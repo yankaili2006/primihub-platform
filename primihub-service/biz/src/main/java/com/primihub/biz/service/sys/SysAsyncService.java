@@ -69,7 +69,7 @@ public class SysAsyncService {
             BaseResultEntity resultEntity = restTemplate.postForObject(SysConstant.SYS_COLLECT_URL, request, BaseResultEntity.class);
             log.info(JSONObject.toJSONString(resultEntity));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("collect service connect error: {}", e.getMessage());
         }
     }
     @Async
