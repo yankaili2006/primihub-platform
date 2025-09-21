@@ -1,6 +1,6 @@
-# Primihub Management Platform Service
+# PrimiHub Management Platform Service
 
-Primihub Management Platform is a comprehensive Spring Cloud-based service platform for managing and orchestrating privacy-preserving machine learning workflows. It provides a centralized management interface for data resources, models, projects, and federated learning tasks.
+PrimiHub Management Platform is a comprehensive Spring Cloud-based service platform for managing and orchestrating privacy-preserving machine learning workflows. It provides a centralized management interface for data resources, models, projects, and federated learning tasks.
 
 ## 🏗️ Architecture Overview
 
@@ -284,4 +284,4 @@ For support and questions:
 
 ---
 
-**Note**: This is a management platform service for Primihub. For the complete Primihub ecosystem, ensure you have the core Primihub nodes and other components properly configured and running.
+**Note**: This is a management platform service for PrimiHub. For the complete PrimiHub ecosystem, ensure you have the core PrimiHub nodes and other components properly configured and running.

@@ -1,6 +1,6 @@
-# Primihub Fusion Platform
+# PrimiHub Fusion Platform
 
-Primihub Fusion 是一个基于 Spring Boot 构建的数据融合平台，提供机构注册、资源管理和群组协作功能。该平台支持多方安全计算环境下的数据资源共享与协作。
+PrimiHub Fusion 是一个基于 Spring Boot 构建的数据融合平台，提供机构注册、资源管理和群组协作功能。该平台支持多方安全计算环境下的数据资源共享与协作。
 
 ## 功能特性
 

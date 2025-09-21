@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Primihub Fusion 项目构建脚本
+# PrimiHub Fusion 项目构建脚本
 # 用于构建 primihub-fusion 项目
 
 set -e  # 遇到错误立即退出

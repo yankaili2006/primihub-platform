@@ -1,4 +1,4 @@
-# Primihub Service Build Fixes
+# PrimiHub Service Build Fixes
 
 This document outlines the steps taken to fix the build issues for the primihub-service project.
 

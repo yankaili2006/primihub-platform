@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Primihub Fusion 启动脚本
+# PrimiHub Fusion 启动脚本
 # 用于启动 primihub-fusion 应用
 
 set -e  # 遇到错误立即退出
@@ -162,7 +162,7 @@ main() {
     # 解析参数
     parse_args "$@"
     
-    echo "=== Primihub Fusion 启动脚本 ==="
+    echo "=== PrimiHub Fusion 启动脚本 ==="
     echo ""
     
     # 检查 Java

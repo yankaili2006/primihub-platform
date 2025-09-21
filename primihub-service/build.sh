@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Primihub Service 项目构建脚本
+# PrimiHub Service 项目构建脚本
 # 用于构建 primihub-service 项目（包含 Java 和 Python 模块）
 
 set -e  # 遇到错误立即退出

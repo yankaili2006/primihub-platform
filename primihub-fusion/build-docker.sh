@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Primihub Fusion Docker 镜像构建脚本
+# PrimiHub Fusion Docker 镜像构建脚本
 # 用于构建 primihub-fusion 项目的 Docker 镜像
 
 set -e  # 遇到错误立即退出
@@ -124,7 +124,7 @@ main() {
     # 解析参数
     parse_args "$@"
     
-    echo "=== Primihub Fusion Docker 镜像构建 ==="
+    echo "=== PrimiHub Fusion Docker 镜像构建 ==="
     echo ""
     
     # 检查 Docker
