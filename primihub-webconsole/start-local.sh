@@ -94,6 +94,9 @@ build_project() {
     # 检查构建模式
     BUILD_MODE=${1:-"prod"}
     
+    # 修复 Node.js v17+ 的 digital envelope routines 错误
+    export NODE_OPTIONS="--openssl-legacy-provider"
+    
     case $BUILD_MODE in
         "prod")
             log_info "使用生产模式构建..."
@@ -133,6 +136,8 @@ start_dev_server() {
     log_info "开发服务器将在 http://localhost:$PORT 启动"
     log_info "按 Ctrl+C 停止服务器"
     
+    # 修复 Node.js v17+ 的 digital envelope routines 错误
+    export NODE_OPTIONS="--openssl-legacy-provider"
     npm run dev
 }
 
