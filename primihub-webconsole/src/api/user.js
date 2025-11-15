@@ -18,7 +18,10 @@ export function login(data) {
   return request({
     url: '/sys/user/login',
     method: 'POST',
-    data
+    data: {
+      ...data,
+      timestamp: Date.now()
+    }
   })
 }
 

@@ -1,6 +1,6 @@
 <template>
   <div v-loading="listLoading" class="right-drawer" :class="{'disabled':!options.isEditable}">
-    <el-form v-if="nodeData" ref="form" :model="nodeData" :rules="rules" label-width="80px" element-loading-spinner="el-icon-loading">
+    <el-form v-if="localNodeData" ref="form" :model="localNodeData" :rules="rules" label-width="80px" element-loading-spinner="el-icon-loading">
       <template v-if="isDataSelect">
         <el-form-item>
           <div class="organ-header">
@@ -34,16 +34,16 @@
           </template>
         </el-form-item>
       </template>
-      <template v-else-if="nodeData.componentCode === FIT_TRANSFORM">
-        <el-form-item :label="nodeData.componentName">
-          <FitTransformCom :column-data="FitTransformData" :node-data="nodeData.componentTypes" @change="handleFitTransform" />
+      <template v-else-if="localNodeData.componentCode === FIT_TRANSFORM">
+        <el-form-item :label="localNodeData.componentName">
+          <FitTransformCom :column-data="FitTransformData" :node-data="localNodeData.componentTypes" @change="handleFitTransform" />
         </el-form-item>
       </template>
-      <template v-else-if="nodeData.componentCode === DATA_ALIGN">
-        <el-form-item :label="nodeData.componentTypes[0].typeName">
-          <el-select v-model="nodeData.componentTypes[0].inputValue" :disabled="!options.isEditable" class="block" placeholder="请选择" @change="handleChange">
+      <template v-else-if="localNodeData.componentCode === DATA_ALIGN">
+        <el-form-item :label="localNodeData.componentTypes[0].typeName">
+          <el-select v-model="localNodeData.componentTypes[0].inputValue" :disabled="!options.isEditable" class="block" placeholder="请选择" @change="handleChange">
             <el-option
-              v-for="(v,index) in nodeData.componentTypes[0].inputValues"
+              v-for="(v,index) in localNodeData.componentTypes[0].inputValues"
               :key="index"
               :label="v.val"
               :value="v.key"
@@ -53,7 +53,7 @@
         <el-form-item>
           <el-row v-if="dataAlignParam">
             <el-col v-for="(param,key) in dataAlignParam" :key="key" :span="param.inputType === 'button' ? 14: 10">
-              <el-button v-if="param.inputType === 'button'" :disabled="!options.isEditable" @click="openFeaturesDialog(nodeData.componentCode)">可多选特征({{ selectedDataAlignFeatures? selectedDataAlignFeatures.length : 0 }}/{{ featuresOptions.length }})</el-button>
+              <el-button v-if="param.inputType === 'button'" :disabled="!options.isEditable" @click="openFeaturesDialog(localNodeData.componentCode)">可多选特征({{ selectedDataAlignFeatures? selectedDataAlignFeatures.length : 0 }}/{{ featuresOptions.length }})</el-button>
               <el-select v-if="param.inputType === 'select'" v-model="param.inputValue" :disabled="!options.isEditable" class="block" placeholder="请选择" @change="handleChange">
                 <el-option
                   v-for="v in param.inputValues"
@@ -69,8 +69,8 @@
           </div>
         </el-form-item>
       </template>
-      <template v-else-if="nodeData.componentCode === MPC_STATISTICS">
-        <el-form-item :label="nodeData.componentTypes[0].typeName">
+      <template v-else-if="localNodeData.componentCode === MPC_STATISTICS">
+        <el-form-item :label="localNodeData.componentTypes[0].typeName">
           <div v-for="(item,index) in featureItems" :key="index" :gutter="20" style="margin-bottom: 30px;">
             <el-row :gutter="5">
               <el-col :span="10">
@@ -99,11 +99,11 @@
               </div>
             </div>
           </div>
-          <el-button v-if="options.isEditable && nodeData.componentTypes.find(item => item.typeCode === 'addFilling')" class="block" type="primary" @click="addFilling">添加统计项</el-button>
+          <el-button v-if="options.isEditable && localNodeData.componentTypes.find(item => item.typeCode === 'addFilling')" class="block" type="primary" @click="addFilling">添加统计项</el-button>
         </el-form-item>
       </template>
-      <template v-else-if="nodeData.componentCode === MODEL">
-        <div v-for="(item,n) in nodeData.componentTypes" :key="n">
+      <template v-else-if="localNodeData.componentCode === MODEL">
+        <div v-for="(item,n) in localNodeData.componentTypes" :key="n">
           <template v-if="item.inputType === 'select'">
             <p class="component-name"><strong v-if="item.isRequired" class="required">*</strong><span>{{ item.typeName }}</span></p>
             <el-select v-model="item.inputValue" :disabled="!options.isEditable" class="block" placeholder="请选择" @change="handleModelChange">
@@ -156,13 +156,13 @@
         </template>
         <el-button v-if="options.isEditable && modelParams && modelParams.find(item => item.typeCode !==ARBITER_ORGAN)" style="margin-top: 10px;" @click="resetModelParams">重置参数</el-button>
       </template>
-      <template v-else-if="nodeData.componentCode === 'featuresPoints'">
-        <el-form-item :label="nodeData.componentTypes[0].typeName">
+      <template v-else-if="localNodeData.componentCode === 'featuresPoints'">
+        <el-form-item :label="localNodeData.componentTypes[0].typeName">
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-select v-model="nodeData.componentTypes[0].inputValue" class="block" placeholder="请选择" @change="handleChange">
+              <el-select v-model="localNodeData.componentTypes[0].inputValue" class="block" placeholder="请选择" @change="handleChange">
                 <el-option
-                  v-for="(v,index) in nodeData.componentTypes[0].inputValues"
+                  v-for="(v,index) in localNodeData.componentTypes[0].inputValues"
                   :key="index"
                   :label="v.val"
                   :value="v.key"
@@ -170,13 +170,13 @@
               </el-select>
             </el-col>
             <el-col :span="12">
-              <el-input-number v-model="nodeData.componentTypes[1].inputValue" controls-position="right" :min="1" :max="100" /> 箱
+              <el-input-number v-model="localNodeData.componentTypes[1].inputValue" controls-position="right" :min="1" :max="100" /> 箱
             </el-col>
           </el-row>
         </el-form-item>
       </template>
       <template v-else>
-        <div v-for="(item,index) in nodeData.componentTypes" :key="index">
+        <div v-for="(item,index) in localNodeData.componentTypes" :key="index">
           <el-form-item :prop="item.typeCode">
             <template v-if="item.inputType === 'label'">
               <p>{{ item.typeName }}</p>
@@ -277,6 +277,7 @@ export default {
       }
     }
     return {
+      localNodeData: { ...this.nodeData },
       DATA_SET,
       DATA_ALIGN,
       MODEL,
@@ -389,7 +390,7 @@ export default {
       }
     },
     dialogTitle() {
-      return this.nodeData.componentCode === DATA_SET ? '添加协作方' : this.nodeData.componentCode === MODEL ? '添加可信第三方' : ''
+      return this.localNodeData.componentCode === DATA_SET ? '添加协作方' : this.localNodeData.componentCode === MODEL ? '添加可信第三方' : ''
     },
     featureConfigIndex() {
       return this.nodeData.componentTypes.findIndex(item => item.typeCode === MPC_STATISTICS)
@@ -634,9 +635,9 @@ export default {
           this.arbiterOrganId = ''
           this.arbiterOrganName = ''
         }
-        const modelTypeIndex = this.nodeData.componentTypes.findIndex(item => item.typeCode === MODEL_TYPE)
-        const paramIndex = this.nodeData.componentTypes[modelTypeIndex].inputValues.findIndex(item => item.key === this.modelTypeValue)
-        this.nodeData.componentTypes[modelTypeIndex].inputValues[paramIndex].param = this.modelParams
+        const modelTypeIndex = this.localNodeData.componentTypes.findIndex(item => item.typeCode === MODEL_TYPE)
+        const paramIndex = this.localNodeData.componentTypes[modelTypeIndex].inputValues.findIndex(item => item.key === this.modelTypeValue)
+        this.localNodeData.componentTypes[modelTypeIndex].inputValues[paramIndex].param = this.modelParams
         this.handleChange()
       }
     },
@@ -664,7 +665,7 @@ export default {
       }
     },
     async openProviderOrganDialog() {
-      if (this.nodeData.componentCode === DATA_SET) {
+      if (this.localNodeData.componentCode === DATA_SET) {
         // multiple selection
         this.selectType = 'checkbox'
         if (this.selectedProviderOrgans.length === 2) {
@@ -698,7 +699,7 @@ export default {
       if (this.inputValue !== '') {
         const posIndex = this.inputValue?.findIndex(item => item.organId === this.selectedProviderOrgans[index].organId)
         this.inputValue.splice(posIndex, 1)
-        this.nodeData.componentTypes[0].inputValue = JSON.stringify(this.inputValue)
+        this.localNodeData.componentTypes[0].inputValue = JSON.stringify(this.inputValue)
         this.handleChange()
       }
 
@@ -715,7 +716,7 @@ export default {
     },
     handleProviderOrganSubmit(data) {
       console.log('data', data)
-      if (this.nodeData.componentCode === DATA_SET) {
+      if (this.localNodeData.componentCode === DATA_SET) {
         // multiple select type
         if (Array.isArray(data)) {
           if (data.length === 0) {
@@ -749,7 +750,7 @@ export default {
         this.getFeaturesItem()
       }
       this.providerOrganDialogVisible = false
-      this.$emit('change', this.nodeData)
+      this.$emit('change', this.localNodeData)
     },
     getDataSetNodeData() {
       this.inputValue = JSON.parse(this.inputValue)
@@ -789,10 +790,10 @@ export default {
       this.dialogVisible = true
     },
     handleChange(value) {
-      if (this.nodeData.componentCode === DATA_ALIGN) {
+      if (this.localNodeData.componentCode === DATA_ALIGN) {
         this.dataAlignTypeValue = value
       }
-      this.$emit('change', this.nodeData)
+      this.$emit('change', this.localNodeData)
     },
     handleProviderOrganChange(value) {
       this.providerOrganId = value
@@ -834,7 +835,7 @@ export default {
       }
       this.save()
       this.dialogVisible = false
-      this.$emit('change', this.nodeData)
+      this.$emit('change', this.localNodeData)
     },
     setInputValue(data) {
       if (this.inputValue) {
@@ -862,7 +863,7 @@ export default {
           this.inputValues.push(currentData)
         }
       }
-      this.nodeData.componentTypes[0].inputValue = JSON.stringify(this.inputValues)
+      this.localNodeData.componentTypes[0].inputValue = JSON.stringify(this.inputValues)
       this.handleChange()
     },
     async getProjectResourceData() {
@@ -963,8 +964,8 @@ export default {
       this.setFeaturesValue()
     },
     setFeaturesValue() {
-      if (this.nodeData.componentTypes[this.featureConfigIndex]) {
-        this.nodeData.componentTypes[this.featureConfigIndex].inputValue = JSON.stringify(this.featureItems)
+      if (this.localNodeData.componentTypes[this.featureConfigIndex]) {
+        this.localNodeData.componentTypes[this.featureConfigIndex].inputValue = JSON.stringify(this.featureItems)
         if (this.options.isEditable) {
           this.handleChange()
         }

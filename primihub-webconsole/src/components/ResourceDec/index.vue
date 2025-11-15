@@ -27,7 +27,8 @@ export default {
   },
   data() {
     return {
-      calculationField: this.data.calculationField ? this.data.calculationField : []
+      calculationField: this.data.calculationField ? this.data.calculationField : [],
+      localData: { ...this.data }
     }
   },
   watch: {
@@ -52,8 +53,8 @@ export default {
       }
     },
     handleCheckedChange(value) {
-      this.data.calculationField = this.calculationField
-      this.$emit('change', this.data)
+      this.localData.calculationField = this.calculationField
+      this.$emit('change', { ...this.data, calculationField: this.calculationField })
     }
   }
 }

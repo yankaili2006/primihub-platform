@@ -121,7 +121,7 @@ export default {
       },
       keyWordsMap: {}, // Plain ciphertext of keywords
       existKeyWords: []
-   }
+    }
   },
   computed: {
     ...mapState('application', ['marketInfo'])
@@ -152,7 +152,7 @@ export default {
           timer && window.clearTimeout(timer)
           taskState === 3 && this.$message.error('查询失败')
           taskState === 4 && this.$message.warning('查询已取消')
-          if (taskState === 1 ){
+          if (taskState === 1) {
             this.dialogVisible = true
             list.forEach(item => {
               const ele = this.keyWordsMap[item.value]
@@ -188,19 +188,19 @@ export default {
 
           this.loading = true
           pirSubmitTask({
-              resourceId: this.resource[0].resourceId,
-              pirParam: hashParams
-            }).then(res => {
-              if (res.code === 0) {
-                this.taskId = res.result.taskId
-                this.getPirTaskResult()
-              } else {
-                this.$message.error(res.msg)
-                this.loading = false
-              }
-            }).catch(err => {
-              console.log(err)
+            resourceId: this.resource[0].resourceId,
+            pirParam: hashParams
+          }).then(res => {
+            if (res.code === 0) {
+              this.taskId = res.result.taskId
+              this.getPirTaskResult()
+            } else {
+              this.$message.error(res.msg)
               this.loading = false
+            }
+          }).catch(err => {
+            console.log(err)
+            this.loading = false
           })
         } else {
           console.log('error submit!!')
@@ -262,4 +262,3 @@ export default {
   }
 }
 </style>
-
