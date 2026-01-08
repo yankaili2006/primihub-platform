@@ -15,8 +15,6 @@
           <el-option label="新增" value="新增" />
           <el-option label="修改" value="修改" />
           <el-option label="删除" value="删除" />
-          <el-option label="查询" value="查询" />
-          <el-option label="导出" value="导出" />
           <el-option label="登录" value="登录" />
           <el-option label="登出" value="登出" />
         </el-select>
@@ -202,12 +200,12 @@ export default {
       this.loading = true
       try {
         const params = {
-          operatorName: this.searchForm.operatorName || null,
+          userName: this.searchForm.operatorName || null,
           operationModule: this.searchForm.operationModule || null,
-          operationType: this.searchForm.operationType || null,
+          operationType: this.mapOperationTypeToCode(this.searchForm.operationType),
           startTime: this.searchForm.timeRange ? this.searchForm.timeRange[0] : null,
           endTime: this.searchForm.timeRange ? this.searchForm.timeRange[1] : null,
-          pageNum: this.pageNum,
+          pageNo: this.pageNum,
           pageSize: this.pageSize
         }
         const res = await getOperationLogPage(params)
@@ -284,9 +282,9 @@ export default {
     async handleExport() {
       try {
         const params = {
-          operatorName: this.searchForm.operatorName || null,
+          userName: this.searchForm.operatorName || null,
           operationModule: this.searchForm.operationModule || null,
-          operationType: this.searchForm.operationType || null,
+          operationType: this.mapOperationTypeToCode(this.searchForm.operationType),
           startTime: this.searchForm.timeRange ? this.searchForm.timeRange[0] : null,
           endTime: this.searchForm.timeRange ? this.searchForm.timeRange[1] : null
         }
@@ -344,6 +342,19 @@ export default {
       } catch (e) {
         return jsonStr
       }
+    },
+
+    // 将操作类型字符串映射为数字代码
+    mapOperationTypeToCode(operationType) {
+      if (!operationType) return null
+      const typeMap = {
+        '新增': 1,
+        '修改': 2,
+        '删除': 3,
+        '登录': 4,
+        '登出': 5
+      }
+      return typeMap[operationType] || null
     }
   }
 }

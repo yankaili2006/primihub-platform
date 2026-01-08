@@ -8,7 +8,7 @@ import request from '@/utils/request'
  */
 export function getOperationLogPage(data) {
   return request({
-    url: '/sys/operationLog/getOperationLogPage',
+    url: '/dev-api/sys/operationLog/getOperationLogPage',
     method: 'post',
     data
   })
@@ -22,7 +22,7 @@ export function getOperationLogPage(data) {
  */
 export function getOperationLogDetail(logId) {
   return request({
-    url: '/sys/operationLog/getOperationLogDetail',
+    url: '/dev-api/sys/operationLog/getOperationLogDetail',
     method: 'get',
     params: { logId }
   })
@@ -36,7 +36,7 @@ export function getOperationLogDetail(logId) {
  */
 export function deleteOperationLog(logId) {
   return request({
-    url: '/sys/operationLog/deleteOperationLog',
+    url: '/dev-api/sys/operationLog/deleteOperationLog',
     method: 'delete',
     params: { logId }
   })
@@ -50,7 +50,7 @@ export function deleteOperationLog(logId) {
  */
 export function exportOperationLog(data) {
   return request({
-    url: '/sys/operationLog/exportOperationLog',
+    url: '/dev-api/sys/operationLog/exportOperationLog',
     method: 'post',
     data,
     responseType: 'blob'
@@ -65,7 +65,7 @@ export function exportOperationLog(data) {
  */
 export function getOperationLogStatistics(data) {
   return request({
-    url: '/sys/operationLog/getOperationLogStatistics',
+    url: '/dev-api/sys/operationLog/getOperationLogStatistics',
     method: 'post',
     data
   })
