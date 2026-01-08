@@ -1,26 +1,25 @@
 package com.primihub.biz.config.database;
 
 import com.alibaba.druid.pool.DruidDataSource;
-import com.alibaba.nacos.api.config.annotation.NacosConfigurationProperties;
-import com.alibaba.nacos.api.config.annotation.NacosValue;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
 public class PrimaryDruidDataSourceWrapper extends DruidDataSource implements InitializingBean {
-    @NacosValue(value="${spring.datasource.druid.primary.url}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.url}")
     private String url;
-    @NacosValue(value="${spring.datasource.druid.primary.username}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.username}")
     private String username;
-    @NacosValue(value="${spring.datasource.druid.primary.password}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.password}")
     private String password;
-    @NacosValue(value="${spring.datasource.druid.primary.driver-class-name}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.driver-class-name}")
     private String driverClassName;
-    @NacosValue(value="${spring.datasource.druid.primary.connection-properties}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.connection-properties}")
     private String connectionProperties;
-    @NacosValue(value="${spring.datasource.druid.primary.filter.config.enabled}",autoRefreshed = true)
+    @Value("${spring.datasource.druid.primary.filter.config.enabled:false}")
     private Boolean filterConfigEnabled = false;
 
 

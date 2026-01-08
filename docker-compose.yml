@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  nacos:
+    image: nacos/nacos-server:2.0.3
+    container_name: nacos
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=1qazmko0
+      - MYSQL_SERVICE_PORT=3306
+    ports:
+      - "8848:8848"
+    depends_on:
+      - mysql
+    networks:
+      - primihub-network
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=1qazmko0
+      - MYSQL_DATABASE=nacos
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./primihub-service/script/ddl.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-file=/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - primihub-network
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - primihub-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - primihub-network
+
+  application:
+    build:
+      context: ./primihub-service
+      dockerfile: Dockerfile.local
+    container_name: application
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - primihub-network
+
+  gateway:
+    build:
+      context: ./primihub-service
+      dockerfile: Dockerfile.local
+      target: gateway
+    container_name: gateway
+    ports:
+      - "8088:8088"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
+    depends_on:
+      - nacos
+      - application
+    networks:
+      - primihub-network
+
+networks:
+  primihub-network:
+    driver: bridge
+
+volumes:
+  mysql-data:

@@ -12,15 +12,15 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 
-@NacosPropertySources({
-        @NacosPropertySource(dataId = "base.json" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "components.json" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "database.yaml" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "redis.yaml" ,autoRefreshed = true)})
-@SpringBootApplication(scanBasePackages="com.primihub",exclude = {HazelcastAutoConfiguration.class})
+// @NacosPropertySources({
+//         @NacosPropertySource(dataId = "base.json" ,autoRefreshed = true),
+//         @NacosPropertySource(dataId = "components.json" ,autoRefreshed = true),
+//         @NacosPropertySource(dataId = "database.yaml" ,autoRefreshed = true),
+//         @NacosPropertySource(dataId = "redis.yaml" ,autoRefreshed = true)})
+@SpringBootApplication(scanBasePackages="com.primihub",exclude = {HazelcastAutoConfiguration.class, org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration.class})
 @EnableAsync
 @ServletComponentScan(basePackages = {"com.primihub.biz.filter"})
-@EnableBinding({SingleTaskChannel.class})
+// @EnableBinding({SingleTaskChannel.class})  // Disable messaging for local development
 @EnableFeignClients(basePackages = {"com.primihub"})
 @EnableScheduling
 public class PlatformApplication {

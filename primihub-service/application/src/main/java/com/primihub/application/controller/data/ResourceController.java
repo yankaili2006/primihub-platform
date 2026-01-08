@@ -54,7 +54,7 @@ public class ResourceController {
      * @return
      */
     @GetMapping("getdataresourcelist")
-    public BaseResultEntity getDataResourceList(@RequestHeader("userId") Long userId,
+    public BaseResultEntity getDataResourceList(@RequestHeader(value = "userId", required = false, defaultValue = "0") Long userId,
                                                 DataResourceReq req){
         return dataResourceService.getDataResourceList(req,userId);
     }
@@ -80,7 +80,7 @@ public class ResourceController {
      */
     @PostMapping("saveorupdateresource")
     public BaseResultEntity saveDataResource(@RequestBody DataResourceReq req,
-                                             @RequestHeader("userId") Long userId){
+                                             @RequestHeader(value = "userId", required = false, defaultValue = "0") Long userId){
         if (req.getResourceId()!=null&&req.getResourceId()!=0L){
             if ((req.getResourceName()==null|| "".equals(req.getResourceName().trim()))
                     &&(req.getResourceDesc()==null|| "".equals(req.getResourceDesc().trim()))
@@ -199,7 +199,7 @@ public class ResourceController {
      * @return
      */
     @GetMapping("getDataResourceFieldPage")
-    public BaseResultEntity getDataResourceFieldPage(@RequestHeader("userId") Long userId,
+    public BaseResultEntity getDataResourceFieldPage(@RequestHeader(value = "userId", required = false, defaultValue = "0") Long userId,
                                                      Long resourceId,
                                                      PageReq req){
         if (resourceId==null||resourceId==0L){

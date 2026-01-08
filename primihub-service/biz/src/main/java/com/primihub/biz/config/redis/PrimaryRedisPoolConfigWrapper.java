@@ -1,24 +1,24 @@
 package com.primihub.biz.config.redis;
 
-import com.alibaba.nacos.api.config.annotation.NacosValue;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Value;
 import redis.clients.jedis.JedisPoolConfig;
 
 public class PrimaryRedisPoolConfigWrapper extends JedisPoolConfig implements InitializingBean {
 
-    @NacosValue("${spring.datasource.redis.primary.minIdle}")
+    @Value("${spring.datasource.redis.primary.minIdle:0}")
     private int minIdle;
-    @NacosValue("${spring.datasource.redis.primary.maxIdle}")
+    @Value("${spring.datasource.redis.primary.maxIdle:8}")
     private int maxIdle;
-    @NacosValue("${spring.datasource.redis.primary.maxTotal}")
+    @Value("${spring.datasource.redis.primary.maxTotal:8}")
     private int maxTotal;
-    @NacosValue("${spring.datasource.redis.primary.lifo}")
+    @Value("${spring.datasource.redis.primary.lifo:true}")
     private boolean lifo;
-    @NacosValue("${spring.datasource.redis.primary.maxWaitMillis}")
+    @Value("${spring.datasource.redis.primary.maxWaitMillis:-1}")
     private long maxWaitMillis;
-    @NacosValue("${spring.datasource.redis.primary.minEvictableIdleTimeMillis}")
+    @Value("${spring.datasource.redis.primary.minEvictableIdleTimeMillis:1800000}")
     private long minEvictableIdleTimeMillis;
-    @NacosValue("${spring.datasource.redis.primary.softMinEvictableIdleTimeMillis}")
+    @Value("${spring.datasource.redis.primary.softMinEvictableIdleTimeMillis:1800000}")
     private long softMinEvictableIdleTimeMillis;
 
     @Override

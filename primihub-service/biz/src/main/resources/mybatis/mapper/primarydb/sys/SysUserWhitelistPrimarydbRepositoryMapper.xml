@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysUserWhitelistPrimarydbRepository">
+
+    <!-- 插入白名单记录 -->
+    <insert id="insertWhitelist" parameterType="com.primihub.biz.entity.sys.po.SysUserWhitelist">
+        INSERT INTO sys_user_whitelist (
+            whitelist_type,
+            whitelist_value,
+            whitelist_desc,
+            status,
+            is_del,
+            creator_id,
+            creator_name
+        ) VALUES (
+            #{whitelistType},
+            #{whitelistValue},
+            #{whitelistDesc},
+            #{status},
+            0,
+            #{creatorId},
+            #{creatorName}
+        )
+    </insert>
+
+    <!-- 更新白名单记录 -->
+    <update id="updateWhitelist" parameterType="com.primihub.biz.entity.sys.po.SysUserWhitelist">
+        UPDATE sys_user_whitelist
+        SET whitelist_type = #{whitelistType},
+            whitelist_value = #{whitelistValue},
+            whitelist_desc = #{whitelistDesc},
+            status = #{status}
+        WHERE whitelist_id = #{whitelistId}
+          AND is_del = 0
+    </update>
+
+    <!-- 删除白名单记录（软删除） -->
+    <update id="deleteWhitelist">
+        UPDATE sys_user_whitelist
+        SET is_del = 1
+        WHERE whitelist_id = #{whitelistId}
+    </update>
+
+</mapper>

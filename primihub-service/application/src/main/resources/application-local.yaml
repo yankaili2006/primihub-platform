@@ -1,0 +1,68 @@
+server:
+  port: 8090
+spring:
+  application:
+    name: platform
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  redis:
+    host: localhost
+    port: 6379
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+    stream:
+      bindings:
+        singleTaskOutput:
+          destination: singlTaskChannel
+        singleTaskInput:
+          destination: singlTaskChannel
+          group: single
+        singleSeatunnelInput:
+          destination: seatunnel
+          group: data
+nacos:
+  config:
+    enabled: false
+aj:
+  captcha:
+    jigsaw: classpath:images/yyjigsaw
+    cache-type: redis
+    water-mark: PrimiHub
+    slip-offset: 5
+    aes-status: true
+    interference-options: 2
+    req-frequency-limit-enable: true
+    req-get-lock-limit: 30
+    req-get-lock-seconds: 30
+    req-get-minute-limit: 10
+    req-check-minute-limit: 10
+    req-verify-minute-limit: 10
+    type: BLOCKPUZZLE
+
+swagger2:
+  enable: true
+logging:
+  level:
+    root: info
+    com.example: debug

@@ -394,17 +394,29 @@ export const asyncRoutes = [
     ]
   },
   {
-    path: '/log',
+    path: '/whitelist',
+    component: Layout,
+    name: 'WhitelistManage',
+    redirect: '/whitelist/list',
+    meta: { title: '白名单管理', icon: 'el-icon-user' },
+    children: [{
+      path: 'list',
+      name: 'WhitelistList',
+      component: () => import('@/views/setting/whitelist'),
+      meta: { title: '白名单管理', breadcrumb: false }
+    }]
+  },
+  {
+    path: '/operationLog',
     component: Layout,
     name: 'Log',
-    redirect: '/log/index',
-    meta: { title: '日志管理', icon: 'el-icon-warning-outline' },
+    redirect: '/operationLog/list',
+    meta: { title: '日志管理', icon: 'el-icon-document' },
     children: [{
-      path: 'index',
+      path: 'list',
       name: 'LogList',
-      component: () => import('@/views/log/index'),
+      component: () => import('@/views/setting/operationLog'),
       meta: { title: '日志管理', breadcrumb: false }
-
     }]
   },
   // 404 page must be placed at the end !!!

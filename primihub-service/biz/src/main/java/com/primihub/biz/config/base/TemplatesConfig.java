@@ -26,6 +26,10 @@ public class TemplatesConfig {
 
     @PostConstruct
     public void readNacosFreemarkerPython(){
+        // Skip Nacos initialization for local development
+        log.info("Skip Nacos template initialization for local development");
+        return;
+        /*
         try {
             if (!baseConfiguration.getOpenDynamicTuning()){
                 log.info("Close nacos template debugging");
@@ -78,5 +82,6 @@ public class TemplatesConfig {
         }catch (Exception e){
             log.info("nacos freemarkerPython Exception:{}",e.getMessage());
         }
+        */
     }
 }

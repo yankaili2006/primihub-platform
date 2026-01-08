@@ -202,7 +202,8 @@ export default {
           default:
             break
         }
-        this.data[index].taskState = taskState
+        // 不能直接修改props，触发事件让父组件更新
+        this.$emit('update-task-state', { index, taskState })
         this.$emit('complete')
       })
     },

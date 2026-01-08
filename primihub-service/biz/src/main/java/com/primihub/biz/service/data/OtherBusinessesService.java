@@ -169,7 +169,10 @@ public class OtherBusinessesService {
     public BaseResultEntity syncGatewayApiData(Object vo,String gatewayAddressAndApi,String publicKey,int i){
         try {
             Object data;
-            if (StringUtils.isEmpty(publicKey)){
+            // 检查publicKey是否为空或无效（如占位符 "public_key_dev"）
+            // 只允许Base64字符：A-Za-z0-9+/=
+            boolean isValidPublicKey = !StringUtils.isEmpty(publicKey) && publicKey.matches("^[A-Za-z0-9+/=]+$");
+            if (!isValidPublicKey){
                 gatewayAddressAndApi = gatewayAddressAndApi+"?ignore=ignore";
                 data = vo;
             }else {

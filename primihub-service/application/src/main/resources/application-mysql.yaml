@@ -1,0 +1,231 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: platform
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/primihub?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+    username: root
+    password: primihub2024
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+    druid:
+      primary:
+        url: jdbc:mysql://localhost:3306/primihub?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+        username: root
+        password: primihub2024
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        initial-size: 5
+        min-idle: 5
+        max-active: 20
+        max-wait: 60000
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        connection-properties: ""
+        filter.config.enabled: false
+      secondary:
+        url: jdbc:mysql://localhost:3306/primihub?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8&allowPublicKeyRetrieval=true
+        username: root
+        password: primihub2024
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        initial-size: 5
+        min-idle: 5
+        max-active: 20
+        max-wait: 60000
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        connection-properties: ""
+        filter.config.enabled: false
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+      schema-locations: classpath:schema-mysql.sql
+      data-locations: classpath:data-mysql.sql
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+    stream:
+      enabled: false
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.boot.autoconfigure.amqp.RabbitRepositoriesAutoConfiguration
+
+# 禁用Nacos配置
+nacos:
+  config:
+    enabled: false
+
+# 基础配置 - 开发环境
+base:
+  tokenValidateUriBlackList:
+    - "/user/login"
+    - "/user/register"
+    - "/user/sendVerificationCode"
+    - "/user/forgetPassword"
+    - "/captcha/get"
+    - "/captcha/check"
+    - "/oauth/getAuthList"
+    - "/oauth/authLogin"
+    - "/oauth/authRegister"
+    - "/oauth/github/render"
+    - "/oauth/github/callback"
+    - "/common/getValidatePublicKey"
+    - "/common/getTrackingID"
+    - "/shareData/syncProject"
+    - "/shareData/syncModel"
+    - "/organ/getHomepage"
+    - "/test/**"
+    - "/actuator/**"
+    # 开发环境：跳过所有业务API的token验证
+    - "/model/**"
+    - "/project/**"
+    - "/resource/**"
+    - "/psi/**"
+    - "/pir/**"
+    - "/reasoning/**"
+    - "/task/**"
+    - "/whitelist/**"
+    - "/user/**"
+    - "/organ/**"
+    - "/data/**"
+    - "/fusionResource/**"
+
+  needSignUriList: []
+
+  taskEmailSubject: "[PrimiHub] PrimiHub Platform Task Notification!"
+  adminUserIds: [1]
+  defaultPassword: "123456"
+  defaultPasswordVector: "excalibur"
+  primihubOfficalService: "http://127.0.0.1:8000"
+
+  # 开发环境配置
+  devMode: true
+  skipVerificationCode: true
+  skipCaptcha: true
+  skipRsaValidation: true
+
+  grpcClient:
+    address: "127.0.0.1"
+    port: 50050
+    useTls: false
+    trustCertFilePath: "/ca.crt"
+    keyCertChainFile: "/client.crt"
+    keyFile: "/client8.key"
+    cacheType: "CaffeineCacheService"
+
+  grpcServerPort: 9090
+  uploadUrlDirPrefix: "/tmp/primihub/upload/"
+  resultUrlDirPrefix: "/tmp/primihub/result/"
+  runModelFileUrlDirPrefix: "/tmp/primihub/result/runTask/"
+  usefulToken: "excalibur_forever_ABCDEFGHIJKLMN"
+  systemDomainName: ""
+
+  mailProperties:
+    host: ""
+    username: ""
+    port: 465
+    password: ""
+    properties: {}
+
+  authConfigs:
+    github:
+      redirectUrl: ""
+      authEnable: 0
+      clientId: ""
+      clientSecret: ""
+      redirectUri: ""
+
+  lokiConfig:
+    address: ""
+    job: "primihub/application1"
+    container: "application1"
+    app: "application1"
+
+# 组件配置
+components:
+  modelComponents: []
+
+# 验证码配置 - 开发环境禁用
+aj:
+  captcha:
+    cache-type: local
+    water-mark: PrimiHub
+    slip-offset: 5
+    aes-status: false
+    interference-options: 0
+    req-frequency-limit-enable: false
+    req-get-lock-limit: 999
+    req-get-lock-seconds: 999
+    req-get-minute-limit: 999
+    req-check-minute-limit: 999
+    req-verify-minute-limit: 999
+    type: DEFAULT
+    enabled: false
+
+# Swagger配置
+swagger2:
+  enable: true
+
+# 日志配置
+logging:
+  level:
+    root: info
+    com.primihub: debug
+  config: classpath:logback-privacy.xml
+
+# Custom Redis properties for the application
+spring.datasource.redis.primary.hostName: localhost
+spring.datasource.redis.primary.port: 6379
+spring.datasource.redis.primary.password: ""
+spring.datasource.redis.primary.database: 0
+spring.datasource.redis.primary.minIdle: 0
+spring.datasource.redis.primary.maxIdle: 8
+spring.datasource.redis.primary.maxTotal: 8
+spring.datasource.redis.primary.lifo: true
+spring.datasource.redis.primary.maxWaitMillis: -1
+spring.datasource.redis.primary.minEvictableIdleTimeMillis: 1800000
+spring.datasource.redis.primary.softMinEvictableIdleTimeMillis: 1800000
+spring.datasource.redis.secondary.hostName: localhost
+spring.datasource.redis.secondary.port: 6379
+spring.datasource.redis.secondary.password: ""
+spring.datasource.redis.secondary.database: 1

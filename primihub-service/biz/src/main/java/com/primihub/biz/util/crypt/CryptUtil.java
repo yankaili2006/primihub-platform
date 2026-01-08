@@ -48,6 +48,14 @@ public class CryptUtil {
     public static String multipartEncrypt( String str, String publicKey ) throws Exception{
 //        byte[] decoded = Base64.decodeBase64(publicKey);
 //        long start = System.currentTimeMillis();
+        // 验证publicKey是否为有效的Base64字符串
+        if (publicKey == null || publicKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("Public key cannot be null or empty");
+        }
+        // 检查是否包含无效字符（只允许Base64字符：A-Za-z0-9+/=）
+        if (!publicKey.matches("^[A-Za-z0-9+/=]+$")) {
+            throw new IllegalArgumentException("Public key contains invalid characters. Expected Base64 encoded key, got: " + publicKey);
+        }
         byte[] decoded = BaseEncoding.base64().decode(publicKey);
         RSAPublicKey pubKey = (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(decoded));
         Cipher cipher = Cipher.getInstance("RSA");
@@ -93,6 +101,14 @@ public class CryptUtil {
     public static String multipartDecrypt(String str, String privateKey) throws Exception{
 //        byte[] decoded = Base64.decodeBase64(privateKey);
 //        long start = System.currentTimeMillis();
+        // 验证privateKey是否为有效的Base64字符串
+        if (privateKey == null || privateKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("Private key cannot be null or empty");
+        }
+        // 检查是否包含无效字符（只允许Base64字符：A-Za-z0-9+/=）
+        if (!privateKey.matches("^[A-Za-z0-9+/=]+$")) {
+            throw new IllegalArgumentException("Private key contains invalid characters. Expected Base64 encoded key, got: " + privateKey);
+        }
         byte[] decoded = BaseEncoding.base64().decode(privateKey);
         RSAPrivateKey priKey = (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
         Cipher cipher = Cipher.getInstance("RSA");

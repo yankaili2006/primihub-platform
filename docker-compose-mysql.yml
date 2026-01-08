@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: primihub-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: primihub2024
+      MYSQL_DATABASE: primihub
+      MYSQL_USER: primihub
+      MYSQL_PASSWORD: primihub2024
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - primihub-mysql-data:/var/lib/mysql
+      - ./primihub-service/application/src/main/resources/schema-mysql.sql:/docker-entrypoint-initdb.d/1-schema.sql
+      - ./primihub-service/application/src/main/resources/data-mysql.sql:/docker-entrypoint-initdb.d/2-data.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: primihub-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - primihub-redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  primihub-mysql-data:
+    driver: local
+  primihub-redis-data:
+    driver: local
+
+networks:
+  default:
+    name: primihub-network

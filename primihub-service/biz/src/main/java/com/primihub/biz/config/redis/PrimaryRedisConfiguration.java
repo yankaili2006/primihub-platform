@@ -1,10 +1,10 @@
 package com.primihub.biz.config.redis;
 
-import com.alibaba.nacos.api.config.annotation.NacosValue;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -22,13 +22,13 @@ import redis.clients.jedis.JedisPoolConfig;
 @EnableRedisRepositories(basePackages = {"com.primihub.biz.repository.primaryredis.*"})
 public class PrimaryRedisConfiguration {
 
-    @NacosValue(value="${spring.datasource.redis.primary.hostName}",autoRefreshed = true)
+    @Value("${spring.datasource.redis.primary.hostName:localhost}")
     private String hostName;
-    @NacosValue(value="${spring.datasource.redis.primary.port}",autoRefreshed = true)
+    @Value("${spring.datasource.redis.primary.port:6379}")
     private int port;
-    @NacosValue(value="${spring.datasource.redis.primary.password}",autoRefreshed = true)
+    @Value("${spring.datasource.redis.primary.password:}")
     private String password;
-    @NacosValue(value="${spring.datasource.redis.primary.database}",autoRefreshed = true)
+    @Value("${spring.datasource.redis.primary.database:0}")
     private int database;
 
     @Bean(name = "primaryRedisPoolConfig")
@@ -59,5 +59,10 @@ public class PrimaryRedisConfiguration {
         stringRedisTemplate.setHashKeySerializer(stringRedisSerializer);
         stringRedisTemplate.setHashValueSerializer(stringRedisSerializer);
         return stringRedisTemplate;
+    }
+
+    @Bean(name = "redisTemplate")
+    public StringRedisTemplate redisTemplate(@Qualifier("primaryRedisConnectionFactory") RedisConnectionFactory redisConnectionFactory){
+        return stringRedisTemplate(redisConnectionFactory);
     }
 }

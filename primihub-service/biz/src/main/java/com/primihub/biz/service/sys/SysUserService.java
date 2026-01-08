@@ -74,10 +74,22 @@ public class SysUserService {
 
     public BaseResultEntity login(LoginParam loginParam,String ip){
         log.info("ip:{}",ip);
-        String privateKey=sysCommonPrimaryRedisRepository.getRsaKey(loginParam.getValidateKeyName());
-        if(privateKey==null) {
+        log.info("=== 登录调试信息 ===");
+        log.info("devMode配置值: {}", baseConfiguration.isDevMode());
+        log.info("用户账号: {}", loginParam.getUserAccount());
+        log.info("validateKeyName: {}", loginParam.getValidateKeyName());
+
+        // 获取RSA私钥
+        String privateKey = sysCommonPrimaryRedisRepository.getRsaKey(loginParam.getValidateKeyName());
+
+        // 生产模式下，私钥必须存在
+        if (!baseConfiguration.isDevMode() && privateKey == null) {
+            log.warn("生产模式：RSA私钥获取失败，validateKeyName: {}", loginParam.getValidateKeyName());
             return BaseResultEntity.failure(BaseResultEnum.VALIDATE_KEY_INVALIDATION);
         }
+
+        log.info("私钥是否存在: {}", privateKey != null);
+
         SysUser sysUser=sysUserSecondarydbRepository.selectUserByUserAccount(loginParam.getUserAccount());
         if(sysUser==null||sysUser.getUserId()==null) {
             return BaseResultEntity.failure(BaseResultEnum.ACCOUNT_NOT_FOUND);
@@ -100,14 +112,33 @@ public class SysUserService {
                 return BaseResultEntity.failure(BaseResultEnum.VERIFICATION_CODE,verification.getRepMsg());
             }
         }
+
         String userPassword;
-        try {
-            userPassword=CryptUtil.decryptRsaWithPrivateKey(loginParam.getUserPassword(),privateKey);
-        } catch (Exception e) {
-            return BaseResultEntity.failure(BaseResultEnum.FAILURE,"解密失败");
-        } 
+        // 尝试RSA解密
+        if (privateKey != null) {
+            try {
+                userPassword = CryptUtil.decryptRsaWithPrivateKey(loginParam.getUserPassword(), privateKey);
+                log.info("RSA解密成功");
+            } catch (Exception e) {
+                log.warn("RSA解密失败，尝试使用明文密码", e);
+                // 开发模式下，如果解密失败，尝试使用明文密码
+                if (baseConfiguration.isDevMode()) {
+                    userPassword = loginParam.getUserPassword();
+                    log.info("开发模式：使用明文密码");
+                } else {
+                    log.error("生产模式：RSA解密失败", e);
+                    return BaseResultEntity.failure(BaseResultEnum.FAILURE,"解密失败");
+                }
+            }
+        } else {
+            // 没有私钥，直接使用明文密码（仅开发模式）
+            userPassword = loginParam.getUserPassword();
+            log.info("开发模式：没有私钥，使用明文密码");
+        }
+
         StringBuffer sb=new StringBuffer().append(baseConfiguration.getDefaultPasswordVector()).append(userPassword);
         String signPassword=SignUtil.getMD5ValueLowerCaseByDefaultEncode(sb.toString());
+        log.info("密码验证：期望={}, 实际={}", sysUser.getUserPassword(), signPassword);
         if(!signPassword.equals(sysUser.getUserPassword())){
             log.info("user_id:{},number:{}",sysUser.getUserId(),number);
             BaseResultEntity failure = BaseResultEntity.failure(BaseResultEnum.PASSWORD_NOT_CORRECT);
@@ -118,6 +149,7 @@ public class SysUserService {
             failure.setResult(number);
             return failure;
         }
+        log.info("登录成功！");
         return baseLogin(sysUser,ip);
     }
 

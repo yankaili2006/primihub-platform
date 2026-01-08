@@ -1,0 +1,125 @@
+server:
+  port: 8090
+  
+spring:
+  application:
+    name: platform
+  main:
+    allow-bean-definition-overriding: true
+  datasource:
+    druid:
+      primary:
+        url: jdbc:h2:mem:primarydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+        username: sa
+        password: 
+        driver-class-name: org.h2.Driver
+        initial-size: 1
+        min-idle: 1
+        max-active: 5
+        max-wait: 60000
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1 FROM DUAL
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      secondary:
+        url: jdbc:h2:mem:secondarydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+        username: sa
+        password: 
+        driver-class-name: org.h2.Driver
+        initial-size: 1
+        min-idle: 1
+        max-active: 5
+        max-wait: 60000
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1 FROM DUAL
+        test-while-idle: true
+        test-on-borrow: false
+        test-on-return: false
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        filter:
+          config:
+            enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+  redis:
+    host: localhost
+    port: 6379
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        bootstrap:
+          enable: false
+
+grpc:
+  client:
+    channel:
+      host: 127.0.0.1
+      port: 50050
+      use-tls: false
+    config:
+      application-name: platform
+      timeout: 30000
+      max-inbound-message-size: 104857600
+
+base:
+  grpcClient:
+    address: "127.0.0.1"
+    port: 50050
+    useTls: false
+    trustCertFilePath: "/ca.crt"
+    keyCertChainFile: "/client.crt"
+    keyFile: "/client.key"
+  grpcServerPort: 50050
+  defaultPassword: "123456"
+  defaultPasswordVector: "primihub2022"
+  devMode: true
+  skipCaptcha: true
+  skipVerificationCode: true
+  skipRsaValidation: true
+
+primihub:
+  node:
+    address: http://127.0.0.1:12120
+    grpc:
+      port: 50050
+      use-tls: false
+
+logging:
+  level:
+    root: INFO
+    com.primihub: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
+    org.springframework: WARN

@@ -1,7 +1,5 @@
 package com.primihub.gateway;
 
-import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySource;
-import com.alibaba.nacos.spring.context.annotation.config.NacosPropertySources;
 import com.primihub.biz.config.base.SwaggerConfig;
 import com.primihub.biz.config.base.TemplatesConfig;
 import com.primihub.biz.config.grpc.GrpcConfiguration;
@@ -18,10 +16,6 @@ import org.springframework.cloud.stream.function.FunctionConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 
-@NacosPropertySources({
-        @NacosPropertySource(dataId = "base.json" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "database.yaml" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "redis.yaml" ,autoRefreshed = true)})
 @SpringBootApplication(scanBasePackages="com.primihub",exclude = {HazelcastAutoConfiguration.class, BindingServiceConfiguration.class, FunctionConfiguration.class})
 @ComponentScan(
     basePackages = {"com.primihub"},

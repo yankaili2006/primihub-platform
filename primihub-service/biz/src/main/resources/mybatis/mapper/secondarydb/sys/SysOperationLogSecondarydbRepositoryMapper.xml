@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysOperationLogSecondarydbRepository">
+
+    <!-- 根据ID查询操作日志 -->
+    <select id="selectOperationLogById" resultType="com.primihub.biz.entity.sys.po.SysOperationLog">
+        SELECT
+            log_id AS logId,
+            user_id AS userId,
+            user_name AS userName,
+            operation_type AS operationType,
+            operation_module AS operationModule,
+            operation_desc AS operationDesc,
+            request_method AS requestMethod,
+            request_url AS requestUrl,
+            request_params AS requestParams,
+            response_code AS responseCode,
+            response_msg AS responseMsg,
+            operation_time AS operationTime,
+            ip_address AS ipAddress,
+            user_agent AS userAgent,
+            exception_msg AS exceptionMsg,
+            is_success AS isSuccess,
+            is_del AS isDel,
+            created_time AS createdTime,
+            updated_time AS updatedTime
+        FROM sys_operation_log
+        WHERE log_id = #{logId}
+          AND is_del = 0
+    </select>
+
+    <!-- 分页查询操作日志列表 -->
+    <select id="selectOperationLogPage" resultType="com.primihub.biz.entity.sys.vo.SysOperationLogVO">
+        SELECT
+            log_id AS logId,
+            user_id AS userId,
+            user_name AS userName,
+            operation_type AS operationType,
+            CASE operation_type
+                WHEN 1 THEN '新增'
+                WHEN 2 THEN '修改'
+                WHEN 3 THEN '删除'
+                WHEN 4 THEN '登录'
+                WHEN 5 THEN '登出'
+                ELSE '未知'
+            END AS operationTypeDesc,
+            operation_module AS operationModule,
+            operation_desc AS operationDesc,
+            request_method AS requestMethod,
+            request_url AS requestUrl,
+            response_code AS responseCode,
+            response_msg AS responseMsg,
+            operation_time AS operationTime,
+            ip_address AS ipAddress,
+            is_success AS isSuccess,
+            CASE is_success
+                WHEN 0 THEN '失败'
+                WHEN 1 THEN '成功'
+                ELSE '未知'
+            END AS isSuccessDesc,
+            created_time AS createdTime
+        FROM sys_operation_log
+        WHERE is_del = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="operationType != null">
+            AND operation_type = #{operationType}
+        </if>
+        <if test="operationModule != null and operationModule != ''">
+            AND operation_module = #{operationModule}
+        </if>
+        <if test="isSuccess != null">
+            AND is_success = #{isSuccess}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND created_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND created_time &lt;= #{endTime}
+        </if>
+        ORDER BY created_time DESC
+        <if test="pageNo != null and pageSize != null">
+            LIMIT #{pageNo}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询操作日志总数 -->
+    <select id="selectOperationLogCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM sys_operation_log
+        WHERE is_del = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="operationType != null">
+            AND operation_type = #{operationType}
+        </if>
+        <if test="operationModule != null and operationModule != ''">
+            AND operation_module = #{operationModule}
+        </if>
+        <if test="isSuccess != null">
+            AND is_success = #{isSuccess}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND created_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND created_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 查询操作日志统计信息 -->
+    <select id="selectOperationLogStatistics" resultType="java.util.HashMap">
+        SELECT
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN is_success = 1 THEN 1 ELSE 0 END) AS successCount,
+            SUM(CASE WHEN is_success = 0 THEN 1 ELSE 0 END) AS failCount,
+            SUM(CASE WHEN operation_type = 1 THEN 1 ELSE 0 END) AS addCount,
+            SUM(CASE WHEN operation_type = 2 THEN 1 ELSE 0 END) AS updateCount,
+            SUM(CASE WHEN operation_type = 3 THEN 1 ELSE 0 END) AS deleteCount,
+            SUM(CASE WHEN operation_type = 4 THEN 1 ELSE 0 END) AS loginCount,
+            SUM(CASE WHEN operation_type = 5 THEN 1 ELSE 0 END) AS logoutCount,
+            AVG(operation_time) AS avgOperationTime
+        FROM sys_operation_log
+        WHERE is_del = 0
+        <if test="startTime != null and startTime != ''">
+            AND created_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND created_time &lt;= #{endTime}
+        </if>
+    </select>
+
+</mapper>

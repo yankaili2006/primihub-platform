@@ -59,11 +59,40 @@ public class SysAuthGatewayFilterFactory extends AbstractGatewayFilterFactory {
                 Set<Long> authIdList = sysRoleSecondarydbRepository.selectRaByBatchRoleId(roleIdSet);
                 Map<String, SysAuthNodeVO> mapping = sysAuthService.getSysAuthUrlMapping();
                 SysAuthNodeVO sysAuthNodeVO = mapping.get(rawPath);
+
+                // ========== 权限验证调试日志 START ==========
+                log.info("=== 权限验证调试信息 ===");
+                log.info("请求路径: {}", rawPath);
+                log.info("用户ID: {}, 用户账号: {}", sysUserListVO.getUserId(), sysUserListVO.getUserAccount());
+                log.info("用户角色ID列表: {}", sysUserListVO.getRoleIdList());
+                log.info("角色ID集合: {}", roleIdSet);
+                log.info("角色权限ID集合: {}", authIdList);
+                log.info("用户权限ID列表(字符串): {}", sysUserListVO.getAuthIdList());
+                log.info("URL映射中的权限节点: {}", sysAuthNodeVO);
+
                 if (sysAuthNodeVO != null) {
-                    if (!sysUserListVO.getAuthIdList().contains(sysAuthNodeVO.getAuthId().toString())&&!authIdList.contains(sysAuthNodeVO.getAuthId())) {
+                    log.info("所需权限ID: {}", sysAuthNodeVO.getAuthId());
+                    log.info("权限名称: {}, URL: {}", sysAuthNodeVO.getAuthName(), sysAuthNodeVO.getAuthUrl());
+
+                    boolean userHasAuth = sysUserListVO.getAuthIdList().contains(sysAuthNodeVO.getAuthId().toString());
+                    boolean roleHasAuth = authIdList.contains(sysAuthNodeVO.getAuthId());
+
+                    log.info("用户是否拥有该权限: {}", userHasAuth);
+                    log.info("角色是否拥有该权限: {}", roleHasAuth);
+
+                    if (!userHasAuth && !roleHasAuth) {
+                        log.warn("⚠️ 权限验证失败！用户和角色都没有权限ID: {}", sysAuthNodeVO.getAuthId());
+                        log.warn("用户权限列表: {}", sysUserListVO.getAuthIdList());
+                        log.warn("角色权限列表: {}", authIdList);
                         return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange, BaseResultEnum.NO_AUTH);
+                    } else {
+                        log.info("✓ 权限验证通过");
                     }
+                } else {
+                    log.info("该URL未在权限系统中注册，跳过权限检查");
                 }
+                log.info("=== 权限验证调试信息结束 ===");
+                // ========== 权限验证调试日志 END ==========
 
                 userIdStr = sysUserListVO.getUserId().toString();
             }

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysOperationLogPrimarydbRepository">
+
+    <!-- 插入操作日志记录 -->
+    <insert id="insertOperationLog" parameterType="com.primihub.biz.entity.sys.po.SysOperationLog">
+        INSERT INTO sys_operation_log (
+            user_id,
+            user_name,
+            operation_type,
+            operation_module,
+            operation_desc,
+            request_method,
+            request_url,
+            request_params,
+            response_code,
+            response_msg,
+            operation_time,
+            ip_address,
+            user_agent,
+            exception_msg,
+            is_success,
+            is_del
+        ) VALUES (
+            #{userId},
+            #{userName},
+            #{operationType},
+            #{operationModule},
+            #{operationDesc},
+            #{requestMethod},
+            #{requestUrl},
+            #{requestParams},
+            #{responseCode},
+            #{responseMsg},
+            #{operationTime},
+            #{ipAddress},
+            #{userAgent},
+            #{exceptionMsg},
+            #{isSuccess},
+            0
+        )
+    </insert>
+
+    <!-- 删除操作日志记录（软删除） -->
+    <update id="deleteOperationLog">
+        UPDATE sys_operation_log
+        SET is_del = 1
+        WHERE log_id = #{logId}
+    </update>
+
+    <!-- 批量删除操作日志记录（软删除） -->
+    <update id="batchDeleteOperationLog">
+        UPDATE sys_operation_log
+        SET is_del = 1
+        WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </update>
+
+</mapper>

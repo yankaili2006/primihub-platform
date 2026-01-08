@@ -32,6 +32,7 @@ module.exports = {
   lintOnSave: process.env.NODE_ENV === 'development',
   productionSourceMap: false,
   devServer: {
+    host: '0.0.0.0',
     port: port,
     open: true,
     client: {
@@ -44,10 +45,12 @@ module.exports = {
         // target: 'http://test1.primihub.com/prod-api/',
         // target: 'http://172.31.31.250:8080',
         // target: 'http://172.31.31.61:8080',
-        target: 'http://127.0.0.1:8080',
+        target: 'http://127.0.0.1:8090',
         ws: true,
         changeOrigin: true,
         pathRewrite: {
+          '^/dev-api/sys': '',
+          '^/dev-api/data': '',
           '^/dev-api': ''
         }
       },

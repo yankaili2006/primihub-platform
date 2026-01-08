@@ -1,16 +1,19 @@
 package com.primihub.application.controller.sys;
 
+import com.primihub.biz.config.base.BaseConfiguration;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.sys.enumeration.VerificationCodeEnum;
 import com.primihub.biz.entity.sys.param.*;
 import com.primihub.biz.service.sys.SysUserService;
 import io.swagger.annotations.Api;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @Api(value = "用户接口",tags = "用户接口")
 @RequestMapping("user")
 @RestController
@@ -18,20 +21,40 @@ public class UserController {
 
     @Autowired
     private SysUserService sysUserService;
+    @Autowired
+    private BaseConfiguration baseConfiguration;
     @Value("${primihub.interior.code:null}")
     private String interiorCode;
 
     @PostMapping("login")
     public BaseResultEntity login(LoginParam loginParam,@RequestHeader(value = "ip",defaultValue = "") String ip){
+        log.info("=== UserController登录请求 ===");
+        log.info("用户账号: {}", loginParam.getUserAccount());
+        log.info("密码: {}", loginParam.getUserPassword());
+        log.info("validateKeyName: {}", loginParam.getValidateKeyName());
+        log.info("devMode: {}", baseConfiguration.isDevMode());
+
         if(loginParam.getUserAccount()==null|| "".equals(loginParam.getUserAccount().trim())) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userAccount");
         }
         if(loginParam.getUserPassword()==null|| "".equals(loginParam.getUserPassword().trim())) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userPassword");
         }
-        if(loginParam.getValidateKeyName()==null|| "".equals(loginParam.getValidateKeyName().trim())) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"validateKeyName");
+
+        // 开发模式下跳过验证码检查和RSA验证
+        if(baseConfiguration.isDevMode()) {
+            log.info("开发模式：跳过验证码和RSA验证");
+            // 设置默认的validateKeyName
+            if(loginParam.getValidateKeyName()==null|| "".equals(loginParam.getValidateKeyName().trim())) {
+                loginParam.setValidateKeyName("dev_bypass");
+            }
+        } else {
+            // 生产模式：需要validateKeyName
+            if(loginParam.getValidateKeyName()==null|| "".equals(loginParam.getValidateKeyName().trim())) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"validateKeyName");
+            }
         }
+
         return sysUserService.login(loginParam,ip);
     }
 
