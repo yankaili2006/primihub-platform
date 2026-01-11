@@ -1,0 +1,67 @@
+{
+  "resourceName": "用户数据资源-135107",
+  "resourceDesc": "通过API创建的用户数据资源（包含用户ID、年龄、性别、城市、收入、教育程度）",
+  "resourceAuthType": 1,
+  "resourceSource": 1,
+  "tags": ["用户数据", "API测试"],
+  "fileId": 1,
+  "fieldList": [
+    {
+      "fieldName": "user_id",
+      "fieldAs": "用户ID",
+      "fieldType": "String",
+      "fieldDesc": "用户唯一标识",
+      "relevance": 1,
+      "grouping": 0,
+      "protectionStatus": 0
+    },
+    {
+      "fieldName": "age",
+      "fieldAs": "年龄",
+      "fieldType": "Integer",
+      "fieldDesc": "用户年龄",
+      "relevance": 0,
+      "grouping": 1,
+      "protectionStatus": 0
+    },
+    {
+      "fieldName": "gender",
+      "fieldAs": "性别",
+      "fieldType": "Integer",
+      "fieldDesc": "性别：0女1男",
+      "relevance": 0,
+      "grouping": 1,
+      "protectionStatus": 0
+    },
+    {
+      "fieldName": "city",
+      "fieldAs": "城市",
+      "fieldType": "String",
+      "fieldDesc": "所在城市",
+      "relevance": 0,
+      "grouping": 1,
+      "protectionStatus": 0
+    },
+    {
+      "fieldName": "income",
+      "fieldAs": "收入",
+      "fieldType": "Double",
+      "fieldDesc": "月收入",
+      "relevance": 0,
+      "grouping": 0,
+      "protectionStatus": 1
+    },
+    {
+      "fieldName": "education",
+      "fieldAs": "教育程度",
+      "fieldType": "Integer",
+      "fieldDesc": "教育程度等级",
+      "relevance": 0,
+      "grouping": 1,
+      "protectionStatus": 0
+    }
+  ],
+  "timestamp": 1768139467000,
+  "nonce": 906,
+  "token": "SU2026011119425868F77BF514722324D1A684973415FB86"
+}

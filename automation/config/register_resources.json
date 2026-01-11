@@ -1,0 +1,28 @@
+[
+  {
+    "resourceId": "demo0org0001-de7f2cb1-ef24-11f0-bac8-463ab87cfb66",
+    "resourceName": "联邦LR训练数据_机构1_AUTO",
+    "resourceDesc": "带标签的用户特征数据 - age, income, credit_score, label",
+    "organId": "000000000000000000000000test0001",
+    "organName": "API测试机构",
+    "resourceRowsCount": 50,
+    "resourceColumnCount": 5,
+    "resourceContainsY": 1,
+    "available": 0,
+    "resourceColumnNameList": "user_id,age,income,credit_score,label",
+    "resourceSource": 0
+  },
+  {
+    "resourceId": "demo0org0001-e4fdfcf0-ef24-11f0-bac8-463ab87cfb66",
+    "resourceName": "联邦LR训练数据_机构2_AUTO",
+    "resourceDesc": "带标签的用户特征数据 - age, income, credit_score, label",
+    "organId": "000000000000000000000000test0002",
+    "organName": "PSI协作机构",
+    "resourceRowsCount": 50,
+    "resourceColumnCount": 5,
+    "resourceContainsY": 1,
+    "available": 0,
+    "resourceColumnNameList": "user_id,age,income,credit_score,label",
+    "resourceSource": 0
+  }
+]
