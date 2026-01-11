@@ -1,0 +1,176 @@
+# PrimiHub Test Framework Test Configuration
+# 测试配置文件
+
+# ===========================
+# 测试环境
+# ===========================
+environment: dev
+
+# ===========================
+# API配置
+# ===========================
+api:
+  base_url: http://localhost:8080
+  timeout: 30
+  retry: 3
+  retry_delay: 2
+  verify_ssl: false
+
+# ===========================
+# 数据库配置
+# ===========================
+database:
+  host: localhost
+  port: 3306
+  database: privacy
+  user: root
+  password: "primihub@123"
+  charset: utf8mb4
+
+# ===========================
+# 测试用户配置
+# ===========================
+test_users:
+  admin:
+    username: admin
+    password: Admin@123456
+    user_id: 1
+  admin_test:
+    username: admin_test
+    password: Admin@123456
+  user_test:
+    username: user_test
+    password: User@123456
+  user_test1:
+    username: user_test1
+    password: User@123456
+  user_test2:
+    username: user_test2
+    password: User@123456
+
+# ===========================
+# 测试机构配置
+# ===========================
+test_organs:
+  - organ_id: "test_organ_001"
+    organ_name: "Test Organ 1"
+    organ_gateway: "http://test1.example.com:50050"
+  - organ_id: "test_organ_002"
+    organ_name: "Test Organ 2"
+    organ_gateway: "http://test2.example.com:50051"
+  - organ_id: "test_organ_003"
+    organ_name: "Test Organ 3"
+    organ_gateway: "http://test3.example.com:50052"
+
+# ===========================
+# 测试数据量配置
+# ===========================
+test_data:
+  user_count: 10
+  organ_count: 5
+  project_count: 5
+  resource_count: 20
+  task_count: 10
+
+# ===========================
+# 测试套件配置
+# ===========================
+test_suites:
+  user_management:
+    enabled: true
+    priority: 1
+  data_management:
+    enabled: true
+    priority: 2
+  project_task:
+    enabled: true
+    priority: 3
+  privacy_computing:
+    enabled: true
+    priority: 4
+  system_features:
+    enabled: true
+    priority: 5
+
+# ===========================
+# 性能测试配置
+# ===========================
+performance:
+  # 并发用户数
+  concurrent_users: 100
+  # 测试持续时间（秒）
+  test_duration: 60
+  # 启动时间（秒）
+  ramp_up_time: 10
+  # 请求间隔（秒）
+  request_interval: 1
+  # 目标吞吐量（请求/秒）
+  target_throughput: 100
+
+# ===========================
+# 报告配置
+# ===========================
+report:
+  # 报告格式: json, html, markdown
+  format: html
+  # 输出目录
+  output_dir: ./reports
+  # 报告文件名格式
+  filename_format: "test_report_{timestamp}.{format}"
+  # 保留历史报告
+  keep_history: true
+  # 历史保留天数
+  history_days: 30
+  # 是否生成详细报告
+  detailed: true
+  # 是否包含截图
+  include_screenshots: false
+
+# ===========================
+# 日志配置
+# ===========================
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "./logs/test_{timestamp}.log"
+  console: true
+
+# ===========================
+# 超时配置（秒）
+# ===========================
+timeouts:
+  api_call: 30
+  task_execution: 300
+  file_upload: 60
+  report_generation: 30
+
+# ===========================
+# 测试资源配置
+# ===========================
+test_resources:
+  # 测试数据文件目录
+  data_dir: ./test_data
+  # 临时文件目录
+  temp_dir: ./temp
+  # 结果文件目录
+  result_dir: ./results
+
+# ===========================
+# 断言配置
+# ===========================
+assertions:
+  # 严格模式（所有断言失败即停止）
+  strict_mode: false
+  # 跳过已知问题
+  skip_known_issues: false
+
+# ===========================
+# 清理配置
+# ===========================
+cleanup:
+  # 测试后清理测试数据
+  after_test: false
+  # 测试前清理旧数据
+  before_test: false
+  # 清理临时文件
+  temp_files: true
