@@ -17,6 +17,7 @@
             data_auth_code dataAuthCode,auth_index authIndex,auth_depth authDepth,is_show isShow,is_editable isEditable,
             is_del isDel,c_time cTime,u_time uTime
         from sys_auth
+        where is_del = 0
         order by auth_depth,auth_index,auth_id
     </select>
 

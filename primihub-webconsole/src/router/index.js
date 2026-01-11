@@ -355,6 +355,24 @@ export const asyncRoutes = [
         },
         hidden: true,
         component: () => import('@/views/resource/derivedDataResourceDetail')
+      },
+      {
+        path: 'requirementList',
+        name: 'DataRequirementList',
+        component: () => import('@/views/resource/requirementList'),
+        meta: { title: '数据需求列表' }
+      },
+      {
+        path: 'requirementConfig',
+        name: 'DataRequirementConfig',
+        component: () => import('@/views/resource/requirementConfig'),
+        meta: { title: '数据需求配置' }
+      },
+      {
+        path: 'requirementMatch',
+        name: 'DataRequirementMatch',
+        component: () => import('@/views/resource/requirementMatch'),
+        meta: { title: '匹配数据需求所需数据' }
       }
 
     ]
@@ -385,6 +403,36 @@ export const asyncRoutes = [
         meta: { title: '节点管理' }
       },
       {
+        path: 'accessManagement',
+        name: 'AccessManagement',
+        component: () => import('@/views/setting/accessManagement'),
+        meta: { title: '接入方管理' }
+      },
+      {
+        path: 'cooperation',
+        name: 'CooperationManagement',
+        component: () => import('@/views/setting/cooperation'),
+        meta: { title: '合作方管理' }
+      },
+      {
+        path: 'approval',
+        name: 'ApprovalWorkflow',
+        component: () => import('@/views/setting/approval'),
+        meta: { title: '审批工作流' }
+      },
+      {
+        path: 'dataExchange',
+        name: 'DataExchangeLog',
+        component: () => import('@/views/setting/dataExchange'),
+        meta: { title: '数据交换日志' }
+      },
+      {
+        path: 'system',
+        name: 'SystemConfig',
+        component: () => import('@/views/setting/system'),
+        meta: { title: '系统配置' }
+      },
+      {
         path: 'ui',
         name: 'UISetting',
         component: () => import('@/views/setting/ui'),
@@ -394,18 +442,186 @@ export const asyncRoutes = [
     ]
   },
   {
+    path: '/whitelist',
+    component: Layout,
+    name: 'Whitelist',
+    redirect: '/whitelist/list',
+    meta: { title: '白名单管理', icon: 'el-icon-s-check' },
+    children: [
+      {
+        path: 'list',
+        name: 'WhitelistList',
+        component: () => import('@/views/whitelist/list'),
+        meta: { title: '白名单列表' }
+      },
+      {
+        path: 'config',
+        name: 'WhitelistConfig',
+        component: () => import('@/views/whitelist/config'),
+        meta: { title: '白名单配置' }
+      },
+      {
+        path: 'accessLog',
+        name: 'WhitelistAccessLog',
+        component: () => import('@/views/whitelist/accessLog'),
+        meta: { title: '访问日志记录' }
+      }
+    ]
+  },
+  {
+    path: '/tenant',
+    component: Layout,
+    name: 'Tenant',
+    redirect: '/tenant/list',
+    meta: { title: '租户管理', icon: 'el-icon-office-building' },
+    children: [
+      {
+        path: 'list',
+        name: 'TenantList',
+        component: () => import('@/views/tenant/list'),
+        meta: { title: '租户列表' }
+      },
+      {
+        path: 'resource/:id',
+        name: 'TenantResource',
+        component: () => import('@/views/tenant/resource'),
+        meta: {
+          title: '资源分配',
+          activeMenu: '/tenant/list'
+        },
+        hidden: true
+      }
+    ]
+  },
+  {
+    path: '/evidence',
+    component: Layout,
+    name: 'Evidence',
+    redirect: '/evidence/query',
+    meta: { title: '存证管理', icon: 'el-icon-document-checked' },
+    children: [
+      {
+        path: 'query',
+        name: 'EvidenceQuery',
+        component: () => import('@/views/evidence/query'),
+        meta: { title: '存证查询' }
+      },
+      {
+        path: 'timestamp',
+        name: 'EvidenceTimestamp',
+        component: () => import('@/views/evidence/timestamp'),
+        meta: { title: '时间戳管理' }
+      },
+      {
+        path: 'config',
+        name: 'EvidenceConfig',
+        component: () => import('@/views/evidence/config'),
+        meta: { title: '存证配置' }
+      },
+      {
+        path: 'export',
+        name: 'EvidenceExport',
+        component: () => import('@/views/evidence/export'),
+        meta: { title: '存证加密导出' }
+      },
+      {
+        path: 'api',
+        name: 'EvidenceApi',
+        component: () => import('@/views/evidence/api'),
+        meta: { title: '存证接口对接' }
+      }
+    ]
+  },
+  {
+    path: '/monitor',
+    component: Layout,
+    name: 'Monitor',
+    redirect: '/monitor/index',
+    meta: { title: '监控管理', icon: 'el-icon-data-line' },
+    children: [{
+      path: 'index',
+      name: 'MonitorIndex',
+      component: () => import('@/views/monitor/index'),
+      meta: { title: '监控管理', breadcrumb: false }
+    }]
+  },
+  {
+    path: '/api',
+    component: Layout,
+    name: 'ApiManage',
+    redirect: '/api/list',
+    meta: { title: '接口管理', icon: 'el-icon-connection' },
+    children: [
+      {
+        path: 'list',
+        name: 'ApiList',
+        component: () => import('@/views/api/list'),
+        meta: { title: '接口列表' }
+      },
+      {
+        path: 'auth',
+        name: 'ApiAuth',
+        component: () => import('@/views/api/auth'),
+        meta: { title: '接口授权' }
+      },
+      {
+        path: 'log',
+        name: 'ApiLog',
+        component: () => import('@/views/api/log'),
+        meta: { title: '接口日志' }
+      }
+    ]
+  },
+  {
     path: '/log',
     component: Layout,
     name: 'Log',
     redirect: '/log/index',
     meta: { title: '日志管理', icon: 'el-icon-warning-outline' },
-    children: [{
-      path: 'index',
-      name: 'LogList',
-      component: () => import('@/views/log/index'),
-      meta: { title: '日志管理', breadcrumb: false }
-
-    }]
+    children: [
+      {
+        path: 'index',
+        name: 'LogList',
+        component: () => import('@/views/log/index'),
+        meta: { title: '任务日志', breadcrumb: false }
+      },
+      {
+        path: 'operationDefinition',
+        name: 'OperationLogDefinition',
+        component: () => import('@/views/logManagement/operationDefinition'),
+        meta: { title: '操作日志定义' }
+      },
+      {
+        path: 'scheduleDefinition',
+        name: 'ScheduleLogDefinition',
+        component: () => import('@/views/logManagement/scheduleDefinition'),
+        meta: { title: '调度日志定义' }
+      },
+      {
+        path: 'computeDefinition',
+        name: 'ComputeLogDefinition',
+        component: () => import('@/views/logManagement/computeDefinition'),
+        meta: { title: '计算日志定义' }
+      },
+      {
+        path: 'operationLog',
+        name: 'OperationLog',
+        component: () => import('@/views/logManagement/operationLog'),
+        meta: { title: '操作日志记录' }
+      },
+      {
+        path: 'scheduleLog',
+        name: 'ScheduleLog',
+        component: () => import('@/views/logManagement/scheduleLog'),
+        meta: { title: '调度日志记录' }
+      },
+      {
+        path: 'computeLog',
+        name: 'ComputeLog',
+        component: () => import('@/views/logManagement/computeLog'),
+        meta: { title: '计算日志记录' }
+      }
+    ]
   },
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }

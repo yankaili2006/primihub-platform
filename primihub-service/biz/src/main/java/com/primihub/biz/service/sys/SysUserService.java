@@ -502,4 +502,98 @@ public class SysUserService {
         map.put("user", sysUserSecondarydbRepository.selectSysUserByUserId(userId));
         return BaseResultEntity.success(map);
     }
+
+    /**
+     * 冻结用户
+     */
+    public BaseResultEntity freezeUser(Long userId) {
+        try {
+            SysUser sysUser = sysUserSecondarydbRepository.selectSysUserByUserId(userId);
+            if (sysUser == null) {
+                return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "用户不存在");
+            }
+            if (sysUser.getIsForbid() == 1) {
+                return BaseResultEntity.failure(BaseResultEnum.CAN_NOT_ALTER, "用户已被冻结");
+            }
+
+            sysUserPrimarydbRepository.updateUserForbidStatus(userId, 1);
+
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("冻结用户失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "冻结用户失败");
+        }
+    }
+
+    /**
+     * 解冻用户
+     */
+    public BaseResultEntity unfreezeUser(Long userId) {
+        try {
+            SysUser sysUser = sysUserSecondarydbRepository.selectSysUserByUserId(userId);
+            if (sysUser == null) {
+                return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "用户不存在");
+            }
+            if (sysUser.getIsForbid() == 0) {
+                return BaseResultEntity.failure(BaseResultEnum.CAN_NOT_ALTER, "用户未被冻结");
+            }
+
+            sysUserPrimarydbRepository.updateUserForbidStatus(userId, 0);
+
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("解冻用户失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "解冻用户失败");
+        }
+    }
+
+    /**
+     * 批量冻结用户
+     */
+    public BaseResultEntity batchFreezeUser(java.util.List<Long> userIds) {
+        try {
+            int successCount = 0;
+            for (Long userId : userIds) {
+                SysUser sysUser = sysUserSecondarydbRepository.selectSysUserByUserId(userId);
+                if (sysUser != null && sysUser.getIsForbid() == 0) {
+                    sysUserPrimarydbRepository.updateUserForbidStatus(userId, 1);
+                    successCount++;
+                }
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("successCount", successCount);
+            result.put("totalCount", userIds.size());
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("批量冻结用户失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "批量冻结用户失败");
+        }
+    }
+
+    /**
+     * 批量解冻用户
+     */
+    public BaseResultEntity batchUnfreezeUser(java.util.List<Long> userIds) {
+        try {
+            int successCount = 0;
+            for (Long userId : userIds) {
+                SysUser sysUser = sysUserSecondarydbRepository.selectSysUserByUserId(userId);
+                if (sysUser != null && sysUser.getIsForbid() == 1) {
+                    sysUserPrimarydbRepository.updateUserForbidStatus(userId, 0);
+                    successCount++;
+                }
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("successCount", successCount);
+            result.put("totalCount", userIds.size());
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("批量解冻用户失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "批量解冻用户失败");
+        }
+    }
 }

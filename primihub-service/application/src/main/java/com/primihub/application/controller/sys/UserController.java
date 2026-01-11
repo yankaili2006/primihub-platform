@@ -208,4 +208,36 @@ public class UserController {
         return sysUserService.relieveUserAccount(userId);
     }
 
+    @PostMapping("freezeUser")
+    public BaseResultEntity freezeUser(@RequestParam Long userId){
+        if (userId == null || userId <= 0) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "userId");
+        }
+        return sysUserService.freezeUser(userId);
+    }
+
+    @PostMapping("unfreezeUser")
+    public BaseResultEntity unfreezeUser(@RequestParam Long userId){
+        if (userId == null || userId <= 0) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "userId");
+        }
+        return sysUserService.unfreezeUser(userId);
+    }
+
+    @PostMapping("batchFreezeUser")
+    public BaseResultEntity batchFreezeUser(@RequestBody java.util.List<Long> userIds){
+        if (userIds == null || userIds.isEmpty()) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "userIds");
+        }
+        return sysUserService.batchFreezeUser(userIds);
+    }
+
+    @PostMapping("batchUnfreezeUser")
+    public BaseResultEntity batchUnfreezeUser(@RequestBody java.util.List<Long> userIds){
+        if (userIds == null || userIds.isEmpty()) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "userIds");
+        }
+        return sysUserService.batchUnfreezeUser(userIds);
+    }
+
 }

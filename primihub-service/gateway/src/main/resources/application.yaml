@@ -82,6 +82,70 @@ spring:
             - Swagger
             - SysAuth
 #            - SysLog
+        - id: whitelist-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/whitelist/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: tenant-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/tenant/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: evidence-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/evidence/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: monitor-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/monitor/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: apimanage-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/apiManage/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: log-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/log/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: data-requirement-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/dataRequirement/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: node-enhanced-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/node/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
 
 logging:
   level:

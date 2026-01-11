@@ -12,6 +12,9 @@
 import { getCoordinates } from '@/api/map'
 import polygonData2 from './geoJson.json'
 
+// Declare global variables that are loaded from external scripts
+/* global LKMap, mapvgl */
+
 const accessToken = 'EE16920807918671432B6E77949CCEA4BD397862C88E80FCE789FUWGY4ZG3919'
 const theme = 'light'
 const colors = ['#BDD0C5', '#A1CEA1', '#BE86BD', '#59A6C8', '#7DC3DA', '#78A5DC', '#9E76D1', '#41b6c4', '#6EA8EB', '#D0956F', '#D5B776', '#E2D6B3', '#E6EAB5', '#EDB57F', '#A1CEA1', '#78A5DC', '#A275A7']

@@ -79,7 +79,7 @@ const actions = {
   },
 
   async getMarketInfo({ commit }) {
-    const {result, code} = await getMarketInfo()
+    const { result, code } = await getMarketInfo()
     if (code === 0) {
       commit('SET_MARKET', result)
     }
@@ -92,4 +92,3 @@ export default {
   mutations,
   actions
 }
-

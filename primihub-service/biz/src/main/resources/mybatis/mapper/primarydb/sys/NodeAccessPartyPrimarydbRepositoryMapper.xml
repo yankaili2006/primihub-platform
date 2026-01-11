@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.NodeAccessPartyPrimarydbRepository">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.primihub.biz.entity.sys.po.NodeAccessParty">
+        <id column="id" property="id"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="organ_gateway" property="organGateway"/>
+        <result column="apply_reason" property="applyReason"/>
+        <result column="access_level" property="accessLevel"/>
+        <result column="ip_whitelist" property="ipWhitelist"/>
+        <result column="valid_from" property="validFrom"/>
+        <result column="valid_until" property="validUntil"/>
+        <result column="apply_status" property="applyStatus"/>
+        <result column="approve_user_id" property="approveUserId"/>
+        <result column="approve_user_name" property="approveUserName"/>
+        <result column="approve_comment" property="approveComment"/>
+        <result column="approve_date" property="approveDate"/>
+        <result column="is_active" property="isActive"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <!-- Insert -->
+    <insert id="insertNodeAccessParty" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_access_party (
+            organ_id, organ_name, organ_gateway, apply_reason, access_level, ip_whitelist,
+            valid_from, valid_until, apply_status, is_active, is_del, create_date, update_date
+        ) VALUES (
+            #{organId}, #{organName}, #{organGateway}, #{applyReason}, #{accessLevel}, #{ipWhitelist},
+            #{validFrom}, #{validUntil}, COALESCE(#{applyStatus}, 0), COALESCE(#{isActive}, 1), 0, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- Update -->
+    <update id="updateNodeAccessParty">
+        UPDATE node_access_party
+        <set>
+            <if test="organName != null and organName != ''">organ_name = #{organName},</if>
+            <if test="organGateway != null and organGateway != ''">organ_gateway = #{organGateway},</if>
+            <if test="applyReason != null">apply_reason = #{applyReason},</if>
+            <if test="accessLevel != null">access_level = #{accessLevel},</if>
+            <if test="ipWhitelist != null">ip_whitelist = #{ipWhitelist},</if>
+            <if test="validFrom != null">valid_from = #{validFrom},</if>
+            <if test="validUntil != null">valid_until = #{validUntil},</if>
+            <if test="applyStatus != null">apply_status = #{applyStatus},</if>
+            <if test="approveUserId != null">approve_user_id = #{approveUserId},</if>
+            <if test="approveUserName != null">approve_user_name = #{approveUserName},</if>
+            <if test="approveComment != null">approve_comment = #{approveComment},</if>
+            <if test="approveDate != null">approve_date = #{approveDate},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Delete (soft) -->
+    <update id="deleteNodeAccessParty">
+        UPDATE node_access_party SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- Select by ID -->
+    <select id="selectNodeAccessPartyById" resultMap="BaseResultMap">
+        SELECT * FROM node_access_party WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <!-- Select by Organ ID -->
+    <select id="selectNodeAccessPartyByOrganId" resultMap="BaseResultMap">
+        SELECT * FROM node_access_party WHERE organ_id = #{organId} AND is_del = 0 LIMIT 1
+    </select>
+
+    <!-- Select List -->
+    <select id="selectNodeAccessPartyList" resultMap="BaseResultMap">
+        SELECT * FROM node_access_party
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="applyStatus != null">
+            AND apply_status = #{applyStatus}
+        </if>
+        <if test="accessLevel != null">
+            AND access_level = #{accessLevel}
+        </if>
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- Count -->
+    <select id="selectNodeAccessPartyCount" resultType="int">
+        SELECT COUNT(*) FROM node_access_party
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="applyStatus != null">
+            AND apply_status = #{applyStatus}
+        </if>
+        <if test="accessLevel != null">
+            AND access_level = #{accessLevel}
+        </if>
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+    </select>
+
+    <!-- Batch Delete -->
+    <update id="batchDeleteNodeAccessParty">
+        UPDATE node_access_party SET is_del = 1, update_date = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- Update Apply Status -->
+    <update id="updateApplyStatus">
+        UPDATE node_access_party
+        SET apply_status = #{applyStatus},
+            approve_user_id = #{approveUserId},
+            approve_user_name = #{approveUserName},
+            approve_comment = #{approveComment},
+            approve_date = NOW(),
+            update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Active Status -->
+    <update id="updateActiveStatus">
+        UPDATE node_access_party
+        SET is_active = #{isActive}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Access Level -->
+    <update id="updateAccessLevel">
+        UPDATE node_access_party
+        SET access_level = #{accessLevel}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Select Pending -->
+    <select id="selectPendingAccessParties" resultMap="BaseResultMap">
+        SELECT * FROM node_access_party
+        WHERE apply_status = 0 AND is_del = 0
+        ORDER BY create_date ASC
+    </select>
+
+    <!-- Select Approved -->
+    <select id="selectApprovedAccessParties" resultMap="BaseResultMap">
+        SELECT * FROM node_access_party
+        WHERE apply_status = 1 AND is_del = 0
+        ORDER BY approve_date DESC
+    </select>
+
+    <!-- Batch Approve -->
+    <update id="batchApprove">
+        UPDATE node_access_party
+        SET apply_status = 1,
+            approve_user_id = #{approveUserId},
+            approve_user_name = #{approveUserName},
+            approve_comment = #{approveComment},
+            approve_date = NOW(),
+            update_date = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_del = 0
+    </update>
+
+</mapper>

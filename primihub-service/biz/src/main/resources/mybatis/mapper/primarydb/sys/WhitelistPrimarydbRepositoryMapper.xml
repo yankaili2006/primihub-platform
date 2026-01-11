@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.WhitelistPrimarydbRepository">
+
+    <!-- ========== 白名单管理 ========== -->
+
+    <insert id="insertWhitelist" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO whitelist (type, value, description, status, create_time, update_time, create_user_id, is_del)
+        VALUES (#{type}, #{value}, #{description}, #{status}, NOW(), NOW(), #{createUserId}, 0)
+    </insert>
+
+    <update id="updateWhitelist">
+        UPDATE whitelist
+        <set>
+            <if test="type != null and type != ''">type = #{type},</if>
+            <if test="value != null and value != ''">value = #{value},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteWhitelist">
+        UPDATE whitelist SET is_del = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="selectWhitelistById" resultType="com.primihub.biz.entity.sys.po.Whitelist">
+        SELECT id, type, value, description, status, create_time, update_time, create_user_id, is_del
+        FROM whitelist
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectWhitelistList" resultType="com.primihub.biz.entity.sys.po.Whitelist">
+        SELECT id, type, value, description, status, create_time as createTime, update_time as updateTime, create_user_id as createUserId
+        FROM whitelist
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (value LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="type != null and type != ''">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        <if test="pageSize != null and pageNum != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectWhitelistCount" resultType="int">
+        SELECT COUNT(*)
+        FROM whitelist
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (value LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="type != null and type != ''">
+            AND type = #{type}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- ========== 白名单配置管理 ========== -->
+
+    <select id="selectWhitelistConfigList" resultType="com.primihub.biz.entity.sys.po.WhitelistConfig">
+        SELECT id, config_key as configKey, config_value as configValue, config_type as configType,
+               description, create_time as createTime, update_time as updateTime, update_user_id as updateUserId, update_user as updateUser
+        FROM whitelist_config
+        ORDER BY id
+    </select>
+
+    <select id="selectWhitelistConfigByKey" resultType="com.primihub.biz.entity.sys.po.WhitelistConfig">
+        SELECT id, config_key as configKey, config_value as configValue, config_type as configType,
+               description, create_time as createTime, update_time as updateTime, update_user_id as updateUserId, update_user as updateUser
+        FROM whitelist_config
+        WHERE config_key = #{configKey}
+    </select>
+
+    <insert id="insertOrUpdateWhitelistConfig">
+        INSERT INTO whitelist_config (config_key, config_value, config_type, description, create_time, update_time, update_user_id, update_user)
+        VALUES (#{configKey}, #{configValue}, #{configType}, #{description}, NOW(), NOW(), #{updateUserId}, #{updateUser})
+        ON DUPLICATE KEY UPDATE
+            config_value = #{configValue},
+            config_type = #{configType},
+            description = #{description},
+            update_time = NOW(),
+            update_user_id = #{updateUserId},
+            update_user = #{updateUser}
+    </insert>
+
+    <select id="selectWhitelistConfigHistory" resultType="com.primihub.biz.entity.sys.po.WhitelistConfig">
+        SELECT config_key as configKey, config_value as configValue, update_time as updateTime, update_user as updateUser
+        FROM whitelist_config
+        ORDER BY update_time DESC
+        LIMIT 100
+    </select>
+
+    <!-- ========== 白名单访问日志管理 ========== -->
+
+    <insert id="insertWhitelistAccessLog">
+        INSERT INTO whitelist_access_log (whitelist_id, access_ip, access_url, request_method, access_result,
+                                          fail_reason, user_id, user_agent, request_params, response_code, response_time, access_time)
+        VALUES (#{whitelistId}, #{accessIp}, #{accessUrl}, #{requestMethod}, #{accessResult},
+                #{failReason}, #{userId}, #{userAgent}, #{requestParams}, #{responseCode}, #{responseTime}, NOW())
+    </insert>
+
+    <select id="selectWhitelistAccessLogList" resultType="com.primihub.biz.entity.sys.po.WhitelistAccessLog">
+        SELECT id, whitelist_id as whitelistId, access_ip as accessIp, access_url as accessUrl,
+               request_method as requestMethod, access_result as accessResult, fail_reason as failReason,
+               user_id as userId, user_agent as userAgent, request_params as requestParams,
+               response_code as responseCode, response_time as responseTime, access_time as accessTime
+        FROM whitelist_access_log
+        WHERE 1=1
+        <if test="accessIp != null and accessIp != ''">
+            AND access_ip LIKE CONCAT('%', #{accessIp}, '%')
+        </if>
+        <if test="accessUrl != null and accessUrl != ''">
+            AND access_url LIKE CONCAT('%', #{accessUrl}, '%')
+        </if>
+        <if test="accessResult != null and accessResult != ''">
+            AND access_result = #{accessResult}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND access_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND access_time &lt;= #{endTime}
+        </if>
+        ORDER BY access_time DESC
+        <if test="pageSize != null and pageNum != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectWhitelistAccessLogCount" resultType="int">
+        SELECT COUNT(*)
+        FROM whitelist_access_log
+        WHERE 1=1
+        <if test="accessIp != null and accessIp != ''">
+            AND access_ip LIKE CONCAT('%', #{accessIp}, '%')
+        </if>
+        <if test="accessUrl != null and accessUrl != ''">
+            AND access_url LIKE CONCAT('%', #{accessUrl}, '%')
+        </if>
+        <if test="accessResult != null and accessResult != ''">
+            AND access_result = #{accessResult}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND access_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND access_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <select id="selectWhitelistAccessLogById" resultType="com.primihub.biz.entity.sys.po.WhitelistAccessLog">
+        SELECT id, whitelist_id as whitelistId, access_ip as accessIp, access_url as accessUrl,
+               request_method as requestMethod, access_result as accessResult, fail_reason as failReason,
+               user_id as userId, user_agent as userAgent, request_params as requestParams,
+               response_code as responseCode, response_time as responseTime, access_time as accessTime
+        FROM whitelist_access_log
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectWhitelistAccessStatistics" resultType="map">
+        SELECT
+            SUM(CASE WHEN access_result = 'SUCCESS' AND DATE(access_time) = CURDATE() THEN 1 ELSE 0 END) as todaySuccess,
+            SUM(CASE WHEN access_result = 'DENIED' AND DATE(access_time) = CURDATE() THEN 1 ELSE 0 END) as todayFailed,
+            COUNT(*) as totalAccess,
+            SUM(CASE WHEN access_result = 'ERROR' THEN 1 ELSE 0 END) as abnormalAccess
+        FROM whitelist_access_log
+    </select>
+
+    <!-- 批量删除访问日志 -->
+    <delete id="batchDeleteAccessLog">
+        DELETE FROM whitelist_access_log
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 清理过期日志 -->
+    <delete id="deleteExpiredLogs">
+        DELETE FROM whitelist_access_log
+        WHERE access_time &lt; #{beforeDate}
+    </delete>
+
+    <!-- 导出访问日志 -->
+    <select id="exportAccessLogList" resultType="com.primihub.biz.entity.sys.po.WhitelistAccessLog">
+        SELECT id, whitelist_id as whitelistId, access_ip as accessIp, access_url as accessUrl,
+               request_method as requestMethod, access_result as accessResult, fail_reason as failReason,
+               user_id as userId, user_agent as userAgent, request_params as requestParams,
+               response_code as responseCode, response_time as responseTime, access_time as accessTime
+        FROM whitelist_access_log
+        WHERE 1=1
+        <if test="accessIp != null and accessIp != ''">
+            AND access_ip LIKE CONCAT('%', #{accessIp}, '%')
+        </if>
+        <if test="accessUrl != null and accessUrl != ''">
+            AND access_url LIKE CONCAT('%', #{accessUrl}, '%')
+        </if>
+        <if test="accessResult != null and accessResult != ''">
+            AND access_result = #{accessResult}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND access_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND access_time &lt;= #{endTime}
+        </if>
+        ORDER BY access_time DESC
+        LIMIT 10000
+    </select>
+
+    <!-- 查询访问趋势（按天统计） -->
+    <select id="selectAccessTrend" resultType="map">
+        SELECT
+            DATE(access_time) as date,
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN access_result = 'SUCCESS' THEN 1 ELSE 0 END) as successCount,
+            SUM(CASE WHEN access_result = 'DENIED' THEN 1 ELSE 0 END) as deniedCount,
+            SUM(CASE WHEN access_result = 'ERROR' THEN 1 ELSE 0 END) as errorCount
+        FROM whitelist_access_log
+        WHERE access_time >= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+        GROUP BY DATE(access_time)
+        ORDER BY date DESC
+    </select>
+
+    <!-- 查询IP访问排行 -->
+    <select id="selectTopAccessIps" resultType="map">
+        SELECT
+            access_ip as ip,
+            COUNT(*) as accessCount,
+            SUM(CASE WHEN access_result = 'SUCCESS' THEN 1 ELSE 0 END) as successCount,
+            SUM(CASE WHEN access_result = 'DENIED' THEN 1 ELSE 0 END) as deniedCount,
+            MAX(access_time) as lastAccessTime
+        FROM whitelist_access_log
+        GROUP BY access_ip
+        ORDER BY accessCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询URL访问排行 -->
+    <select id="selectTopAccessUrls" resultType="map">
+        SELECT
+            access_url as url,
+            COUNT(*) as accessCount,
+            SUM(CASE WHEN access_result = 'SUCCESS' THEN 1 ELSE 0 END) as successCount,
+            SUM(CASE WHEN access_result = 'DENIED' THEN 1 ELSE 0 END) as deniedCount,
+            AVG(response_time) as avgResponseTime
+        FROM whitelist_access_log
+        GROUP BY access_url
+        ORDER BY accessCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询详细统计 -->
+    <select id="selectAccessDetailStatistics" resultType="map">
+        SELECT
+            COUNT(*) as totalCount,
+            COUNT(DISTINCT access_ip) as uniqueIpCount,
+            COUNT(DISTINCT access_url) as uniqueUrlCount,
+            SUM(CASE WHEN access_result = 'SUCCESS' THEN 1 ELSE 0 END) as successCount,
+            SUM(CASE WHEN access_result = 'DENIED' THEN 1 ELSE 0 END) as deniedCount,
+            SUM(CASE WHEN access_result = 'ERROR' THEN 1 ELSE 0 END) as errorCount,
+            AVG(response_time) as avgResponseTime,
+            MAX(response_time) as maxResponseTime,
+            MIN(response_time) as minResponseTime
+        FROM whitelist_access_log
+        WHERE 1=1
+        <if test="startTime != null and startTime != ''">
+            AND access_time >= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND access_time &lt;= #{endTime}
+        </if>
+    </select>
+
+</mapper>

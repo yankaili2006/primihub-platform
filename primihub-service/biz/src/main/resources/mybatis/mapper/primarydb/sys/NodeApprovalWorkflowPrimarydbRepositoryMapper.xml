@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.NodeApprovalWorkflowPrimarydbRepository">
+
+    <!-- ========== Workflow Result Maps ========== -->
+    <resultMap id="WorkflowResultMap" type="com.primihub.biz.entity.sys.po.NodeApprovalWorkflow">
+        <id column="id" property="id"/>
+        <result column="workflow_type" property="workflowType"/>
+        <result column="workflow_title" property="workflowTitle"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="request_data" property="requestData"/>
+        <result column="current_step" property="currentStep"/>
+        <result column="total_steps" property="totalSteps"/>
+        <result column="status" property="status"/>
+        <result column="requester_id" property="requesterId"/>
+        <result column="requester_name" property="requesterName"/>
+        <result column="requester_comment" property="requesterComment"/>
+        <result column="final_approver_id" property="finalApproverId"/>
+        <result column="final_approver_name" property="finalApproverName"/>
+        <result column="final_comment" property="finalComment"/>
+        <result column="approved_at" property="approvedAt"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <resultMap id="StepResultMap" type="com.primihub.biz.entity.sys.po.NodeApprovalStep">
+        <id column="id" property="id"/>
+        <result column="workflow_id" property="workflowId"/>
+        <result column="step_number" property="stepNumber"/>
+        <result column="step_name" property="stepName"/>
+        <result column="approver_id" property="approverId"/>
+        <result column="approver_name" property="approverName"/>
+        <result column="approver_role" property="approverRole"/>
+        <result column="status" property="status"/>
+        <result column="comment" property="comment"/>
+        <result column="attachments" property="attachments"/>
+        <result column="approved_at" property="approvedAt"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <resultMap id="ConfigResultMap" type="com.primihub.biz.entity.sys.po.NodeApprovalConfig">
+        <id column="id" property="id"/>
+        <result column="workflow_type" property="workflowType"/>
+        <result column="is_enabled" property="isEnabled"/>
+        <result column="steps_count" property="stepsCount"/>
+        <result column="auto_approve_rules" property="autoApproveRules"/>
+        <result column="notification_enabled" property="notificationEnabled"/>
+        <result column="notification_emails" property="notificationEmails"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <!-- ========== Workflow CRUD ========== -->
+    <insert id="insertNodeApprovalWorkflow" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_approval_workflow (
+            workflow_type, workflow_title, organ_id, organ_name, request_data, current_step, total_steps,
+            status, requester_id, requester_name, requester_comment, is_del, create_date, update_date
+        ) VALUES (
+            #{workflowType}, #{workflowTitle}, #{organId}, #{organName}, #{requestData},
+            COALESCE(#{currentStep}, 1), COALESCE(#{totalSteps}, 1), COALESCE(#{status}, 0),
+            #{requesterId}, #{requesterName}, #{requesterComment}, 0, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateNodeApprovalWorkflow">
+        UPDATE node_approval_workflow
+        <set>
+            <if test="workflowTitle != null">workflow_title = #{workflowTitle},</if>
+            <if test="requestData != null">request_data = #{requestData},</if>
+            <if test="currentStep != null">current_step = #{currentStep},</if>
+            <if test="status != null">status = #{status},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteNodeApprovalWorkflow">
+        UPDATE node_approval_workflow SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="selectNodeApprovalWorkflowById" resultMap="WorkflowResultMap">
+        SELECT * FROM node_approval_workflow WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectNodeApprovalWorkflowList" resultMap="WorkflowResultMap">
+        SELECT * FROM node_approval_workflow
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (workflow_title LIKE CONCAT('%', #{keyword}, '%') OR organ_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="workflowType != null and workflowType != ''">
+            AND workflow_type = #{workflowType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="requesterId != null">
+            AND requester_id = #{requesterId}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectNodeApprovalWorkflowCount" resultType="int">
+        SELECT COUNT(*) FROM node_approval_workflow
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (workflow_title LIKE CONCAT('%', #{keyword}, '%') OR organ_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="workflowType != null and workflowType != ''">
+            AND workflow_type = #{workflowType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="requesterId != null">
+            AND requester_id = #{requesterId}
+        </if>
+    </select>
+
+    <update id="updateWorkflowStatus">
+        UPDATE node_approval_workflow
+        SET status = #{status},
+            final_approver_id = #{finalApproverId},
+            final_approver_name = #{finalApproverName},
+            final_comment = #{finalComment},
+            approved_at = NOW(),
+            update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="updateCurrentStep">
+        UPDATE node_approval_workflow
+        SET current_step = #{currentStep}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectPendingWorkflows" resultMap="WorkflowResultMap">
+        SELECT * FROM node_approval_workflow WHERE status = 0 AND is_del = 0 ORDER BY create_date ASC
+    </select>
+
+    <select id="selectMyPendingWorkflows" resultMap="WorkflowResultMap">
+        SELECT w.* FROM node_approval_workflow w
+        INNER JOIN node_approval_step s ON w.id = s.workflow_id
+        WHERE w.status = 0 AND s.status = 0 AND s.approver_id = #{userId}
+        AND w.is_del = 0 AND s.is_del = 0
+        ORDER BY w.create_date ASC
+    </select>
+
+    <select id="selectWorkflowsByRequester" resultMap="WorkflowResultMap">
+        SELECT * FROM node_approval_workflow WHERE requester_id = #{requesterId} AND is_del = 0 ORDER BY create_date DESC
+    </select>
+
+    <update id="cancelWorkflow">
+        UPDATE node_approval_workflow SET status = 3, update_date = NOW() WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- ========== Step CRUD ========== -->
+    <insert id="insertNodeApprovalStep" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_approval_step (
+            workflow_id, step_number, step_name, approver_id, approver_name, approver_role,
+            status, comment, attachments, is_del, create_date, update_date
+        ) VALUES (
+            #{workflowId}, #{stepNumber}, #{stepName}, #{approverId}, #{approverName}, #{approverRole},
+            COALESCE(#{status}, 0), #{comment}, #{attachments}, 0, NOW(), NOW()
+        )
+    </insert>
+
+    <insert id="batchInsertNodeApprovalSteps">
+        INSERT INTO node_approval_step (
+            workflow_id, step_number, step_name, approver_id, approver_name, approver_role,
+            status, is_del, create_date, update_date
+        ) VALUES
+        <foreach collection="stepList" item="step" separator=",">
+            (#{step.workflowId}, #{step.stepNumber}, #{step.stepName}, #{step.approverId},
+             #{step.approverName}, #{step.approverRole}, COALESCE(#{step.status}, 0), 0, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <update id="updateNodeApprovalStep">
+        UPDATE node_approval_step
+        <set>
+            <if test="stepName != null">step_name = #{stepName},</if>
+            <if test="approverId != null">approver_id = #{approverId},</if>
+            <if test="approverName != null">approver_name = #{approverName},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="comment != null">comment = #{comment},</if>
+            <if test="attachments != null">attachments = #{attachments},</if>
+            <if test="approvedAt != null">approved_at = #{approvedAt},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteNodeApprovalStep">
+        UPDATE node_approval_step SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="selectNodeApprovalStepById" resultMap="StepResultMap">
+        SELECT * FROM node_approval_step WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectStepsByWorkflowId" resultMap="StepResultMap">
+        SELECT * FROM node_approval_step WHERE workflow_id = #{workflowId} AND is_del = 0 ORDER BY step_number ASC
+    </select>
+
+    <select id="selectStepByWorkflowIdAndStepNumber" resultMap="StepResultMap">
+        SELECT * FROM node_approval_step
+        WHERE workflow_id = #{workflowId} AND step_number = #{stepNumber} AND is_del = 0
+        LIMIT 1
+    </select>
+
+    <update id="updateStepStatus">
+        UPDATE node_approval_step
+        SET status = #{status}, comment = #{comment}, approved_at = NOW(), update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteStepsByWorkflowId">
+        UPDATE node_approval_step SET is_del = 1, update_date = NOW() WHERE workflow_id = #{workflowId}
+    </update>
+
+    <!-- ========== Config CRUD ========== -->
+    <insert id="insertNodeApprovalConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_approval_config (
+            workflow_type, is_enabled, steps_count, auto_approve_rules, notification_enabled,
+            notification_emails, is_del, create_date, update_date
+        ) VALUES (
+            #{workflowType}, COALESCE(#{isEnabled}, 1), COALESCE(#{stepsCount}, 1),
+            #{autoApproveRules}, COALESCE(#{notificationEnabled}, 1), #{notificationEmails}, 0, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateNodeApprovalConfig">
+        UPDATE node_approval_config
+        <set>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="stepsCount != null">steps_count = #{stepsCount},</if>
+            <if test="autoApproveRules != null">auto_approve_rules = #{autoApproveRules},</if>
+            <if test="notificationEnabled != null">notification_enabled = #{notificationEnabled},</if>
+            <if test="notificationEmails != null">notification_emails = #{notificationEmails},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteNodeApprovalConfig">
+        UPDATE node_approval_config SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="selectNodeApprovalConfigById" resultMap="ConfigResultMap">
+        SELECT * FROM node_approval_config WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectNodeApprovalConfigByType" resultMap="ConfigResultMap">
+        SELECT * FROM node_approval_config WHERE workflow_type = #{workflowType} AND is_del = 0 LIMIT 1
+    </select>
+
+    <select id="selectAllNodeApprovalConfigs" resultMap="ConfigResultMap">
+        SELECT * FROM node_approval_config WHERE is_del = 0 ORDER BY workflow_type
+    </select>
+
+    <update id="updateConfigEnabled">
+        UPDATE node_approval_config SET is_enabled = #{isEnabled}, update_date = NOW() WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectEnabledConfigs" resultMap="ConfigResultMap">
+        SELECT * FROM node_approval_config WHERE is_enabled = 1 AND is_del = 0
+    </select>
+
+</mapper>

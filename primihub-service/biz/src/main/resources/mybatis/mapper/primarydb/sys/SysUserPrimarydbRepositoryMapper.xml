@@ -47,4 +47,8 @@
         update sys_user set ip=#{ip} where user_id=#{userId}
     </update>
 
+    <update id="updateUserForbidStatus">
+        update sys_user set is_forbid=#{isForbid} where user_id=#{userId}
+    </update>
+
 </mapper>
