@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 
 # 你的配置
 BASE_URL = "http://100.64.0.23:30811/prod-api"
-TOKEN = "SU202601111503542F1167CD6FFFD38A270C80D9D96A928C"
+TOKEN = "SU20260111234709EA67396910B1686EBF63EAADE3408E6E"
 USER_ID = 1
 
 

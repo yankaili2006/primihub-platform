@@ -1,0 +1,15 @@
+{
+  "organId": "00000000000000000000000000000001",
+  "organName": "本地节点",
+  "nodeId": "node2",
+  "nodeName": "Node2",
+  "gatewayAddress": "http://gateway2:8080",
+  "isCenter": false,
+  "pinCode": "123456",
+  "publicKey": "",
+  "ipAddress": "192.168.99.101",
+  "servicePort": 50052,
+  "useSSL": false,
+  "isAuth": false,
+  "worldUrl": ""
+}
