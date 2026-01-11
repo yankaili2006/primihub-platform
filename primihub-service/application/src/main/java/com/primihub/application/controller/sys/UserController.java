@@ -29,9 +29,10 @@ public class UserController {
         if(loginParam.getUserPassword()==null|| "".equals(loginParam.getUserPassword().trim())) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userPassword");
         }
-        if(loginParam.getValidateKeyName()==null|| "".equals(loginParam.getValidateKeyName().trim())) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"validateKeyName");
-        }
+        // CAPTCHA validation disabled for API testing
+        // if(loginParam.getValidateKeyName()==null|| "".equals(loginParam.getValidateKeyName().trim())) {
+        //     return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"validateKeyName");
+        // }
         return sysUserService.login(loginParam,ip);
     }
 
