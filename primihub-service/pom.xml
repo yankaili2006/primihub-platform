@@ -75,6 +75,18 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- 显式管理protobuf版本，覆盖Spring Cloud的默认版本 -->
+            <!-- 修复NoSuchMethodError: GeneratedMessageV3.isStringEmpty -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.19.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>3.19.2</version>
+            </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>

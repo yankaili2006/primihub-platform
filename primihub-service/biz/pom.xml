@@ -12,6 +12,19 @@
     <artifactId>biz</artifactId>
 
     <dependencies>
+        <!-- 显式声明protobuf版本，覆盖Spring Cloud Alibaba的版本管理 -->
+        <!-- 修复NoSuchMethodError: GeneratedMessageV3.isStringEmpty -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.19.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java-util</artifactId>
+            <version>3.19.2</version>
+        </dependency>
+
         <dependency>
             <groupId>com.primihub</groupId>
             <artifactId>primihub-sdk</artifactId>
