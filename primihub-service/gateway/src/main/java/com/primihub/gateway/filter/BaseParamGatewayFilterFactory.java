@@ -203,7 +203,23 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
                                             exchange.getAttributes().put(BaseParamEnum.SIGN.getColumnName(),sign);
                                         }
                                     } else if (MediaType.APPLICATION_JSON.isCompatibleWith(mediaType)) {
-                                        BaseJsonParam baseJsonParam=JSON.parseObject(resolvedBody.toString(),BaseJsonParam.class);
+                                        BaseJsonParam baseJsonParam = null;
+                                        try {
+                                            baseJsonParam = JSON.parseObject(resolvedBody.toString(), BaseJsonParam.class);
+                                        } catch (Exception e) {
+                                            log.error("JSON解析失败 - URI: {}, Body: {}, Error: {}",
+                                                currentRawPath,
+                                                resolvedBody.toString().length() > 500 ? resolvedBody.toString().substring(0, 500) + "..." : resolvedBody.toString(),
+                                                e.getMessage(),
+                                                e);
+                                            return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange, BaseResultEnum.FAILURE, "JSON格式错误: " + e.getMessage());
+                                        }
+
+                                        if(baseJsonParam == null) {
+                                            log.error("JSON解析结果为null - URI: {}", currentRawPath);
+                                            return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange, BaseResultEnum.FAILURE, "JSON解析失败");
+                                        }
+
                                         if(baseJsonParam.getTimestamp()==null|| "".equals(baseJsonParam.getTimestamp())){
                                             return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange,BaseResultEnum.LACK_OF_PARAM,BaseParamEnum.TIMESTAMP);
                                         }

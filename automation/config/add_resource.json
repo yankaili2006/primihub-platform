@@ -1,0 +1,40 @@
+{
+  "resourceName": "测试数据资源",
+  "resourceDesc": "通过API创建的测试数据资源", 
+  "resourceAuthType": 1,
+  "resourceSource": 1,
+  "tags": ["测试", "API创建"],
+  "fileId": 1,
+  "fieldList": [
+    {
+      "fieldName": "id",
+      "fieldAs": "ID",
+      "fieldType": "String",
+      "fieldDesc": "唯一标识",
+      "relevance": 1,
+      "grouping": 0,
+      "protectionStatus": 0
+    },
+    {
+      "fieldName": "name",
+      "fieldAs": "姓名",
+      "fieldType": "String",
+      "fieldDesc": "用户姓名",
+      "relevance": 0,
+      "grouping": 0,
+      "protectionStatus": 1
+    },
+    {
+      "fieldName": "age",
+      "fieldAs": "年龄",
+      "fieldType": "Integer",
+      "fieldDesc": "用户年龄",
+      "relevance": 0,
+      "grouping": 1,
+      "protectionStatus": 0
+    }
+  ],
+  "timestamp": 1768134000000,
+  "nonce": 999,
+  "token": "SU2026011119425868F77BF514722324D1A684973415FB86"
+}

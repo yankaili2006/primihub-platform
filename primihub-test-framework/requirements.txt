@@ -1,0 +1,43 @@
+# PrimiHub Test Framework Python Dependencies
+
+# Core HTTP Library
+requests>=2.28.0
+
+# Database
+PyMySQL>=1.0.2
+
+# YAML Parser
+PyYAML>=6.0
+
+# Testing Framework
+pytest>=7.0.0
+pytest-html>=3.1.0
+pytest-cov>=4.0.0
+
+# Async HTTP
+aiohttp>=3.8.0
+
+# CLI Tools
+click>=8.1.0
+
+# Table Output
+tabulate>=0.9.0
+
+# Progress Bar
+tqdm>=4.64.0
+
+# Color Output
+colorama>=0.4.6
+
+# JSON Schema Validation
+jsonschema>=4.17.0
+
+# Data Faker (for test data generation)
+Faker>=18.0.0
+
+# Statistics
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Load Testing
+locust>=2.15.0

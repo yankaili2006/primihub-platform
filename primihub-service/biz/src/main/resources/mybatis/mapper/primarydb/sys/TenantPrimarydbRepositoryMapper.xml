@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.TenantPrimarydbRepository">
+
+    <!-- ========== 租户管理 ========== -->
+
+    <insert id="insertTenant" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tenant (
+            tenant_code, tenant_name, contact_person, contact_phone, contact_email,
+            description, status, data_isolation, compute_isolation, resource_count, is_del
+        ) VALUES (
+            #{tenantCode}, #{tenantName}, #{contactPerson}, #{contactPhone}, #{contactEmail},
+            #{description}, #{status}, #{dataIsolation}, #{computeIsolation}, 0, 0
+        )
+    </insert>
+
+    <update id="updateTenant">
+        UPDATE tenant
+        <set>
+            <if test="tenantName != null and tenantName != ''">tenant_name = #{tenantName},</if>
+            <if test="contactPerson != null">contact_person = #{contactPerson},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="contactEmail != null">contact_email = #{contactEmail},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="dataIsolation != null">data_isolation = #{dataIsolation},</if>
+            <if test="computeIsolation != null">compute_isolation = #{computeIsolation},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteTenant">
+        UPDATE tenant SET is_del = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateTenantStatus">
+        UPDATE tenant SET status = #{status}, update_time = NOW() WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="updateTenantResourceCount">
+        UPDATE tenant
+        SET resource_count = resource_count + #{increment}, update_time = NOW()
+        WHERE id = #{tenantId} AND is_del = 0
+    </update>
+
+    <select id="selectTenantById" resultType="com.primihub.biz.entity.sys.po.Tenant">
+        SELECT id, tenant_code as tenantCode, tenant_name as tenantName,
+               contact_person as contactPerson, contact_phone as contactPhone, contact_email as contactEmail,
+               description, status, data_isolation as dataIsolation, compute_isolation as computeIsolation,
+               resource_count as resourceCount, create_time as createTime, update_time as updateTime, is_del as isDel
+        FROM tenant
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectTenantByCode" resultType="com.primihub.biz.entity.sys.po.Tenant">
+        SELECT id, tenant_code as tenantCode, tenant_name as tenantName,
+               contact_person as contactPerson, contact_phone as contactPhone, contact_email as contactEmail,
+               description, status, data_isolation as dataIsolation, compute_isolation as computeIsolation,
+               resource_count as resourceCount, create_time as createTime, update_time as updateTime, is_del as isDel
+        FROM tenant
+        WHERE tenant_code = #{tenantCode} AND is_del = 0
+    </select>
+
+    <select id="selectTenantList" resultType="com.primihub.biz.entity.sys.po.Tenant">
+        SELECT id, tenant_code as tenantCode, tenant_name as tenantName,
+               contact_person as contactPerson, contact_phone as contactPhone, contact_email as contactEmail,
+               description, status, data_isolation as dataIsolation, compute_isolation as computeIsolation,
+               resource_count as resourceCount, create_time as createTime, update_time as updateTime
+        FROM tenant
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (tenant_code LIKE CONCAT('%', #{keyword}, '%') OR tenant_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectTenantCount" resultType="int">
+        SELECT COUNT(*)
+        FROM tenant
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (tenant_code LIKE CONCAT('%', #{keyword}, '%') OR tenant_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- ========== 租户资源分配 ========== -->
+
+    <insert id="insertTenantResourceAllocation">
+        INSERT INTO tenant_resource_allocation (
+            tenant_id, resource_id, resource_name, resource_type, permission_level,
+            quota_amount, quota_unit, status, effective_time, expiry_time, remark
+        ) VALUES (
+            #{tenantId}, #{resourceId}, #{resourceName}, #{resourceType}, #{permissionLevel},
+            #{quotaAmount}, #{quotaUnit}, #{status}, #{effectiveTime}, #{expiryTime}, #{remark}
+        )
+    </insert>
+
+    <delete id="deleteTenantResourceAllocation">
+        DELETE FROM tenant_resource_allocation WHERE id = #{id}
+    </delete>
+
+    <select id="selectTenantResourceList" resultType="map">
+        SELECT id, tenant_id as tenantId, resource_id as resourceId, resource_name as resourceName,
+               resource_type as resourceType, permission_level as permissionLevel,
+               quota_amount as quotaAmount, quota_unit as quotaUnit, used_amount as usedAmount,
+               status, effective_time as effectiveTime, expiry_time as expiryTime,
+               remark, create_time as createTime, update_time as updateTime
+        FROM tenant_resource_allocation
+        WHERE tenant_id = #{tenantId}
+        <if test="resourceName != null and resourceName != ''">
+            AND resource_name LIKE CONCAT('%', #{resourceName}, '%')
+        </if>
+        <if test="resourceType != null and resourceType != ''">
+            AND resource_type = #{resourceType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectTenantResourceCount" resultType="int">
+        SELECT COUNT(*)
+        FROM tenant_resource_allocation
+        WHERE tenant_id = #{tenantId}
+        <if test="resourceName != null and resourceName != ''">
+            AND resource_name LIKE CONCAT('%', #{resourceName}, '%')
+        </if>
+        <if test="resourceType != null and resourceType != ''">
+            AND resource_type = #{resourceType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="selectTenantResourceById" resultType="map">
+        SELECT id, tenant_id as tenantId, resource_id as resourceId, resource_name as resourceName,
+               resource_type as resourceType, permission_level as permissionLevel,
+               quota_amount as quotaAmount, quota_unit as quotaUnit, used_amount as usedAmount,
+               status, effective_time as effectiveTime, expiry_time as expiryTime,
+               remark, create_time as createTime, update_time as updateTime
+        FROM tenant_resource_allocation
+        WHERE id = #{id}
+    </select>
+
+    <!-- ========== 租户隔离配置 ========== -->
+
+    <insert id="insertTenantIsolationConfig">
+        INSERT INTO tenant_isolation_config (
+            tenant_id, cpu_quota, memory_quota, storage_quota, dataset_limit, model_limit,
+            concurrent_tasks, network_isolation, namespace
+        ) VALUES (
+            #{tenantId}, #{cpuQuota}, #{memoryQuota}, #{storageQuota}, #{datasetLimit}, #{modelLimit},
+            #{concurrentTasks}, #{networkIsolation}, #{namespace}
+        )
+    </insert>
+
+    <update id="updateTenantIsolationConfig">
+        UPDATE tenant_isolation_config
+        <set>
+            <if test="cpuQuota != null">cpu_quota = #{cpuQuota},</if>
+            <if test="memoryQuota != null">memory_quota = #{memoryQuota},</if>
+            <if test="storageQuota != null">storage_quota = #{storageQuota},</if>
+            <if test="datasetLimit != null">dataset_limit = #{datasetLimit},</if>
+            <if test="modelLimit != null">model_limit = #{modelLimit},</if>
+            <if test="concurrentTasks != null">concurrent_tasks = #{concurrentTasks},</if>
+            <if test="networkIsolation != null">network_isolation = #{networkIsolation},</if>
+            <if test="namespace != null">namespace = #{namespace},</if>
+            update_time = NOW()
+        </set>
+        WHERE tenant_id = #{tenantId}
+    </update>
+
+    <select id="selectTenantIsolationConfig" resultType="map">
+        SELECT id, tenant_id as tenantId, cpu_quota as cpuQuota, memory_quota as memoryQuota,
+               storage_quota as storageQuota, dataset_limit as datasetLimit, model_limit as modelLimit,
+               concurrent_tasks as concurrentTasks, network_isolation as networkIsolation, namespace,
+               create_time as createTime, update_time as updateTime
+        FROM tenant_isolation_config
+        WHERE tenant_id = #{tenantId}
+    </select>
+
+    <!-- ========== 租户统计 ========== -->
+
+    <select id="selectTenantStatistics" resultType="map">
+        SELECT
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as normalCount,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as frozenCount,
+            SUM(resource_count) as totalResourceCount
+        FROM tenant
+        WHERE is_del = 0
+    </select>
+
+</mapper>

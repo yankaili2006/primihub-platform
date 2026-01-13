@@ -5,7 +5,7 @@
       <div class="desc-col">
         <div class="desc-label">任务结果名称:</div>
         <div class="desc-content">
-          <EditInput type="textarea" show-word-limit maxlength="50" size="mini" :value="data.resultName" @change="handleEditChange" />
+          <EditInput type="textarea" show-word-limit maxlength="50" size="mini" :value="localData.resultName" @change="handleEditChange" />
         </div>
       </div>
       <div class="desc-col">
@@ -109,6 +109,7 @@ export default {
   },
   data() {
     return {
+      localData: { ...this.data }
     }
   },
   methods: {
@@ -132,12 +133,12 @@ export default {
     },
     handleEditChange({ change, value }) {
       if (change) {
-        this.data.resultName = value
-        updateDataPsiResultName({ id: this.data.taskId, resultName: this.data.resultName }).then(res => {
+        this.localData.resultName = value
+        updateDataPsiResultName({ id: this.data.taskId, resultName: value }).then(res => {
           if (res.code === 0) {
             this.$emit('change', {
               taskId: this.data.taskId,
-              resultName: this.data.resultName
+              resultName: value
             })
             this.$message.success('修改成功')
           } else {

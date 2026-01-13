@@ -316,7 +316,7 @@ public class SysOrganService {
         Integer count = sysOrganSecondarydbRepository.selectSysOrganByParamCount(param);
         String localOrganShortCode = organConfiguration.getLocalOrganShortCode();
         for (SysOrgan sysOrgan : list) {
-            if (sysOrgan.getApplyId().contains(localOrganShortCode)){
+            if (sysOrgan.getApplyId() != null && sysOrgan.getApplyId().contains(localOrganShortCode)){
                 sysOrgan.setIdentity(0);
             }
         }

@@ -40,6 +40,7 @@ import org.springframework.context.annotation.FilterType;
                         SysEmailService.class,
                         SysOrganService.class,
                         SysAsyncService.class,
+                        LogManagementService.class,
                         GrpcConfiguration.class,
                         SwaggerConfig.class
                 }),

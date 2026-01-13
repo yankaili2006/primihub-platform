@@ -18,7 +18,10 @@ export function login(data) {
   return request({
     url: '/sys/user/login',
     method: 'POST',
-    data
+    data: {
+      ...data,
+      timestamp: Date.now()
+    }
   })
 }
 
@@ -101,4 +104,42 @@ export function checkCaptcha(data) {
 
 export function logout() {
   return Promise.resolve({})
+}
+
+// 冻结用户
+export function freezeUser(data) {
+  return request({
+    url: '/sys/user/freezeUser',
+    method: 'POST',
+    data
+  })
+}
+
+// 解冻用户
+export function unfreezeUser(data) {
+  return request({
+    url: '/sys/user/unfreezeUser',
+    method: 'POST',
+    data
+  })
+}
+
+// 批量冻结用户
+export function batchFreezeUser(data) {
+  return request({
+    url: '/sys/user/batchFreezeUser',
+    method: 'POST',
+    type: 'json',
+    data
+  })
+}
+
+// 批量解冻用户
+export function batchUnfreezeUser(data) {
+  return request({
+    url: '/sys/user/batchUnfreezeUser',
+    method: 'POST',
+    type: 'json',
+    data
+  })
 }

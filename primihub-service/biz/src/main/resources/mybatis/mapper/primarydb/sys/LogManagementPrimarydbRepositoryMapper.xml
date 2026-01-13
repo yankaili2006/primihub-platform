@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.LogManagementPrimarydbRepository">
+
+    <!-- ========== 操作日志定义 ========== -->
+
+    <insert id="insertOperationLogDefinition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_operation_log_definition (
+            log_code, log_name, log_type, module_name, description,
+            is_enabled, retention_days, is_del
+        ) VALUES (
+            #{logCode}, #{logName}, #{logType}, #{moduleName}, #{description},
+            #{isEnabled}, #{retentionDays}, 0
+        )
+    </insert>
+
+    <update id="updateOperationLogDefinition">
+        UPDATE sys_operation_log_definition
+        <set>
+            <if test="logName != null and logName != ''">log_name = #{logName},</if>
+            <if test="logType != null">log_type = #{logType},</if>
+            <if test="moduleName != null">module_name = #{moduleName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="retentionDays != null">retention_days = #{retentionDays},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteOperationLogDefinition">
+        UPDATE sys_operation_log_definition SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateOperationLogDefinitionStatus">
+        UPDATE sys_operation_log_definition SET is_enabled = #{isEnabled}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectOperationLogDefinitionById" resultType="com.primihub.biz.entity.sys.po.OperationLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, log_type as logType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_operation_log_definition
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectOperationLogDefinitionByCode" resultType="com.primihub.biz.entity.sys.po.OperationLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, log_type as logType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_operation_log_definition
+        WHERE log_code = #{logCode} AND is_del = 0
+    </select>
+
+    <select id="selectOperationLogDefinitionList" resultType="com.primihub.biz.entity.sys.po.OperationLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, log_type as logType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_operation_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="logType != null and logType != ''">
+            AND log_type = #{logType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectOperationLogDefinitionCount" resultType="int">
+        SELECT COUNT(*) FROM sys_operation_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="logType != null and logType != ''">
+            AND log_type = #{logType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+    </select>
+
+    <!-- ========== 调度日志定义 ========== -->
+
+    <insert id="insertScheduleLogDefinition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_schedule_log_definition (
+            log_code, log_name, schedule_type, module_name, description,
+            is_enabled, retention_days, is_del
+        ) VALUES (
+            #{logCode}, #{logName}, #{scheduleType}, #{moduleName}, #{description},
+            #{isEnabled}, #{retentionDays}, 0
+        )
+    </insert>
+
+    <update id="updateScheduleLogDefinition">
+        UPDATE sys_schedule_log_definition
+        <set>
+            <if test="logName != null and logName != ''">log_name = #{logName},</if>
+            <if test="scheduleType != null">schedule_type = #{scheduleType},</if>
+            <if test="moduleName != null">module_name = #{moduleName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="retentionDays != null">retention_days = #{retentionDays},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteScheduleLogDefinition">
+        UPDATE sys_schedule_log_definition SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateScheduleLogDefinitionStatus">
+        UPDATE sys_schedule_log_definition SET is_enabled = #{isEnabled}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectScheduleLogDefinitionById" resultType="com.primihub.biz.entity.sys.po.ScheduleLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, schedule_type as scheduleType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_schedule_log_definition
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectScheduleLogDefinitionByCode" resultType="com.primihub.biz.entity.sys.po.ScheduleLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, schedule_type as scheduleType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_schedule_log_definition
+        WHERE log_code = #{logCode} AND is_del = 0
+    </select>
+
+    <select id="selectScheduleLogDefinitionList" resultType="com.primihub.biz.entity.sys.po.ScheduleLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, schedule_type as scheduleType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_schedule_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="scheduleType != null and scheduleType != ''">
+            AND schedule_type = #{scheduleType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectScheduleLogDefinitionCount" resultType="int">
+        SELECT COUNT(*) FROM sys_schedule_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="scheduleType != null and scheduleType != ''">
+            AND schedule_type = #{scheduleType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+    </select>
+
+    <!-- ========== 计算日志定义 ========== -->
+
+    <insert id="insertComputeLogDefinition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_compute_log_definition (
+            log_code, log_name, compute_type, module_name, description,
+            is_enabled, retention_days, is_del
+        ) VALUES (
+            #{logCode}, #{logName}, #{computeType}, #{moduleName}, #{description},
+            #{isEnabled}, #{retentionDays}, 0
+        )
+    </insert>
+
+    <update id="updateComputeLogDefinition">
+        UPDATE sys_compute_log_definition
+        <set>
+            <if test="logName != null and logName != ''">log_name = #{logName},</if>
+            <if test="computeType != null">compute_type = #{computeType},</if>
+            <if test="moduleName != null">module_name = #{moduleName},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="retentionDays != null">retention_days = #{retentionDays},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteComputeLogDefinition">
+        UPDATE sys_compute_log_definition SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateComputeLogDefinitionStatus">
+        UPDATE sys_compute_log_definition SET is_enabled = #{isEnabled}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectComputeLogDefinitionById" resultType="com.primihub.biz.entity.sys.po.ComputeLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, compute_type as computeType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_compute_log_definition
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectComputeLogDefinitionByCode" resultType="com.primihub.biz.entity.sys.po.ComputeLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, compute_type as computeType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_compute_log_definition
+        WHERE log_code = #{logCode} AND is_del = 0
+    </select>
+
+    <select id="selectComputeLogDefinitionList" resultType="com.primihub.biz.entity.sys.po.ComputeLogDefinition">
+        SELECT id, log_code as logCode, log_name as logName, compute_type as computeType,
+               module_name as moduleName, description, is_enabled as isEnabled,
+               retention_days as retentionDays, is_del as isDel,
+               create_date as createDate, update_date as updateDate
+        FROM sys_compute_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="computeType != null and computeType != ''">
+            AND compute_type = #{computeType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectComputeLogDefinitionCount" resultType="int">
+        SELECT COUNT(*) FROM sys_compute_log_definition
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="computeType != null and computeType != ''">
+            AND compute_type = #{computeType}
+        </if>
+        <if test="moduleName != null and moduleName != ''">
+            AND module_name = #{moduleName}
+        </if>
+        <if test="isEnabled != null">
+            AND is_enabled = #{isEnabled}
+        </if>
+    </select>
+
+    <!-- ========== 操作日志记录 ========== -->
+
+    <insert id="insertOperationLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_operation_log (
+            log_code, user_id, user_name, organ_id, organ_name,
+            operation_type, operation_module, operation_desc,
+            request_method, request_url, request_params, response_result,
+            ip_address, status, error_msg, execution_time, is_del
+        ) VALUES (
+            #{logCode}, #{userId}, #{userName}, #{organId}, #{organName},
+            #{operationType}, #{operationModule}, #{operationDesc},
+            #{requestMethod}, #{requestUrl}, #{requestParams}, #{responseResult},
+            #{ipAddress}, #{status}, #{errorMsg}, #{executionTime}, 0
+        )
+    </insert>
+
+    <select id="selectOperationLogById" resultType="com.primihub.biz.entity.sys.po.OperationLog">
+        SELECT id, log_code as logCode, user_id as userId, user_name as userName,
+               organ_id as organId, organ_name as organName,
+               operation_type as operationType, operation_module as operationModule,
+               operation_desc as operationDesc, request_method as requestMethod,
+               request_url as requestUrl, request_params as requestParams,
+               response_result as responseResult, ip_address as ipAddress,
+               status, error_msg as errorMsg, execution_time as executionTime,
+               is_del as isDel, create_date as createDate
+        FROM sys_operation_log
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectOperationLogList" resultType="com.primihub.biz.entity.sys.po.OperationLog">
+        SELECT id, log_code as logCode, user_id as userId, user_name as userName,
+               organ_id as organId, organ_name as organName,
+               operation_type as operationType, operation_module as operationModule,
+               operation_desc as operationDesc, request_method as requestMethod,
+               request_url as requestUrl, ip_address as ipAddress,
+               status, error_msg as errorMsg, execution_time as executionTime,
+               create_date as createDate
+        FROM sys_operation_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="operationType != null and operationType != ''">
+            AND operation_type = #{operationType}
+        </if>
+        <if test="operationModule != null and operationModule != ''">
+            AND operation_module = #{operationModule}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectOperationLogCount" resultType="int">
+        SELECT COUNT(*) FROM sys_operation_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND user_name LIKE CONCAT('%', #{userName}, '%')
+        </if>
+        <if test="operationType != null and operationType != ''">
+            AND operation_type = #{operationType}
+        </if>
+        <if test="operationModule != null and operationModule != ''">
+            AND operation_module = #{operationModule}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+    </select>
+
+    <delete id="deleteExpiredOperationLogs">
+        DELETE FROM sys_operation_log
+        WHERE create_date &lt; #{beforeDate}
+    </delete>
+
+    <!-- ========== 调度日志记录 ========== -->
+
+    <insert id="insertScheduleLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_schedule_log (
+            log_code, schedule_name, schedule_type, schedule_cron, execute_server,
+            start_time, end_time, execution_time, status, result_message,
+            error_msg, retry_count, is_del
+        ) VALUES (
+            #{logCode}, #{scheduleName}, #{scheduleType}, #{scheduleCron}, #{executeServer},
+            #{startTime}, #{endTime}, #{executionTime}, #{status}, #{resultMessage},
+            #{errorMsg}, #{retryCount}, 0
+        )
+    </insert>
+
+    <update id="updateScheduleLog">
+        UPDATE sys_schedule_log
+        <set>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="executionTime != null">execution_time = #{executionTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="resultMessage != null">result_message = #{resultMessage},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectScheduleLogById" resultType="com.primihub.biz.entity.sys.po.ScheduleLog">
+        SELECT id, log_code as logCode, schedule_name as scheduleName,
+               schedule_type as scheduleType, schedule_cron as scheduleCron,
+               execute_server as executeServer, start_time as startTime,
+               end_time as endTime, execution_time as executionTime,
+               status, result_message as resultMessage, error_msg as errorMsg,
+               retry_count as retryCount, is_del as isDel, create_date as createDate
+        FROM sys_schedule_log
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectScheduleLogList" resultType="com.primihub.biz.entity.sys.po.ScheduleLog">
+        SELECT id, log_code as logCode, schedule_name as scheduleName,
+               schedule_type as scheduleType, schedule_cron as scheduleCron,
+               execute_server as executeServer, start_time as startTime,
+               end_time as endTime, execution_time as executionTime,
+               status, result_message as resultMessage, error_msg as errorMsg,
+               retry_count as retryCount, create_date as createDate
+        FROM sys_schedule_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="scheduleName != null and scheduleName != ''">
+            AND schedule_name LIKE CONCAT('%', #{scheduleName}, '%')
+        </if>
+        <if test="scheduleType != null and scheduleType != ''">
+            AND schedule_type = #{scheduleType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectScheduleLogCount" resultType="int">
+        SELECT COUNT(*) FROM sys_schedule_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="scheduleName != null and scheduleName != ''">
+            AND schedule_name LIKE CONCAT('%', #{scheduleName}, '%')
+        </if>
+        <if test="scheduleType != null and scheduleType != ''">
+            AND schedule_type = #{scheduleType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+    </select>
+
+    <delete id="deleteExpiredScheduleLogs">
+        DELETE FROM sys_schedule_log
+        WHERE create_date &lt; #{beforeDate}
+    </delete>
+
+    <!-- ========== 计算日志记录 ========== -->
+
+    <insert id="insertComputeLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_compute_log (
+            log_code, task_id, task_name, compute_type, project_id, project_name,
+            user_id, user_name, organ_id, organ_name, start_time, end_time,
+            execution_time, status, result_data, error_msg, resource_usage, is_del
+        ) VALUES (
+            #{logCode}, #{taskId}, #{taskName}, #{computeType}, #{projectId}, #{projectName},
+            #{userId}, #{userName}, #{organId}, #{organName}, #{startTime}, #{endTime},
+            #{executionTime}, #{status}, #{resultData}, #{errorMsg}, #{resourceUsage}, 0
+        )
+    </insert>
+
+    <update id="updateComputeLog">
+        UPDATE sys_compute_log
+        <set>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="executionTime != null">execution_time = #{executionTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="resultData != null">result_data = #{resultData},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="resourceUsage != null">resource_usage = #{resourceUsage},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectComputeLogById" resultType="com.primihub.biz.entity.sys.po.ComputeLog">
+        SELECT id, log_code as logCode, task_id as taskId, task_name as taskName,
+               compute_type as computeType, project_id as projectId, project_name as projectName,
+               user_id as userId, user_name as userName, organ_id as organId, organ_name as organName,
+               start_time as startTime, end_time as endTime, execution_time as executionTime,
+               status, result_data as resultData, error_msg as errorMsg,
+               resource_usage as resourceUsage, is_del as isDel, create_date as createDate
+        FROM sys_compute_log
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectComputeLogByTaskId" resultType="com.primihub.biz.entity.sys.po.ComputeLog">
+        SELECT id, log_code as logCode, task_id as taskId, task_name as taskName,
+               compute_type as computeType, project_id as projectId, project_name as projectName,
+               user_id as userId, user_name as userName, organ_id as organId, organ_name as organName,
+               start_time as startTime, end_time as endTime, execution_time as executionTime,
+               status, result_data as resultData, error_msg as errorMsg,
+               resource_usage as resourceUsage, is_del as isDel, create_date as createDate
+        FROM sys_compute_log
+        WHERE task_id = #{taskId} AND is_del = 0
+        ORDER BY create_date DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectComputeLogList" resultType="com.primihub.biz.entity.sys.po.ComputeLog">
+        SELECT id, log_code as logCode, task_id as taskId, task_name as taskName,
+               compute_type as computeType, project_id as projectId, project_name as projectName,
+               user_id as userId, user_name as userName, organ_id as organId, organ_name as organName,
+               start_time as startTime, end_time as endTime, execution_time as executionTime,
+               status, error_msg as errorMsg, create_date as createDate
+        FROM sys_compute_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="taskId != null and taskId != ''">
+            AND task_id = #{taskId}
+        </if>
+        <if test="taskName != null and taskName != ''">
+            AND task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="computeType != null and computeType != ''">
+            AND compute_type = #{computeType}
+        </if>
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="organId != null">
+            AND organ_id = #{organId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectComputeLogCount" resultType="int">
+        SELECT COUNT(*) FROM sys_compute_log
+        WHERE is_del = 0
+        <if test="logCode != null and logCode != ''">
+            AND log_code = #{logCode}
+        </if>
+        <if test="taskId != null and taskId != ''">
+            AND task_id = #{taskId}
+        </if>
+        <if test="taskName != null and taskName != ''">
+            AND task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="computeType != null and computeType != ''">
+            AND compute_type = #{computeType}
+        </if>
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="organId != null">
+            AND organ_id = #{organId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND create_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND create_date &lt;= #{endTime}
+        </if>
+    </select>
+
+    <delete id="deleteExpiredComputeLogs">
+        DELETE FROM sys_compute_log
+        WHERE create_date &lt; #{beforeDate}
+    </delete>
+
+</mapper>

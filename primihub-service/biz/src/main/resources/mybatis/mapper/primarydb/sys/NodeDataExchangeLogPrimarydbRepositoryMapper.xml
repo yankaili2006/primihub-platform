@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.NodeDataExchangeLogPrimarydbRepository">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.primihub.biz.entity.sys.po.NodeDataExchangeLog">
+        <id column="id" property="id"/>
+        <result column="exchange_id" property="exchangeId"/>
+        <result column="source_organ_id" property="sourceOrganId"/>
+        <result column="source_organ_name" property="sourceOrganName"/>
+        <result column="target_organ_id" property="targetOrganId"/>
+        <result column="target_organ_name" property="targetOrganName"/>
+        <result column="exchange_type" property="exchangeType"/>
+        <result column="data_type" property="dataType"/>
+        <result column="data_id" property="dataId"/>
+        <result column="data_name" property="dataName"/>
+        <result column="data_size" property="dataSize"/>
+        <result column="status" property="status"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="started_at" property="startedAt"/>
+        <result column="completed_at" property="completedAt"/>
+        <result column="duration_ms" property="durationMs"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+    </resultMap>
+
+    <!-- Insert -->
+    <insert id="insertNodeDataExchangeLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_data_exchange_log (
+            exchange_id, source_organ_id, source_organ_name, target_organ_id, target_organ_name,
+            exchange_type, data_type, data_id, data_name, data_size, status, error_msg, retry_count,
+            started_at, is_del, create_date
+        ) VALUES (
+            #{exchangeId}, #{sourceOrganId}, #{sourceOrganName}, #{targetOrganId}, #{targetOrganName},
+            #{exchangeType}, #{dataType}, #{dataId}, #{dataName}, COALESCE(#{dataSize}, 0),
+            COALESCE(#{status}, 0), #{errorMsg}, COALESCE(#{retryCount}, 0), #{startedAt}, 0, NOW()
+        )
+    </insert>
+
+    <!-- Update -->
+    <update id="updateNodeDataExchangeLog">
+        UPDATE node_data_exchange_log
+        <set>
+            <if test="sourceOrganName != null">source_organ_name = #{sourceOrganName},</if>
+            <if test="targetOrganName != null">target_organ_name = #{targetOrganName},</if>
+            <if test="dataName != null">data_name = #{dataName},</if>
+            <if test="dataSize != null">data_size = #{dataSize},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if>
+            <if test="completedAt != null">completed_at = #{completedAt},</if>
+            <if test="durationMs != null">duration_ms = #{durationMs},</if>
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Delete (soft) -->
+    <update id="deleteNodeDataExchangeLog">
+        UPDATE node_data_exchange_log SET is_del = 1 WHERE id = #{id}
+    </update>
+
+    <!-- Select by ID -->
+    <select id="selectNodeDataExchangeLogById" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <!-- Select by Exchange ID -->
+    <select id="selectNodeDataExchangeLogByExchangeId" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log WHERE exchange_id = #{exchangeId} AND is_del = 0 LIMIT 1
+    </select>
+
+    <!-- Select List -->
+    <select id="selectNodeDataExchangeLogList" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (source_organ_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR target_organ_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR data_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="sourceOrganId != null and sourceOrganId != ''">
+            AND source_organ_id = #{sourceOrganId}
+        </if>
+        <if test="targetOrganId != null and targetOrganId != ''">
+            AND target_organ_id = #{targetOrganId}
+        </if>
+        <if test="exchangeType != null and exchangeType != ''">
+            AND exchange_type = #{exchangeType}
+        </if>
+        <if test="dataType != null and dataType != ''">
+            AND data_type = #{dataType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startDate != null">
+            AND create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND create_date &lt;= #{endDate}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- Count -->
+    <select id="selectNodeDataExchangeLogCount" resultType="int">
+        SELECT COUNT(*) FROM node_data_exchange_log
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (source_organ_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR target_organ_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR data_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="sourceOrganId != null and sourceOrganId != ''">
+            AND source_organ_id = #{sourceOrganId}
+        </if>
+        <if test="targetOrganId != null and targetOrganId != ''">
+            AND target_organ_id = #{targetOrganId}
+        </if>
+        <if test="exchangeType != null and exchangeType != ''">
+            AND exchange_type = #{exchangeType}
+        </if>
+        <if test="dataType != null and dataType != ''">
+            AND data_type = #{dataType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="startDate != null">
+            AND create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND create_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <!-- Batch Delete -->
+    <update id="batchDeleteNodeDataExchangeLog">
+        UPDATE node_data_exchange_log SET is_del = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- Update Exchange Status -->
+    <update id="updateExchangeStatus">
+        UPDATE node_data_exchange_log
+        SET status = #{status}, error_msg = #{errorMsg}
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Retry Count -->
+    <update id="updateRetryCount">
+        UPDATE node_data_exchange_log
+        SET retry_count = #{retryCount}
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Complete Exchange -->
+    <update id="completeExchange">
+        UPDATE node_data_exchange_log
+        SET status = #{status}, completed_at = #{completedAt}, duration_ms = #{durationMs}
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Select by Source Organ -->
+    <select id="selectExchangeLogsBySourceOrgan" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE source_organ_id = #{sourceOrganId} AND is_del = 0
+        ORDER BY create_date DESC
+    </select>
+
+    <!-- Select by Target Organ -->
+    <select id="selectExchangeLogsByTargetOrgan" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE target_organ_id = #{targetOrganId} AND is_del = 0
+        ORDER BY create_date DESC
+    </select>
+
+    <!-- Select Failed Logs -->
+    <select id="selectFailedExchangeLogs" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE status = 2 AND is_del = 0
+        ORDER BY create_date DESC
+    </select>
+
+    <!-- Select Pending Logs -->
+    <select id="selectPendingExchangeLogs" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE status = 0 AND is_del = 0
+        ORDER BY create_date ASC
+    </select>
+
+    <!-- Select Exchange Statistics -->
+    <select id="selectExchangeStatistics" resultType="map">
+        SELECT
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as successCount,
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as failureCount,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as pendingCount,
+            SUM(data_size) as totalDataSize,
+            AVG(duration_ms) as avgDurationMs
+        FROM node_data_exchange_log
+        WHERE is_del = 0
+        <if test="organId != null and organId != ''">
+            AND (source_organ_id = #{organId} OR target_organ_id = #{organId})
+        </if>
+    </select>
+
+    <!-- Select Between Organs -->
+    <select id="selectExchangeLogsBetweenOrgans" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE (
+            (source_organ_id = #{sourceOrganId} AND target_organ_id = #{targetOrganId})
+            OR (source_organ_id = #{targetOrganId} AND target_organ_id = #{sourceOrganId})
+        )
+        AND is_del = 0
+        ORDER BY create_date DESC
+    </select>
+
+    <!-- Select Recent Logs -->
+    <select id="selectRecentExchangeLogs" resultMap="BaseResultMap">
+        SELECT * FROM node_data_exchange_log
+        WHERE create_date &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        AND is_del = 0
+        ORDER BY create_date DESC
+    </select>
+
+</mapper>

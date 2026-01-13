@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataRequirementPrimarydbRepository">
+
+    <!-- 数据需求结果映射 -->
+    <resultMap id="DataRequirementMap" type="com.primihub.biz.entity.data.po.DataRequirement">
+        <id column="id" property="id"/>
+        <result column="requirement_code" property="requirementCode"/>
+        <result column="requirement_name" property="requirementName"/>
+        <result column="requirement_desc" property="requirementDesc"/>
+        <result column="requirement_type" property="requirementType"/>
+        <result column="data_fields" property="dataFields"/>
+        <result column="data_volume" property="dataVolume"/>
+        <result column="data_format" property="dataFormat"/>
+        <result column="priority" property="priority"/>
+        <result column="status" property="status"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="remark" property="remark"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <!-- 数据需求配置结果映射 -->
+    <resultMap id="DataRequirementConfigMap" type="com.primihub.biz.entity.data.po.DataRequirementConfig">
+        <id column="id" property="id"/>
+        <result column="config_key" property="configKey"/>
+        <result column="config_value" property="configValue"/>
+        <result column="config_desc" property="configDesc"/>
+        <result column="config_type" property="configType"/>
+        <result column="is_enabled" property="isEnabled"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <!-- 数据需求匹配结果映射 -->
+    <resultMap id="DataRequirementMatchMap" type="com.primihub.biz.entity.data.po.DataRequirementMatch">
+        <id column="id" property="id"/>
+        <result column="requirement_id" property="requirementId"/>
+        <result column="resource_id" property="resourceId"/>
+        <result column="match_score" property="matchScore"/>
+        <result column="match_status" property="matchStatus"/>
+        <result column="match_type" property="matchType"/>
+        <result column="match_details" property="matchDetails"/>
+        <result column="confirm_user_id" property="confirmUserId"/>
+        <result column="confirm_user_name" property="confirmUserName"/>
+        <result column="confirm_date" property="confirmDate"/>
+        <result column="remark" property="remark"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+        <result column="requirement_name" property="requirementName"/>
+        <result column="resource_name" property="resourceName"/>
+    </resultMap>
+
+    <!-- ========== 数据需求 CRUD ========== -->
+
+    <!-- 插入数据需求 -->
+    <insert id="insertDataRequirement" parameterType="com.primihub.biz.entity.data.po.DataRequirement"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO data_requirement (
+            requirement_code, requirement_name, requirement_desc, requirement_type,
+            data_fields, data_volume, data_format, priority, status,
+            user_id, user_name, organ_id, organ_name,
+            start_date, end_date, remark, is_del
+        ) VALUES (
+            #{requirementCode}, #{requirementName}, #{requirementDesc}, #{requirementType},
+            #{dataFields}, #{dataVolume}, #{dataFormat}, #{priority}, #{status},
+            #{userId}, #{userName}, #{organId}, #{organName},
+            #{startDate}, #{endDate}, #{remark}, 0
+        )
+    </insert>
+
+    <!-- 更新数据需求 -->
+    <update id="updateDataRequirement" parameterType="com.primihub.biz.entity.data.po.DataRequirement">
+        UPDATE data_requirement
+        <set>
+            <if test="requirementName != null">requirement_name = #{requirementName},</if>
+            <if test="requirementDesc != null">requirement_desc = #{requirementDesc},</if>
+            <if test="requirementType != null">requirement_type = #{requirementType},</if>
+            <if test="dataFields != null">data_fields = #{dataFields},</if>
+            <if test="dataVolume != null">data_volume = #{dataVolume},</if>
+            <if test="dataFormat != null">data_format = #{dataFormat},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 删除数据需求(软删除) -->
+    <update id="deleteDataRequirement">
+        UPDATE data_requirement SET is_del = 1 WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询数据需求 -->
+    <select id="selectDataRequirementById" resultMap="DataRequirementMap">
+        SELECT * FROM data_requirement WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <!-- 根据需求编码查询数据需求 -->
+    <select id="selectDataRequirementByCode" resultMap="DataRequirementMap">
+        SELECT * FROM data_requirement WHERE requirement_code = #{requirementCode} AND is_del = 0
+    </select>
+
+    <!-- 查询数据需求列表 -->
+    <select id="selectDataRequirementList" parameterType="map" resultMap="DataRequirementMap">
+        SELECT * FROM data_requirement
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (requirement_code LIKE CONCAT('%', #{keyword}, '%')
+                OR requirement_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="requirementType != null and requirementType != ''">
+                AND requirement_type = #{requirementType}
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND start_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND end_date &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询数据需求总数 -->
+    <select id="selectDataRequirementCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM data_requirement
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (requirement_code LIKE CONCAT('%', #{keyword}, '%')
+                OR requirement_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="requirementType != null and requirementType != ''">
+                AND requirement_type = #{requirementType}
+            </if>
+            <if test="priority != null">
+                AND priority = #{priority}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND start_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND end_date &lt;= #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <!-- 批量删除数据需求 -->
+    <update id="batchDeleteDataRequirement">
+        UPDATE data_requirement SET is_del = 1
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 更新数据需求状态 -->
+    <update id="updateDataRequirementStatus">
+        UPDATE data_requirement SET status = #{status} WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- ========== 数据需求配置 CRUD ========== -->
+
+    <!-- 插入配置 -->
+    <insert id="insertDataRequirementConfig" parameterType="com.primihub.biz.entity.data.po.DataRequirementConfig"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO data_requirement_config (
+            config_key, config_value, config_desc, config_type, is_enabled, is_del
+        ) VALUES (
+            #{configKey}, #{configValue}, #{configDesc}, #{configType}, #{isEnabled}, 0
+        )
+    </insert>
+
+    <!-- 更新配置 -->
+    <update id="updateDataRequirementConfig" parameterType="com.primihub.biz.entity.data.po.DataRequirementConfig">
+        UPDATE data_requirement_config
+        <set>
+            <if test="configValue != null">config_value = #{configValue},</if>
+            <if test="configDesc != null">config_desc = #{configDesc},</if>
+            <if test="configType != null">config_type = #{configType},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 删除配置(软删除) -->
+    <update id="deleteDataRequirementConfig">
+        UPDATE data_requirement_config SET is_del = 1 WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询配置 -->
+    <select id="selectDataRequirementConfigById" resultMap="DataRequirementConfigMap">
+        SELECT * FROM data_requirement_config WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <!-- 根据配置键查询配置 -->
+    <select id="selectDataRequirementConfigByKey" resultMap="DataRequirementConfigMap">
+        SELECT * FROM data_requirement_config WHERE config_key = #{configKey} AND is_del = 0
+    </select>
+
+    <!-- 查询配置列表 -->
+    <select id="selectDataRequirementConfigList" parameterType="map" resultMap="DataRequirementConfigMap">
+        SELECT * FROM data_requirement_config
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (config_key LIKE CONCAT('%', #{keyword}, '%')
+                OR config_desc LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="configType != null and configType != ''">
+                AND config_type = #{configType}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+        ORDER BY config_type, id
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询配置总数 -->
+    <select id="selectDataRequirementConfigCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM data_requirement_config
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (config_key LIKE CONCAT('%', #{keyword}, '%')
+                OR config_desc LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="configType != null and configType != ''">
+                AND config_type = #{configType}
+            </if>
+            <if test="isEnabled != null">
+                AND is_enabled = #{isEnabled}
+            </if>
+        </where>
+    </select>
+
+    <!-- 更新配置启用状态 -->
+    <update id="updateDataRequirementConfigStatus">
+        UPDATE data_requirement_config SET is_enabled = #{isEnabled} WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 查询所有启用的配置 -->
+    <select id="selectEnabledConfigs" resultMap="DataRequirementConfigMap">
+        SELECT * FROM data_requirement_config WHERE is_enabled = 1 AND is_del = 0 ORDER BY config_type
+    </select>
+
+    <!-- ========== 数据需求匹配 CRUD ========== -->
+
+    <!-- 插入匹配记录 -->
+    <insert id="insertDataRequirementMatch" parameterType="com.primihub.biz.entity.data.po.DataRequirementMatch"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO data_requirement_match (
+            requirement_id, resource_id, match_score, match_status, match_type,
+            match_details, remark, is_del
+        ) VALUES (
+            #{requirementId}, #{resourceId}, #{matchScore}, #{matchStatus}, #{matchType},
+            #{matchDetails}, #{remark}, 0
+        )
+    </insert>
+
+    <!-- 批量插入匹配记录 -->
+    <insert id="batchInsertDataRequirementMatch">
+        INSERT INTO data_requirement_match (
+            requirement_id, resource_id, match_score, match_status, match_type,
+            match_details, remark, is_del
+        ) VALUES
+        <foreach collection="matchList" item="item" separator=",">
+            (#{item.requirementId}, #{item.resourceId}, #{item.matchScore}, #{item.matchStatus}, #{item.matchType},
+            #{item.matchDetails}, #{item.remark}, 0)
+        </foreach>
+    </insert>
+
+    <!-- 更新匹配记录 -->
+    <update id="updateDataRequirementMatch" parameterType="com.primihub.biz.entity.data.po.DataRequirementMatch">
+        UPDATE data_requirement_match
+        <set>
+            <if test="matchScore != null">match_score = #{matchScore},</if>
+            <if test="matchStatus != null">match_status = #{matchStatus},</if>
+            <if test="matchType != null">match_type = #{matchType},</if>
+            <if test="matchDetails != null">match_details = #{matchDetails},</if>
+            <if test="confirmUserId != null">confirm_user_id = #{confirmUserId},</if>
+            <if test="confirmUserName != null">confirm_user_name = #{confirmUserName},</if>
+            <if test="confirmDate != null">confirm_date = #{confirmDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 删除匹配记录(软删除) -->
+    <update id="deleteDataRequirementMatch">
+        UPDATE data_requirement_match SET is_del = 1 WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID查询匹配记录 -->
+    <select id="selectDataRequirementMatchById" resultMap="DataRequirementMatchMap">
+        SELECT
+            m.*,
+            dr.requirement_name,
+            d.resource_name
+        FROM data_requirement_match m
+        LEFT JOIN data_requirement dr ON m.requirement_id = dr.id AND dr.is_del = 0
+        LEFT JOIN data_resource d ON m.resource_id = d.resource_id AND d.is_del = 0
+        WHERE m.id = #{id} AND m.is_del = 0
+    </select>
+
+    <!-- 查询匹配记录列表 -->
+    <select id="selectDataRequirementMatchList" parameterType="map" resultMap="DataRequirementMatchMap">
+        SELECT
+            m.*,
+            dr.requirement_name,
+            d.resource_name
+        FROM data_requirement_match m
+        LEFT JOIN data_requirement dr ON m.requirement_id = dr.id AND dr.is_del = 0
+        LEFT JOIN data_resource d ON m.resource_id = d.resource_id AND d.is_del = 0
+        <where>
+            m.is_del = 0
+            <if test="requirementId != null">
+                AND m.requirement_id = #{requirementId}
+            </if>
+            <if test="resourceId != null">
+                AND m.resource_id = #{resourceId}
+            </if>
+            <if test="matchStatus != null">
+                AND m.match_status = #{matchStatus}
+            </if>
+            <if test="matchType != null and matchType != ''">
+                AND m.match_type = #{matchType}
+            </if>
+            <if test="minScore != null">
+                AND m.match_score &gt;= #{minScore}
+            </if>
+        </where>
+        ORDER BY m.match_score DESC, m.create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询匹配记录总数 -->
+    <select id="selectDataRequirementMatchCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM data_requirement_match m
+        <where>
+            m.is_del = 0
+            <if test="requirementId != null">
+                AND m.requirement_id = #{requirementId}
+            </if>
+            <if test="resourceId != null">
+                AND m.resource_id = #{resourceId}
+            </if>
+            <if test="matchStatus != null">
+                AND m.match_status = #{matchStatus}
+            </if>
+            <if test="matchType != null and matchType != ''">
+                AND m.match_type = #{matchType}
+            </if>
+            <if test="minScore != null">
+                AND m.match_score &gt;= #{minScore}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据需求ID查询匹配的资源 -->
+    <select id="selectMatchedResourcesByRequirementId" resultMap="DataRequirementMatchMap">
+        SELECT
+            m.*,
+            dr.requirement_name,
+            d.resource_name
+        FROM data_requirement_match m
+        LEFT JOIN data_requirement dr ON m.requirement_id = dr.id AND dr.is_del = 0
+        LEFT JOIN data_resource d ON m.resource_id = d.resource_id AND d.is_del = 0
+        WHERE m.requirement_id = #{requirementId} AND m.is_del = 0
+        ORDER BY m.match_score DESC
+    </select>
+
+    <!-- 根据资源ID查询匹配的需求 -->
+    <select id="selectMatchedRequirementsByResourceId" resultMap="DataRequirementMatchMap">
+        SELECT
+            m.*,
+            dr.requirement_name,
+            d.resource_name
+        FROM data_requirement_match m
+        LEFT JOIN data_requirement dr ON m.requirement_id = dr.id AND dr.is_del = 0
+        LEFT JOIN data_resource d ON m.resource_id = d.resource_id AND d.is_del = 0
+        WHERE m.resource_id = #{resourceId} AND m.is_del = 0
+        ORDER BY m.match_score DESC
+    </select>
+
+    <!-- 更新匹配状态 -->
+    <update id="updateMatchStatus">
+        UPDATE data_requirement_match
+        SET match_status = #{matchStatus},
+            confirm_user_id = #{confirmUserId},
+            confirm_user_name = #{confirmUserName},
+            confirm_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 删除需求的所有匹配记录 -->
+    <update id="deleteMatchesByRequirementId">
+        UPDATE data_requirement_match SET is_del = 1 WHERE requirement_id = #{requirementId}
+    </update>
+
+    <!-- 查询需求是否已有匹配记录 -->
+    <select id="checkMatchExists" resultType="int">
+        SELECT COUNT(*) FROM data_requirement_match
+        WHERE requirement_id = #{requirementId}
+        AND resource_id = #{resourceId}
+        AND is_del = 0
+    </select>
+
+</mapper>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.NodeCooperationPartyPrimarydbRepository">
+
+    <!-- Result Map -->
+    <resultMap id="BaseResultMap" type="com.primihub.biz.entity.sys.po.NodeCooperationParty">
+        <id column="id" property="id"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="organ_gateway" property="organGateway"/>
+        <result column="cooperation_type" property="cooperationType"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="agreement_file_path" property="agreementFilePath"/>
+        <result column="sla_uptime_target" property="slaUptimeTarget"/>
+        <result column="sla_response_time" property="slaResponseTime"/>
+        <result column="health_score" property="healthScore"/>
+        <result column="data_sent_count" property="dataSentCount"/>
+        <result column="data_received_count" property="dataReceivedCount"/>
+        <result column="last_activity_time" property="lastActivityTime"/>
+        <result column="cooperation_status" property="cooperationStatus"/>
+        <result column="initiated_by_us" property="initiatedByUs"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_by_name" property="createdByName"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <!-- Insert -->
+    <insert id="insertNodeCooperationParty" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_cooperation_party (
+            organ_id, organ_name, organ_gateway, cooperation_type, start_date, end_date, agreement_file_path,
+            sla_uptime_target, sla_response_time, health_score, data_sent_count, data_received_count,
+            cooperation_status, initiated_by_us, created_by, created_by_name, is_del, create_date, update_date
+        ) VALUES (
+            #{organId}, #{organName}, #{organGateway}, #{cooperationType}, #{startDate}, #{endDate}, #{agreementFilePath},
+            COALESCE(#{slaUptimeTarget}, 99.9), COALESCE(#{slaResponseTime}, 3000), COALESCE(#{healthScore}, 100),
+            COALESCE(#{dataSentCount}, 0), COALESCE(#{dataReceivedCount}, 0),
+            COALESCE(#{cooperationStatus}, 0), COALESCE(#{initiatedByUs}, 1), #{createdBy}, #{createdByName}, 0, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- Update -->
+    <update id="updateNodeCooperationParty">
+        UPDATE node_cooperation_party
+        <set>
+            <if test="organName != null and organName != ''">organ_name = #{organName},</if>
+            <if test="organGateway != null and organGateway != ''">organ_gateway = #{organGateway},</if>
+            <if test="cooperationType != null">cooperation_type = #{cooperationType},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="agreementFilePath != null">agreement_file_path = #{agreementFilePath},</if>
+            <if test="slaUptimeTarget != null">sla_uptime_target = #{slaUptimeTarget},</if>
+            <if test="slaResponseTime != null">sla_response_time = #{slaResponseTime},</if>
+            <if test="healthScore != null">health_score = #{healthScore},</if>
+            <if test="cooperationStatus != null">cooperation_status = #{cooperationStatus},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Delete (soft) -->
+    <update id="deleteNodeCooperationParty">
+        UPDATE node_cooperation_party SET is_del = 1, update_date = NOW() WHERE id = #{id}
+    </update>
+
+    <!-- Select by ID -->
+    <select id="selectNodeCooperationPartyById" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <!-- Select by Organ ID -->
+    <select id="selectNodeCooperationPartyByOrganId" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party WHERE organ_id = #{organId} AND is_del = 0 LIMIT 1
+    </select>
+
+    <!-- Select List -->
+    <select id="selectNodeCooperationPartyList" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="cooperationType != null and cooperationType != ''">
+            AND cooperation_type = #{cooperationType}
+        </if>
+        <if test="cooperationStatus != null">
+            AND cooperation_status = #{cooperationStatus}
+        </if>
+        <if test="initiatedByUs != null">
+            AND initiated_by_us = #{initiatedByUs}
+        </if>
+        ORDER BY create_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- Count -->
+    <select id="selectNodeCooperationPartyCount" resultType="int">
+        SELECT COUNT(*) FROM node_cooperation_party
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="cooperationType != null and cooperationType != ''">
+            AND cooperation_type = #{cooperationType}
+        </if>
+        <if test="cooperationStatus != null">
+            AND cooperation_status = #{cooperationStatus}
+        </if>
+        <if test="initiatedByUs != null">
+            AND initiated_by_us = #{initiatedByUs}
+        </if>
+    </select>
+
+    <!-- Batch Delete -->
+    <update id="batchDeleteNodeCooperationParty">
+        UPDATE node_cooperation_party SET is_del = 1, update_date = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- Update Cooperation Status -->
+    <update id="updateCooperationStatus">
+        UPDATE node_cooperation_party
+        SET cooperation_status = #{cooperationStatus}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Health Score -->
+    <update id="updateHealthScore">
+        UPDATE node_cooperation_party
+        SET health_score = #{healthScore}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Data Exchange Count -->
+    <update id="updateDataExchangeCount">
+        UPDATE node_cooperation_party
+        SET data_sent_count = #{dataSentCount},
+            data_received_count = #{dataReceivedCount},
+            last_activity_time = NOW(),
+            update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Update Last Activity Time -->
+    <update id="updateLastActivityTime">
+        UPDATE node_cooperation_party
+        SET last_activity_time = NOW(), update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Select Active Cooperations -->
+    <select id="selectActiveCooperationParties" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party
+        WHERE cooperation_status = 1 AND is_del = 0
+        ORDER BY last_activity_time DESC
+    </select>
+
+    <!-- Select Expiring Cooperations -->
+    <select id="selectExpiringCooperationParties" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party
+        WHERE cooperation_status = 1
+        AND end_date IS NOT NULL
+        AND end_date BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL #{days} DAY)
+        AND is_del = 0
+        ORDER BY end_date ASC
+    </select>
+
+    <!-- Select Unhealthy Cooperations -->
+    <select id="selectUnhealthyCooperationParties" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_party
+        WHERE health_score &lt; #{threshold}
+        AND cooperation_status = 1
+        AND is_del = 0
+        ORDER BY health_score ASC
+    </select>
+
+    <!-- Terminate Cooperation -->
+    <update id="terminateCooperation">
+        UPDATE node_cooperation_party
+        SET cooperation_status = 3, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- Renew Cooperation -->
+    <update id="renewCooperation">
+        UPDATE node_cooperation_party
+        SET end_date = #{newEndDate}, cooperation_status = 1, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+</mapper>
