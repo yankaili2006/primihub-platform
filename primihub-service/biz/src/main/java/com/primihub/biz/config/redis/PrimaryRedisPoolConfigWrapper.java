@@ -6,20 +6,13 @@ import redis.clients.jedis.JedisPoolConfig;
 
 public class PrimaryRedisPoolConfigWrapper extends JedisPoolConfig implements InitializingBean {
 
-    @NacosValue("${spring.datasource.redis.primary.minIdle}")
-    private int minIdle;
-    @NacosValue("${spring.datasource.redis.primary.maxIdle}")
-    private int maxIdle;
-    @NacosValue("${spring.datasource.redis.primary.maxTotal}")
-    private int maxTotal;
-    @NacosValue("${spring.datasource.redis.primary.lifo}")
-    private boolean lifo;
-    @NacosValue("${spring.datasource.redis.primary.maxWaitMillis}")
-    private long maxWaitMillis;
-    @NacosValue("${spring.datasource.redis.primary.minEvictableIdleTimeMillis}")
-    private long minEvictableIdleTimeMillis;
-    @NacosValue("${spring.datasource.redis.primary.softMinEvictableIdleTimeMillis}")
-    private long softMinEvictableIdleTimeMillis;
+    private int minIdle = 5;
+    private int maxIdle = 10;
+    private int maxTotal = 20;
+    private boolean lifo = true;
+    private long maxWaitMillis = 3000;
+    private long minEvictableIdleTimeMillis = 1800000;
+    private long softMinEvictableIdleTimeMillis = 1800000;
 
     @Override
     public int getMinIdle() {

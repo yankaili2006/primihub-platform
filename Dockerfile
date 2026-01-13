@@ -10,15 +10,14 @@ RUN ARCH=`arch | sed s/arm64/aarch_64/ | sed s/aarch64/aarch_64/ | sed s/amd64/x
 RUN cd primihub-service \
   && mvn clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true
 
-FROM openjdk:8-jre
+FROM amazoncorretto:8
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update \
-  && apt install tzdata \
+RUN yum install -y tzdata \
   && ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 COPY --from=build /opt/primihub-service/application/target/*-SNAPSHOT.jar /applications/application.jar
 COPY --from=build /opt/primihub-service/gateway/target/*-SNAPSHOT.jar /applications/gateway.jar
 
-ENTRYPOINT ["/bin/sh","-c","java -jar -Dfile.encoding=UTF-8 /applications/application.jar --spring.profiles.active=test --server.port=8080"]
+ENTRYPOINT ["/bin/sh","-c","java -jar -Dfile.encoding=UTF-8 -Dspring.profiles.active=dev /applications/application.jar --server.port=8080"]

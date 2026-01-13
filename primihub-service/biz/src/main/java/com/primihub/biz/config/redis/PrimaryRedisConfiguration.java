@@ -22,14 +22,10 @@ import redis.clients.jedis.JedisPoolConfig;
 @EnableRedisRepositories(basePackages = {"com.primihub.biz.repository.primaryredis.*"})
 public class PrimaryRedisConfiguration {
 
-    @NacosValue(value="${spring.datasource.redis.primary.hostName}",autoRefreshed = true)
-    private String hostName;
-    @NacosValue(value="${spring.datasource.redis.primary.port}",autoRefreshed = true)
-    private int port;
-    @NacosValue(value="${spring.datasource.redis.primary.password}",autoRefreshed = true)
-    private String password;
-    @NacosValue(value="${spring.datasource.redis.primary.database}",autoRefreshed = true)
-    private int database;
+    private String hostName = "redis-cache";
+    private int port = 6379;
+    private String password = "";
+    private int database = 0;
 
     @Bean(name = "primaryRedisPoolConfig")
     @Primary

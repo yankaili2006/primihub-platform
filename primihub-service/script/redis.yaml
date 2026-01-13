@@ -2,7 +2,7 @@ spring:
   datasource:
     redis:
       primary:
-        hostName: localhost
+        hostName: redis-cache
         port: 6379
         password:
         database: 0

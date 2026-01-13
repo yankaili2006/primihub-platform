@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  nacos:
+    image: registry.cn-beijing.aliyuncs.com/primihub/nacos-server:v2.0.4
+    container_name: nacos-server
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+    ports:
+      - "8848:8848"
+    networks:
+      - primihub-network
+
+  mysql:
+    image: registry.cn-beijing.aliyuncs.com/primihub/mysql:5.7
+    container_name: mysql-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=primihub
+    ports:
+      - "3306:3306"
+    networks:
+      - primihub-network
+
+  redis:
+    image: registry.cn-beijing.aliyuncs.com/primihub/redis:5
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - primihub-network
+
+  rabbitmq:
+    image: registry.cn-beijing.aliyuncs.com/primihub/rabbitmq:3.6.15-management
+    container_name: rabbitmq-mq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - primihub-network
+
+  platform:
+    image: primihub/primihub-platform
+    container_name: primihub-platform
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=dev
+      - SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_DRUID_PRIMARY_USERNAME=root
+      - SPRING_DATASOURCE_DRUID_PRIMARY_PASSWORD=root
+      - SPRING_DATASOURCE_DRUID_PRIMARY_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_DATASOURCE_DRUID_PRIMARY_INITIAL_SIZE=3
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MIN_IDLE=3
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_ACTIVE=20
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_WAIT=60000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TIME_BETWEEN_EVICTION_RUNS_MILLIS=60000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MIN_EVICTABLE_IDLE_TIME_MILLIS=30000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_VALIDATION_QUERY=select 'x'
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_WHILE_IDLE=true
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_ON_BORROW=false
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_ON_RETURN=false
+      - SPRING_DATASOURCE_DRUID_PRIMARY_POOL_PREPARED_STATEMENTS=true
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_POOL_PREPARED_STATEMENT_PER_CONNECTION_SIZE=20
+      - SPRING_DATASOURCE_DRUID_PRIMARY_FILTERS=stat,wall,slf4j
+    command: ["java", "-jar", "-Dfile.encoding=UTF-8", "-Dspring.profiles.active=dev", "/applications/application.jar", "--server.port=8080"]
+    ports:
+      - "8091:8080"
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - primihub-network
+
+  gateway:
+    image: primihub/primihub-platform
+    container_name: primihub-gateway
+    environment:
+      - NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=dev
+      - SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_DRUID_PRIMARY_USERNAME=root
+      - SPRING_DATASOURCE_DRUID_PRIMARY_PASSWORD=root
+      - SPRING_DATASOURCE_DRUID_PRIMARY_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_DATASOURCE_DRUID_PRIMARY_INITIAL_SIZE=3
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MIN_IDLE=3
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_ACTIVE=20
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_WAIT=60000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TIME_BETWEEN_EVICTION_RUNS_MILLIS=60000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MIN_EVICTABLE_IDLE_TIME_MILLIS=30000
+      - SPRING_DATASOURCE_DRUID_PRIMARY_VALIDATION_QUERY=select 'x'
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_WHILE_IDLE=true
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_ON_BORROW=false
+      - SPRING_DATASOURCE_DRUID_PRIMARY_TEST_ON_RETURN=false
+      - SPRING_DATASOURCE_DRUID_PRIMARY_POOL_PREPARED_STATEMENTS=true
+      - SPRING_DATASOURCE_DRUID_PRIMARY_MAX_POOL_PREPARED_STATEMENT_PER_CONNECTION_SIZE=20
+      - SPRING_DATASOURCE_DRUID_PRIMARY_FILTERS=stat,wall,slf4j
+    command: ["java", "-jar", "-Dfile.encoding=UTF-8", "-Dspring.profiles.active=dev", "/applications/gateway.jar", "--server.port=8082"]
+    ports:
+      - "8092:8082"
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+      - platform
+    networks:
+      - primihub-network
+
+  web:
+    image: primihub/primihub-web
+    container_name: primihub-web
+    ports:
+      - "8093:80"
+    depends_on:
+      - gateway
+    networks:
+      - primihub-network
+
+networks:
+  primihub-network:
+    driver: bridge

@@ -12,11 +12,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfiguration;
 
-@NacosPropertySources({
-        @NacosPropertySource(dataId = "base.json" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "components.json" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "database.yaml" ,autoRefreshed = true),
-        @NacosPropertySource(dataId = "redis.yaml" ,autoRefreshed = true)})
+//@NacosPropertySources({
+//        @NacosPropertySource(dataId = "base.json" ,autoRefreshed = true),
+//        @NacosPropertySource(dataId = "components.json" ,autoRefreshed = true),
+//        @NacosPropertySource(dataId = "database.yaml" ,autoRefreshed = true),
+//        @NacosPropertySource(dataId = "redis.yaml" ,autoRefreshed = true)})
 @SpringBootApplication(scanBasePackages="com.primihub",exclude = {HazelcastAutoConfiguration.class})
 @EnableAsync
 @ServletComponentScan(basePackages = {"com.primihub.biz.filter"})

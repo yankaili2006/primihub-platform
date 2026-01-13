@@ -6,18 +6,12 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Configuration;
 
 public class SecondaryDruidDataSourceWrapper extends DruidDataSource implements InitializingBean {
-    @NacosValue(value="${spring.datasource.druid.secondary.url}",autoRefreshed = true)
-    private String url;
-    @NacosValue(value="${spring.datasource.druid.secondary.username}",autoRefreshed = true)
-    private String username;
-    @NacosValue(value="${spring.datasource.druid.secondary.password}",autoRefreshed = true)
-    private String password;
-    @NacosValue(value="${spring.datasource.druid.secondary.driver-class-name}",autoRefreshed = true)
-    private String driverClassName;
-    @NacosValue(value="${spring.datasource.druid.secondary.connection-properties}",autoRefreshed = true)
-    private String connectionProperties;
-    @NacosValue(value="${spring.datasource.druid.secondary.filter.config.enabled}",autoRefreshed = true)
-    private Boolean filterConfigEnabled = false;
+    private String url = "jdbc:mysql://mysql-db:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false";
+    private String username = "root";
+    private String password = "root";
+    private String driverClassName = "com.mysql.cj.jdbc.Driver";
+    private String connectionProperties = "config.decrypt=false";
+    private Boolean filterConfigEnabled = true;
 
 
     public void setMaxWait(int maxWait) {

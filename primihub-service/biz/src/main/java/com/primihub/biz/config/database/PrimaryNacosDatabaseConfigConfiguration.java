@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
+import java.sql.SQLException;
 
 @Slf4j
 @Configuration
@@ -23,9 +24,28 @@ public class PrimaryNacosDatabaseConfigConfiguration {
     private String locationPattern;
 
     @Bean(name = "primaryDB",initMethod = "init")
-    public DruidDataSource dataSource() {
+    public DruidDataSource dataSource() throws SQLException {
         log.info("Init Primary DruidDataSource");
-        return new PrimaryDruidDataSourceWrapper();
+        DruidDataSource dataSource = new DruidDataSource();
+        dataSource.setUrl("jdbc:mysql://mysql-db:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false");
+        dataSource.setUsername("root");
+        dataSource.setPassword("root");
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setInitialSize(3);
+        dataSource.setMinIdle(3);
+        dataSource.setMaxActive(20);
+        dataSource.setMaxWait(60000);
+        dataSource.setTimeBetweenEvictionRunsMillis(60000);
+        dataSource.setMinEvictableIdleTimeMillis(30000);
+        dataSource.setValidationQuery("select 'x'");
+        dataSource.setTestWhileIdle(true);
+        dataSource.setTestOnBorrow(false);
+        dataSource.setTestOnReturn(false);
+        dataSource.setPoolPreparedStatements(true);
+        dataSource.setMaxPoolPreparedStatementPerConnectionSize(20);
+        dataSource.setConnectionProperties("config.decrypt=false");
+        dataSource.addFilters("config");
+        return dataSource;
     }
 
     @Bean("primarySessionFactory")

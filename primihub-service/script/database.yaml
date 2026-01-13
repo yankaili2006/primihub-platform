@@ -6,8 +6,8 @@ spring:
       primary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://127.0.0.1:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
-        password: 1qazmko0
+        url: jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+        password: root
         connection-properties: config.decrypt=true;config.decrypt.key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJI/xqbyvpVttxfAKulKeSTIb7tZAGaFcPyTnE2r7AHTQ8kOnqKXDda4u59umt9XBFxi7db28KxeVooB138zuRUCAwEAAQ==
         filter:
           config:
@@ -43,8 +43,8 @@ spring:
       secondary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://127.0.0.1:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
-        password: 1qazmko0
+        url: jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+        password: root
         connection-properties: config.decrypt=true;config.decrypt.key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJI/xqbyvpVttxfAKulKeSTIb7tZAGaFcPyTnE2r7AHTQ8kOnqKXDda4u59umt9XBFxi7db28KxeVooB138zuRUCAwEAAQ==
         filter:
           config:
@@ -80,8 +80,8 @@ spring:
       resourcePrimary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://127.0.0.1:3306/resource?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
-        password: 1qazmko0
+        url: jdbc:mysql://mysql-db:3306/resource?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+        password: root
         connection-properties: config.decrypt=true;config.decrypt.key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJI/xqbyvpVttxfAKulKeSTIb7tZAGaFcPyTnE2r7AHTQ8kOnqKXDda4u59umt9XBFxi7db28KxeVooB138zuRUCAwEAAQ==
         filter:
           config:
@@ -117,8 +117,8 @@ spring:
       resourceSecondary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://127.0.0.1:3306/resource?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
-        password: 1qazmko0
+        url: jdbc:mysql://mysql-db:3306/resource?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+        password: root
         connection-properties: config.decrypt=true;config.decrypt.key=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAJI/xqbyvpVttxfAKulKeSTIb7tZAGaFcPyTnE2r7AHTQ8kOnqKXDda4u59umt9XBFxi7db28KxeVooB138zuRUCAwEAAQ==
         filter:
           config:
