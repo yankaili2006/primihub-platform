@@ -1,0 +1,21 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 禁用代理并安装 OpenJDK 8
+RUN unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY && \
+    apt-get update -o Acquire::http::proxy=false && \
+    apt-get install -y -o Acquire::http::proxy=false openjdk-8-jre-headless tzdata && \
+    ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 复制JAR文件
+ADD application/target/*-SNAPSHOT.jar /applications/application.jar
+ADD gateway/target/*-SNAPSHOT.jar /applications/gateway.jar
+
+# 设置工作目录
+WORKDIR /applications
+
+# 入口点
+ENTRYPOINT ["/bin/sh","-c","java -jar -Dfile.encoding=UTF-8 /applications/application.jar --spring.profiles.active=test --server.port=8080"]

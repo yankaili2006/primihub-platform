@@ -80,6 +80,17 @@
                 <artifactId>lombok</artifactId>
                 <version>1.18.30</version>
             </dependency>
+            <!-- Force protobuf version to fix NoSuchMethodError: isStringEmpty -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.21.12</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java-util</artifactId>
+                <version>3.21.12</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
