@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.SinglePartyRepository">
+
+    <select id="selectTaskPage" resultType="java.util.HashMap">
+        SELECT
+            sp.id,
+            sp.algorithm_type AS algorithmType,
+            sp.task_name AS taskName,
+            sp.project_id AS projectId,
+            spt.task_id AS taskId,
+            spt.task_state AS taskState,
+            spt.result_rows AS resultRows,
+            spt.create_date AS createDate
+        FROM
+            single_party sp
+        INNER JOIN single_party_task spt ON sp.id = spt.sp_id
+        WHERE spt.is_del = 0
+        <if test="taskName != null and taskName != ''">
+            AND sp.task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="algorithmType != null">
+            AND sp.algorithm_type = #{algorithmType}
+        </if>
+        <if test="taskState != null">
+            AND spt.task_state = #{taskState}
+        </if>
+        <if test="projectId != null">
+            AND sp.project_id = #{projectId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND spt.create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND spt.create_date &lt;= #{endDate}
+        </if>
+        ORDER BY spt.create_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectTaskPageCount" resultType="java.lang.Long">
+        SELECT COUNT(sp.id)
+        FROM
+            single_party sp
+        INNER JOIN single_party_task spt ON sp.id = spt.sp_id
+        WHERE spt.is_del = 0
+        <if test="taskName != null and taskName != ''">
+            AND sp.task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="algorithmType != null">
+            AND sp.algorithm_type = #{algorithmType}
+        </if>
+        <if test="taskState != null">
+            AND spt.task_state = #{taskState}
+        </if>
+        <if test="projectId != null">
+            AND sp.project_id = #{projectId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND spt.create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND spt.create_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.SinglePartyTask">
+        SELECT * FROM single_party_task
+        WHERE task_id = #{taskId} AND is_del = 0
+    </select>
+
+    <select id="selectById" resultType="com.primihub.biz.entity.data.po.SingleParty">
+        SELECT * FROM single_party WHERE id = #{id}
+    </select>
+
+</mapper>
