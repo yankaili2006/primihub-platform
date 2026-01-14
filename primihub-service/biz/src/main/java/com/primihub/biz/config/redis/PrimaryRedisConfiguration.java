@@ -22,9 +22,9 @@ import redis.clients.jedis.JedisPoolConfig;
 @EnableRedisRepositories(basePackages = {"com.primihub.biz.repository.primaryredis.*"})
 public class PrimaryRedisConfiguration {
 
-    private String hostName = "redis-cache";
+    private String hostName = "redis";
     private int port = 6379;
-    private String password = "";
+    private String password = "primihub";
     private int database = 0;
 
     @Bean(name = "primaryRedisPoolConfig")

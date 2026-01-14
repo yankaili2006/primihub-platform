@@ -6,7 +6,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.annotation.Configuration;
 
 public class SecondaryDruidDataSourceWrapper extends DruidDataSource implements InitializingBean {
-    private String url = "jdbc:mysql://mysql-db:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false";
+    private String url = "jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false";
     private String username = "root";
     private String password = "root";
     private String driverClassName = "com.mysql.cj.jdbc.Driver";
