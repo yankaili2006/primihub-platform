@@ -56,4 +56,31 @@
   "detailImg": "account-app.png",
   "layout": "",
   "readNumber": 137
+},{
+  "applicationId": 7,
+  "appName": "Difference",
+  "appTitle": "联邦求差集合运算应用",
+  "organName": "机构A",
+  "createTime": "2026-01-14 10:00",
+  "description": "联邦求差应用运用隐私计算技术实现集合差集运算。在保护数据隐私的前提下，允许持有各自数据集的两方或多方共同计算差集，即计算A-B或B-A。协议交互结束后，根据预先约定，一方或多方得到正确的差集结果，且不会获取差集以外的任何信息。适用于数据去重、异常检测、补集分析等多种场景，在金融反欺诈、数据核查等领域有广泛应用。",
+  "detailImg": "psi-app.png",
+  "readNumber": 0
+},{
+  "applicationId": 8,
+  "appName": "Union",
+  "appTitle": "联邦求并集合运算应用",
+  "organName": "机构A",
+  "createTime": "2026-01-14 10:00",
+  "description": "联邦求并应用运用隐私计算技术实现集合并集运算。在保护数据隐私的前提下，允许持有各自数据集的两方或多方共同计算并集，即合并所有唯一元素。协议交互结束后，根据预先约定，一方或多方得到正确的并集结果，且不会获取并集以外的任何信息。适用于数据整合、用户聚合、多源数据融合等场景，在营销分析、客户画像、协同分析等领域有重要价值。",
+  "detailImg": "psi-app.png",
+  "readNumber": 0
+},{
+  "applicationId": 9,
+  "appName": "FederatedLearning",
+  "appTitle": "纵向联邦学习隐私保护应用",
+  "organName": "机构A",
+  "createTime": "2026-01-14 10:00",
+  "description": "纵向联邦学习应用通过隐私计算技术，在保护原始数据不出域的前提下，实现多方联合建模和预测。支持线性回归、逻辑回归、XGBoost等多种机器学习算法。在纵向联邦学习中，各参与方拥有相同样本ID但不同特征维度的数据，通过加密协议进行模型训练，最终获得联合模型，同时保证各方原始数据和中间结果的隐私安全。<br/>应用场景包括：金融风控联合建模、医疗数据联合分析、营销效果预测等。支持差分隐私保护、模型加密存储、训练过程实时监控等高级功能。",
+  "detailImg": "reasoning-app.png",
+  "readNumber": 0
 }]

@@ -43,6 +43,7 @@
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="search">查询</el-button>
           <el-button icon="el-icon-refresh-right" @click="reset" />
+          <el-button type="success" icon="el-icon-download" @click="handleExportLog">导出日志</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -137,7 +138,7 @@
 
 <script>
 import { getAvailableOrganList } from '@/api/center'
-import { getPirTaskList } from '@/api/PIR'
+import { getPirTaskList, exportPirLog } from '@/api/PIR'
 import { deleteTask, cancelTask } from '@/api/task'
 import Pagination from '@/components/Pagination'
 import StatusIcon from '@/components/StatusIcon'
@@ -323,6 +324,26 @@ export default {
       const nonce = Math.floor(Math.random() * 1000 + 1)
       const token = getToken()
       window.open(`${process.env.VUE_APP_BASE_API}/data/task/downloadTaskFile?taskId=${taskId}&timestamp=${timestamp}&nonce=${nonce}&token=${token}`, '_self')
+    },
+    handleExportLog() {
+      const params = {
+        taskName: this.query.taskName || '',
+        status: this.query.taskState !== '' ? this.query.taskState : null,
+        startTime: this.query.createDate && this.query.createDate.length > 0 ? this.query.createDate[0] : '',
+        endTime: this.query.createDate && this.query.createDate.length > 0 ? this.query.createDate[1] : ''
+      }
+      exportPirLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `PIR任务日志_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      }).catch(() => {
+        this.$message.error('导出失败')
+      })
     }
 
   }

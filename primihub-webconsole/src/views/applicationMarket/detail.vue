@@ -66,10 +66,19 @@ export default {
   },
   methods: {
     toApplication() {
-      this.$router.push({
-        name: 'Application',
-        params: { name: this.appName }
-      })
+      // 联邦求差、求并和联邦学习直接跳转到列表页面
+      if (this.appName === 'Difference') {
+        this.$router.push({ name: 'DifferenceList' })
+      } else if (this.appName === 'Union') {
+        this.$router.push({ name: 'UnionList' })
+      } else if (this.appName === 'FederatedLearning') {
+        this.$router.push({ name: 'FederatedLearningList' })
+      } else {
+        this.$router.push({
+          name: 'Application',
+          params: { name: this.appName }
+        })
+      }
     },
     goBack() {
       this.$router.back()

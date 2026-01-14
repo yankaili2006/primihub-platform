@@ -9,6 +9,9 @@ public enum TaskTypeEnum {
     PIR(3,"pir"),
     REASONING(4,"推理"),
     JOINT_STATISTICAL(5,"联合统计"),
+    DIFFERENCE(6,"求差"),
+    UNION(7,"求并"),
+    FEDERATED_LEARNING(8,"联邦学习"),
     ;
     private Integer taskType;
     private String taskName;

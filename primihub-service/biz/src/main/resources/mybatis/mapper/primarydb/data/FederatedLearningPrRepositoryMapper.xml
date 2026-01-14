@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository">
+
+    <insert id="saveFederatedLearning" parameterType="com.primihub.biz.entity.data.po.FederatedLearning">
+        INSERT INTO federated_learning (
+            task_type, algorithm_type, federated_type, task_name, project_id,
+            own_organ_id, own_resource_id, own_features, label_feature, is_label_owner,
+            participant_organ_ids, participant_resource_ids, training_params, model_id,
+            model_path, result_path, remarks, user_id, is_del, create_date, update_date
+        ) VALUES (
+            #{taskType}, #{algorithmType}, #{federatedType}, #{taskName}, #{projectId},
+            #{ownOrganId}, #{ownResourceId}, #{ownFeatures}, #{labelFeature}, #{isLabelOwner},
+            #{participantOrganIds}, #{participantResourceIds}, #{trainingParams}, #{modelId},
+            #{modelPath}, #{resultPath}, #{remarks}, #{userId}, 0, now(), now()
+        )
+        <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <insert id="saveFederatedLearningTask" parameterType="com.primihub.biz.entity.data.po.FederatedLearningTask">
+        INSERT INTO federated_learning_task (
+            fl_id, task_id, task_state, current_round, total_rounds, accuracy, loss,
+            metrics, result_rows, result_file_path, execution_log, is_del, create_date, update_date
+        ) VALUES (
+            #{flId}, #{taskId}, #{taskState}, #{currentRound}, #{totalRounds}, #{accuracy}, #{loss},
+            #{metrics}, #{resultRows}, #{resultFilePath}, #{executionLog}, 0, now(), now()
+        )
+    </insert>
+
+    <update id="updateFederatedLearning" parameterType="com.primihub.biz.entity.data.po.FederatedLearning">
+        UPDATE federated_learning
+        SET model_path = #{modelPath},
+            result_path = #{resultPath},
+            update_date = now()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateFederatedLearningTask" parameterType="com.primihub.biz.entity.data.po.FederatedLearningTask">
+        UPDATE federated_learning_task
+        SET task_state = #{taskState},
+            current_round = #{currentRound},
+            total_rounds = #{totalRounds},
+            accuracy = #{accuracy},
+            loss = #{loss},
+            metrics = #{metrics},
+            result_rows = #{resultRows},
+            result_file_path = #{resultFilePath},
+            execution_log = #{executionLog},
+            update_date = now()
+        WHERE task_id = #{taskId}
+    </update>
+
+    <update id="deleteTask">
+        UPDATE federated_learning_task
+        SET is_del = 1, update_date = now()
+        WHERE task_id = #{taskId}
+    </update>
+
+    <update id="cancelTask">
+        UPDATE federated_learning_task
+        SET task_state = 4, update_date = now()
+        WHERE task_id = #{taskId}
+    </update>
+
+</mapper>

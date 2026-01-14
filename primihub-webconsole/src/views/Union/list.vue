@@ -45,10 +45,10 @@
       </el-form>
     </div>
     <div class="organ-container">
-      <el-button class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">隐私求交</el-button>
+      <el-button class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求并</el-button>
       <div class="organ">
         <el-table
-          :data="allDataPsiTask"
+          :data="allDataUnionTask"
           class="table-list"
         >
           <el-table-column
@@ -59,7 +59,9 @@
           />
           <el-table-column label="任务名称" min-width="120px">
             <template slot-scope="{row}">
-              <el-tooltip :content="row.taskName" placement="top"><el-link type="primary" @click="toTaskDetailPage(row.taskId)">{{ row.taskName }}</el-link></el-tooltip>
+              <el-tooltip :content="row.taskName" placement="top">
+                <el-link type="primary" @click="toTaskDetailPage(row.taskId)">{{ row.taskName }}</el-link>
+              </el-tooltip>
             </template>
           </el-table-column>
           <el-table-column
@@ -71,15 +73,14 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="psiTag"
+            prop="tag"
             label="实现方法"
             align="center"
           >
             <template slot-scope="{row}">
-              {{ row.psiTag | psiTagFilter }}
+              {{ row.tag | tagFilter }}
             </template>
           </el-table-column>
-          <el-table-column label="任务类型" prop="ascription" />
           <el-table-column label="发起时间" prop="createDate" min-width="120px">
             <template slot-scope="{row}">
               <span>{{ row.createDate.split(' ')[0] }}</span><br>
@@ -103,7 +104,7 @@
               <p class="tool-buttons">
                 <el-link type="primary" @click="toTaskDetailPage(row.taskId)">查看</el-link>
                 <el-link v-if="row.taskState === 2" type="warning" @click="cancelTask(row)">取消</el-link>
-                <el-link type="danger" :disabled="row.taskState === 2" @click="delPsiTask(row)">删除</el-link>
+                <el-link type="danger" :disabled="row.taskState === 2" @click="delUnionTask(row)">删除</el-link>
               </p>
             </template>
           </el-table-column>
@@ -111,29 +112,21 @@
         <pagination v-show="totalPage>1" :limit.sync="pageSize" :page-count="totalPage" :page.sync="pageNo" :total="total" @pagination="handlePagination" />
       </div>
     </div>
-    <el-dialog
-      :visible.sync="dialogVisible"
-      width="70%"
-    >
-      <PSI-task-detail :data="taskData" />
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import { getAvailableOrganList } from '@/api/center'
-import { getPsiTaskDetails, getPsiTaskList, delPsiTask, cancelTask, exportPsiLog } from '@/api/PSI'
-import PSITaskDetail from '@/components/PSITaskDetail'
+import { getUnionTaskList, delUnionTask, cancelUnionTask, exportUnionLog } from '@/api/union'
 import Pagination from '@/components/Pagination'
 
 export default {
-  name: 'PSIDirectory',
+  name: 'UnionDirectory',
   components: {
-    PSITaskDetail,
     Pagination
   },
   filters: {
-    psiTagFilter(state) {
+    tagFilter(state) {
       const stateMap = {
         0: 'ECDH',
         1: 'KKRT',
@@ -146,25 +139,18 @@ export default {
     return {
       query: {
         organId: '',
-        retrievalId: '',
-        resourceName: '',
+        taskName: '',
         taskState: '',
-        taskId: '',
         createDate: []
       },
-      allDataPsiTask: [],
+      allDataUnionTask: [],
       organList: [],
       pageSize: 10,
       totalPage: 0,
       total: 0,
       pageNo: 1,
-      dialogVisible: false,
-      taskData: [],
-      taskId: 0,
-      resultName: '',
-      resultNameB: '',
       timer: null,
-      statusOptions: [ // 任务状态(0未开始 1成功 2运行中 3失败 4取消)
+      statusOptions: [
         {
           label: '运行中',
           value: 2
@@ -184,10 +170,10 @@ export default {
     }
   },
   async created() {
-    this.getPsiTaskList()
+    this.getUnionTaskList()
     await this.getAvailableOrganList()
     this.timer = window.setInterval(() => {
-      setTimeout(this.getPsiTaskList(), 0)
+      setTimeout(this.getUnionTaskList(), 0)
     }, 3000)
   },
   destroyed() {
@@ -197,30 +183,27 @@ export default {
     handleDateChange(val) {
       if (!val) {
         this.query.createDate = []
-        this.getPsiTaskList()
+        this.getUnionTaskList()
       }
     },
     handleClear(name) {
       this.query[name] = ''
-      this.getPsiTaskList()
+      this.getUnionTaskList()
     },
     reset() {
       for (const key in this.query) {
         this.query[key] = ''
       }
       this.pageNo = 1
-      this.getPsiTaskList()
+      this.getUnionTaskList()
     },
     toTaskPage() {
-      this.$router.push({
-        name: 'PSITask'
-      })
+      this.$message.info('联邦求并任务创建页面开发中...')
+      // this.$router.push({ name: 'UnionTask' })
     },
     toTaskDetailPage(id) {
-      this.$router.push({
-        name: 'PSIDetail',
-        params: { id }
-      })
+      this.$message.info('联邦求并任务详情页面开发中...')
+      // this.$router.push({ name: 'UnionDetail', params: { id } })
     },
     async getAvailableOrganList() {
       const { result } = await getAvailableOrganList()
@@ -229,18 +212,18 @@ export default {
     statusStyle(state) {
       return state === 0 ? 'state-default' : state === 1 ? 'state-end' : state === 2 ? 'state-running' : state === 4 ? 'state-default' : 'state-error'
     },
-    delPsiTask(row) {
+    delUnionTask(row) {
       if (row.taskState === 2) return
       this.$confirm('此操作将永久删除该任务, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        delPsiTask({ taskId: row.taskId }).then(res => {
+        delUnionTask({ taskId: row.taskId }).then(res => {
           if (res.code === 0) {
-            const posIndex = this.allDataPsiTask.findIndex(item => item.taskId === row.taskId)
+            const posIndex = this.allDataUnionTask.findIndex(item => item.taskId === row.taskId)
             if (posIndex !== -1) {
-              this.allDataPsiTask.splice(posIndex, 1)
+              this.allDataUnionTask.splice(posIndex, 1)
             }
             this.$message({
               message: '删除成功',
@@ -248,39 +231,26 @@ export default {
               duration: 1000
             })
             clearInterval(this.timer)
-            this.$emit('delete', this.allDataPsiTask)
           }
         })
       }).catch(() => {})
     },
     async cancelTask(row) {
-      const res = await cancelTask(row.taskIdName)
+      const res = await cancelUnionTask({ taskId: row.taskId })
       if (res.code === 0) {
-        const posIndex = this.allDataPsiTask.findIndex(item => item.taskId === row.taskId)
-        this.allDataPsiTask[posIndex].taskState === 4
+        const posIndex = this.allDataUnionTask.findIndex(item => item.taskId === row.taskId)
+        this.allDataUnionTask[posIndex].taskState = 4
         this.$notify({
           message: '取消成功',
           type: 'success',
           duration: 1000
         })
-        this.$emit('cancel', { taskId: row.taskId })
       }
     },
-    handleDelete(data) {
-      // last page && all deleted, to the first page
-      if (this.taskData.length === 0 && (this.pageNo === this.totalPage)) {
-        this.pageNo = 1
-      }
-      this.getPsiTaskList()
-    },
-    handleCancel() {
-      this.getPsiTaskList()
-    },
-    getPsiTaskList() {
+    getUnionTaskList() {
       let params = {
         pageNo: this.pageNo,
-        pageSize: this.pageSize,
-        resultName: this.resultName
+        pageSize: this.pageSize
       }
       if (this.query.createDate && this.query.createDate.length > 0) {
         const startDate = this.query.createDate.length > 0 ? this.query.createDate[0] : ''
@@ -288,7 +258,8 @@ export default {
         params = {
           ...params,
           startDate: startDate,
-          endDate: endDate }
+          endDate: endDate
+        }
       }
       if (this.query.organId !== '') {
         params = {
@@ -308,14 +279,12 @@ export default {
           taskName: this.query.taskName
         }
       }
-      getPsiTaskList(params).then(res => {
-        const { data, totalPage, total } = res.result
+      getUnionTaskList(params).then(res => {
+        const { data, totalPage, total } = res.result || { data: [], totalPage: 0, total: 0 }
         this.totalPage = totalPage
         this.total = total
-        this.allDataPsiTask = data
-        // filter the running task
-        const result = this.allDataPsiTask.filter(item => item.taskState === 2)
-        // No tasks are running
+        this.allDataUnionTask = data
+        const result = this.allDataUnionTask.filter(item => item.taskState === 2)
         if (result.length === 0) {
           clearInterval(this.timer)
         }
@@ -324,20 +293,13 @@ export default {
         clearInterval(this.timer)
       })
     },
-    openDialog(id) {
-      this.taskId = id
-      getPsiTaskDetails({ taskId: this.taskId }).then(res => {
-        this.taskData = res.result
-        this.dialogVisible = true
-      })
-    },
     handlePagination(data) {
       this.pageNo = data.page
-      this.getPsiTaskList()
+      this.getUnionTaskList()
     },
     async search() {
       this.pageNo = 1
-      await this.getPsiTaskList()
+      await this.getUnionTaskList()
     },
     handleExportLog() {
       const params = {
@@ -346,12 +308,12 @@ export default {
         startTime: this.query.createDate && this.query.createDate.length > 0 ? this.query.createDate[0] : '',
         endTime: this.query.createDate && this.query.createDate.length > 0 ? this.query.createDate[1] : ''
       }
-      exportPsiLog(params).then(response => {
+      exportUnionLog(params).then(response => {
         const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `PSI任务日志_${new Date().getTime()}.xlsx`
+        link.download = `联邦求并任务日志_${new Date().getTime()}.xlsx`
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('导出成功')
@@ -360,9 +322,9 @@ export default {
       })
     }
   }
-
 }
 </script>
+
 <style lang="scss" scoped>
 ::v-deep .el-input--suffix .el-input__inner{
   padding-right: 0;
@@ -382,27 +344,15 @@ export default {
   cursor: pointer;
   margin-top: 24px;
 }
-.app-container{
-  min-width: 1000px
-}
 .organ-container{
   border-radius: 12px;
   padding: 25px 40px;
   background-color: #fff;
   margin-top: 20px;
-  .resource-name{
-    color: #1989fa;
-  }
 }
 .pagination-container{
   padding-left:0;
   padding-right: 0;
-}
-.header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
 }
 .state-default,.state-running,.state-error,.state-end{
   width: 6px;
@@ -414,11 +364,9 @@ export default {
 }
 .state-default{
   background-color: #909399;
-
 }
 .state-end{
   background-color: #67C23A;
-
 }
 .state-running{
   background-color: #1677FF;

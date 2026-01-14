@@ -1,0 +1,382 @@
+package com.primihub.biz.service.data;
+
+import com.alibaba.fastjson.JSON;
+import com.primihub.biz.entity.base.BaseResultEntity;
+import com.primihub.biz.entity.base.BaseResultEnum;
+import com.primihub.biz.entity.data.po.FederatedLearning;
+import com.primihub.biz.entity.data.po.FederatedLearningTask;
+import com.primihub.biz.entity.data.req.FederatedLearningReq;
+import com.primihub.biz.entity.sys.po.ComputeLog;
+import com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository;
+import com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository;
+import com.primihub.biz.service.sys.LogManagementService;
+import com.primihub.biz.util.FileUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.util.*;
+
+/**
+ * 联邦学习Service
+ */
+@Slf4j
+@Service
+public class FederatedLearningService {
+
+    @Autowired
+    private LogManagementService logManagementService;
+
+    @Autowired
+    private FederatedLearningRepository federatedLearningRepository;
+
+    @Autowired
+    private FederatedLearningPrRepository federatedLearningPrRepository;
+
+    /**
+     * 创建并运行联邦学习任务
+     */
+    public BaseResultEntity createTask(FederatedLearningReq req, Long userId) {
+        try {
+            String taskId = UUID.randomUUID().toString();
+
+            // 保存联邦学习记录
+            FederatedLearning fl = new FederatedLearning();
+            BeanUtils.copyProperties(req, fl);
+            fl.setUserId(userId);
+            fl.setCreateDate(new Date());
+            fl.setUpdateDate(new Date());
+            fl.setIsDel(0);
+            federatedLearningPrRepository.saveFederatedLearning(fl);
+
+            // 创建任务记录
+            FederatedLearningTask task = new FederatedLearningTask();
+            task.setFlId(fl.getId());
+            task.setTaskId(taskId);
+            task.setTaskState(2); // 运行中
+            task.setCurrentRound(0);
+            task.setTotalRounds(req.getTrainingParams() != null ?
+                JSON.parseObject(req.getTrainingParams()).getIntValue("epochs") : 10);
+            task.setIsDel(0);
+            task.setCreateDate(new Date());
+            task.setUpdateDate(new Date());
+            federatedLearningPrRepository.saveFederatedLearningTask(task);
+
+            // 构建Python算法参数
+            Map<String, Object> algorithmParams = buildAlgorithmParams(req, taskId);
+
+            // 调用Python联邦学习算法
+            String algorithmPath = getAlgorithmPath(req);
+            executePythonAlgorithm(algorithmPath, algorithmParams, taskId);
+
+            // 记录计算日志
+            String computeType = getComputeType(req);
+            recordComputeLog(taskId, req.getTaskName(), computeType, userId, req.getProjectId(), 0);
+
+            log.info("联邦学习任务创建成功, taskId: {}, taskType: {}, algorithmType: {}",
+                    taskId, req.getTaskType(), req.getAlgorithmType());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("taskId", taskId);
+            result.put("message", "任务已创建，正在执行中...");
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("创建联邦学习任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建任务失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询任务列表
+     */
+    public BaseResultEntity getTaskList(String taskName, Integer taskType, Integer algorithmType,
+                                        Integer taskState, Long projectId, String startDate,
+                                        String endDate, Integer pageNo, Integer pageSize) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("taskName", taskName);
+            params.put("taskType", taskType);
+            params.put("algorithmType", algorithmType);
+            params.put("taskState", taskState);
+            params.put("projectId", projectId);
+            params.put("startDate", startDate);
+            params.put("endDate", endDate);
+            params.put("offset", (pageNo - 1) * pageSize);
+            params.put("pageSize", pageSize);
+
+            List<Map<String, Object>> data = federatedLearningRepository.selectTaskPage(params);
+            Long total = federatedLearningRepository.selectTaskPageCount(params);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("data", data);
+            result.put("total", total);
+            result.put("pageNo", pageNo);
+            result.put("pageSize", pageSize);
+            result.put("totalPage", (total + pageSize - 1) / pageSize);
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询联邦学习任务列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 查询任务详情
+     */
+    public BaseResultEntity getTaskDetails(String taskId) {
+        try {
+            FederatedLearningTask task = federatedLearningRepository.selectTaskByTaskId(taskId);
+            if (task == null) {
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "任务不存在");
+            }
+            FederatedLearning fl = federatedLearningRepository.selectById(task.getFlId());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("task", task);
+            result.put("federatedLearning", fl);
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询联邦学习任务详情失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 查询模型列表
+     */
+    public BaseResultEntity getModelList(Integer algorithmType, Long projectId,
+                                         Integer pageNo, Integer pageSize) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("algorithmType", algorithmType);
+            params.put("projectId", projectId);
+            params.put("offset", (pageNo - 1) * pageSize);
+            params.put("pageSize", pageSize);
+
+            List<Map<String, Object>> data = federatedLearningRepository.selectModelList(params);
+            Long total = federatedLearningRepository.selectModelListCount(params);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("data", data);
+            result.put("total", total);
+
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询模型列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 下载模型文件
+     */
+    public void downloadModel(HttpServletResponse response, String modelId) {
+        try {
+            FederatedLearningTask task = federatedLearningRepository.selectTaskByTaskId(modelId);
+            if (task == null) {
+                return;
+            }
+            FederatedLearning fl = federatedLearningRepository.selectById(task.getFlId());
+            if (fl != null && fl.getModelPath() != null) {
+                File file = new File(fl.getModelPath());
+                if (file.exists()) {
+                    FileUtil.downloadFile(response, file, fl.getTaskName() + "_model.pkl");
+                }
+            }
+        } catch (Exception e) {
+            log.error("下载模型文件失败", e);
+        }
+    }
+
+    /**
+     * 下载预测结果
+     */
+    public void downloadResult(HttpServletResponse response, String taskId) {
+        try {
+            FederatedLearningTask task = federatedLearningRepository.selectTaskByTaskId(taskId);
+            if (task != null && task.getResultFilePath() != null) {
+                File file = new File(task.getResultFilePath());
+                if (file.exists()) {
+                    FileUtil.downloadFile(response, file, "prediction_result.csv");
+                }
+            }
+        } catch (Exception e) {
+            log.error("下载预测结果失败", e);
+        }
+    }
+
+    /**
+     * 删除任务
+     */
+    public BaseResultEntity deleteTask(String taskId) {
+        try {
+            federatedLearningPrRepository.deleteTask(taskId);
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("删除任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "删除失败");
+        }
+    }
+
+    /**
+     * 取消任务
+     */
+    public BaseResultEntity cancelTask(String taskId) {
+        try {
+            federatedLearningPrRepository.cancelTask(taskId);
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("取消任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "取消失败");
+        }
+    }
+
+    /**
+     * 获取训练进度
+     */
+    public BaseResultEntity getTrainingProgress(String taskId) {
+        try {
+            FederatedLearningTask task = federatedLearningRepository.selectTaskByTaskId(taskId);
+            if (task == null) {
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "任务不存在");
+            }
+
+            Map<String, Object> progress = new HashMap<>();
+            progress.put("currentRound", task.getCurrentRound());
+            progress.put("totalRounds", task.getTotalRounds());
+            progress.put("accuracy", task.getAccuracy());
+            progress.put("loss", task.getLoss());
+            progress.put("taskState", task.getTaskState());
+
+            return BaseResultEntity.success(progress);
+        } catch (Exception e) {
+            log.error("获取训练进度失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 构建算法参数
+     */
+    private Map<String, Object> buildAlgorithmParams(FederatedLearningReq req, String taskId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("task_id", taskId);
+        params.put("task_type", req.getTaskType()); // 1:建模 2:预测
+        params.put("algorithm_type", req.getAlgorithmType()); // 1:线性回归 2:逻辑回归 3:XGBoost
+        params.put("federated_type", req.getFederatedType()); // 1:横向 2:纵向
+        params.put("own_organ_id", req.getOwnOrganId());
+        params.put("own_resource_id", req.getOwnResourceId());
+        params.put("own_features", req.getOwnFeatures());
+        params.put("label_feature", req.getLabelFeature());
+        params.put("is_label_owner", req.getIsLabelOwner());
+        params.put("participant_organ_ids", req.getParticipantOrganIds());
+        params.put("participant_resource_ids", req.getParticipantResourceIds());
+        params.put("training_params", req.getTrainingParams());
+        params.put("model_id", req.getModelId());
+
+        return params;
+    }
+
+    /**
+     * 获取计算类型名称
+     */
+    private String getComputeType(FederatedLearningReq req) {
+        String algorithmName = getAlgorithmName(req.getAlgorithmType());
+        String taskTypeName = req.getTaskType() == 1 ? "建模" : "预测";
+        String federatedTypeName = req.getFederatedType() == 1 ? "横向" : "纵向";
+
+        return String.format("联邦学习%s%s（%s）", algorithmName, taskTypeName, federatedTypeName);
+    }
+
+    /**
+     * 获取算法名称
+     */
+    private String getAlgorithmName(Integer algorithmType) {
+        switch (algorithmType) {
+            case 1: return "线性回归";
+            case 2: return "逻辑回归";
+            case 3: return "XGBoost";
+            default: return "未知算法";
+        }
+    }
+
+    /**
+     * 获取算法路径
+     */
+    private String getAlgorithmPath(FederatedLearningReq req) {
+        String basePath = "/home/primihub/primihub-platform/python-algorithms/federated_learning/";
+        String algorithmName = "";
+
+        switch (req.getAlgorithmType()) {
+            case 1: algorithmName = "linear_regression"; break;
+            case 2: algorithmName = "logistic_regression"; break;
+            case 3: algorithmName = "xgboost"; break;
+            default: throw new RuntimeException("不支持的算法类型");
+        }
+
+        String taskType = req.getTaskType() == 1 ? "train" : "predict";
+        return basePath + algorithmName + "_" + taskType + ".py";
+    }
+
+    /**
+     * 执行Python算法
+     */
+    private void executePythonAlgorithm(String algorithmPath, Map<String, Object> params, String taskId) {
+        new Thread(() -> {
+            try {
+                ProcessBuilder pb = new ProcessBuilder("python3", algorithmPath, JSON.toJSONString(params));
+                pb.redirectErrorStream(true);
+                Process process = pb.start();
+
+                int exitCode = process.waitFor();
+
+                FederatedLearningTask task = new FederatedLearningTask();
+                task.setTaskId(taskId);
+                task.setTaskState(exitCode == 0 ? 1 : 3);
+                federatedLearningPrRepository.updateFederatedLearningTask(task);
+
+                log.info("Python算法执行完成, taskId: {}, exitCode: {}", taskId, exitCode);
+            } catch (Exception e) {
+                log.error("执行Python算法失败, taskId: " + taskId, e);
+                try {
+                    FederatedLearningTask task = new FederatedLearningTask();
+                    task.setTaskId(taskId);
+                    task.setTaskState(3);
+                    federatedLearningPrRepository.updateFederatedLearningTask(task);
+                } catch (Exception ex) {
+                    log.error("更新任务状态失败", ex);
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * 记录计算日志
+     */
+    private void recordComputeLog(String taskId, String taskName, String computeType,
+                                    Long userId, Long projectId, Integer status) {
+        try {
+            ComputeLog computeLog = new ComputeLog();
+            computeLog.setLogCode("COMPUTE_FL");
+            computeLog.setTaskId(taskId);
+            computeLog.setTaskName(taskName);
+            computeLog.setComputeType(computeType);
+            computeLog.setUserId(userId);
+            computeLog.setProjectId(projectId);
+            computeLog.setStatus(status);
+            computeLog.setStartTime(new Date());
+            computeLog.setCreateDate(new Date());
+
+            logManagementService.recordComputeLog(computeLog);
+            log.info("记录联邦学习计算日志成功, taskId: {}", taskId);
+        } catch (Exception e) {
+            log.error("记录联邦学习计算日志失败", e);
+        }
+    }
+}

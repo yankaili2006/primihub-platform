@@ -166,6 +166,54 @@ export const asyncRoutes = [
       }]
   },
   {
+    path: '/Difference',
+    component: Layout,
+    name: 'Difference',
+    redirect: '/Difference/list',
+    meta: { title: '联邦求差', icon: 'el-icon-minus' },
+    hidden: true,
+    children: [
+      {
+        path: 'list',
+        name: 'DifferenceList',
+        component: () => import('@/views/Difference/list'),
+        meta: { title: '联邦求差', breadcrumb: false }
+      }
+    ]
+  },
+  {
+    path: '/Union',
+    component: Layout,
+    name: 'Union',
+    redirect: '/Union/list',
+    meta: { title: '联邦求并', icon: 'el-icon-plus' },
+    hidden: true,
+    children: [
+      {
+        path: 'list',
+        name: 'UnionList',
+        component: () => import('@/views/Union/list'),
+        meta: { title: '联邦求并', breadcrumb: false }
+      }
+    ]
+  },
+  {
+    path: '/FederatedLearning',
+    component: Layout,
+    name: 'FederatedLearning',
+    redirect: '/FederatedLearning/list',
+    meta: { title: '联邦学习', icon: 'el-icon-data-analysis' },
+    hidden: true,
+    children: [
+      {
+        path: 'list',
+        name: 'FederatedLearningList',
+        component: () => import('@/views/FederatedLearning/list'),
+        meta: { title: '联邦学习', breadcrumb: false }
+      }
+    ]
+  },
+  {
     path: '/project',
     name: 'Project',
     component: Layout,

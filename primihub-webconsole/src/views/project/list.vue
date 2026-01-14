@@ -48,6 +48,7 @@
         <div class="buttons">
           <el-button class="button" type="primary" size="small" icon="el-icon-search" @click="searchProject">查询</el-button>
           <el-button class="button" size="small" icon="el-icon-refresh-right" plain @click="reset">重置</el-button>
+          <el-button class="button" type="success" size="small" icon="el-icon-download" @click="handleExportLog">导出日志</el-button>
         </div>
       </el-form-item>
     </el-form>
@@ -184,7 +185,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { getProjectList, getListStatistics, closeProject, openProject } from '@/api/project'
+import { getProjectList, getListStatistics, closeProject, openProject, exportProjectLog } from '@/api/project'
 import ProjectItem from '@/components/ProjectItem'
 import NoData from '@/components/NoData'
 import Pagination from '@/components/Pagination'
@@ -439,6 +440,28 @@ export default {
     handlePagination(data) {
       this.pageNo = data.page
       this.fetchData()
+    },
+    handleExportLog() {
+      const { projectName, projectId, status, createDate } = this.searchForm
+      const params = {
+        projectId: projectId || null,
+        projectName: projectName || '',
+        status: status !== '' ? status : null,
+        startTime: createDate && createDate[0] ? createDate[0] : '',
+        endTime: createDate && createDate[1] ? createDate[1] : ''
+      }
+      exportProjectLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `项目任务日志_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      }).catch(() => {
+        this.$message.error('导出失败')
+      })
     }
   }
 }

@@ -24,3 +24,15 @@ export function pirSubmitTask(data) {
   })
 }
 
+// 导出PIR日志
+export function exportPirLog(params) {
+  return request({
+    url: '/log/exportComputeLog',
+    method: 'get',
+    params: {
+      ...params,
+      computeType: 'pir'
+    },
+    responseType: 'blob'
+  })
+}

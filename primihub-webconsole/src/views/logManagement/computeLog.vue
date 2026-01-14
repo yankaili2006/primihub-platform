@@ -8,6 +8,8 @@
         <el-option label="安全求交" value="安全求交" />
         <el-option label="隐匿查询" value="隐匿查询" />
         <el-option label="联合预测" value="联合预测" />
+        <el-option label="联邦求差" value="联邦求差" />
+        <el-option label="联邦求并" value="联邦求并" />
       </el-select>
       <el-select v-model="searchForm.status" placeholder="状态" style="width: 120px; margin-right: 10px;" clearable>
         <el-option label="运行中" :value="0" />

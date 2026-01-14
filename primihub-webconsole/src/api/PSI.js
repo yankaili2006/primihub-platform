@@ -106,3 +106,16 @@ export function updateDataPsiResultName(data) {
     data
   })
 }
+
+// 导出PSI日志
+export function exportPsiLog(params) {
+  return request({
+    url: '/log/exportComputeLog',
+    method: 'get',
+    params: {
+      ...params,
+      computeType: 'psi'
+    },
+    responseType: 'blob'
+  })
+}

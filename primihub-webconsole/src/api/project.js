@@ -80,3 +80,13 @@ export function removeOrgan(data) {
     data
   })
 }
+
+// 导出项目日志
+export function exportProjectLog(params) {
+  return request({
+    url: '/log/exportComputeLog',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

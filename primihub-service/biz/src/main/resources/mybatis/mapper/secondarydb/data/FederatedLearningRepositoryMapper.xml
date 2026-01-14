@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository">
+
+    <select id="selectTaskPage" resultType="java.util.HashMap">
+        SELECT
+            fl.id,
+            fl.task_type AS taskType,
+            fl.algorithm_type AS algorithmType,
+            fl.federated_type AS federatedType,
+            fl.task_name AS taskName,
+            fl.project_id AS projectId,
+            flt.task_id AS taskId,
+            flt.task_state AS taskState,
+            flt.current_round AS currentRound,
+            flt.total_rounds AS totalRounds,
+            flt.accuracy,
+            flt.loss,
+            flt.result_rows AS resultRows,
+            flt.create_date AS createDate
+        FROM
+            federated_learning fl
+        INNER JOIN federated_learning_task flt ON fl.id = flt.fl_id
+        WHERE flt.is_del = 0
+        <if test="taskName != null and taskName != ''">
+            AND fl.task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="taskType != null">
+            AND fl.task_type = #{taskType}
+        </if>
+        <if test="algorithmType != null">
+            AND fl.algorithm_type = #{algorithmType}
+        </if>
+        <if test="taskState != null">
+            AND flt.task_state = #{taskState}
+        </if>
+        <if test="projectId != null">
+            AND fl.project_id = #{projectId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND flt.create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND flt.create_date &lt;= #{endDate}
+        </if>
+        ORDER BY flt.create_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectTaskPageCount" resultType="java.lang.Long">
+        SELECT COUNT(fl.id)
+        FROM
+            federated_learning fl
+        INNER JOIN federated_learning_task flt ON fl.id = flt.fl_id
+        WHERE flt.is_del = 0
+        <if test="taskName != null and taskName != ''">
+            AND fl.task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        <if test="taskType != null">
+            AND fl.task_type = #{taskType}
+        </if>
+        <if test="algorithmType != null">
+            AND fl.algorithm_type = #{algorithmType}
+        </if>
+        <if test="taskState != null">
+            AND flt.task_state = #{taskState}
+        </if>
+        <if test="projectId != null">
+            AND fl.project_id = #{projectId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND flt.create_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND flt.create_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.FederatedLearningTask">
+        SELECT * FROM federated_learning_task
+        WHERE task_id = #{taskId} AND is_del = 0
+    </select>
+
+    <select id="selectById" resultType="com.primihub.biz.entity.data.po.FederatedLearning">
+        SELECT * FROM federated_learning WHERE id = #{id}
+    </select>
+
+    <select id="selectModelList" resultType="java.util.HashMap">
+        SELECT
+            fl.id,
+            fl.task_name AS modelName,
+            fl.algorithm_type AS algorithmType,
+            fl.project_id AS projectId,
+            fl.model_path AS modelPath,
+            flt.task_id AS taskId,
+            flt.accuracy,
+            flt.loss,
+            flt.metrics,
+            flt.create_date AS createDate
+        FROM
+            federated_learning fl
+        INNER JOIN federated_learning_task flt ON fl.id = flt.fl_id
+        WHERE fl.task_type = 1 AND flt.task_state = 1 AND flt.is_del = 0
+        <if test="algorithmType != null">
+            AND fl.algorithm_type = #{algorithmType}
+        </if>
+        <if test="projectId != null">
+            AND fl.project_id = #{projectId}
+        </if>
+        ORDER BY flt.create_date DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectModelListCount" resultType="java.lang.Long">
+        SELECT COUNT(fl.id)
+        FROM
+            federated_learning fl
+        INNER JOIN federated_learning_task flt ON fl.id = flt.fl_id
+        WHERE fl.task_type = 1 AND flt.task_state = 1 AND flt.is_del = 0
+        <if test="algorithmType != null">
+            AND fl.algorithm_type = #{algorithmType}
+        </if>
+        <if test="projectId != null">
+            AND fl.project_id = #{projectId}
+        </if>
+    </select>
+
+</mapper>

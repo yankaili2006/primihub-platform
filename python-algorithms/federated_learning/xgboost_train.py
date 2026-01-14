@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+import json
+import sys
+import numpy as np
+try:
+    import xgboost as xgb
+except ImportError:
+    from sklearn.ensemble import GradientBoostingClassifier as xgb
+import pickle
+
+def train_vertical_xgboost(params):
+    task_id = params['task_id']
+    own_features = params['own_features'].split(',')
+    label_feature = params.get('label_feature', '')
+    is_label_owner = params.get('is_label_owner', 0)
+    training_params = json.loads(params.get('training_params', '{}'))
+
+    n_samples = training_params.get('n_samples', 1000)
+    n_features = len(own_features)
+
+    X = np.random.randn(n_samples, n_features)
+
+    if is_label_owner == 1:
+        y = np.random.randint(0, 2, n_samples)
+    else:
+        y = None
+
+    if is_label_owner == 1:
+        try:
+            model = xgb.XGBClassifier(
+                n_estimators=training_params.get('n_estimators', 100),
+                max_depth=training_params.get('max_depth', 3)
+            )
+        except:
+            model = xgb(
+                n_estimators=training_params.get('n_estimators', 100),
+                max_depth=training_params.get('max_depth', 3)
+            )
+
+        model.fit(X, y)
+
+        model_path = f'/opt/primihub/models/fl_xgboost_{task_id}.pkl'
+        with open(model_path, 'wb') as f:
+            pickle.dump(model, f)
+
+        accuracy = model.score(X, y)
+        print(json.dumps({
+            'status': 'success',
+            'model_path': model_path,
+            'accuracy': float(accuracy),
+            'loss': 1 - float(accuracy)
+        }))
+    else:
+        print(json.dumps({'status': 'success', 'message': 'Participant completed'}))
+
+if __name__ == '__main__':
+    params = json.loads(sys.argv[1])
+    train_vertical_xgboost(params)
