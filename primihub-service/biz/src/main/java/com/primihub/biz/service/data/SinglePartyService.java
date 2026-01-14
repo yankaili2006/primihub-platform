@@ -128,7 +128,9 @@ public class SinglePartyService {
             if (task != null && task.getResultFilePath() != null) {
                 File file = new File(task.getResultFilePath());
                 if (file.exists()) {
-                    FileUtil.downloadFile(response, file, "result.csv");
+                    response.setContentType("application/octet-stream");
+                    response.setHeader("Content-Disposition", "attachment; filename=result.csv");
+                    java.nio.file.Files.copy(file.toPath(), response.getOutputStream());
                 }
             }
         } catch (Exception e) {

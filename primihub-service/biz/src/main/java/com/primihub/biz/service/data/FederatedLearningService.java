@@ -59,7 +59,7 @@ public class FederatedLearningService {
             task.setTaskState(2); // 运行中
             task.setCurrentRound(0);
             task.setTotalRounds(req.getTrainingParams() != null ?
-                JSON.parseObject(req.getTrainingParams()).getIntValue("epochs") : 10);
+                req.getTrainingParams().getEpochs() : 10);
             task.setIsDel(0);
             task.setCreateDate(new Date());
             task.setUpdateDate(new Date());
@@ -186,7 +186,9 @@ public class FederatedLearningService {
             if (fl != null && fl.getModelPath() != null) {
                 File file = new File(fl.getModelPath());
                 if (file.exists()) {
-                    FileUtil.downloadFile(response, file, fl.getTaskName() + "_model.pkl");
+                    response.setContentType("application/octet-stream");
+                    response.setHeader("Content-Disposition", "attachment; filename=" + fl.getTaskName() + "_model.pkl");
+                    java.nio.file.Files.copy(file.toPath(), response.getOutputStream());
                 }
             }
         } catch (Exception e) {
@@ -203,7 +205,9 @@ public class FederatedLearningService {
             if (task != null && task.getResultFilePath() != null) {
                 File file = new File(task.getResultFilePath());
                 if (file.exists()) {
-                    FileUtil.downloadFile(response, file, "prediction_result.csv");
+                    response.setContentType("application/octet-stream");
+                    response.setHeader("Content-Disposition", "attachment; filename=prediction_result.csv");
+                    java.nio.file.Files.copy(file.toPath(), response.getOutputStream());
                 }
             }
         } catch (Exception e) {
@@ -277,7 +281,8 @@ public class FederatedLearningService {
         params.put("is_label_owner", req.getIsLabelOwner());
         params.put("participant_organ_ids", req.getParticipantOrganIds());
         params.put("participant_resource_ids", req.getParticipantResourceIds());
-        params.put("training_params", req.getTrainingParams());
+        params.put("training_params", req.getTrainingParams() != null ?
+            JSON.toJSONString(req.getTrainingParams()) : null);
         params.put("model_id", req.getModelId());
 
         return params;
