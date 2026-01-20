@@ -30,3 +30,19 @@ export function initPassword(data) {
     data
   })
 }
+
+export function freezeUser(data) {
+  return request({
+    url: '/sys/user/freezeUser',
+    method: 'post',
+    data
+  })
+}
+
+export function unfreezeUser(data) {
+  return request({
+    url: '/sys/user/unfreezeUser',
+    method: 'post',
+    data
+  })
+}

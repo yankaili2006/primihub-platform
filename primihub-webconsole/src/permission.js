@@ -22,15 +22,7 @@ router.beforeEach(async(to, from, next) => {
 
   // determine whether the user has logged in
   const hasToken = getToken()
-  if (to.matched.length === 0 && flag !== 0) { // 如果未匹配到路由
-    console.log('未匹配到路由', to.path)
-    Message({
-      message: '暂无权限',
-      type: 'warning'
-    })
-    next('/') // 不存在跳转首页
-    NProgress.done()
-  }
+
   if (hasToken) {
     if (to.path === '/login') {
       // if is logged in, redirect to the home page
@@ -51,7 +43,34 @@ router.beforeEach(async(to, from, next) => {
           NProgress.done()
         }
       } else {
-        next()
+        // 检查路由是否匹配，如果未匹配则尝试重新生成路由（处理无痕模式等场景）
+        if (to.matched.length === 0) {
+          console.log('未匹配到路由，尝试重新生成', to.path)
+          try {
+            const permissionList = await store.dispatch('user/getPermission')
+            if (permissionList && permissionList.length > 0) {
+              await store.dispatch('permission/generateRoutes', permissionList)
+              next({ ...to, replace: true })
+            } else {
+              Message({
+                message: '暂无权限',
+                type: 'warning'
+              })
+              next('/') // 不存在跳转首页
+              NProgress.done()
+            }
+          } catch (error) {
+            console.error('重新生成路由失败', error)
+            Message({
+              message: '暂无权限',
+              type: 'warning'
+            })
+            next('/') // 不存在跳转首页
+            NProgress.done()
+          }
+        } else {
+          next()
+        }
       }
     }
   } else {

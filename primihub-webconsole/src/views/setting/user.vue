@@ -11,12 +11,22 @@
         <el-table-column align="left" label="账户名" prop="userAccount" />
         <el-table-column align="left" label="昵称" prop="userName" />
         <el-table-column align="left" label="角色名称" prop="roleIdListDesc" />
+        <el-table-column align="center" label="状态" prop="isFrozen" width="100">
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.isFrozen === 1 ? 'danger' : 'success'" size="small">
+              {{ scope.row.isFrozen === 1 ? '已冻结' : '正常' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column align="center" label="注册时间" prop="cTime" />
-        <el-table-column v-if="hasEditPermission || hasDeletePermission || hasResetPermission" align="center" label="操作" fixed="right" width="250">
+        <el-table-column v-if="hasEditPermission || hasDeletePermission || hasResetPermission || hasFreezePermission" align="center" label="操作" fixed="right" width="320">
           <template slot-scope="scope">
             <el-button v-if="hasEditPermission" type="text" icon="edit" @click="openEdit(scope.row)"><i class="el-icon-edit" type="primary" />编辑</el-button>
             <el-button v-if="hasDeletePermission" type="text" icon="magic-stick" @click="handleDeleteUser(scope.row)"><i class="el-icon-delete" />删除</el-button>
             <el-button v-if="hasResetPermission" type="text" icon="magic-stick" @click="handleInitPassword(scope.row)"><i class="el-icon-magic-stick" />重置密码</el-button>
+            <el-button v-if="hasFreezePermission" type="text" :style="{ color: scope.row.isFrozen === 1 ? '#67C23A' : '#F56C6C' }" @click="handleFreezeUser(scope.row)">
+              <i :class="scope.row.isFrozen === 1 ? 'el-icon-unlock' : 'el-icon-lock'" />{{ scope.row.isFrozen === 1 ? '解冻' : '冻结' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -81,7 +91,7 @@
 </template>
 
 <script>
-import { getUserList, deleteUser, saveOrUpdateUser, initPassword } from '@/api/userAdmin'
+import { getUserList, deleteUser, saveOrUpdateUser, initPassword, freezeUser, unfreezeUser } from '@/api/userAdmin'
 import { getRoles } from '@/api/role'
 import Pagination from '@/components/Pagination'
 import { mapGetters } from 'vuex'
@@ -136,6 +146,9 @@ export default {
     },
     hasResetPermission() {
       return this.buttonPermissionList.includes('UserPasswordReset')
+    },
+    hasFreezePermission() {
+      return this.buttonPermissionList.includes('UserFreeze')
     },
     ...mapGetters([
       'buttonPermissionList'
@@ -246,6 +259,29 @@ export default {
           this.fetchData()
         }
       })
+    },
+    handleFreezeUser(row) {
+      const isFrozen = row.isFrozen === 1
+      const action = isFrozen ? '解冻' : '冻结'
+      const confirmMessage = isFrozen
+        ? `确定要解冻用户 "${row.userName}" 吗？解冻后该用户将恢复正常登录。`
+        : `确定要冻结用户 "${row.userName}" 吗？冻结后该用户将无法登录系统。`
+
+      this.$confirm(confirmMessage, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async() => {
+        const apiCall = isFrozen ? unfreezeUser : freezeUser
+        const res = await apiCall({ userId: row.userId })
+        if (res.code === 0) {
+          this.$message({
+            type: 'success',
+            message: `${action}成功`
+          })
+          this.fetchData()
+        }
+      }).catch(() => {})
     },
     openHeaderChange() {
       console.log('修改头像')

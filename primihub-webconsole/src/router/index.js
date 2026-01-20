@@ -218,12 +218,13 @@ export const asyncRoutes = [
     name: 'Project',
     component: Layout,
     redirect: '/project/list',
+    alwaysShow: true,
     meta: { icon: 'el-icon-menu', title: '项目管理' },
     children: [
       {
         path: 'list',
         name: 'ProjectList',
-        meta: { icon: 'el-icon-menu', title: '项目管理', breadcrumb: false },
+        meta: { icon: 'el-icon-menu', title: '项目列表', breadcrumb: false },
         component: () => import('@/views/project/list')
       },
       {
@@ -266,6 +267,302 @@ export const asyncRoutes = [
         },
         hidden: true,
         component: () => import('@/views/project/taskDetail')
+      },
+      {
+        path: 'permission',
+        name: 'ProjectPermission',
+        component: () => import('@/views/project/permission'),
+        meta: { title: '项目权限配置' }
+      },
+      {
+        path: 'resultSave',
+        name: 'ProjectResultSave',
+        component: () => import('@/views/project/resultSave'),
+        meta: { title: '项目结果保存' }
+      },
+      {
+        path: 'ledgerExport',
+        name: 'ProjectLedgerExport',
+        component: () => import('@/views/project/ledgerExport'),
+        meta: { title: '项目台账导出' }
+      }
+    ]
+  },
+  {
+    path: '/federatedLearning',
+    component: Layout,
+    name: 'ProjectFederatedLearning',
+    redirect: '/federatedLearning/index',
+    alwaysShow: true,
+    meta: { title: '联邦学习', icon: 'el-icon-data-analysis' },
+    children: [
+      {
+        path: 'index',
+        name: 'FederatedLearningIndex',
+        component: () => import('@/views/federatedLearning/index'),
+        meta: { title: '联邦学习' }
+      },
+      {
+        path: 'paramTuning',
+        name: 'FederatedLearningParamTuning',
+        component: () => import('@/views/federatedLearning/paramTuning'),
+        meta: { title: '联邦建模参数调优' }
+      },
+      {
+        path: 'trainingIteration',
+        name: 'FederatedLearningTrainingIteration',
+        component: () => import('@/views/federatedLearning/trainingIteration'),
+        meta: { title: '联邦建模训练迭代' }
+      },
+      {
+        path: 'trainingReport',
+        name: 'FederatedLearningTrainingReport',
+        component: () => import('@/views/federatedLearning/trainingReport'),
+        meta: { title: '联邦建模训练报告' }
+      },
+      {
+        path: 'logRecord',
+        name: 'FederatedLearningLogRecord',
+        component: () => import('@/views/federatedLearning/logRecord'),
+        meta: { title: '联邦学习日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'FederatedLearningLogExport',
+        component: () => import('@/views/federatedLearning/logExport'),
+        meta: { title: '联邦学习日志导出' }
+      },
+      {
+        path: 'dataMerge',
+        name: 'FederatedLearningSinglePartyDataMerge',
+        component: () => import('@/views/federatedLearning/dataMerge'),
+        meta: { title: '单方数据合并模块' }
+      }
+    ]
+  },
+  {
+    path: '/federatedAnalysis',
+    component: Layout,
+    name: 'ProjectFederatedAnalysis',
+    redirect: '/federatedAnalysis/index',
+    alwaysShow: true,
+    meta: { title: '联邦分析', icon: 'el-icon-s-data' },
+    children: [
+      {
+        path: 'index',
+        name: 'FederatedAnalysisIndex',
+        component: () => import('@/views/federatedAnalysis/index'),
+        meta: { title: '联邦分析' }
+      },
+      {
+        path: 'relationalDB',
+        name: 'FederatedAnalysisRelationalDB',
+        component: () => import('@/views/federatedAnalysis/relationalDB'),
+        meta: { title: '联邦分析对接主流关系型数据库' }
+      },
+      {
+        path: 'bigData',
+        name: 'FederatedAnalysisBigData',
+        component: () => import('@/views/federatedAnalysis/bigData'),
+        meta: { title: '联邦分析对接主流大数据平台' }
+      },
+      {
+        path: 'publicCloud',
+        name: 'FederatedAnalysisPublicCloud',
+        component: () => import('@/views/federatedAnalysis/publicCloud'),
+        meta: { title: '联邦分析对接主流公有云平台' }
+      },
+      {
+        path: 'logRecord',
+        name: 'FederatedAnalysisLogRecord',
+        component: () => import('@/views/federatedAnalysis/logRecord'),
+        meta: { title: '联邦分析日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'FederatedAnalysisLogExport',
+        component: () => import('@/views/federatedAnalysis/logExport'),
+        meta: { title: '联邦分析日志导出' }
+      }
+    ]
+  },
+  {
+    path: '/federatedStatistics',
+    component: Layout,
+    name: 'ProjectFederatedStatistics',
+    redirect: '/federatedStatistics/index',
+    alwaysShow: true,
+    meta: { title: '联邦统计', icon: 'el-icon-pie-chart' },
+    children: [
+      {
+        path: 'index',
+        name: 'FederatedStatisticsIndex',
+        component: () => import('@/views/federatedStatistics/index'),
+        meta: { title: '联邦统计' }
+      },
+      {
+        path: 'resultStorage',
+        name: 'FederatedStatisticsResultStorage',
+        component: () => import('@/views/federatedStatistics/resultStorage'),
+        meta: { title: '联邦统计结果存储' }
+      },
+      {
+        path: 'resultExport',
+        name: 'FederatedStatisticsResultExport',
+        component: () => import('@/views/federatedStatistics/resultExport'),
+        meta: { title: '联邦统计结果导出' }
+      },
+      {
+        path: 'logRecord',
+        name: 'FederatedStatisticsLogRecord',
+        component: () => import('@/views/federatedStatistics/logRecord'),
+        meta: { title: '联邦统计日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'FederatedStatisticsLogExport',
+        component: () => import('@/views/federatedStatistics/logExport'),
+        meta: { title: '联邦统计日志导出' }
+      }
+    ]
+  },
+  {
+    path: '/policeDataFusion',
+    component: Layout,
+    name: 'PoliceDataFusion',
+    redirect: '/policeDataFusion/intersection',
+    alwaysShow: true,
+    meta: { title: '警务数据融合', icon: 'el-icon-connection' },
+    children: [
+      {
+        path: 'intersection',
+        name: 'PoliceDataIntersection',
+        component: () => import('@/views/policeDataFusion/intersection'),
+        meta: { title: '警务数据交集数据融合' }
+      },
+      {
+        path: 'insuranceApi',
+        name: 'InsuranceApiConnect',
+        component: () => import('@/views/policeDataFusion/insuranceApi'),
+        meta: { title: '保险机构接口对接' }
+      },
+      {
+        path: 'homomorphicKey',
+        name: 'InsuranceHomomorphicKey',
+        component: () => import('@/views/policeDataFusion/homomorphicKey'),
+        meta: { title: '保险机构同态密钥创建' }
+      },
+      {
+        path: 'modelEncrypt',
+        name: 'InsuranceModelEncrypt',
+        component: () => import('@/views/policeDataFusion/modelEncrypt'),
+        meta: { title: '保险机构模型同态加密' }
+      },
+      {
+        path: 'encryptedCompute',
+        name: 'EncryptedModelCompute',
+        component: () => import('@/views/policeDataFusion/encryptedCompute'),
+        meta: { title: '加密模型联合运算' }
+      },
+      {
+        path: 'dataDecrypt',
+        name: 'InsuranceDataDecrypt',
+        component: () => import('@/views/policeDataFusion/dataDecrypt'),
+        meta: { title: '保险机构数据解密' }
+      },
+      {
+        path: 'policeConnect',
+        name: 'PoliceDataConnect',
+        component: () => import('@/views/policeDataFusion/policeConnect'),
+        meta: { title: '警务数据对接' }
+      },
+      {
+        path: 'batchExchange',
+        name: 'ModelCipherBatchExchange',
+        component: () => import('@/views/policeDataFusion/batchExchange'),
+        meta: { title: '模型密文数据安全交换（批量）' }
+      },
+      {
+        path: 'logRecord',
+        name: 'PoliceDataLogRecord',
+        component: () => import('@/views/policeDataFusion/logRecord'),
+        meta: { title: '流程执行日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'PoliceDataLogExport',
+        component: () => import('@/views/policeDataFusion/logExport'),
+        meta: { title: '流程执行日志导出' }
+      }
+    ]
+  },
+  {
+    path: '/electronicCert',
+    component: Layout,
+    name: 'ElectronicCertCompare',
+    redirect: '/electronicCert/featureConvert',
+    alwaysShow: true,
+    meta: { title: '电子证件比对', icon: 'el-icon-postcard' },
+    children: [
+      {
+        path: 'featureConvert',
+        name: 'ElectronicCertFeatureConvert',
+        component: () => import('@/views/electronicCert/featureConvert'),
+        meta: { title: '电子证件特征转换' }
+      },
+      {
+        path: 'onSiteConvert',
+        name: 'OnSiteCertFeatureConvert',
+        component: () => import('@/views/electronicCert/onSiteConvert'),
+        meta: { title: '现场证件特征转换' }
+      },
+      {
+        path: 'privacyCompare',
+        name: 'FeaturePrivacyCompare',
+        component: () => import('@/views/electronicCert/privacyCompare'),
+        meta: { title: '特征数据隐私比对' }
+      },
+      {
+        path: 'policeConnect',
+        name: 'ElectronicCertPoliceConnect',
+        component: () => import('@/views/electronicCert/policeConnect'),
+        meta: { title: '警务数据对接' }
+      },
+      {
+        path: 'orgDataImport',
+        name: 'OrgDataImport',
+        component: () => import('@/views/electronicCert/orgDataImport'),
+        meta: { title: '使用机构数据接入' }
+      },
+      {
+        path: 'orgDataExport',
+        name: 'OrgDataExport',
+        component: () => import('@/views/electronicCert/orgDataExport'),
+        meta: { title: '使用机构数据导出' }
+      },
+      {
+        path: 'batchExchange',
+        name: 'FeatureCipherBatchExchange',
+        component: () => import('@/views/electronicCert/batchExchange'),
+        meta: { title: '特征密文数据安全交换（批量）' }
+      },
+      {
+        path: 'realTimeExchange',
+        name: 'FeatureCipherRealTimeExchange',
+        component: () => import('@/views/electronicCert/realTimeExchange'),
+        meta: { title: '特征密文数据安全交换（实时）' }
+      },
+      {
+        path: 'logRecord',
+        name: 'ElectronicCertLogRecord',
+        component: () => import('@/views/electronicCert/logRecord'),
+        meta: { title: '流程执行日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'ElectronicCertLogExport',
+        component: () => import('@/views/electronicCert/logExport'),
+        meta: { title: '流程执行日志导出' }
       }
     ]
   },
@@ -421,6 +718,12 @@ export const asyncRoutes = [
         name: 'DataRequirementMatch',
         component: () => import('@/views/resource/requirementMatch'),
         meta: { title: '匹配数据需求所需数据' }
+      },
+      {
+        path: 'sharedDatasetList',
+        name: 'SharedDatasetList',
+        component: () => import('@/views/resource/sharedDatasetList'),
+        meta: { title: '共享数据集列表' }
       }
 
     ]
@@ -486,6 +789,12 @@ export const asyncRoutes = [
         component: () => import('@/views/setting/ui'),
         meta: { title: '界面设置' },
         hidden: true
+      },
+      {
+        path: 'cancelCooperation',
+        name: 'CancelCooperation',
+        component: () => import('@/views/setting/cancelCooperation'),
+        meta: { title: '节点取消合作' }
       }
     ]
   },

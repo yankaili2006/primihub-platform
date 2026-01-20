@@ -1,0 +1,159 @@
+<template>
+  <div class="app-container">
+    <el-page-header @back="goBack" content="联邦统计日志记录" style="margin-bottom: 20px;" />
+
+    <el-form :inline="true" :model="queryForm" class="demo-form-inline">
+      <el-form-item label="任务ID">
+        <el-input v-model="queryForm.taskId" placeholder="请输入任务ID" clearable style="width: 150px;" />
+      </el-form-item>
+      <el-form-item label="日志类型">
+        <el-select v-model="queryForm.logType" placeholder="请选择" clearable style="width: 120px;">
+          <el-option label="INFO" value="INFO" />
+          <el-option label="WARN" value="WARN" />
+          <el-option label="ERROR" value="ERROR" />
+          <el-option label="DEBUG" value="DEBUG" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="统计类型">
+        <el-select v-model="queryForm.statisticsType" placeholder="请选择" clearable style="width: 140px;">
+          <el-option label="求和" value="SUM" />
+          <el-option label="平均值" value="AVG" />
+          <el-option label="计数" value="COUNT" />
+          <el-option label="最大值" value="MAX" />
+          <el-option label="最小值" value="MIN" />
+          <el-option label="方差" value="VARIANCE" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="时间范围">
+        <el-date-picker v-model="queryForm.dateRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="yyyy-MM-dd HH:mm:ss" style="width: 340px;" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleQuery">查询</el-button>
+        <el-button @click="handleReset">重置</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table :data="logData" border v-loading="loading">
+      <el-table-column type="selection" width="50" />
+      <el-table-column prop="logId" label="日志ID" width="100" />
+      <el-table-column prop="taskId" label="任务ID" width="100" />
+      <el-table-column prop="taskName" label="任务名称" width="180" />
+      <el-table-column prop="statisticsType" label="统计类型" width="100">
+        <template slot-scope="scope">
+          {{ getStatisticsTypeLabel(scope.row.statisticsType) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="logType" label="日志类型" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="getLogTypeTag(scope.row.logType)" size="small">{{ scope.row.logType }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="content" label="日志内容" min-width="300" show-overflow-tooltip />
+      <el-table-column prop="createTime" label="记录时间" width="160" />
+      <el-table-column label="操作" width="100" fixed="right">
+        <template slot-scope="scope">
+          <el-button size="mini" type="text" @click="handleViewDetail(scope.row)">详情</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-pagination style="margin-top: 15px;" :current-page="queryForm.pageNum" :page-sizes="[10, 20, 50]" :page-size="queryForm.pageSize" :total="total" layout="total, sizes, prev, pager, next" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+
+    <!-- Detail Dialog -->
+    <el-dialog title="日志详情" :visible.sync="detailDialogVisible" width="50%">
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="日志ID">{{ detailData.logId }}</el-descriptions-item>
+        <el-descriptions-item label="任务ID">{{ detailData.taskId }}</el-descriptions-item>
+        <el-descriptions-item label="任务名称">{{ detailData.taskName }}</el-descriptions-item>
+        <el-descriptions-item label="统计类型">{{ getStatisticsTypeLabel(detailData.statisticsType) }}</el-descriptions-item>
+        <el-descriptions-item label="日志类型">
+          <el-tag :type="getLogTypeTag(detailData.logType)" size="small">{{ detailData.logType }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="记录时间">{{ detailData.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="日志内容">
+          <pre style="white-space: pre-wrap; word-wrap: break-word; margin: 0;">{{ detailData.content }}</pre>
+        </el-descriptions-item>
+      </el-descriptions>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="detailDialogVisible = false">关 闭</el-button>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'FederatedStatisticsLogRecord',
+  data() {
+    return {
+      loading: false,
+      queryForm: {
+        taskId: '',
+        logType: '',
+        statisticsType: '',
+        dateRange: [],
+        pageNum: 1,
+        pageSize: 10
+      },
+      logData: [],
+      total: 0,
+      detailDialogVisible: false,
+      detailData: {}
+    }
+  },
+  mounted() {
+    this.fetchData()
+  },
+  methods: {
+    goBack() {
+      this.$router.go(-1)
+    },
+    fetchData() {
+      this.loading = true
+      setTimeout(() => {
+        this.logData = [
+          { logId: 'FSL001', taskId: 'FS-001', taskName: '用户分布统计', statisticsType: 'COUNT', logType: 'INFO', content: '开始执行联邦统计任务，参与方数量: 3', createTime: '2024-01-15 10:00:00' },
+          { logId: 'FSL002', taskId: 'FS-001', taskName: '用户分布统计', statisticsType: 'COUNT', logType: 'INFO', content: '统计完成，总用户数: 150,000，各区域分布已计算', createTime: '2024-01-15 10:05:00' },
+          { logId: 'FSL003', taskId: 'FS-002', taskName: '交易金额统计', statisticsType: 'SUM', logType: 'INFO', content: '求和统计完成，总交易金额: ¥125,680,000', createTime: '2024-01-15 14:00:00' },
+          { logId: 'FSL004', taskId: 'FS-003', taskName: '风险评分分布', statisticsType: 'AVG', logType: 'WARN', content: '部分参与方数据缺失，已使用可用数据进行计算', createTime: '2024-01-15 15:30:00' },
+          { logId: 'FSL005', taskId: 'FS-004', taskName: '地区数据统计', statisticsType: 'COUNT', logType: 'ERROR', content: '统计失败：参与方2连接超时', createTime: '2024-01-14 09:30:00' }
+        ]
+        this.total = 5
+        this.loading = false
+      }, 500)
+    },
+    handleQuery() {
+      this.queryForm.pageNum = 1
+      this.fetchData()
+    },
+    handleReset() {
+      this.queryForm = { taskId: '', logType: '', statisticsType: '', dateRange: [], pageNum: 1, pageSize: 10 }
+      this.fetchData()
+    },
+    handleSizeChange(val) {
+      this.queryForm.pageSize = val
+      this.fetchData()
+    },
+    handleCurrentChange(val) {
+      this.queryForm.pageNum = val
+      this.fetchData()
+    },
+    handleViewDetail(row) {
+      this.detailData = { ...row }
+      this.detailDialogVisible = true
+    },
+    getLogTypeTag(type) {
+      const map = { 'INFO': 'info', 'WARN': 'warning', 'ERROR': 'danger', 'DEBUG': '' }
+      return map[type] || 'info'
+    },
+    getStatisticsTypeLabel(type) {
+      const map = { 'SUM': '求和', 'AVG': '平均值', 'COUNT': '计数', 'MAX': '最大值', 'MIN': '最小值', 'VARIANCE': '方差' }
+      return map[type] || type
+    }
+  }
+}
+</script>
+
+<style scoped>
+.app-container { padding: 20px; }
+</style>
