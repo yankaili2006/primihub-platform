@@ -23,7 +23,7 @@ cd "$SCRIPT_DIR/primihub-webconsole"
 
 # 安装依赖并构建
 echo "[1/2] 构建前端项目..."
-npm install -q && npm run build:prod
+npm install -q --legacy-peer-deps && npm run build:prod
 
 # 构建镜像
 echo "[2/2] 构建 Docker 镜像..."

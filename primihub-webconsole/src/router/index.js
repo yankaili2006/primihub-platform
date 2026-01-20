@@ -210,6 +210,30 @@ export const asyncRoutes = [
         name: 'FederatedLearningList',
         component: () => import('@/views/FederatedLearning/list'),
         meta: { title: '联邦学习', breadcrumb: false }
+      },
+      {
+        path: 'modelPreview',
+        name: 'FederatedModelPreview',
+        component: () => import('@/views/federatedLearning/modelPreview'),
+        meta: { title: '联邦学习模型预览' }
+      },
+      {
+        path: 'modelImport',
+        name: 'FederatedModelImport',
+        component: () => import('@/views/federatedLearning/modelImport'),
+        meta: { title: '联邦学习模型导入' }
+      },
+      {
+        path: 'modelExport',
+        name: 'FederatedModelExport',
+        component: () => import('@/views/federatedLearning/modelExport'),
+        meta: { title: '联邦学习模型导出' }
+      },
+      {
+        path: 'modelingWorkbench',
+        name: 'FederatedModelingWorkbench',
+        component: () => import('@/views/federatedLearning/modelingWorkbench'),
+        meta: { title: '联邦建模工作台' }
       }
     ]
   },
@@ -423,6 +447,46 @@ export const asyncRoutes = [
         name: 'FederatedStatisticsLogExport',
         component: () => import('@/views/federatedStatistics/logExport'),
         meta: { title: '联邦统计日志导出' }
+      }
+    ]
+  },
+  {
+    path: '/federatedQuery',
+    component: Layout,
+    name: 'FederatedQuery',
+    redirect: '/federatedQuery/billingByCount',
+    alwaysShow: true,
+    meta: { title: '联邦查询', icon: 'el-icon-search' },
+    children: [
+      {
+        path: 'billingByCount',
+        name: 'FederatedQueryBillingByCount',
+        component: () => import('@/views/federatedQuery/billingByCount'),
+        meta: { title: '联邦查询计费（按次数）' }
+      },
+      {
+        path: 'billingByHit',
+        name: 'FederatedQueryBillingByHit',
+        component: () => import('@/views/federatedQuery/billingByHit'),
+        meta: { title: '联邦查询计费（按命中）' }
+      },
+      {
+        path: 'deduplicationFixed',
+        name: 'FederatedQueryDeduplicationFixed',
+        component: () => import('@/views/federatedQuery/deduplicationFixed'),
+        meta: { title: '联邦查询去重计费（固定时间范围）' }
+      },
+      {
+        path: 'deduplicationRolling',
+        name: 'FederatedQueryDeduplicationRolling',
+        component: () => import('@/views/federatedQuery/deduplicationRolling'),
+        meta: { title: '联邦查询去重计费（滚动时间范围）' }
+      },
+      {
+        path: 'apiValidation',
+        name: 'FederatedQueryApiValidation',
+        component: () => import('@/views/federatedQuery/apiValidation'),
+        meta: { title: '联邦查询实时接口校验' }
       }
     ]
   },
