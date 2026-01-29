@@ -1,6 +1,6 @@
 <template>
   <el-cascader ref="connectRef" v-model="value" :options="cascaderOptions" :props="propOption" v-bind="$attrs" @change="handleOrganCascaderChange">
-    <template slot-scope="{ node, data }">
+    <template slot-scope="{ data }">
       <span>{{ data.label }}</span>
     </template>
   </el-cascader>

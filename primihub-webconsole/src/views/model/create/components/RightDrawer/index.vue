@@ -217,7 +217,8 @@ export default {
         this.inputValues.push(currentData)
       }
       console.log('inputValues', this.inputValues)
-      this.nodeData.componentTypes[0].inputValue = JSON.stringify(this.inputValues)
+      // 触发事件更新父组件中的数据
+      this.$emit('update-node-input', JSON.stringify(this.inputValues))
     },
     async getProjectResourceData() {
       this.resourceList = []

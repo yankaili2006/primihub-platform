@@ -53,6 +53,29 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
 //        return false;
 //    }
 
+    /**
+     * 检查路径是否在黑名单中（支持通配符）
+     */
+    private boolean isPathInBlacklist(String path) {
+        if (baseConfiguration.getTokenValidateUriBlackList() == null) {
+            return false;
+        }
+        for (String pattern : baseConfiguration.getTokenValidateUriBlackList()) {
+            if (pattern.contains("*")) {
+                // 使用通配符匹配
+                if (MATCHER.match(pattern, path)) {
+                    return true;
+                }
+            } else {
+                // 精确匹配
+                if (pattern.equals(path)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public GatewayFilter apply(Object config) {
         return ((exchange, chain) -> {
@@ -87,9 +110,7 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
                 }
 
                 String token=queryParams.getFirst(BaseParamEnum.TOKEN.getColumnName());
-                if(!(baseConfiguration.getTokenValidateUriBlackList()!=null
-                        && baseConfiguration.getTokenValidateUriBlackList().contains(currentRawPath))
-                        &&(token==null|| "".equals(token.trim()))){
+                if(!isPathInBlacklist(currentRawPath) && (token==null|| "".equals(token.trim()))){
                     return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange,BaseResultEnum.LACK_OF_PARAM,BaseParamEnum.TOKEN);
                 }
                 String sign=queryParams.getFirst(BaseParamEnum.SIGN.getColumnName());
@@ -174,9 +195,7 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
                                                 return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange,BaseResultEnum.LACK_OF_PARAM,BaseParamEnum.TOKEN);
                                             }
                                         }
-                                        if(!(baseConfiguration.getTokenValidateUriBlackList()!=null
-                                                && baseConfiguration.getTokenValidateUriBlackList().contains(currentRawPath))
-                                                &&(token==null|| "".equals(token.trim()))){
+                                        if(!isPathInBlacklist(currentRawPath) && (token==null|| "".equals(token.trim()))){
                                             return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange,BaseResultEnum.LACK_OF_PARAM,BaseParamEnum.TOKEN);
                                         }
 
@@ -226,9 +245,7 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
                                         if(baseJsonParam.getNonce()==null|| "".equals(baseJsonParam.getNonce())){
                                             return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange,BaseResultEnum.LACK_OF_PARAM,BaseParamEnum.NONCE);
                                         }
-                                        if(!(baseConfiguration.getTokenValidateUriBlackList()!=null
-                                                && baseConfiguration.getTokenValidateUriBlackList().contains(currentRawPath))
-                                                &&(baseJsonParam.getToken()==null|| "".equals(baseJsonParam.getToken().trim()))){
+                                        if(!isPathInBlacklist(currentRawPath) && (baseJsonParam.getToken()==null|| "".equals(baseJsonParam.getToken().trim()))){
                                             return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange, BaseResultEnum.LACK_OF_PARAM, BaseParamEnum.TOKEN);
                                         }
                                         if((baseConfiguration.getNeedSignUriList()!=null
@@ -265,9 +282,7 @@ public class BaseParamGatewayFilterFactory extends AbstractGatewayFilterFactory 
                                         }
 
                                         String token=queryParams.getFirst(BaseParamEnum.TOKEN.getColumnName());
-                                        if(!(baseConfiguration.getTokenValidateUriBlackList()!=null
-                                                && baseConfiguration.getTokenValidateUriBlackList().contains(currentRawPath))
-                                                &&(token==null|| "".equals(token.trim()))){
+                                        if(!isPathInBlacklist(currentRawPath) && (token==null|| "".equals(token.trim()))){
                                             token=((MultiValueMap<String,String>) resolvedBody).getFirst(BaseParamEnum.TOKEN.getColumnName());
                                             if(token==null|| "".equals(token.trim())){
                                                 return GatewayFilterFactoryTool.writeFailureJsonToResponse(exchange, BaseResultEnum.LACK_OF_PARAM, BaseParamEnum.TOKEN);

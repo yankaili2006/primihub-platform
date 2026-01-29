@@ -223,7 +223,7 @@
         </if>
         <if test="(organId!=null and organId!='') or (participationIdentity!=null and participationIdentity!=0)">
             and project_id in (
-                select project_id from data_project_organ where is_del = 0
+                select project_id         from data_project_ORGAN where is_del = 0
                 <if test="organId!=''">
                     and organ_id = #{organId}
                 </if>

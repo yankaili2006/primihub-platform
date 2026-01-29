@@ -1,0 +1,56 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: gateway
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 1MB
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedHeaders: "*"
+            allowedMethods: "*"
+      routes:
+        - id: test-url-proxy
+          uri: http://localhost:8090
+          predicates:
+            - Path=/test/**
+          filters:
+            - StripPrefix=1
+        - id: sys-url-proxy
+          uri: http://localhost:8090
+          predicates:
+            - Path=/sys/**
+          filters:
+            - StripPrefix=1
+        - id: data-url-proxy
+          uri: http://localhost:8090
+          predicates:
+            - Path=/data/**
+          filters:
+            - StripPrefix=1
+        - id: share-url-proxy
+          uri: http://localhost:8090
+          predicates:
+            - Path=/share/**
+          filters:
+            - StripPrefix=1
+        - id: swagger-url-proxy
+          uri: http://localhost:8090
+          predicates:
+            - Path=/platform/**
+          filters:
+            - StripPrefix=1
+
+logging:
+  level:
+    root: info
+  config: classpath:logback-privacy.xml

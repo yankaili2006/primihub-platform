@@ -48,6 +48,9 @@ service.interceptors.request.use(
     if (store.getters.token) {
       config.headers['token'] = getToken()
     }
+    if (store.getters.userId) {
+      config.headers['userId'] = store.getters.userId
+    }
     if (config.method === 'get') {
       config.params = {
         ...config.params,

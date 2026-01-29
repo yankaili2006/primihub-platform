@@ -1,0 +1,73 @@
+server:
+  port: 8090
+spring:
+  application:
+    name: platform
+  datasource:
+    druid:
+      primary:
+        url: jdbc:h2:mem:primarydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+        username: sa
+        password: 
+        driver-class-name: org.h2.Driver
+        connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      secondary:
+        url: jdbc:h2:mem:secondarydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+        username: sa
+        password: 
+        driver-class-name: org.h2.Driver
+        connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+        filter:
+          config:
+            enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  redis:
+    host: localhost
+    port: 6379
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+        
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
+
+grpc:
+  client:
+    channel:
+      host: localhost
+      port: 50050
+      use-tls: false
+    config:
+      application-name: platform
+      timeout: 30000
+      max-inbound-message-size: 104857600
+      
+primihub:
+  node:
+    address: http://localhost:12120

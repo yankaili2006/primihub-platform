@@ -1,7 +1,7 @@
 <template>
   <div class="item" :class="{'active': selected}" @click="handleResourceClick">
     <div class="header">
-      <el-checkbox v-if="hasCheckBox" v-model="selected" class="checkbox" @change="handleResourceClick" />
+      <el-checkbox v-if="hasCheckBox" v-model="localSelected" class="checkbox" @change="handleCheckboxChange" />
       <div class="header-title"><span>{{ resource.resourceName }}</span></div>
       <div class="header-right">
         <div class="type"><el-tag size="mini" class="header-title-tag">{{ resource.resourceAuthType | authTypeFilter }}</el-tag></div>
@@ -71,7 +71,8 @@ export default {
       list: [],
       operationPopVisible: false,
       selectedIds: [],
-      selectId: 0
+      selectId: 0,
+      localSelected: this.selected
     }
   },
   computed: {
@@ -145,6 +146,10 @@ export default {
       if (this.hasCheckBox) {
         this.$emit('click', this.resource)
       }
+    },
+    handleCheckboxChange() {
+      this.$emit('update:selected', this.localSelected)
+      this.$emit('click', this.resource)
     },
     toggleClick() {}
   }

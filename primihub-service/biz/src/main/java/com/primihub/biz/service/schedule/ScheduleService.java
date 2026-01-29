@@ -73,7 +73,7 @@ public class ScheduleService {
         for (SysOrgan sysOrgan : sysOrgans) {
             try {
                 BaseResultEntity baseResultEntity = otherBusinessesService.syncGatewayApiData(data, sysOrgan.getOrganGateway() + "/share/shareData/healthConnection", sysOrgan.getPublicKey());
-                if (baseResultEntity==null || !baseResultEntity.getCode().equals(BaseResultEnum.SUCCESS.getReturnCode())){
+                if (baseResultEntity!=null && baseResultEntity.getCode().equals(BaseResultEnum.SUCCESS.getReturnCode())){
                     Set<String> services = (Set<String>) baseResultEntity.getResult();
                     sysOrgan.setPlatformState(services.contains("platform")?1:0);
                     sysOrgan.setNodeState(services.contains("node")?1:0);

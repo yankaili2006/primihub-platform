@@ -2,10 +2,8 @@
   <section class="app-main" :class="{'padding':!routePath}">
     <div v-if="!routePath" class="flex justify-content-between">
       <div>
-        <template>
-          <hamburger :is-active="$store.getters.sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
-          <breadcrumb class="breadcrumb-container" />
-        </template>
+        <hamburger :is-active="$store.getters.sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+        <breadcrumb class="breadcrumb-container" />
       </div>
       <div v-if="!isHideFadeBack" id="guide" class="align-self-center flex">
         <!--        <div class="guide-item">-->

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysUserWhitelistSecondarydbRepository">
+
+    <!-- 根据ID查询白名单 -->
+    <select id="selectWhitelistById" resultType="com.primihub.biz.entity.sys.po.SysUserWhitelist">
+        SELECT
+            whitelist_id AS whitelistId,
+            whitelist_type AS whitelistType,
+            whitelist_value AS whitelistValue,
+            whitelist_desc AS whitelistDesc,
+            status,
+            is_del AS isDel,
+            creator_id AS creatorId,
+            creator_name AS creatorName,
+            c_time AS cTime,
+            u_time AS uTime
+        FROM sys_user_whitelist
+        WHERE whitelist_id = #{whitelistId}
+          AND is_del = 0
+    </select>
+
+    <!-- 根据类型和值查询白名单 -->
+    <select id="selectWhitelistByTypeAndValue" resultType="com.primihub.biz.entity.sys.po.SysUserWhitelist">
+        SELECT
+            whitelist_id AS whitelistId,
+            whitelist_type AS whitelistType,
+            whitelist_value AS whitelistValue,
+            whitelist_desc AS whitelistDesc,
+            status,
+            is_del AS isDel,
+            creator_id AS creatorId,
+            creator_name AS creatorName,
+            c_time AS cTime,
+            u_time AS uTime
+        FROM sys_user_whitelist
+        WHERE whitelist_type = #{whitelistType}
+          AND whitelist_value = #{whitelistValue}
+          AND is_del = 0
+    </select>
+
+    <!-- 分页查询白名单列表 -->
+    <select id="selectWhitelistPage" resultType="com.primihub.biz.entity.sys.vo.SysUserWhitelistVO">
+        SELECT
+            whitelist_id AS whitelistId,
+            whitelist_type AS whitelistType,
+            CASE whitelist_type
+                WHEN 1 THEN '邮箱'
+                WHEN 2 THEN '手机号'
+                ELSE '未知'
+            END AS whitelistTypeDesc,
+            whitelist_value AS whitelistValue,
+            whitelist_desc AS whitelistDesc,
+            status,
+            CASE status
+                WHEN 0 THEN '禁用'
+                WHEN 1 THEN '启用'
+                ELSE '未知'
+            END AS statusDesc,
+            creator_name AS creatorName,
+            c_time AS cTime
+        FROM sys_user_whitelist
+        WHERE is_del = 0
+        <if test="whitelistType != null">
+            AND whitelist_type = #{whitelistType}
+        </if>
+        <if test="whitelistValue != null and whitelistValue != ''">
+            AND whitelist_value LIKE CONCAT('%', #{whitelistValue}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY c_time DESC
+        LIMIT #{pageIndex}, #{pageSize}
+    </select>
+
+    <!-- 查询白名单总数 -->
+    <select id="selectWhitelistCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM sys_user_whitelist
+        WHERE is_del = 0
+        <if test="whitelistType != null">
+            AND whitelist_type = #{whitelistType}
+        </if>
+        <if test="whitelistValue != null and whitelistValue != ''">
+            AND whitelist_value LIKE CONCAT('%', #{whitelistValue}, '%')
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 检查用户是否在白名单中 -->
+    <select id="checkUserInWhitelist" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM sys_user_whitelist
+        WHERE whitelist_type = #{whitelistType}
+          AND whitelist_value = #{whitelistValue}
+          AND status = 1
+          AND is_del = 0
+    </select>
+
+</mapper>
