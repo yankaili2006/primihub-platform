@@ -33,12 +33,15 @@ const service = axios.create({
   timeout: 20 * 1000 // request timeout
 })
 
-const timestamp = new Date().getTime()
-const nonce = Math.floor(Math.random() * 1000 + 1)
-
 // request interceptor
 service.interceptors.request.use(
   config => {
+    // 每次请求生成新的 timestamp 和 nonce
+    const timestamp = new Date().getTime()
+    const nonce = Math.floor(Math.random() * 1000 + 1)
+    // 获取 token，如果不存在则使用空字符串（确保参数存在）
+    const token = getToken() || ''
+
     if (config.showLoading === undefined) {
       config.showLoading = true
     }
@@ -53,7 +56,7 @@ service.interceptors.request.use(
         ...config.params,
         timestamp,
         nonce,
-        token: getToken()
+        token
       }
     } else if (config.method === 'post') {
       if (config.type === 'json') {
@@ -62,7 +65,7 @@ service.interceptors.request.use(
           ...config.data,
           timestamp,
           nonce,
-          token: getToken()
+          token
         })
       } else {
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -71,7 +74,7 @@ service.interceptors.request.use(
           ...data,
           timestamp,
           nonce,
-          token: getToken()
+          token
         }, { allowDots: true })
       }
     }
