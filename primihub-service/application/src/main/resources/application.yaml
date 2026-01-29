@@ -18,7 +18,7 @@ spring:
       primary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false
+        url: jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false
         password: root
         connection-properties: config.decrypt=false
         filter:

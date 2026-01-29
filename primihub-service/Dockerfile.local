@@ -1,4 +1,4 @@
-FROM openjdk:8-jre
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/eclipse-temurin:8-jre
 
 ENV DEBIAN_FRONTEND=noninteractive
 

@@ -8,7 +8,7 @@ module.exports = {
   plugins: plugins,
   presets: [
     // https://github.com/vuejs/vue-cli/tree/master/packages/@vue/babel-preset-app
-    '@vue/cli-plugin-babel/preset'
+    '@vue/babel-preset-app'
   ],
   'env': {
     'development': {
