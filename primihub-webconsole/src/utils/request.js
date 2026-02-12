@@ -51,8 +51,18 @@ service.interceptors.request.use(
     if (store.getters.token) {
       config.headers['token'] = getToken()
     }
-    if (store.getters.userId) {
-      config.headers['userId'] = store.getters.userId
+    // 添加 userId 请求头 - 优先从 store 获取，如果不存在则从 localStorage 读取
+    let userId = store.getters.userId
+    if (!userId) {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+        userId = userInfo.userId || userInfo.id
+      } catch (e) {
+        console.warn('Failed to get userId from localStorage:', e)
+      }
+    }
+    if (userId) {
+      config.headers['userId'] = userId
     }
     if (config.method === 'get') {
       config.params = {

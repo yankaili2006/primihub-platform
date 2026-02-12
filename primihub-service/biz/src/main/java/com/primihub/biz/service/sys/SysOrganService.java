@@ -309,18 +309,23 @@ public class SysOrganService {
     }
 
     public BaseResultEntity getOrganList(OrganParam param) {
-        List<SysOrgan> list = sysOrganSecondarydbRepository.selectSysOrganByParam(param);
-        if (list.size()==0){
-            return BaseResultEntity.success(new PageDataEntity(0,param.getPageSize(),param.getPageNo(),new ArrayList()));
-        }
-        Integer count = sysOrganSecondarydbRepository.selectSysOrganByParamCount(param);
-        String localOrganShortCode = organConfiguration.getLocalOrganShortCode();
-        for (SysOrgan sysOrgan : list) {
-            if (sysOrgan.getApplyId() != null && sysOrgan.getApplyId().contains(localOrganShortCode)){
-                sysOrgan.setIdentity(0);
+        try {
+            List<SysOrgan> list = sysOrganSecondarydbRepository.selectSysOrganByParam(param);
+            if (list.size()==0){
+                return BaseResultEntity.success(new PageDataEntity(0,param.getPageSize(),param.getPageNo(),new ArrayList()));
             }
+            Integer count = sysOrganSecondarydbRepository.selectSysOrganByParamCount(param);
+            String localOrganShortCode = organConfiguration.getLocalOrganShortCode();
+            for (SysOrgan sysOrgan : list) {
+                if (localOrganShortCode != null && sysOrgan.getApplyId() != null && sysOrgan.getApplyId().contains(localOrganShortCode)){
+                    sysOrgan.setIdentity(0);
+                }
+            }
+            return BaseResultEntity.success(new PageDataEntity(count,param.getPageSize(),param.getPageNo(),list));
+        } catch (Exception e) {
+            log.error("获取机构列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "获取机构列表失败: " + e.getMessage());
         }
-        return BaseResultEntity.success(new PageDataEntity(count,param.getPageSize(),param.getPageNo(),list));
     }
 
     public BaseResultEntity examineJoining(Long id, Integer examineState, String examineMsg) {

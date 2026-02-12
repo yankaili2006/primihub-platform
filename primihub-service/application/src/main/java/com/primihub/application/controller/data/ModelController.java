@@ -34,7 +34,7 @@ public class ModelController {
             @ApiImplicitParam(name="taskStatus", value = "任务状态", dataType = "Integer", paramType = "query"),
             @ApiImplicitParam(name="projectId", value = "项目ID", dataType = "Long", paramType = "query")
     })
-    @GetMapping("getmodellist")
+    @GetMapping({"getmodellist", "getModelList"})
     public BaseResultEntity getDataModelList(String projectName,
                                              String modelName,
                                              Integer taskStatus,

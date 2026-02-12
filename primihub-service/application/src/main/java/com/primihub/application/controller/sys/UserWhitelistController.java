@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  * 用户白名单控制器
  */
 @Api(value = "用户白名单接口", tags = "用户白名单管理")
-@RequestMapping("whitelist")
+@RequestMapping("userWhitelist")
 @RestController
 public class UserWhitelistController {
 

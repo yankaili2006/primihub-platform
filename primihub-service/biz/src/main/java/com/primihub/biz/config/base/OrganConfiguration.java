@@ -61,7 +61,13 @@ public class OrganConfiguration {
         if (sysLocalOrganInfo == null || sysLocalOrganInfo.getOrganId() == null) {
             return null;
         }
-        return sysLocalOrganInfo.getOrganId().substring(24, 36);
+        String organId = sysLocalOrganInfo.getOrganId();
+        // 检查organId长度，避免StringIndexOutOfBoundsException
+        if (organId.length() < 36) {
+            log.warn("OrganId length is less than 36: {}", organId);
+            return organId.length() >= 12 ? organId.substring(organId.length() - 12) : organId;
+        }
+        return organId.substring(24, 36);
     }
 
     public String generateUniqueCode() {
