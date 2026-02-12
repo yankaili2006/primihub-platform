@@ -188,10 +188,15 @@ public class DataProjectService {
         }
         DataProjectDetailsVo dataProjectDetailsVo = DataProjectConvert.dataProjectConvertDetailsVo(dataProject);
         SysLocalOrganInfo sysLocalOrganInfo = organConfiguration.getSysLocalOrganInfo();
-        if (sysLocalOrganInfo.getOrganId().equals(dataProject.getCreatedOrganId())) {
+        // 添加空指针检查，避免500错误
+        if (sysLocalOrganInfo != null && sysLocalOrganInfo.getOrganId() != null
+            && dataProject.getCreatedOrganId() != null
+            && sysLocalOrganInfo.getOrganId().equals(dataProject.getCreatedOrganId())) {
             dataProjectDetailsVo.setCreator(true);
         }
-        List<DataProjectOrgan> dataProjectOrgans = dataProjectRepository.selectDataProjcetOrganByProjectId(dataProject.getProjectId()).stream().filter(organ -> dataProjectDetailsVo.getCreator() || organ.getOrganId().equals(organ.getInitiateOrganId()) || organ.getOrganId().equals(sysLocalOrganInfo.getOrganId())).collect(Collectors.toList());
+        // 获取本机构ID，如果为null则使用空字符串避免空指针
+        String localOrganId = (sysLocalOrganInfo != null && sysLocalOrganInfo.getOrganId() != null) ? sysLocalOrganInfo.getOrganId() : "";
+        List<DataProjectOrgan> dataProjectOrgans = dataProjectRepository.selectDataProjcetOrganByProjectId(dataProject.getProjectId()).stream().filter(organ -> dataProjectDetailsVo.getCreator() || organ.getOrganId().equals(organ.getInitiateOrganId()) || organ.getOrganId().equals(localOrganId)).collect(Collectors.toList());
         List<String> organIds = dataProjectOrgans.stream().map(DataProjectOrgan::getOrganId).collect(Collectors.toList());
         List<DataProjectResource> dataProjectResources = dataProjectRepository.selectProjectResourceByProjectId(dataProject.getProjectId());
         Map<String, List<DataProjectResource>> organResourceMap = dataProjectResources.stream().collect(Collectors.groupingBy(DataProjectResource::getOrganId));
@@ -200,7 +205,10 @@ public class DataProjectService {
         Map<String, SysOrgan> organListMap = otherBusinessesService.getOrganListMap(organIds);
         List<DataProjectOrganVo> organs = new ArrayList<>();
         for (DataProjectOrgan projectOrgan : dataProjectOrgans) {
-            DataProjectOrganVo dataProjectOrganVo = DataProjectConvert.DataProjectOrganConvertVo(projectOrgan, dataProject.getCreatedOrganId().equals(projectOrgan.getOrganId()), sysLocalOrganInfo,organListMap.get(projectOrgan.getOrganId()));
+            // 添加空指针检查
+            boolean isCreator = dataProject.getCreatedOrganId() != null && projectOrgan.getOrganId() != null
+                    && dataProject.getCreatedOrganId().equals(projectOrgan.getOrganId());
+            DataProjectOrganVo dataProjectOrganVo = DataProjectConvert.DataProjectOrganConvertVo(projectOrgan, isCreator, sysLocalOrganInfo,organListMap.get(projectOrgan.getOrganId()));
             List<DataProjectResource> projectResources = organResourceMap.get(dataProjectOrganVo.getOrganId());
             if (projectResources!=null){
                 projectResources = projectResources.stream().sorted(Comparator.comparing(DataProjectResource::getId).reversed()).collect(Collectors.toList());
