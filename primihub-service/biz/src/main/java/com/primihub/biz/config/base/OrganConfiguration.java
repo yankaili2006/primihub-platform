@@ -79,10 +79,10 @@ public class OrganConfiguration {
 
     @PostConstruct
     public void init() {
-        // Skip Nacos initialization for local development
-        // readNacosConfigOrganInfo();
+        // Initialize Nacos configuration for organ info
+        readNacosConfigOrganInfo();
         readResourceConfigComponentsInfo();
-        // readNacosMarketInfo();
+        readNacosMarketInfo();
     }
 
     private void readNacosMarketInfo() {

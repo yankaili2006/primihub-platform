@@ -65,8 +65,8 @@
               <!-- <el-link v-if="row.identity === 1 && row.examineState === 0" size="mini" type="primary" @click="handleAgree(row)">同意</el-link>
               <el-link v-if="row.identity === 1 && row.examineState === 0" size="mini" type="primary" @click="handleRefuse(row)">拒绝</el-link>
               <el-link v-if="row.identity === 0 && row.examineState === 2" size="mini" type="primary" @click="handleApply(row)">申请</el-link> -->
-              <el-link v-if="row.examineState === 1 && row.enable === 0" size="mini" type="primary" @click="handleConnect(row)">断开连接</el-link>
-              <el-link v-if="row.examineState === 1 && row.enable === 1" size="mini" type="primary" @click="reconnectApply (row)">重新连接</el-link>
+              <el-link v-if="row.examineState === 1 && row.enable === 1" size="mini" type="primary" @click="handleConnect(row)">断开连接</el-link>
+              <el-link v-if="row.examineState === 1 && row.enable === 0" size="mini" type="primary" @click="reconnectApply (row)">重新连接</el-link>
             </div>
           </template>
         </el-table-column>
@@ -196,7 +196,7 @@ export default {
     filterState(row, type) {
       const { examineState, identity, enable } = row
       if (examineState === 1 && type === 1) {
-        return enable === 0 ? '已连接' : '连接断开'
+        return enable === 1 ? '已连接' : '连接断开'
       }
       if (examineState === 0) {
         if (type === 1) {
@@ -216,7 +216,7 @@ export default {
       clip(text, event)
     },
     statusStyle(state, enable) {
-      return state === 1 && enable === 1 ? 'state-error el-icon-error' : state === 0 ? 'state-default el-icon-loading' : state === 2 ? 'state-error el-icon-error' : state === 1 ? 'state-success el-icon-success' : 'state-default'
+      return state === 1 && enable === 0 ? 'state-error el-icon-error' : state === 0 ? 'state-default el-icon-loading' : state === 2 ? 'state-error el-icon-error' : state === 1 ? 'state-success el-icon-success' : 'state-default'
     },
     reconnectApply({ id, publicKey, organGateway, organId, organName, applyId, enable }) {
       console.log('reconnectApply ====>>', organId)

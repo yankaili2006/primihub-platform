@@ -72,6 +72,22 @@ public class SysOrganService {
             configService = NacosFactory.createConfigService(properties);
             String organInfoContent = configService.getConfig(SysConstant.SYS_ORGAN_INFO_NAME, group, 3000);
             SysLocalOrganInfo sysLocalOrganInfo = JSON.parseObject(organInfoContent, SysLocalOrganInfo.class);
+
+            // Auto-generate public/private key pair if missing
+            if (sysLocalOrganInfo != null && StringUtils.isBlank(sysLocalOrganInfo.getPublicKey())) {
+                log.info("Public key is missing, generating new RSA key pair for organ: {}", sysLocalOrganInfo.getOrganId());
+                try {
+                    String[] rsaKeyPair = CryptUtil.genRsaKeyPair();
+                    sysLocalOrganInfo.setPublicKey(rsaKeyPair[0]);
+                    sysLocalOrganInfo.setPrivateKey(rsaKeyPair[1]);
+                    // Update Nacos configuration with the new keys
+                    configService.publishConfig(SysConstant.SYS_ORGAN_INFO_NAME, group, JSON.toJSONString(sysLocalOrganInfo), ConfigType.JSON.getType());
+                    log.info("Successfully generated and saved public key for organ: {}", sysLocalOrganInfo.getOrganId());
+                } catch (Exception e) {
+                    log.error("Failed to generate RSA key pair", e);
+                }
+            }
+
             Map result = new HashMap();
             result.put("sysLocalOrganInfo", sysLocalOrganInfo);
             return BaseResultEntity.success(result);
