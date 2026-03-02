@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8090
 spring:
   profiles:
     active: simple
@@ -53,7 +53,7 @@ spring:
           login-username: admin
           login-password: admin
   rabbitmq:
-    host: rabbitmq-mq
+    host: rabbitmq0
     port: 5672
     username: guest
     password: guest
@@ -71,11 +71,11 @@ spring:
     nacos:
       discovery:
         server-addr: nacos:8848
-        namespace: dev
+        namespace: demo0
       config:
         enabled: false
         server-addr: nacos:8848
-        namespace: dev
+        namespace: demo0
         group: DEFAULT_GROUP
         file-extension: yaml
         username: nacos
@@ -90,4 +90,21 @@ logging:
   level:
     root: info
   config: classpath:logback-privacy.xml
+
+# Base config defaults (can be overridden by Nacos base.json or profile-specific yamls)
+base:
+  defaultPassword: "123456"
+  defaultPasswordVector: "excalibur"
+  adminUserIds: [1]
+  grpcClient:
+    address: primihub-node0
+    port: 50050
+    useTls: false
+    trustCertFilePath: /data/javaclientcert/ca.crt
+    keyCertChainFile: /data/javaclientcert/client.crt
+    keyFile: /data/javaclientcert/client8.key
+  grpcServerPort: 9090
+  uploadUrlDirPrefix: /data/upload/
+  resultUrlDirPrefix: /data/result/
+  usefulToken: excalibur_forever_ABCDEFGHIJKLMN
 

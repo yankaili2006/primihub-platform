@@ -24,8 +24,8 @@ export default {
   },
   data() {
     return {
-      title: 'Vue Admin Template',
-      logo: 'https://wpimg.wallstcn.com/69a1c46c-eb1c-4b46-8bd4-e9e686ef5251.png'
+      title: 'DataItem',
+      logo: require('@/assets/logo-primihub.png')
     }
   }
 }
@@ -55,8 +55,9 @@ export default {
     width: 100%;
 
     & .sidebar-logo {
-      width: 32px;
-      height: 32px;
+      height: 40px;
+      width: auto;
+      max-width: 120px;
       vertical-align: middle;
       margin-right: 12px;
     }

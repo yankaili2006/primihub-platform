@@ -231,13 +231,29 @@ public class DataAsyncService implements ApplicationContextAware {
             available = otherDataResource.getResourceState();
         } else {
             BaseResultEntity dataResource = otherBusinessesService.getDataResource(dataPsi.getOtherResourceId());
-            if (dataResource.getCode() != 0) {
-                return;
+            if (dataResource == null || dataResource.getCode() != 0 || dataResource.getResult() == null) {
+                // Fallback to local database query for all-in-one deployment
+                log.warn("Remote resource query failed for resourceId: {}, falling back to local database", dataPsi.getOtherResourceId());
+                DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+                if (otherDataResource == null) {
+                    log.error("Failed to query resource from both remote and local database for resourceId: {}", dataPsi.getOtherResourceId());
+                    psiTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+                    dataPsiPrRepository.updateDataPsiTask(psiTask);
+                    dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+                    dataTask.setTaskEndTime(System.currentTimeMillis());
+                    dataTask.setTaskErrorMsg("无法查询到对方资源信息，资源ID: " + dataPsi.getOtherResourceId());
+                    dataTaskPrRepository.updateDataTask(dataTask);
+                    return;
+                }
+                resourceId = StringUtils.isNotBlank(otherDataResource.getResourceFusionId()) ? otherDataResource.getResourceFusionId() : otherDataResource.getResourceId().toString();
+                resourceColumnNameList = otherDataResource.getFileHandleField();
+                available = otherDataResource.getResourceState();
+            } else {
+                Map<String, Object> otherDataResource = (LinkedHashMap) dataResource.getResult();
+                resourceId = otherDataResource.getOrDefault("resourceId", "1").toString();
+                resourceColumnNameList = otherDataResource.getOrDefault("resourceColumnNameList", "").toString();
+                available = Integer.parseInt(otherDataResource.getOrDefault("available", "1").toString());
             }
-            Map<String, Object> otherDataResource = (LinkedHashMap) dataResource.getResult();
-            resourceId = otherDataResource.getOrDefault("resourceId", "1").toString();
-            resourceColumnNameList = otherDataResource.getOrDefault("resourceColumnNameList", "").toString();
-            available = Integer.parseInt(otherDataResource.getOrDefault("available", "1").toString());
         }
         DataTask dataTask = new DataTask();
         dataTask.setTaskIdName(psiTask.getTaskId());
@@ -321,7 +337,22 @@ public class DataAsyncService implements ApplicationContextAware {
         } else {
             dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
         }
-        psiTask.setTaskState(dataTask.getTaskState());
+        // Map TaskStateEnum values to data_psi_task state values:
+        // TaskStateEnum.SUCCESS=1 but data_psi_task success=2, fail=3 (matches TaskStateEnum.FAIL=3)
+        if (dataTask.getTaskState().equals(TaskStateEnum.SUCCESS.getStateType())) {
+            psiTask.setTaskState(2);
+            // Read result file content and row count
+            String fileContent = FileUtil.getFileContent(psiTask.getFilePath());
+            if (fileContent != null) {
+                psiTask.setFileContent(fileContent);
+                String[] lines = fileContent.split("\n");
+                int rowCount = 0;
+                for (String line : lines) { if (!line.trim().isEmpty()) rowCount++; }
+                psiTask.setFileRows(rowCount);
+            }
+        } else {
+            psiTask.setTaskState(dataTask.getTaskState());
+        }
         dataPsiPrRepository.updateDataPsiTask(psiTask);
         dataTask.setTaskEndTime(System.currentTimeMillis());
         updateTaskState(dataTask);

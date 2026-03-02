@@ -2,6 +2,7 @@ package com.primihub.biz.config.database;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -10,11 +11,16 @@ import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Data initialization component
+ * Disabled: JdbcTemplate auto-configuration not available in current setup
+ */
 @Slf4j
-@Component
+// @Component
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
+    @Qualifier("primaryDB")
     private DataSource dataSource;
     
     @Autowired

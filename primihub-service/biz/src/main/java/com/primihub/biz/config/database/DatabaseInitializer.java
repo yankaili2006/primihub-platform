@@ -18,9 +18,10 @@ import java.sql.Statement;
 /**
  * 数据库初始化组件
  * 用于在应用启动时执行SQL初始化脚本
+ * 注意: 此组件为H2内存数据库模式使用，生产MySQL环境中禁用
  */
 @Slf4j
-@Component
+// @Component  // Disabled: causes startup deadlock in MySQL mode (primaryDataSource bean missing)
 public class DatabaseInitializer {
     
     @Autowired

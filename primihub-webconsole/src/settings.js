@@ -25,13 +25,14 @@ module.exports = {
    */
   googleAnalytics: true,
   loginLogoUrl: '/images/logo-white.png', // login page logo
-  isShowLogo: false,
+  isShowLogo: true,
   isOpenTracing: false,
-  logoUrl: '/images/logo1.png', // navbar logo
-  logoTitle: '原语隐私计算平台', // navbar logo title
+  logoUrl: '/images/logo-primihub.png', // navbar logo
+  logoTitle: 'DataItem', // navbar logo title
+  showLogoTitle: true,
   favicon: '', // browser icon
   isHideFadeBack: true, // show or hide suggestions and feedback
   isHideAppMarket: true, // show or hide application market
   isHideFooterVersion: true, // show or hide footer text
-  footerText: '北京原语科技有限公司 V1.5.5' // when show footer text
+  footerText: '海会科技 V1.5.5' // when show footer text
 }

@@ -9,11 +9,13 @@ spring:
     nacos:
       discovery:
         server-addr: nacos:8848
-        namespace: dev
+        # namespace 通过环境变量 SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE 注入，不在此处硬编码
+        # 避免覆盖 docker-compose 中按节点配置的 demo0/demo1/demo2 命名空间
 nacos:
   config:
     server-addr: nacos:8848
-    namespace: dev
+    # namespace 通过环境变量 SPRING_CLOUD_NACOS_CONFIG_NAMESPACE 注入
+    namespace:
     max-retry: 3
     config-long-poll-timeout: 1000
     config-retry-time: 1000
@@ -42,6 +44,38 @@ aj:
 
 swagger2:
   enable: true
+
+# 基础配置
+base:
+  grpc-client:
+    address: primihub-node0
+    port: 50050
+    use-tls: false
+    trust-cert-file-path: /data/javaclientcert/ca.crt
+  grpc-server-port: 9090
+  upload-url-dir-prefix: /data/upload/
+  result-url-dir-prefix: /data/result/
+  useful-token: excalibur_forever_ABCDEFGHIJKLMN
+  tokenValidateUriBlackList:
+    - "/user/login"
+    - "/user/register"
+    - "/user/sendVerificationCode"
+    - "/user/forgetPassword"
+    - "/captcha/get"
+    - "/captcha/check"
+    - "/oauth/getAuthList"
+    - "/oauth/authLogin"
+    - "/oauth/authRegister"
+    - "/oauth/github/render"
+    - "/oauth/github/callback"
+    - "/common/getValidatePublicKey"
+    - "/common/getTrackingID"
+    - "/shareData/syncProject"
+    - "/shareData/syncModel"
+    - "/organ/getHomepage"
+    - "/test/**"
+    - "/actuator/**"
+
 logging:
   level:
     root: info

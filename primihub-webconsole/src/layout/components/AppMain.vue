@@ -29,7 +29,7 @@
               <el-dropdown-item>
                 <div class="contact-server">
                   <p>微信扫描二维码</p>
-                  <img src="/static/img/assitant.001dc94b.png" alt="原语科技">
+                  <img src="/static/img/assitant.001dc94b.png" alt="海会科技">
                 </div>
               </el-dropdown-item>
             </el-dropdown-menu>

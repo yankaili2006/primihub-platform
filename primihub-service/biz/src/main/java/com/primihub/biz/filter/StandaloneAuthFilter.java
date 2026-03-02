@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
 import javax.servlet.*;
@@ -21,7 +20,6 @@ import java.io.IOException;
 import java.util.*;
 
 @Slf4j
-@Component
 @WebFilter(filterName = "standaloneAuthFilter", urlPatterns = {"/*"})
 public class StandaloneAuthFilter implements Filter {
 

@@ -7,7 +7,7 @@
     >
       <div style="text-align: center;">
         <img src="../../assets/assitant.png" width="100%">
-        <p>原语科技小助手</p>
+        <p>海会科技小助手</p>
       </div>
       <div slot="reference" class="contact-icon"><svg-icon icon-class="contact" /></div>
     </el-popover>

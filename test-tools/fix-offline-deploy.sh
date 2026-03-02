@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# 修复离线部署问题
+
+set -e
+
+echo "=========================================="
+echo "   修复离线部署配置"
+echo "=========================================="
+echo ""
+
+cd "$(dirname "$0")"
+
+# 1. 停止服务
+echo "步骤1: 停止所有服务..."
+docker-compose down
+echo ""
+
+# 2. 获取主机IP
+HOST_IP=$(hostname -I | awk '{print $1}')
+echo "步骤2: 检测到主机IP: $HOST_IP"
+echo ""
+
+# 3. 备份nacos配置
+echo "步骤3: 备份nacos配置文件..."
+if [ ! -f "data/initsql/nacos_config.sql.bak" ]; then
+    cp data/initsql/nacos_config.sql data/initsql/nacos_config.sql.bak
+    echo "✓ 已备份为 nacos_config.sql.bak"
+else
+    echo "✓ 备份文件已存在"
+fi
+echo ""
+
+# 4. 替换IP地址
+echo "步骤4: 更新Loki地址配置..."
+# 先尝试从备份恢复
+if [ -f "data/initsql/nacos_config.sql.bak" ]; then
+    cp data/initsql/nacos_config.sql.bak data/initsql/nacos_config.sql
+    echo "✓ 从备份恢复配置文件"
+fi
+
+# 替换所有可能的IP地址
+sed -i "s/192\.168\.99\.5:3100/${HOST_IP}:3100/g" data/initsql/nacos_config.sql
+sed -i "s/YOUR_HOST_IP/${HOST_IP}/g" data/initsql/nacos_config.sql
+
+REPLACED=$(grep -c "${HOST_IP}:3100" data/initsql/nacos_config.sql || true)
+echo "✓ 已更新 $REPLACED 处Loki地址为: ${HOST_IP}:3100"
+echo ""
+
+# 5. 清理MySQL数据
+echo "步骤5: 清理MySQL数据目录..."
+if [ -d "data/mysql" ]; then
+    mv data/mysql data/mysql.bak.$(date +%Y%m%d_%H%M%S)
+    echo "✓ MySQL数据已备份并清理"
+else
+    echo "✓ MySQL数据目录不存在，跳过"
+fi
+echo ""
+
+# 6. 检查镜像
+echo "步骤6: 检查所需镜像..."
+MISSING=0
+for img in primihub-meta primihub-node nacos-server rabbitmq redis mysql loki; do
+    if ! docker images | grep -q "$img"; then
+        echo "⚠ 缺少镜像: $img"
+        MISSING=1
+    fi
+done
+
+if [ $MISSING -eq 1 ]; then
+    echo ""
+    echo "❌ 缺少必需的镜像，请先导入离线镜像包:"
+    echo "   bash import-images.sh primihub-images-*.tar"
+    exit 1
+fi
+echo "✓ 所有必需镜像已就绪"
+echo ""
+
+# 7. 启动服务
+echo "步骤7: 启动服务..."
+docker-compose up -d
+echo ""
+
+# 8. 等待服务就绪
+echo "步骤8: 等待服务就绪..."
+echo "等待MySQL启动(约30秒)..."
+sleep 30
+
+# 检查MySQL
+docker exec mysql mysqladmin ping -h localhost -uprimihub -pprimihub@123 &>/dev/null && \
+    echo "✓ MySQL已就绪" || echo "⚠ MySQL仍在启动中"
+
+echo ""
+echo "等待Nacos启动(约30秒)..."
+sleep 30
+
+# 检查Nacos
+curl -s http://localhost:8848/nacos &>/dev/null && \
+    echo "✓ Nacos已就绪" || echo "⚠ Nacos仍在启动中"
+
+echo ""
+echo "=========================================="
+echo "   修复完成"
+echo "=========================================="
+echo ""
+echo "访问地址:"
+echo "  机构1: http://${HOST_IP}:30811"
+echo "  机构2: http://${HOST_IP}:30812"
+echo "  机构3: http://${HOST_IP}:30813"
+echo ""
+echo "查看服务状态: docker-compose ps"
+echo "查看日志: docker-compose logs -f"
+echo "健康检查: bash health_check.sh"
+echo ""
