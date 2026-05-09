@@ -1,0 +1,14 @@
+#!/bin/bash
+# PrimiHub 任务创建和执行 Skill
+# 用法: /create-task [选项]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/create-and-run-task.py"
+
+# 默认配置
+BASE_URL="${PRIMIHUB_BASE_URL:-http://100.64.0.23:30811/prod-api}"
+TOKEN="${PRIMIHUB_TOKEN:-}"
+USER_ID="${PRIMIHUB_USER_ID:-}"
+
+# 执行 Python 脚本
+python3 "$PYTHON_SCRIPT" --base-url "$BASE_URL" --token "$TOKEN" --user-id "$USER_ID" "$@"

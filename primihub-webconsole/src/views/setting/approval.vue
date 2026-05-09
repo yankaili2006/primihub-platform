@@ -319,7 +319,7 @@
             v-model="configFormData.approvalRules"
             type="textarea"
             :rows="5"
-            placeholder='{"rule1": "value1"}'
+            placeholder="{&quot;rule1&quot;: &quot;value1&quot;}"
           />
         </el-form-item>
       </el-form>

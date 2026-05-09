@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦建模训练迭代" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦建模训练迭代" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row style="margin-bottom: 15px;">
       <el-select v-model="iterationTaskId" placeholder="选择任务" style="width: 300px;" @change="handleTaskChange">
@@ -17,7 +17,7 @@
           <div ref="lossChart" style="height: 300px;">
             <el-empty v-if="!iterationTaskId" description="请选择任务" />
             <div v-else style="text-align: center; padding: 100px 0; color: #999;">
-              损失曲线图表区域<br/>
+              损失曲线图表区域<br>
               <small>当前损失值: {{ currentLoss }}</small>
             </div>
           </div>
@@ -29,7 +29,7 @@
           <div ref="accuracyChart" style="height: 300px;">
             <el-empty v-if="!iterationTaskId" description="请选择任务" />
             <div v-else style="text-align: center; padding: 100px 0; color: #999;">
-              精度曲线图表区域<br/>
+              精度曲线图表区域<br>
               <small>当前精度: {{ currentAccuracy }}</small>
             </div>
           </div>

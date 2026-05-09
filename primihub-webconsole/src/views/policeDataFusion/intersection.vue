@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="警务数据交集数据融合" style="margin-bottom: 20px;" />
+    <el-page-header content="警务数据交集数据融合" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>数据源配置</span></div>

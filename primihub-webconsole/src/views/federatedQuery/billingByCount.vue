@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦查询计费（按次数）" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦查询计费（按次数）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>计费配置</span></div>
@@ -25,7 +25,7 @@
               <el-switch v-model="configForm.enableDiscount" />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="configForm.enableDiscount">
+          <el-col v-if="configForm.enableDiscount" :span="12">
             <el-form-item label="折扣阈值">
               <el-input-number v-model="configForm.discountThreshold" :min="1" />
               <span style="margin-left: 10px;">次</span>
@@ -78,11 +78,11 @@
       </el-table>
       <el-pagination
         style="margin-top: 20px; text-align: right;"
-        @current-change="handlePageChange"
         :current-page="currentPage"
         :page-size="10"
         layout="total, prev, pager, next"
         :total="total"
+        @current-change="handlePageChange"
       />
     </el-card>
 

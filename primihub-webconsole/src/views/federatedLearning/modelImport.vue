@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦学习模型导入" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦学习模型导入" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>模型导入</span></div>
@@ -25,9 +25,9 @@
             :on-change="handleFileChange"
             :file-list="fileList"
           >
-            <i class="el-icon-upload"></i>
+            <i class="el-icon-upload" />
             <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-            <div class="el-upload__tip" slot="tip">支持 .pkl, .h5, .pt, .onnx 格式</div>
+            <div slot="tip" class="el-upload__tip">支持 .pkl, .h5, .pt, .onnx 格式</div>
           </el-upload>
         </el-form-item>
         <el-form-item label="模型描述">

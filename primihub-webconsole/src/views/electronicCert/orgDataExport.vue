@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="使用机构数据导出" style="margin-bottom: 20px;" />
+    <el-page-header content="使用机构数据导出" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>导出配置</span></div>

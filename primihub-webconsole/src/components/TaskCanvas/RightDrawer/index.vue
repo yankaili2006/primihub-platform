@@ -413,6 +413,9 @@ export default {
     async nodeData(newVal) {
       console.log('watch newVal', newVal)
       if (newVal) {
+        // 同步 localNodeData 以确保组件状态正确
+        this.localNodeData = { ...newVal }
+
         if (newVal.componentCode === DATA_SET) {
           this.inputValue = newVal.componentTypes.find(item => item.typeCode === DATA_SET_SELECT_DATA).inputValue
           if (this.inputValue !== '') {

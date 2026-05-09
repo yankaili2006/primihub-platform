@@ -811,41 +811,63 @@ export default {
       }
     },
     async run() {
-      // 运行前触发保存
-      this.isDraft = 1
-      await this.saveFn()
-      this.checkRunValidated()
-      if (!this.modelRunValidated) {
-        this.isDraft = 0
-        return
-      }
-      runTaskModel({ modelId: this.currentModelId }).then(res => {
-        if (res.code !== 0) {
-          if (res.code === 1007) {
-            this.dialogVisible = true
-            this.runTaskErrorMessage = res.msg
-          } else {
-            this.$message({
-              message: res.msg,
-              type: 'error'
-            })
-          }
+      console.log('TaskCanvas: run method called')
+      try {
+        // 运行前触发保存
+        this.isDraft = 1
+        console.log('TaskCanvas: calling saveFn before run')
+        await this.saveFn()
+        console.log('TaskCanvas: saveFn completed, modelId:', this.currentModelId)
+        this.checkRunValidated()
+        if (!this.modelRunValidated) {
+          console.log('TaskCanvas: validation failed, aborting run')
+          this.isDraft = 0
           return
-        } else {
-          this.currentTaskId = res.result.taskId
-          this.modelStartRun = true
-          this.$notify.closeAll()
-          this.$notify({
-            message: '开始运行',
-            type: 'info',
-            duration: 5000
-          })
-          // to model task detail page
-          setTimeout(() => {
-            this.toModelDetail(this.currentTaskId)
-          }, 1000)
         }
-      })
+        console.log('TaskCanvas: validation passed, calling runTaskModel API')
+        runTaskModel({ modelId: this.currentModelId }).then(res => {
+          console.log('TaskCanvas: runTaskModel response:', res)
+          if (res.code !== 0) {
+            if (res.code === 1007) {
+              this.dialogVisible = true
+              this.runTaskErrorMessage = res.msg
+            } else {
+              this.$message({
+                message: res.msg,
+                type: 'error'
+              })
+            }
+            return
+          } else {
+            this.currentTaskId = res.result.taskId
+            this.modelStartRun = true
+            this.$notify.closeAll()
+            this.$notify({
+              message: '开始运行',
+              type: 'info',
+              duration: 5000
+            })
+            // to model task detail page
+            setTimeout(() => {
+              this.toModelDetail(this.currentTaskId)
+            }, 1000)
+          }
+        }).catch(err => {
+          console.error('运行任务失败:', err)
+          this.$message({
+            message: err.message || '运行任务失败，请稍后重试',
+            type: 'error'
+          })
+          this.isDraft = 0
+        })
+      } catch (error) {
+        console.error('运行任务异常:', error)
+        this.$message({
+          message: error.message || '运行任务异常，请检查网络连接或稍后重试',
+          type: 'error'
+        })
+        this.isDraft = 0
+      }
     },
     async restartTaskModel() {
       const res = await restartTaskModel({ taskId: this.taskId })
@@ -1172,19 +1194,30 @@ export default {
       this.checkOrder()
       console.log('saveParams', modelComponents)
       this.$emit('saveParams', this.saveParams.param)
-      const res = await saveModelAndComponent(this.saveParams)
-      if (res.code === 0) {
-        this.currentModelId = res.result.modelId
-        if (this.isCopy) {
-          this.$route.query.modelId = this.currentModelId
+      try {
+        const res = await saveModelAndComponent(this.saveParams)
+        if (res.code === 0) {
+          this.currentModelId = res.result.modelId
+          if (this.isCopy) {
+            this.$route.query.modelId = this.currentModelId
+          }
+        } else {
+          this.$message({
+            message: res.msg,
+            type: 'error'
+          })
+          throw new Error(res.msg || '保存失败')
         }
-      } else {
+      } catch (error) {
+        console.error('保存模型失败:', error)
         this.$message({
-          message: res.msg,
+          message: error.message || '保存模型失败，请检查网络连接或稍后重试',
           type: 'error'
         })
+        throw error
+      } finally {
+        this.isClear = false
       }
-      this.isClear = false
     },
     findParams(list, targetVal) {
       const result = []

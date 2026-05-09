@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="保险机构模型同态加密" style="margin-bottom: 20px;" />
+    <el-page-header content="保险机构模型同态加密" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>模型加密配置</span></div>

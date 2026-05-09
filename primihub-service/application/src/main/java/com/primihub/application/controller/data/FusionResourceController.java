@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Api(value = "Meta服务数据集接口",tags = "Meta服务数据集接口")
@@ -42,5 +43,18 @@ public class FusionResourceController {
     @GetMapping("getResourceTagList")
     public BaseResultEntity getResourceTagList(){
         return otherBusinessesService.getResourceTagList();
+    }
+
+    @ApiOperation(value = "根据资源ID数组获取资源详情列表",httpMethod = "GET")
+    @GetMapping("getResourceListById")
+    public BaseResultEntity getResourceListById(@RequestParam("resourceIdArray") java.util.List<String> resourceIdArray,
+                                                 @RequestParam("globalId") String globalId){
+        if (resourceIdArray == null || resourceIdArray.isEmpty()) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"resourceIdArray");
+        }
+        if (StringUtils.isBlank(globalId)) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"globalId");
+        }
+        return otherBusinessesService.getResourceListById(resourceIdArray);
     }
 }

@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦分析对接主流公有云平台" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦分析对接主流公有云平台" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="12">
@@ -77,7 +77,7 @@
 
     <el-card style="margin-top: 20px;">
       <div slot="header"><span>联邦分析任务</span></div>
-      <el-button type="primary" icon="el-icon-plus" @click="handleCreateTask" style="margin-bottom: 15px;">创建分析任务</el-button>
+      <el-button type="primary" icon="el-icon-plus" style="margin-bottom: 15px;" @click="handleCreateTask">创建分析任务</el-button>
       <el-table :data="taskList" border>
         <el-table-column prop="taskId" label="任务ID" width="100" />
         <el-table-column prop="taskName" label="任务名称" width="200" />

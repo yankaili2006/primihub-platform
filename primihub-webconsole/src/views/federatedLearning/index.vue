@@ -14,90 +14,90 @@
     <div v-show="activeTab === 'tasks'">
       <!-- Search filters -->
       <el-form :inline="true" :model="queryForm" class="demo-form-inline">
-      <el-form-item label="任务名称">
-        <el-input v-model="queryForm.taskName" placeholder="请输入任务名称" clearable />
-      </el-form-item>
-      <el-form-item label="算法类型">
-        <el-select v-model="queryForm.algorithmType" placeholder="请选择" clearable>
-          <el-option label="线性回归" value="LINEAR_REGRESSION" />
-          <el-option label="逻辑回归" value="LOGISTIC_REGRESSION" />
-          <el-option label="XGBoost" value="XGBOOST" />
-          <el-option label="神经网络" value="NEURAL_NETWORK" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="任务状态">
-        <el-select v-model="queryForm.taskStatus" placeholder="请选择" clearable>
-          <el-option label="待执行" :value="0" />
-          <el-option label="执行中" :value="1" />
-          <el-option label="已完成" :value="2" />
-          <el-option label="已失败" :value="3" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleQuery">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </el-form-item>
-    </el-form>
+        <el-form-item label="任务名称">
+          <el-input v-model="queryForm.taskName" placeholder="请输入任务名称" clearable />
+        </el-form-item>
+        <el-form-item label="算法类型">
+          <el-select v-model="queryForm.algorithmType" placeholder="请选择" clearable>
+            <el-option label="线性回归" value="LINEAR_REGRESSION" />
+            <el-option label="逻辑回归" value="LOGISTIC_REGRESSION" />
+            <el-option label="XGBoost" value="XGBOOST" />
+            <el-option label="神经网络" value="NEURAL_NETWORK" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="任务状态">
+          <el-select v-model="queryForm.taskStatus" placeholder="请选择" clearable>
+            <el-option label="待执行" :value="0" />
+            <el-option label="执行中" :value="1" />
+            <el-option label="已完成" :value="2" />
+            <el-option label="已失败" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
 
-    <!-- Action buttons -->
-    <el-row style="margin-bottom: 20px;">
-      <el-button type="primary" icon="el-icon-plus" @click="handleCreate">创建联邦学习任务</el-button>
-      <el-button type="info" icon="el-icon-document" @click="handleViewLogs">日志记录</el-button>
-      <el-button type="primary" icon="el-icon-download" plain @click="handleExportLogs">日志导出</el-button>
-    </el-row>
+      <!-- Action buttons -->
+      <el-row style="margin-bottom: 20px;">
+        <el-button type="primary" icon="el-icon-plus" @click="handleCreate">创建联邦学习任务</el-button>
+        <el-button type="info" icon="el-icon-document" @click="handleViewLogs">日志记录</el-button>
+        <el-button type="primary" icon="el-icon-download" plain @click="handleExportLogs">日志导出</el-button>
+      </el-row>
 
-    <!-- Table -->
-    <el-table v-loading="loading" :data="tableData" border>
-      <el-table-column prop="taskId" label="任务ID" width="120" />
-      <el-table-column prop="taskName" label="任务名称" width="180" />
-      <el-table-column prop="algorithmType" label="算法类型" width="120">
-        <template slot-scope="scope">
-          <el-tag :type="getAlgorithmTag(scope.row.algorithmType)">
-            {{ getAlgorithmLabel(scope.row.algorithmType) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="learningType" label="学习类型" width="100">
-        <template slot-scope="scope">
-          <span>{{ scope.row.learningType === 'HORIZONTAL' ? '横向' : '纵向' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="participantCount" label="参与方数" width="100" />
-      <el-table-column prop="taskStatus" label="任务状态" width="100">
-        <template slot-scope="scope">
-          <el-tag v-if="scope.row.taskStatus === 0" type="info">待执行</el-tag>
-          <el-tag v-else-if="scope.row.taskStatus === 1" type="warning">执行中</el-tag>
-          <el-tag v-else-if="scope.row.taskStatus === 2" type="success">已完成</el-tag>
-          <el-tag v-else-if="scope.row.taskStatus === 3" type="danger">已失败</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="progress" label="进度" width="150">
-        <template slot-scope="scope">
-          <el-progress :percentage="scope.row.progress" :status="getProgressStatus(scope.row)" />
-        </template>
-      </el-table-column>
-      <el-table-column prop="createDate" label="创建时间" width="160" />
-      <el-table-column label="操作" fixed="right" width="200">
-        <template slot-scope="scope">
-          <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
-          <el-button v-if="scope.row.taskStatus === 0" size="mini" type="primary" @click="handleStart(scope.row)">启动</el-button>
-          <el-button v-if="scope.row.taskStatus === 1" size="mini" type="warning" @click="handleStop(scope.row)">停止</el-button>
-          <el-button v-if="scope.row.taskStatus === 2" size="mini" type="success" @click="handleDownloadModel(scope.row)">下载模型</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <!-- Table -->
+      <el-table v-loading="loading" :data="tableData" border>
+        <el-table-column prop="taskId" label="任务ID" width="120" />
+        <el-table-column prop="taskName" label="任务名称" width="180" />
+        <el-table-column prop="algorithmType" label="算法类型" width="120">
+          <template slot-scope="scope">
+            <el-tag :type="getAlgorithmTag(scope.row.algorithmType)">
+              {{ getAlgorithmLabel(scope.row.algorithmType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="learningType" label="学习类型" width="100">
+          <template slot-scope="scope">
+            <span>{{ scope.row.learningType === 'HORIZONTAL' ? '横向' : '纵向' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="participantCount" label="参与方数" width="100" />
+        <el-table-column prop="taskStatus" label="任务状态" width="100">
+          <template slot-scope="scope">
+            <el-tag v-if="scope.row.taskStatus === 0" type="info">待执行</el-tag>
+            <el-tag v-else-if="scope.row.taskStatus === 1" type="warning">执行中</el-tag>
+            <el-tag v-else-if="scope.row.taskStatus === 2" type="success">已完成</el-tag>
+            <el-tag v-else-if="scope.row.taskStatus === 3" type="danger">已失败</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="progress" label="进度" width="150">
+          <template slot-scope="scope">
+            <el-progress :percentage="scope.row.progress" :status="getProgressStatus(scope.row)" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="createDate" label="创建时间" width="160" />
+        <el-table-column label="操作" fixed="right" width="200">
+          <template slot-scope="scope">
+            <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
+            <el-button v-if="scope.row.taskStatus === 0" size="mini" type="primary" @click="handleStart(scope.row)">启动</el-button>
+            <el-button v-if="scope.row.taskStatus === 1" size="mini" type="warning" @click="handleStop(scope.row)">停止</el-button>
+            <el-button v-if="scope.row.taskStatus === 2" size="mini" type="success" @click="handleDownloadModel(scope.row)">下载模型</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-    <!-- Pagination -->
-    <el-pagination
-      style="margin-top: 20px;"
-      :current-page="queryForm.pageNum"
-      :page-sizes="[10, 20, 50, 100]"
-      :page-size="queryForm.pageSize"
-      :total="total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="handleSizeChange"
-      @current-change="handleCurrentChange"
-    />
+      <!-- Pagination -->
+      <el-pagination
+        style="margin-top: 20px;"
+        :current-page="queryForm.pageNum"
+        :page-sizes="[10, 20, 50, 100]"
+        :page-size="queryForm.pageSize"
+        :total="total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </div>
 
     <!-- Workbench Panel -->
@@ -267,7 +267,7 @@
         <el-button type="primary" style="margin-left: 10px;" @click="handleGenerateReport">生成报告</el-button>
         <el-button type="success" @click="handleExportReport">导出报告</el-button>
       </el-row>
-      <el-row :gutter="20" v-if="reportData.taskId">
+      <el-row v-if="reportData.taskId" :gutter="20">
         <el-col :span="12">
           <el-card>
             <div slot="header"><span>模型评估指标</span></div>
@@ -288,7 +288,7 @@
           </el-card>
         </el-col>
       </el-row>
-      <el-row :gutter="20" style="margin-top: 20px;" v-if="reportData.taskId">
+      <el-row v-if="reportData.taskId" :gutter="20" style="margin-top: 20px;">
         <el-col :span="24">
           <el-card>
             <div slot="header"><span>训练摘要</span></div>

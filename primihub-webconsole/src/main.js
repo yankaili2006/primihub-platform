@@ -9,7 +9,6 @@ import '@/theme/index.css'
 import '@/styles/index.scss' // global css
 import '@/icons' // icon
 import '@/permission' // permission control
-import { baiduAnalytics } from '@/utils/ba'
 import filter from '@/filters'
 import { setUpTracing } from '@/utils/webTracing'
 
@@ -18,8 +17,6 @@ import locale from 'element-ui/lib/locale/lang/zh-CN'
 // common filter
 Object.keys(filter).forEach(key => Vue.filter(key, filter[key]))
 
-// add baidu analytics
-baiduAnalytics()
 // add web tracing
 setUpTracing()
 // set pagination global options

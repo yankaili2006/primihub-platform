@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦查询去重计费（固定时间范围）" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦查询去重计费（固定时间范围）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>去重计费配置</span></div>

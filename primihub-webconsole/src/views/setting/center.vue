@@ -326,25 +326,39 @@ export default {
     },
     async getOrganList() {
       this.loading = true
-      const res = await getOrganList({
-        pageSize: this.pageSize,
-        pageNo: this.pageNo
-      })
-      if (res.code === 0) {
+      try {
+        const res = await getOrganList({
+          pageSize: this.pageSize,
+          pageNo: this.pageNo
+        })
+        if (res.code === 0) {
+          const { result } = res
+          this.organList = result.data
+          this.total = res.result.total || 0
+          this.pageCount = res.result.totalPage
+        } else {
+          this.$message.error(res.msg || '获取节点列表失败')
+        }
+      } catch (error) {
+        console.error('获取节点列表错误:', error)
+        this.$message.error('获取节点列表失败，请检查网络连接')
+      } finally {
         this.loading = false
-        const { result } = res
-        this.organList = result.data
-        this.total = res.result.total || 0
-        this.pageCount = res.result.totalPage
       }
     },
     async getLocalOrganInfo() {
       this.loading = true
-      const { result = {}} = await getLocalOrganInfo()
-      this.sysLocalOrganInfo = result.sysLocalOrganInfo
-      this.organId = this.sysLocalOrganInfo?.organId
-      this.organName = this.sysLocalOrganInfo?.organName
-      this.loading = false
+      try {
+        const { result = {}} = await getLocalOrganInfo()
+        this.sysLocalOrganInfo = result.sysLocalOrganInfo
+        this.organId = this.sysLocalOrganInfo?.organId
+        this.organName = this.sysLocalOrganInfo?.organName
+      } catch (error) {
+        console.error('获取本地节点信息错误:', error)
+        this.$message.error('获取节点信息失败，请检查网络连接')
+      } finally {
+        this.loading = false
+      }
     },
     addOrgan() {
       this.dialogType = 'add'

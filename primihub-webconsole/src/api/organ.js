@@ -1,11 +1,10 @@
 import request from '@/utils/request'
 
 /**
- * 获取机构分页
+ * 获取机构列表
  *
  * @export
  * @param {*} params
- * pOrganId:父节点id 非必填 默认为0
  * organName:机构名称 非必填
  * pageNum:页数 非必填 默认为1
  * pageSize:每页条数 非必填 默认为10
@@ -13,7 +12,7 @@ import request from '@/utils/request'
  */
 export function getOrgans(params) {
   return request({
-    url: '/sys/organ/findOrganPage',
+    url: '/organ/getOrganList',
     method: 'get',
     params
   })

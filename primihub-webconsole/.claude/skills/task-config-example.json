@@ -1,0 +1,96 @@
+{
+  "modelComponents": [
+    {
+      "frontComponentId": "start-node-1",
+      "componentCode": "start",
+      "componentName": "开始",
+      "coordinateX": 100,
+      "coordinateY": 100,
+      "width": 180,
+      "height": 40,
+      "shape": "dag-node",
+      "componentValues": [
+        {
+          "key": "taskName",
+          "val": "API创建的PSI任务"
+        },
+        {
+          "key": "taskDesc",
+          "val": "通过API创建的隐私求交任务示例"
+        }
+      ],
+      "input": [],
+      "output": ["dataset-node-1"]
+    },
+    {
+      "frontComponentId": "dataset-node-1",
+      "componentCode": "dataSet",
+      "componentName": "数据集",
+      "coordinateX": 300,
+      "coordinateY": 100,
+      "width": 180,
+      "height": 40,
+      "shape": "dag-node",
+      "componentValues": [
+        {
+          "key": "dataSetSelectData",
+          "val": "[{\"organId\":\"1\",\"organName\":\"机构1\",\"participationIdentity\":1,\"resourceId\":\"resource_id_1\",\"resourceName\":\"数据集1\",\"calculationField\":[\"id\",\"name\"],\"fileHandleField\":[\"id\"]},{\"organId\":\"2\",\"organName\":\"机构2\",\"participationIdentity\":2,\"resourceId\":\"resource_id_2\",\"resourceName\":\"数据集2\",\"calculationField\":[\"id\",\"name\"],\"fileHandleField\":[\"id\"]}]"
+        }
+      ],
+      "input": ["start-node-1"],
+      "output": ["model-node-1"]
+    },
+    {
+      "frontComponentId": "model-node-1",
+      "componentCode": "model",
+      "componentName": "模型",
+      "coordinateX": 500,
+      "coordinateY": 100,
+      "width": 180,
+      "height": 40,
+      "shape": "dag-node",
+      "componentValues": [
+        {
+          "key": "modelName",
+          "val": "PSI模型"
+        },
+        {
+          "key": "modelType",
+          "val": "1"
+        },
+        {
+          "key": "modelDesc",
+          "val": "隐私求交模型"
+        }
+      ],
+      "input": ["dataset-node-1"],
+      "output": []
+    }
+  ],
+  "modelPointComponents": [
+    {
+      "frontComponentId": "edge-1",
+      "shape": "edge",
+      "input": {
+        "cell": "start-node-1",
+        "port": "output"
+      },
+      "output": {
+        "cell": "dataset-node-1",
+        "port": "input"
+      }
+    },
+    {
+      "frontComponentId": "edge-2",
+      "shape": "edge",
+      "input": {
+        "cell": "dataset-node-1",
+        "port": "output"
+      },
+      "output": {
+        "cell": "model-node-1",
+        "port": "input"
+      }
+    }
+  ]
+}

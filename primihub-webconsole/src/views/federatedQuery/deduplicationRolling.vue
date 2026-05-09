@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦查询去重计费（滚动时间范围）" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦查询去重计费（滚动时间范围）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>滚动去重计费配置</span></div>
@@ -39,7 +39,7 @@
               <el-switch v-model="configForm.autoCleanup" />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="configForm.autoCleanup">
+          <el-col v-if="configForm.autoCleanup" :span="12">
             <el-form-item label="保留天数">
               <el-input-number v-model="configForm.retentionDays" :min="1" :max="365" />
               <span style="margin-left: 10px;">天</span>
@@ -125,7 +125,7 @@
       <div slot="header"><span>窗口时间线</span></div>
       <div class="timeline-container">
         <div v-for="(window, index) in windowTimeline" :key="index" class="timeline-item">
-          <div class="timeline-marker"></div>
+          <div class="timeline-marker" />
           <div class="timeline-content">
             <div class="timeline-time">{{ window.time }}</div>
             <div class="timeline-info">

@@ -28,7 +28,9 @@
                   prop="resourceRowsCount"
                   align="center"
                   label="样本量"
-                />
+                >
+                  <template slot-scope="{row}">{{ row.resourceRowsCount || 0 }}</template>
+                </el-table-column>
               </el-table>
             </el-form-item>
           </div>

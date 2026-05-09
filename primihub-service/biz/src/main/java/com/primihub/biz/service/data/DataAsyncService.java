@@ -239,10 +239,6 @@ public class DataAsyncService implements ApplicationContextAware {
                     log.error("Failed to query resource from both remote and local database for resourceId: {}", dataPsi.getOtherResourceId());
                     psiTask.setTaskState(TaskStateEnum.FAIL.getStateType());
                     dataPsiPrRepository.updateDataPsiTask(psiTask);
-                    dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
-                    dataTask.setTaskEndTime(System.currentTimeMillis());
-                    dataTask.setTaskErrorMsg("无法查询到对方资源信息，资源ID: " + dataPsi.getOtherResourceId());
-                    dataTaskPrRepository.updateDataTask(dataTask);
                     return;
                 }
                 resourceId = StringUtils.isNotBlank(otherDataResource.getResourceFusionId()) ? otherDataResource.getResourceFusionId() : otherDataResource.getResourceId().toString();

@@ -21,7 +21,7 @@
       </div>
     </div>
     <div class="main">
-      <div><span>是否包含Y值：</span><span>{{ resource.resourceContainsY ? '是' : '否' }}</span></div>
+      <div><span>是否包含Y值：</span><span>{{ resource.resourceContainsY === true ? '是' : resource.resourceContainsY === false ? '否' : '未知' }}</span></div>
       <div><span>特征量：</span><span>{{ resource.resourceRowsCount || 0 }}</span></div>
       <div><span>样本量：</span><span>{{ resource.resourceColumnCount || 0 }}</span></div>
       <div><span>正例样本数量：</span><span>{{ resource.resourceYRowsCount || 0 }}</span></div>

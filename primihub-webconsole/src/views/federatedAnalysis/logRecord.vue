@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦分析日志记录" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦分析日志记录" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-form :inline="true" :model="queryForm" class="demo-form-inline">
       <el-form-item label="任务ID">
@@ -30,7 +30,7 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="logData" border v-loading="loading">
+    <el-table v-loading="loading" :data="logData" border>
       <el-table-column type="selection" width="50" />
       <el-table-column prop="logId" label="日志ID" width="100" />
       <el-table-column prop="taskId" label="任务ID" width="100" />

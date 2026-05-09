@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="特征密文数据安全交换（实时）" style="margin-bottom: 20px;" />
+    <el-page-header content="特征密文数据安全交换（实时）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="12">

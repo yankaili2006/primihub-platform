@@ -142,8 +142,7 @@ export default {
       this.$confirm('确认删除该日志定义吗？', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' })
         .then(() => {
           deleteScheduleLogDefinition({ id: row.id }).then(res => {
-            if (res.code === 0) { this.$message.success('删除成功'); this.fetchData() }
-            else { this.$message.error(res.msg || '删除失败') }
+            if (res.code === 0) { this.$message.success('删除成功'); this.fetchData() } else { this.$message.error(res.msg || '删除失败') }
           })
         }).catch(() => {})
     },

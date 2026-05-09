@@ -41,7 +41,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="请求参数">
-              <el-input v-model="testForm.params" type="textarea" :rows="4" placeholder='{"key":"value"}' />
+              <el-input v-model="testForm.params" type="textarea" :rows="4" placeholder="{&quot;key&quot;:&quot;value&quot;}" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="testing" @click="testApi">发送请求</el-button>

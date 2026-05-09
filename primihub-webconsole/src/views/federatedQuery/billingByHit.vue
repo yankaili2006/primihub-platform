@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦查询计费（按命中）" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦查询计费（按命中）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>计费配置</span></div>
@@ -25,7 +25,7 @@
               <el-switch v-model="configForm.enableTiered" />
             </el-form-item>
           </el-col>
-          <el-col :span="12" v-if="configForm.enableTiered">
+          <el-col v-if="configForm.enableTiered" :span="12">
             <el-form-item label="阶梯配置">
               <el-button size="small" @click="dialogVisible = true">配置</el-button>
             </el-form-item>

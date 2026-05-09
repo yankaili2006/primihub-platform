@@ -57,12 +57,18 @@ service.interceptors.request.use(
       try {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
         userId = userInfo.userId || userInfo.id
+        // 如果从 localStorage 获取到了 userId，同步到 store
+        if (userId && !store.getters.userId) {
+          store.commit('user/SET_USER_INFO', userInfo)
+        }
       } catch (e) {
         console.warn('Failed to get userId from localStorage:', e)
       }
     }
     if (userId) {
       config.headers['userId'] = userId
+    } else {
+      console.warn('No userId found in store or localStorage for request:', config.url)
     }
     if (config.method === 'get') {
       config.params = {

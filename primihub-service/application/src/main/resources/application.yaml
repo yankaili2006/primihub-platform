@@ -73,13 +73,21 @@ spring:
         server-addr: nacos:8848
         namespace: demo0
       config:
-        enabled: false
+        enabled: true
         server-addr: nacos:8848
         namespace: demo0
         group: DEFAULT_GROUP
         file-extension: yaml
         username: nacos
         password: nacos
+
+# Nacos config properties for OrganConfiguration
+nacos:
+  config:
+    server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
+    namespace: ${SPRING_CLOUD_NACOS_CONFIG_NAMESPACE:demo0}
+    group: ${NACOS_CONFIG_GROUP:DEFAULT_GROUP}
+
 rest:
   template:
     connection:

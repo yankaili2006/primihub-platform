@@ -68,8 +68,9 @@ export default {
     redoFn() {
       this.$emit('redo')
     },
-    // 撤消
+    // 运行
     runFn() {
+      console.log('ToolBar: runFn clicked, emitting run event')
       this.$emit('run')
     },
     // 清除

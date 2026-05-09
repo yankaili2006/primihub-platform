@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="流程执行日志记录" style="margin-bottom: 20px;" />
+    <el-page-header content="流程执行日志记录" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>日志查询</span></div>

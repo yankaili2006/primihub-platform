@@ -92,12 +92,13 @@
           min-width="200"
         >
           <template slot-scope="{row}">
-            特征量：{{ row.resourceColumnCount }}<br>
-            样本量：{{ row.resourceRowsCount }} <br>
+            特征量：{{ row.resourceColumnCount || 0 }}<br>
+            样本量：{{ row.resourceRowsCount || 0 }} <br>
             正例样本数量：{{ row.resourceYRowsCount || 0 }}<br>
             正例样本比例：{{ row.resourceYRatio || 0 }}%<br>
-            <el-tag v-if="row.resourceContainsY" class="containsy-tag" type="primary" size="mini">包含Y值</el-tag>
-            <el-tag v-else class="containsy-tag" type="danger" size="mini">不包含Y值</el-tag>
+            <el-tag v-if="row.resourceContainsY === true" class="containsy-tag" type="primary" size="mini">包含Y值</el-tag>
+            <el-tag v-else-if="row.resourceContainsY === false" class="containsy-tag" type="danger" size="mini">不包含Y值</el-tag>
+            <el-tag v-else class="containsy-tag" type="info" size="mini">未知</el-tag>
           </template>
         </el-table-column>
         <el-table-column
@@ -252,7 +253,7 @@ export default {
         resourceName,
         tagName,
         resourceSource,
-        organId,
+        organId: organId || this.$store.getters.userOrganId || '',
         fileContainsY
       }
       const { code, result } = await getResourceList(params)

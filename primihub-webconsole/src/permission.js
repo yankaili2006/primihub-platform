@@ -31,6 +31,8 @@ router.beforeEach(async(to, from, next) => {
     } else {
       if (flag === 0) { // 刷新后空白问题
         try {
+          // 恢复用户信息到 store（包括 userId）
+          await store.dispatch('user/getInfo')
           const permissionList = await store.dispatch('user/getPermission')
           await store.dispatch('permission/generateRoutes', permissionList)
           flag++

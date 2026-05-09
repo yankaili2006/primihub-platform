@@ -173,7 +173,10 @@ public class OtherBusinessesService {
             // 只允许Base64字符：A-Za-z0-9+/=
             boolean isValidPublicKey = !StringUtils.isEmpty(publicKey) && publicKey.matches("^[A-Za-z0-9+/=]+$");
             if (!isValidPublicKey){
-                gatewayAddressAndApi = gatewayAddressAndApi+"?ignore=ignore";
+                // 只在URL中不存在ignore参数时才添加，避免重试时重复添加
+                if (!gatewayAddressAndApi.contains("?ignore=ignore")) {
+                    gatewayAddressAndApi = gatewayAddressAndApi+"?ignore=ignore";
+                }
                 data = vo;
             }else {
                 data = CryptUtil.multipartEncrypt(JSONObject.toJSONString(vo), publicKey);

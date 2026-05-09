@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦查询实时接口校验" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦查询实时接口校验" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="12">
@@ -19,10 +19,10 @@
               </el-select>
             </el-form-item>
             <el-form-item label="请求头">
-              <el-input v-model="testForm.headers" type="textarea" :rows="3" placeholder='{"Content-Type": "application/json"}' />
+              <el-input v-model="testForm.headers" type="textarea" :rows="3" placeholder="{&quot;Content-Type&quot;: &quot;application/json&quot;}" />
             </el-form-item>
             <el-form-item label="请求体">
-              <el-input v-model="testForm.body" type="textarea" :rows="5" placeholder='{"query": "test"}' />
+              <el-input v-model="testForm.body" type="textarea" :rows="5" placeholder="{&quot;query&quot;: &quot;test&quot;}" />
             </el-form-item>
             <el-form-item label="超时时间">
               <el-input-number v-model="testForm.timeout" :min="1" :max="60" />

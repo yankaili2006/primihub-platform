@@ -69,26 +69,36 @@ public class ScheduleService {
         sysAsyncService.collectBaseData();
         List<SysOrgan> sysOrgans = sysOrganSecondarydbRepository.selectSysOrganByExamine();
         long time = System.currentTimeMillis();
-        String data = String.format("{'time':%s}", time);
+        Map<String, Object> data = new HashMap<>();
+        data.put("time", time);
         for (SysOrgan sysOrgan : sysOrgans) {
             try {
                 BaseResultEntity baseResultEntity = otherBusinessesService.syncGatewayApiData(data, sysOrgan.getOrganGateway() + "/share/shareData/healthConnection", sysOrgan.getPublicKey());
-                if (baseResultEntity!=null && baseResultEntity.getCode().equals(BaseResultEnum.SUCCESS.getReturnCode())){
-                    Set<String> services = (Set<String>) baseResultEntity.getResult();
-                    sysOrgan.setPlatformState(services.contains("platform")?1:0);
-                    sysOrgan.setNodeState(services.contains("node")?1:0);
-                    sysOrgan.setFusionState(services.contains("fusion")?1:0);
+                if (baseResultEntity != null && baseResultEntity.getCode() != null && baseResultEntity.getCode().equals(BaseResultEnum.SUCCESS.getReturnCode())){
+                    Object result = baseResultEntity.getResult();
+                    if (result instanceof List) {
+                        List<String> services = (List<String>) result;
+                        sysOrgan.setPlatformState(services.contains("platform")?1:0);
+                        sysOrgan.setNodeState(services.contains("node")?1:0);
+                        sysOrgan.setFusionState(services.contains("fusion")?1:0);
+                    } else {
+                        sysOrgan.setPlatformState(0);
+                        sysOrgan.setNodeState(0);
+                        sysOrgan.setFusionState(0);
+                    }
                 }else {
                     sysOrgan.setPlatformState(0);
                     sysOrgan.setNodeState(0);
                     sysOrgan.setFusionState(0);
+                    if (baseResultEntity == null) {
+                        log.warn("机构ID:{} - 机构名称:{} - healthConnection返回null", sysOrgan.getOrganId(), sysOrgan.getOrganName());
+                    }
                 }
             }catch (Exception e){
                 sysOrgan.setPlatformState(0);
                 sysOrgan.setNodeState(0);
                 sysOrgan.setFusionState(0);
-                log.info("机构ID:{} - 机构名称:{} - 机构网关地址:{} - 状态获取失败",sysOrgan.getOrganId(),sysOrgan.getOrganName(),sysOrgan.getOrganGateway());
-                e.printStackTrace();
+                log.warn("机构ID:{} - 机构名称:{} - 机构网关地址:{} - 状态获取失败: {}", sysOrgan.getOrganId(), sysOrgan.getOrganName(), sysOrgan.getOrganGateway(), e.getMessage());
             }
             sysOrganPrimarydbRepository.updateSysOrgan(sysOrgan);
         }

@@ -209,10 +209,10 @@
           <el-switch v-model="apiForm.needAuth" />
         </el-form-item>
         <el-form-item label="请求参数">
-          <el-input v-model="apiForm.requestParams" type="textarea" :rows="4" placeholder='JSON格式，如：{"userId": "用户ID", "pageNum": "页码"}' />
+          <el-input v-model="apiForm.requestParams" type="textarea" :rows="4" placeholder="JSON格式，如：{&quot;userId&quot;: &quot;用户ID&quot;, &quot;pageNum&quot;: &quot;页码&quot;}" />
         </el-form-item>
         <el-form-item label="响应示例">
-          <el-input v-model="apiForm.responseExample" type="textarea" :rows="4" placeholder='JSON格式响应示例' />
+          <el-input v-model="apiForm.responseExample" type="textarea" :rows="4" placeholder="JSON格式响应示例" />
         </el-form-item>
         <el-form-item label="接口描述">
           <el-input v-model="apiForm.description" type="textarea" :rows="3" placeholder="请输入接口描述" />

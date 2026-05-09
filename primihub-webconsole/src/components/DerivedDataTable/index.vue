@@ -26,14 +26,15 @@
     >
       <template slot-scope="{row}">
         <div class="info">
-          特征量：{{ row.fileColumns }}<br>
-          样本量：{{ row.fileRows }} <br>
+          特征量：{{ row.fileColumns || 0 }}<br>
+          样本量：{{ row.fileRows || 0 }} <br>
           正例样本数量：{{ row.fileYRows || 0 }}<br>
           正例样本比例：{{ row.fileYRatio || 0 }}%<br>
         </div>
         <div class="margin-top-5">
-          <el-tag v-if="row.resourceContainsY" type="primary" size="mini">包含Y值</el-tag>
-          <el-tag v-else type="danger" size="mini">不包含Y值</el-tag>
+          <el-tag v-if="row.resourceContainsY === true" type="primary" size="mini">包含Y值</el-tag>
+          <el-tag v-else-if="row.resourceContainsY === false" type="danger" size="mini">不包含Y值</el-tag>
+          <el-tag v-else type="info" size="mini">未知</el-tag>
         </div>
       </template>
     </el-table-column>

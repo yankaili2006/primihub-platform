@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="单方数据合并模块" style="margin-bottom: 20px;" />
+    <el-page-header content="单方数据合并模块" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="12">
@@ -46,7 +46,7 @@
       <el-col :span="12">
         <el-card>
           <div slot="header"><span>数据预览</span></div>
-          <el-table :data="previewData" border max-height="350" v-if="previewData.length > 0">
+          <el-table v-if="previewData.length > 0" :data="previewData" border max-height="350">
             <el-table-column v-for="col in previewColumns" :key="col" :prop="col" :label="col" min-width="100" />
           </el-table>
           <el-empty v-else description="请选择数据源后点击预览" />

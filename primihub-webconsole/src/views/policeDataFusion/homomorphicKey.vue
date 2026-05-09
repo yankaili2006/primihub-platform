@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="保险机构同态密钥创建" style="margin-bottom: 20px;" />
+    <el-page-header content="保险机构同态密钥创建" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>密钥生成配置</span></div>

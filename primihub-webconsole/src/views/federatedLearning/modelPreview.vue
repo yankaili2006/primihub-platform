@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦学习模型预览" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦学习模型预览" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>模型列表</span></div>
@@ -29,7 +29,7 @@
     </el-card>
 
     <el-dialog title="模型详情" :visible.sync="dialogVisible" width="60%">
-      <el-descriptions :column="2" border v-if="currentModel">
+      <el-descriptions v-if="currentModel" :column="2" border>
         <el-descriptions-item label="模型ID">{{ currentModel.modelId }}</el-descriptions-item>
         <el-descriptions-item label="模型名称">{{ currentModel.modelName }}</el-descriptions-item>
         <el-descriptions-item label="模型类型">{{ currentModel.modelType }}</el-descriptions-item>

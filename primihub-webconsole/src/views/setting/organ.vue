@@ -93,21 +93,29 @@ export default {
   methods: {
     async getOrgans() {
       this.listLoading = true
-      const params = {
-        organId: this.form.organId,
-        organName: this.form.organName,
-        pageSize: this.pageSize,
-        pageNum: this.pageNum
-      }
-      const res = await getOrgans(params)
-      if (res.code === 0) {
-        const { sysOrganList, pageParam } = res.result
-        this.list = sysOrganList
-        this.itemTotalCount = pageParam.itemTotalCount
-        this.pageCount = pageParam.pageCount
-        setTimeout(() => {
+      try {
+        const params = {
+          organName: this.form.organName,
+          pageSize: this.pageSize,
+          pageNum: this.pageNum
+        }
+        const res = await getOrgans(params)
+        if (res.code === 0) {
+          const { data, total, totalPage } = res.result
+          this.list = data
+          this.itemTotalCount = total
+          this.pageCount = totalPage
+          setTimeout(() => {
+            this.listLoading = false
+          }, 200)
+        } else {
           this.listLoading = false
-        }, 200)
+          this.$message.error(res.msg || '获取机构列表失败')
+        }
+      } catch (error) {
+        this.listLoading = false
+        console.error('获取机构列表错误:', error)
+        this.$message.error('获取机构列表失败，请检查网络连接')
       }
     },
     clearForm() {

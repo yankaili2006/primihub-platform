@@ -93,7 +93,7 @@ export default {
       const params = {
         pageNo: this.pageNo,
         pageSize: this.pageSize,
-        organId: this.organId,
+        organId: this.organId || this.$store.getters.userOrganId || '',
         resourceName: this.resourceName
       }
       const { code, result } = await getResourceList(params)

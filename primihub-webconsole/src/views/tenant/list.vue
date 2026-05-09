@@ -225,7 +225,7 @@ export default {
       this.tenantInfo = { id: '', tenantCode: '', tenantName: '', contactPerson: '', contactPhone: '', contactEmail: '', description: '', dataIsolation: true, computeIsolation: true }
     },
     viewResource(row) {
-      this.$router.push({ name: 'TenantResource', params: { id: row.id } })
+      this.$router.push({ name: 'TenantResource', params: { id: row.id }})
     },
     async handleFreeze(row) {
       this.$confirm('是否冻结该租户?', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }).then(async() => {

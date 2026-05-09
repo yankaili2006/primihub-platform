@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦建模工作台" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦建模工作台" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="8">

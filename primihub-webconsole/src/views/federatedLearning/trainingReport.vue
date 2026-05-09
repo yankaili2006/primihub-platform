@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦建模训练报告" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦建模训练报告" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row style="margin-bottom: 15px;">
       <el-select v-model="reportTaskId" placeholder="选择已完成任务" style="width: 300px;" @change="handleTaskChange">
@@ -10,7 +10,7 @@
       <el-button type="success" @click="handleExportReport">导出报告</el-button>
     </el-row>
 
-    <el-row :gutter="20" v-if="reportData.taskId">
+    <el-row v-if="reportData.taskId" :gutter="20">
       <el-col :span="12">
         <el-card>
           <div slot="header"><span>模型评估指标</span></div>
@@ -41,7 +41,7 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px;" v-if="reportData.taskId">
+    <el-row v-if="reportData.taskId" :gutter="20" style="margin-top: 20px;">
       <el-col :span="24">
         <el-card>
           <div slot="header"><span>训练摘要</span></div>

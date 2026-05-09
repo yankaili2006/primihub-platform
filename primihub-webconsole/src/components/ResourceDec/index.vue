@@ -2,9 +2,9 @@
   <el-descriptions :column="1" border label-class-name="detail-title" class="resource-data">
     <el-descriptions-item label="资源名称">{{ data.resourceName }}</el-descriptions-item>
     <el-descriptions-item label="资源id">{{ data.resourceId }}</el-descriptions-item>
-    <el-descriptions-item label="特征量">{{ data.resourceColumnCount || data.fileColumns }}</el-descriptions-item>
-    <el-descriptions-item label="样本量">{{ data.resourceRowsCount || data.fileRows }}</el-descriptions-item>
-    <el-descriptions-item label="是否包含Y值">{{ data.resourceContainsY === 1? '是': '否' }}</el-descriptions-item>
+    <el-descriptions-item label="特征量">{{ data.resourceColumnCount || data.fileColumns || 0 }}</el-descriptions-item>
+    <el-descriptions-item label="样本量">{{ data.resourceRowsCount || data.fileRows || 0 }}</el-descriptions-item>
+    <el-descriptions-item label="是否包含Y值">{{ data.resourceContainsY === true || data.resourceContainsY === 1 ? '是' : data.resourceContainsY === false || data.resourceContainsY === 0 ? '否' : '未知' }}</el-descriptions-item>
     <el-descriptions-item label="选择特征">
       <el-checkbox-group v-model="calculationField" @change="handleCheckedChange">
         <el-checkbox v-for="(item,index) in data.fileHandleField" :key="index" :disabled="item === 'y'" :label="item" />

@@ -25,10 +25,22 @@ public class StartComponentTaskServiceImpl extends BaseComponentServiceImpl impl
         Map<String, String> componentVals = getComponentVals(req.getComponentValues());
         DataTask dataTask = new DataTask();
         if (componentVals.containsKey("taskName")){
-            dataTask.setTaskName(componentVals.get("taskName"));
+            String taskName = componentVals.get("taskName");
+            // Truncate task name to 255 characters to fit database column limit
+            if (taskName != null && taskName.length() > 255) {
+                taskName = taskName.substring(0, 255);
+                log.warn("Task name truncated from {} to 255 characters", componentVals.get("taskName").length());
+            }
+            dataTask.setTaskName(taskName);
         }
         if (componentVals.containsKey("taskDesc")){
-            dataTask.setTaskDesc(componentVals.get("taskDesc"));
+            String taskDesc = componentVals.get("taskDesc");
+            // Truncate task description to 255 characters to fit database column limit
+            if (taskDesc != null && taskDesc.length() > 255) {
+                taskDesc = taskDesc.substring(0, 255);
+                log.warn("Task description truncated from {} to 255 characters", componentVals.get("taskDesc").length());
+            }
+            dataTask.setTaskDesc(taskDesc);
         }
         taskReq.setDataTask(dataTask);
         return componentTypeVerification(req,componentsConfiguration.getModelComponents(),taskReq);

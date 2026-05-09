@@ -30,18 +30,22 @@
                   align="center"
                   label="是否包含Y值"
                 >
-                  <template slot-scope="{row}">{{ row.resourceContainsY === 1? '是' : '否' }}</template>
+                  <template slot-scope="{row}">{{ row.resourceContainsY === true || row.resourceContainsY === 1 ? '是' : row.resourceContainsY === false || row.resourceContainsY === 0 ? '否' : '未知' }}</template>
                 </el-table-column>
                 <el-table-column
                   prop="resourceColumnCount"
                   align="center"
                   label="特征量"
-                />
+                >
+                  <template slot-scope="{row}">{{ row.resourceColumnCount || 0 }}</template>
+                </el-table-column>
                 <el-table-column
                   prop="resourceRowsCount"
                   align="center"
                   label="样本量"
-                />
+                >
+                  <template slot-scope="{row}">{{ row.resourceRowsCount || 0 }}</template>
+                </el-table-column>
                 <el-table-column
                   prop="resourceYRowsCount"
                   align="center"

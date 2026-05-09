@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="使用机构数据接入" style="margin-bottom: 20px;" />
+    <el-page-header content="使用机构数据接入" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header">
@@ -25,7 +25,7 @@
           <template slot-scope="scope">
             <el-button size="mini" type="text" @click="handleConfig(scope.row)">配置</el-button>
             <el-button size="mini" type="text" @click="handleToggle(scope.row)">{{ scope.row.status === 'active' ? '禁用' : '启用' }}</el-button>
-            <el-button size="mini" type="text" @click="handleDelete(scope.row)" style="color: #F56C6C;">删除</el-button>
+            <el-button size="mini" type="text" style="color: #F56C6C;" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

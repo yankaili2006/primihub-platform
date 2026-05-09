@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="特征数据隐私比对" style="margin-bottom: 20px;" />
+    <el-page-header content="特征数据隐私比对" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>比对配置</span></div>

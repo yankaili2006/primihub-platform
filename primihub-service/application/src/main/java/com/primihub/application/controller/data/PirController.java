@@ -50,6 +50,11 @@ public class PirController {
             sb.append("PIR任务").append("-").append(resourceId);
             taskName = sb.toString();
         }
+        // Truncate task name to 255 characters to fit database column limit
+        if (taskName != null && taskName.length() > 255) {
+            taskName = taskName.substring(0, 255);
+            log.warn("PIR task name truncated from {} to 255 characters", taskName.length());
+        }
         if (StringUtils.isBlank(pirParam)) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"pirParam");
         }

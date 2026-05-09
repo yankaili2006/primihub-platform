@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦学习模型导出" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦学习模型导出" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>选择导出模型</span></div>
@@ -34,7 +34,7 @@
       </el-form>
     </el-card>
 
-    <el-card style="margin-top: 20px;" v-if="selectedModel">
+    <el-card v-if="selectedModel" style="margin-top: 20px;">
       <div slot="header"><span>模型信息</span></div>
       <el-descriptions :column="2" border>
         <el-descriptions-item label="模型ID">{{ selectedModel.modelId }}</el-descriptions-item>

@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="特征密文数据安全交换（批量）" style="margin-bottom: 20px;" />
+    <el-page-header content="特征密文数据安全交换（批量）" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>批量交换配置</span></div>
@@ -23,7 +23,7 @@
             <el-checkbox label="compare">比对结果密文</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <el-form-item label="选择文件" v-if="exchangeForm.direction === 'send'">
+        <el-form-item v-if="exchangeForm.direction === 'send'" label="选择文件">
           <el-upload :auto-upload="false" :on-change="handleFileChange" :file-list="fileList" multiple action="">
             <el-button size="small" type="primary">选择文件</el-button>
             <div slot="tip" class="el-upload__tip">支持批量上传多个密文文件</div>

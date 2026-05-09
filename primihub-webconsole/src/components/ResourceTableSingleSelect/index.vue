@@ -27,8 +27,8 @@
         label="资源信息"
       >
         <template slot-scope="{row}">
-          特征量：{{ row.resourceColumnCount }}<br>
-          样本量：{{ row.resourceRowsCount }} <br>
+          特征量：{{ row.resourceColumnCount || 0 }}<br>
+          样本量：{{ row.resourceRowsCount || 0 }} <br>
         </template>
       </el-table-column>
       <el-table-column

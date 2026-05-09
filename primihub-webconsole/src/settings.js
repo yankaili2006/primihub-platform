@@ -24,7 +24,7 @@ module.exports = {
    * @description for google analytics
    */
   googleAnalytics: true,
-  loginLogoUrl: '/images/logo-white.png', // login page logo
+  loginLogoUrl: '/images/logo-DataItem.png', // login page logo
   isShowLogo: true,
   isOpenTracing: false,
   logoUrl: '/images/logo-primihub.png', // navbar logo

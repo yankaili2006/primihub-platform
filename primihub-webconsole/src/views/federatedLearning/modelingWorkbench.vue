@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="联邦建模工作台" style="margin-bottom: 20px;" />
+    <el-page-header content="联邦建模工作台" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-row :gutter="20">
       <el-col :span="6">
@@ -9,26 +9,26 @@
           <el-collapse v-model="activeNames">
             <el-collapse-item title="数据处理" name="1">
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'dataLoader')">
-                <i class="el-icon-upload2"></i> 数据加载
+                <i class="el-icon-upload2" /> 数据加载
               </div>
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'dataPreprocess')">
-                <i class="el-icon-setting"></i> 数据预处理
+                <i class="el-icon-setting" /> 数据预处理
               </div>
             </el-collapse-item>
             <el-collapse-item title="模型训练" name="2">
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'logisticRegression')">
-                <i class="el-icon-data-line"></i> 逻辑回归
+                <i class="el-icon-data-line" /> 逻辑回归
               </div>
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'neuralNetwork')">
-                <i class="el-icon-connection"></i> 神经网络
+                <i class="el-icon-connection" /> 神经网络
               </div>
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'xgboost')">
-                <i class="el-icon-data-analysis"></i> XGBoost
+                <i class="el-icon-data-analysis" /> XGBoost
               </div>
             </el-collapse-item>
             <el-collapse-item title="模型评估" name="3">
               <div class="component-item" draggable="true" @dragstart="handleDragStart($event, 'evaluation')">
-                <i class="el-icon-pie-chart"></i> 模型评估
+                <i class="el-icon-pie-chart" /> 模型评估
               </div>
             </el-collapse-item>
           </el-collapse>
@@ -44,8 +44,8 @@
           <div class="canvas" @drop="handleDrop" @dragover.prevent>
             <div v-for="(node, index) in workflow" :key="index" class="workflow-node" :style="{ left: node.x + 'px', top: node.y + 'px' }">
               <div class="node-header">
-                <i :class="node.icon"></i> {{ node.label }}
-                <i class="el-icon-close" @click="removeNode(index)"></i>
+                <i :class="node.icon" /> {{ node.label }}
+                <i class="el-icon-close" @click="removeNode(index)" />
               </div>
               <div class="node-body">
                 <el-form size="mini">

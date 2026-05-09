@@ -149,7 +149,7 @@ export default {
       userInfo: [],
       organs: [],
       showResourceDelBtn: false,
-      currentOrgan: [],
+      currentOrgan: {},
       differents: [],
       saveParams: {
         id: '',
@@ -248,10 +248,10 @@ export default {
       this.saveParams.projectOrgans = []
       this.selectedOrganId = label
       this.currentOrgan = this.organs.filter(item => item.organId === this.selectedOrganId)[0]
-      this.resourceList[this.selectedOrganId] = this.currentOrgan.resources
+      this.resourceList[this.selectedOrganId] = this.currentOrgan.resources || []
       this.isShowAuditForm = this.thisInstitution && this.currentOrgan.auditStatus === 0 && this.projectStatus !== 2
       this.projectAuditStatus = this.currentOrgan.auditStatus === 1
-      this.selectedData = this.organs.filter(item => item.organId === this.selectedOrganId)[0].resources
+      this.selectedData = this.organs.filter(item => item.organId === this.selectedOrganId)[0].resources || []
     },
     async handlePreview(row) {
       this.resourceId = row.resourceId
@@ -417,7 +417,6 @@ export default {
       this.id = this.$route.params.id || this.list.id
       getProjectDetail({ id: this.id }).then(res => {
         if (res.code === 0) {
-          this.listLoading = false
           this.list = res.result
           const { projectName, projectDesc, userName, createDate, organs, creator, status, projectId } = this.list
           this.projectId = projectId
@@ -427,14 +426,35 @@ export default {
           this.projectDesc = projectDesc
           this.userName = userName
           this.createDate = createDate
-          this.organs = organs
+          this.organs = organs || []
+
+          // 检查organs数组是否为空
+          if (this.organs.length === 0) {
+            this.$message.warning('该项目暂无参与机构数据')
+            this.listLoading = false
+            return
+          }
+
           // 发起方拥有资源删除权限
-          this.showResourceDelBtn = this.userOrganId === this.organs.find(item => item.participationIdentity === 1).organId
+          const initiatorOrgan = this.organs.find(item => item.participationIdentity === 1)
+          this.showResourceDelBtn = initiatorOrgan && this.userOrganId === initiatorOrgan.organId
           this.selectedOrganId = this.selectedOrganId || this.userOrganId
           this.activeName = this.selectedOrganId
-          this.resourceList[this.selectedOrganId] = this.organs.filter(item => item.organId === this.selectedOrganId)[0].resources
-          this.selectedData = this.organs.filter(item => item.organId === this.selectedOrganId)[0].resources
-          this.currentOrgan = this.organs.filter(item => item.organId === this.selectedOrganId)[0]
+
+          const currentOrganData = this.organs.filter(item => item.organId === this.selectedOrganId)[0]
+          if (!currentOrganData) {
+            // 如果当前用户的机构不在项目中，使用第一个机构
+            this.currentOrgan = this.organs[0]
+            this.selectedOrganId = this.organs[0].organId
+            this.activeName = this.organs[0].organId
+            this.resourceList[this.organs[0].organId] = this.organs[0].resources || []
+            this.selectedData = this.organs[0].resources || []
+          } else {
+            this.resourceList[this.selectedOrganId] = currentOrganData.resources || []
+            this.selectedData = currentOrganData.resources || []
+            this.currentOrgan = currentOrganData
+          }
+
           this.projectAuditStatus = this.currentOrgan.auditStatus === 1
           this.isShowAuditForm = this.projectStatus !== 2 && this.currentOrgan.auditStatus === 0
           this.providerOrganIds = this.organs.filter(item => item.participationIdentity === 2)
@@ -446,9 +466,14 @@ export default {
             }
           })
           this.SET_STATUS(this.projectStatus)
+        } else {
+          this.$message.error(res.msg || '获取项目详情失败')
         }
-      }).catch(() => {
         this.listLoading = false
+      }).catch((error) => {
+        this.listLoading = false
+        console.error('获取项目详情错误:', error)
+        this.$message.error('获取项目详情失败，请检查网络连接')
       })
     },
     // compare array diffrent

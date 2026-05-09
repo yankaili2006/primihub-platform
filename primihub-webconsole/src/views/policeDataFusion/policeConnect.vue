@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="警务数据对接" style="margin-bottom: 20px;" />
+    <el-page-header content="警务数据对接" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header">

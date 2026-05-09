@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="保险机构接口对接" style="margin-bottom: 20px;" />
+    <el-page-header content="保险机构接口对接" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header">
@@ -60,7 +60,7 @@
             <el-option label="证书认证" value="证书认证" />
           </el-select>
         </el-form-item>
-        <el-form-item label="API Key" v-if="apiForm.authType === 'API Key'">
+        <el-form-item v-if="apiForm.authType === 'API Key'" label="API Key">
           <el-input v-model="apiForm.apiKey" placeholder="请输入API Key" />
         </el-form-item>
       </el-form>

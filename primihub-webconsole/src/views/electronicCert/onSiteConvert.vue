@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header @back="goBack" content="现场证件特征转换" style="margin-bottom: 20px;" />
+    <el-page-header content="现场证件特征转换" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>现场采集配置</span></div>
