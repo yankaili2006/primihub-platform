@@ -32,11 +32,10 @@ class PrimiHubAPIClient:
             base_url: API基础URL
             timeout: 请求超时时间（秒）
         """
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip('/') + '/'
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
-            'Content-Type': 'application/json',
             'Accept': 'application/json'
         })
 
@@ -152,7 +151,7 @@ class PrimiHubAPIClient:
 
     def login(self, username: str, password: str) -> Dict[str, Any]:
         """
-        用户登录
+        用户登录 (使用表单数据)
 
         Args:
             username: 用户名
@@ -163,10 +162,18 @@ class PrimiHubAPIClient:
         """
         self.logger.info(f"Logging in as {username}")
 
-        response = self._make_request("POST", "/sys/user/login", data={
-            "userAccount": username,
-            "userPassword": password
-        })
+        url = self._build_url("/sys/user/login")
+        timestamp = int(time.time() * 1000)
+        nonce = int(time.time() * 1000) % 1000 + 1
+        data = {"userAccount": username, "userPassword": password,
+                "timestamp": timestamp, "nonce": nonce}
+        if self.token:
+            data["token"] = self.token
+
+        response = self.session.post(url, data=data,
+                                      timeout=self.timeout)
+        response.raise_for_status()
+        response = response.json()
 
         # 保存认证信息
         if response.get('code') == 0 and response.get('result'):

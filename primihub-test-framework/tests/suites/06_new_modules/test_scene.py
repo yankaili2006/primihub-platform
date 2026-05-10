@@ -5,9 +5,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../lib'))
 from api_client import PrimiHubAPIClient
 from report_generator import TestReport
 
-BASE_URL = os.environ.get("API_BASE_URL", "http://172.20.0.12:8080")
+BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:30811/prod-api/")
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "Admin@123456")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "123456")
 
 class SceneTest:
     def __init__(self):
