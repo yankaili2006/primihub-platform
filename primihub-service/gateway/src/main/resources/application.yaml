@@ -147,6 +147,62 @@ spring:
             - BaseParam
             - SysAuth
             - SysLog
+        - id: federated-analysis-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/federatedAnalysis/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: federated-billing-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/federatedBilling/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: federated-query-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/federatedQuery/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: federated-stats-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/federatedStatistics/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: police-fusion-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/policeFusion/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: electronic-cert-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/electronicCert/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: system-config-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/systemConfig/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
 
 logging:
   level:
