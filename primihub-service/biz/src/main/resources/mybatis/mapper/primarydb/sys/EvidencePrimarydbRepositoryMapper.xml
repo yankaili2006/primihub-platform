@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.EvidencePrimarydbRepository">
+
+    <resultMap id="EvidenceRecordMap" type="com.primihub.biz.entity.sys.po.EvidenceRecord">
+        <id column="id" property="id"/>
+        <result column="evidence_hash" property="evidenceHash"/>
+        <result column="evidence_data" property="evidenceData"/>
+        <result column="evidence_type" property="evidenceType"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="file_type" property="fileType"/>
+        <result column="status" property="status"/>
+        <result column="block_height" property="blockHeight"/>
+        <result column="block_hash" property="blockHash"/>
+        <result column="tx_hash" property="txHash"/>
+        <result column="chain_type" property="chainType"/>
+        <result column="description" property="description"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="EvidenceTimestampMap" type="com.primihub.biz.entity.sys.po.EvidenceTimestamp">
+        <id column="id" property="id"/>
+        <result column="evidence_id" property="evidenceId"/>
+        <result column="timestamp_value" property="timestampValue"/>
+        <result column="timestamp_hash" property="timestampHash"/>
+        <result column="timestamp_source" property="timestampSource"/>
+        <result column="nonce" property="nonce"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <resultMap id="EvidenceConfigMap" type="com.primihub.biz.entity.sys.po.EvidenceConfig">
+        <id column="id" property="id"/>
+        <result column="config_key" property="configKey"/>
+        <result column="config_value" property="configValue"/>
+        <result column="config_desc" property="configDesc"/>
+        <result column="is_encrypted" property="isEncrypted"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="EvidenceApiKeyMap" type="com.primihub.biz.entity.sys.po.EvidenceApiKey">
+        <id column="id" property="id"/>
+        <result column="api_key" property="apiKey"/>
+        <result column="secret_key" property="secretKey"/>
+        <result column="status" property="status"/>
+        <result column="expiry_date" property="expiryDate"/>
+        <result column="description" property="description"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="EvidenceExportRecordMap" type="com.primihub.biz.entity.sys.po.EvidenceExportRecord">
+        <id column="id" property="id"/>
+        <result column="evidence_id" property="evidenceId"/>
+        <result column="export_type" property="exportType"/>
+        <result column="file_name" property="fileName"/>
+        <result column="file_size" property="fileSize"/>
+        <result column="is_encrypted" property="isEncrypted"/>
+        <result column="encrypt_algorithm" property="encryptAlgorithm"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <resultMap id="EvidenceApiCallLogMap" type="com.primihub.biz.entity.sys.po.EvidenceApiCallLog">
+        <id column="id" property="id"/>
+        <result column="api_key_id" property="apiKeyId"/>
+        <result column="api_path" property="apiPath"/>
+        <result column="request_method" property="requestMethod"/>
+        <result column="request_params" property="requestParams"/>
+        <result column="response_code" property="responseCode"/>
+        <result column="response_body" property="responseBody"/>
+        <result column="client_ip" property="clientIp"/>
+        <result column="execution_time" property="executionTime"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- Evidence Record -->
+    <insert id="insertEvidenceRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_record (evidence_hash, evidence_data, evidence_type, file_name, file_size, file_type,
+            status, block_height, block_hash, tx_hash, chain_type, description, created_by)
+        VALUES (#{evidenceHash}, #{evidenceData}, #{evidenceType}, #{fileName}, #{fileSize}, #{fileType},
+            #{status}, #{blockHeight}, #{blockHash}, #{txHash}, #{chainType}, #{description}, #{createdBy})
+    </insert>
+
+    <update id="updateEvidenceRecord">
+        UPDATE evidence_record
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="blockHeight != null">block_height = #{blockHeight},</if>
+            <if test="blockHash != null">block_hash = #{blockHash},</if>
+            <if test="txHash != null">tx_hash = #{txHash},</if>
+            <if test="description != null">description = #{description},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteEvidenceRecord">
+        DELETE FROM evidence_record WHERE id = #{id}
+    </delete>
+
+    <select id="selectEvidenceRecordById" resultMap="EvidenceRecordMap">
+        SELECT * FROM evidence_record WHERE id = #{id}
+    </select>
+
+    <select id="selectEvidenceRecordByHash" resultMap="EvidenceRecordMap">
+        SELECT * FROM evidence_record WHERE evidence_hash = #{evidenceHash}
+    </select>
+
+    <select id="selectEvidenceRecordList" resultMap="EvidenceRecordMap">
+        SELECT * FROM evidence_record
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (evidence_hash LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="evidenceType != null and evidenceType != ''">AND evidence_type = #{evidenceType}</if>
+            <if test="startTime != null and startTime != ''">AND created_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND created_at &lt;= #{endTime}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectEvidenceRecordCount" resultType="int">
+        SELECT COUNT(*) FROM evidence_record
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (evidence_hash LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="evidenceType != null and evidenceType != ''">AND evidence_type = #{evidenceType}</if>
+            <if test="startTime != null and startTime != ''">AND created_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND created_at &lt;= #{endTime}</if>
+        </where>
+    </select>
+
+    <!-- Evidence Timestamp -->
+    <insert id="insertEvidenceTimestamp" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_timestamp (evidence_id, timestamp_value, timestamp_hash, timestamp_source, nonce, status)
+        VALUES (#{evidenceId}, #{timestampValue}, #{timestampHash}, #{timestampSource}, #{nonce}, #{status})
+    </insert>
+
+    <update id="updateEvidenceTimestamp">
+        UPDATE evidence_timestamp
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectEvidenceTimestampById" resultMap="EvidenceTimestampMap">
+        SELECT * FROM evidence_timestamp WHERE id = #{id}
+    </select>
+
+    <select id="selectEvidenceTimestampByEvidenceId" resultMap="EvidenceTimestampMap">
+        SELECT * FROM evidence_timestamp WHERE evidence_id = #{evidenceId} ORDER BY created_at DESC LIMIT 1
+    </select>
+
+    <select id="selectEvidenceTimestampList" resultMap="EvidenceTimestampMap">
+        SELECT * FROM evidence_timestamp
+        <where>
+            <if test="evidenceId != null">AND evidence_id = #{evidenceId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectEvidenceTimestampCount" resultType="int">
+        SELECT COUNT(*) FROM evidence_timestamp
+        <where>
+            <if test="evidenceId != null">AND evidence_id = #{evidenceId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+    <!-- Evidence Config -->
+    <select id="selectEvidenceConfigByKey" resultMap="EvidenceConfigMap">
+        SELECT * FROM evidence_config WHERE config_key = #{configKey}
+    </select>
+
+    <select id="selectEvidenceConfigList" resultMap="EvidenceConfigMap">
+        SELECT * FROM evidence_config ORDER BY config_key
+    </select>
+
+    <insert id="insertEvidenceConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_config (config_key, config_value, config_desc, is_encrypted)
+        VALUES (#{configKey}, #{configValue}, #{configDesc}, #{isEncrypted})
+    </insert>
+
+    <update id="updateEvidenceConfig">
+        UPDATE evidence_config
+        SET config_value = #{configValue}, config_desc = #{configDesc}, is_encrypted = #{isEncrypted}
+        WHERE config_key = #{configKey}
+    </update>
+
+    <!-- Evidence API Key -->
+    <insert id="insertEvidenceApiKey" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_api_key (api_key, secret_key, status, expiry_date, description, created_by)
+        VALUES (#{apiKey}, #{secretKey}, #{status}, #{expiryDate}, #{description}, #{createdBy})
+    </insert>
+
+    <update id="updateEvidenceApiKey">
+        UPDATE evidence_api_key
+        SET status = #{status}, description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteEvidenceApiKey">
+        DELETE FROM evidence_api_key WHERE id = #{id}
+    </delete>
+
+    <select id="selectEvidenceApiKeyById" resultMap="EvidenceApiKeyMap">
+        SELECT * FROM evidence_api_key WHERE id = #{id}
+    </select>
+
+    <select id="selectEvidenceApiKeyByKey" resultMap="EvidenceApiKeyMap">
+        SELECT * FROM evidence_api_key WHERE api_key = #{apiKey}
+    </select>
+
+    <select id="selectEvidenceApiKeyList" resultMap="EvidenceApiKeyMap">
+        SELECT * FROM evidence_api_key
+        <where>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="keyword != null and keyword != ''">AND (api_key LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectEvidenceApiKeyCount" resultType="int">
+        SELECT COUNT(*) FROM evidence_api_key
+        <where>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="keyword != null and keyword != ''">AND (api_key LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))</if>
+        </where>
+    </select>
+
+    <!-- Evidence Export Record -->
+    <insert id="insertEvidenceExportRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_export_record (evidence_id, export_type, file_name, file_size, is_encrypted, encrypt_algorithm, status, created_by)
+        VALUES (#{evidenceId}, #{exportType}, #{fileName}, #{fileSize}, #{isEncrypted}, #{encryptAlgorithm}, #{status}, #{createdBy})
+    </insert>
+
+    <select id="selectEvidenceExportRecordList" resultMap="EvidenceExportRecordMap">
+        SELECT * FROM evidence_export_record
+        <where>
+            <if test="createdBy != null">AND created_by = #{createdBy}</if>
+            <if test="exportType != null and exportType != ''">AND export_type = #{exportType}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectEvidenceExportRecordCount" resultType="int">
+        SELECT COUNT(*) FROM evidence_export_record
+        <where>
+            <if test="createdBy != null">AND created_by = #{createdBy}</if>
+            <if test="exportType != null and exportType != ''">AND export_type = #{exportType}</if>
+        </where>
+    </select>
+
+    <!-- Evidence API Call Log -->
+    <insert id="insertEvidenceApiCallLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO evidence_api_call_log (api_key_id, api_path, request_method, request_params, response_code, response_body, client_ip, execution_time, status)
+        VALUES (#{apiKeyId}, #{apiPath}, #{requestMethod}, #{requestParams}, #{responseCode}, #{responseBody}, #{clientIp}, #{executionTime}, #{status})
+    </insert>
+
+    <select id="selectEvidenceApiCallLogList" resultMap="EvidenceApiCallLogMap">
+        SELECT * FROM evidence_api_call_log
+        <where>
+            <if test="apiKeyId != null">AND api_key_id = #{apiKeyId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectEvidenceApiCallLogCount" resultType="int">
+        SELECT COUNT(*) FROM evidence_api_call_log
+        <where>
+            <if test="apiKeyId != null">AND api_key_id = #{apiKeyId}</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+    </select>
+
+</mapper>

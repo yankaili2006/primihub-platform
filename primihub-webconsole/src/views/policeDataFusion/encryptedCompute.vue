@@ -75,6 +75,7 @@
 </template>
 
 <script>
+import { createPoliceTask } from "@/api/scene"
 export default {
   name: 'EncryptedModelCompute',
   data() {
@@ -103,29 +104,30 @@ export default {
     getStatusType(status) {
       return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
     },
-    handleCompute() {
+    async handleCompute() {
       if (!this.computeForm.encryptedModelId || !this.computeForm.policeDatasetId) {
         this.$message.warning('请选择加密模型和数据集')
         return
       }
       this.computing = true
-      setTimeout(() => {
+      try {
+        const res = await createPoliceTask({ taskType: 'encryptedCompute', params: this.computeForm })
+        if (res.code === 0) {
+          this.$message.success('联合运算任务已提交')
+          this.computeTaskList.unshift({
+            taskId: `EC-${Date.now()}`,
+            modelName: '加密模型',
+            datasetName: '警务数据集',
+            status: 'running',
+            statusText: '运行中',
+            createTime: new Date().toLocaleString()
+          })
+        }
+      } catch (e) {
+        this.$message.error('提交失败')
+      } finally {
         this.computing = false
-        this.computeTaskList.unshift({
-          taskId: `EC-${Date.now()}`,
-          modelName: this.encryptedModels.find(m => m.id === this.computeForm.encryptedModelId).name.replace('(加密)', ''),
-          datasetName: this.policeDatasets.find(d => d.id === this.computeForm.policeDatasetId).name.replace('数据集', ''),
-          operations: this.computeForm.operations.map(o => ({ predict: '模型预测', aggregate: '聚合统计', compare: '数据比对' }[o])).join(', '),
-          recordCount: Math.floor(Math.random() * 10000) + 5000,
-          computeTime: `${Math.floor(Math.random() * 20) + 5}min`,
-          status: 'completed',
-          statusText: '已完成',
-          createTime: new Date().toLocaleString(),
-          outputCount: Math.floor(Math.random() * 10000) + 3000,
-          resultSize: `${Math.floor(Math.random() * 500) + 200} MB`
-        })
-        this.$message.success('联合运算完成')
-      }, 3000)
+      }
     },
     handleViewResult(row) {
       this.currentResult = row

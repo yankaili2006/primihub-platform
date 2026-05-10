@@ -68,6 +68,7 @@
 </template>
 
 <script>
+import { decryptPoliceData } from "@/api/scene"
 export default {
   name: 'InsuranceDataDecrypt',
   data() {
@@ -96,33 +97,31 @@ export default {
     handleFileChange(file) {
       this.decryptForm.privateKeyFile = file.raw
     },
-    handleDecrypt() {
+    async handleDecrypt() {
       if (!this.decryptForm.ciphertextId || !this.decryptForm.privateKeyFile) {
         this.$message.warning('请选择密文结果并上传私钥文件')
         return
       }
       this.decrypting = true
-      const ct = this.ciphertextList.find(c => c.id === this.decryptForm.ciphertextId)
-      const newTask = {
-        taskId: `DT-${Date.now()}`,
-        ciphertextName: ct.name,
-        recordCount: Math.floor(Math.random() * 10000) + 5000,
-        decryptedSize: '计算中...',
-        outputFormat: this.decryptForm.outputFormat,
-        progress: 0,
-        createTime: new Date().toLocaleString()
-      }
-      this.decryptTaskList.unshift(newTask)
-      const timer = setInterval(() => {
-        if (newTask.progress < 100) {
-          newTask.progress += 10
-        } else {
-          clearInterval(timer)
-          newTask.decryptedSize = `${(Math.random() * 15 + 5).toFixed(1)} MB`
-          this.decrypting = false
+      try {
+        const res = await decryptPoliceData({ keyId: 1, encryptedData: this.decryptForm.ciphertextId })
+        if (res.code === 0) {
+          this.decryptTaskList.unshift({
+            taskId: `DT-${Date.now()}`,
+            ciphertextName: (this.ciphertextList.find(c => c.id === this.decryptForm.ciphertextId) || {}).name,
+            recordCount: 0,
+            decryptedSize: '解密完成',
+            outputFormat: this.decryptForm.outputFormat,
+            progress: 100,
+            createTime: new Date().toLocaleString()
+          })
           this.$message.success('解密完成')
         }
-      }, 400)
+      } catch (e) {
+        this.$message.error('解密失败')
+      } finally {
+        this.decrypting = false
+      }
     },
     handlePreview(row) {
       this.previewDialogVisible = true

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedQueryTaskRepository">
+
+    <resultMap id="QueryTaskMap" type="com.primihub.biz.entity.data.po.FederatedQueryTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="algorithm" property="algorithm"/>
+        <result column="query_mode" property="queryMode"/>
+        <result column="query_type" property="queryType"/>
+        <result column="task_state" property="taskState"/>
+        <result column="source_config" property="sourceConfig"/>
+        <result column="result_summary" property="resultSummary"/>
+        <result column="result_row_count" property="resultRowCount"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="QueryLogMap" type="com.primihub.biz.entity.data.po.FederatedQueryLog">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="log_level" property="logLevel"/>
+        <result column="log_message" property="logMessage"/>
+        <result column="log_data" property="logData"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <insert id="insertQueryTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_query_task (task_name, algorithm, query_mode, query_type, task_state, source_config, created_by)
+        VALUES (#{taskName}, #{algorithm}, #{queryMode}, #{queryType}, #{taskState}, #{sourceConfig}, #{createdBy})
+    </insert>
+
+    <update id="updateQueryTask">
+        UPDATE federated_query_task
+        <set>
+            <if test="taskState != null">task_state = #{taskState},</if>
+            <if test="resultSummary != null">result_summary = #{resultSummary},</if>
+            <if test="resultRowCount != null">result_row_count = #{resultRowCount},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectQueryTaskById" resultMap="QueryTaskMap">
+        SELECT * FROM federated_query_task WHERE id = #{id}
+    </select>
+
+    <select id="selectQueryTaskList" resultMap="QueryTaskMap">
+        SELECT * FROM federated_query_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="algorithm != null and algorithm != ''">AND algorithm = #{algorithm}</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="queryMode != null and queryMode != ''">AND query_mode = #{queryMode}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectQueryTaskCount" resultType="int">
+        SELECT COUNT(*) FROM federated_query_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="algorithm != null and algorithm != ''">AND algorithm = #{algorithm}</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="queryMode != null and queryMode != ''">AND query_mode = #{queryMode}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+    </select>
+
+    <insert id="insertQueryLog" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_query_log (task_id, log_level, log_message, log_data)
+        VALUES (#{taskId}, #{logLevel}, #{logMessage}, #{logData})
+    </insert>
+
+    <insert id="batchInsertQueryLog">
+        INSERT INTO federated_query_log (task_id, log_level, log_message, log_data) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.taskId}, #{item.logLevel}, #{item.logMessage}, #{item.logData})
+        </foreach>
+    </insert>
+
+    <select id="selectQueryLogList" resultMap="QueryLogMap">
+        SELECT * FROM federated_query_log
+        <where>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+            <if test="logLevel != null and logLevel != ''">AND log_level = #{logLevel}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectQueryLogCount" resultType="int">
+        SELECT COUNT(*) FROM federated_query_log
+        <where>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+            <if test="logLevel != null and logLevel != ''">AND log_level = #{logLevel}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+    </select>
+
+</mapper>

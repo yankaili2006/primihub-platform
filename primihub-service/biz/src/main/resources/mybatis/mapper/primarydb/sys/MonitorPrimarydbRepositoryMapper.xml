@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.MonitorPrimarydbRepository">
+
+    <resultMap id="AlertConfigMap" type="com.primihub.biz.entity.sys.po.MonitorAlertConfig">
+        <id column="id" property="id"/>
+        <result column="monitor_type" property="monitorType"/>
+        <result column="threshold" property="threshold"/>
+        <result column="duration" property="duration"/>
+        <result column="alert_level" property="alertLevel"/>
+        <result column="notify_method" property="notifyMethod"/>
+        <result column="notify_target" property="notifyTarget"/>
+        <result column="is_enabled" property="isEnabled"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="AlertHistoryMap" type="com.primihub.biz.entity.sys.po.MonitorAlertHistory">
+        <id column="id" property="id"/>
+        <result column="config_id" property="configId"/>
+        <result column="monitor_type" property="monitorType"/>
+        <result column="alert_level" property="alertLevel"/>
+        <result column="alert_value" property="alertValue"/>
+        <result column="threshold" property="threshold"/>
+        <result column="message" property="message"/>
+        <result column="status" property="status"/>
+        <result column="handled_by" property="handledBy"/>
+        <result column="handled_at" property="handledAt"/>
+        <result column="handle_remark" property="handleRemark"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <resultMap id="MonitorRecordMap" type="com.primihub.biz.entity.sys.po.MonitorRecord">
+        <id column="id" property="id"/>
+        <result column="monitor_type" property="monitorType"/>
+        <result column="metric_name" property="metricName"/>
+        <result column="metric_value" property="metricValue"/>
+        <result column="unit" property="unit"/>
+        <result column="extra_data" property="extraData"/>
+        <result column="recorded_at" property="recordedAt"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <!-- Alert Config -->
+    <insert id="insertAlertConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO monitor_alert_config (monitor_type, threshold, duration, alert_level, notify_method, notify_target, is_enabled)
+        VALUES (#{monitorType}, #{threshold}, #{duration}, #{alertLevel}, #{notifyMethod}, #{notifyTarget}, #{isEnabled})
+    </insert>
+
+    <update id="updateAlertConfig">
+        UPDATE monitor_alert_config
+        <set>
+            <if test="threshold != null">threshold = #{threshold},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="alertLevel != null">alert_level = #{alertLevel},</if>
+            <if test="notifyMethod != null">notify_method = #{notifyMethod},</if>
+            <if test="notifyTarget != null">notify_target = #{notifyTarget},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteAlertConfig">
+        DELETE FROM monitor_alert_config WHERE id = #{id}
+    </delete>
+
+    <select id="selectAlertConfigById" resultMap="AlertConfigMap">
+        SELECT * FROM monitor_alert_config WHERE id = #{id}
+    </select>
+
+    <select id="selectAlertConfigList" resultMap="AlertConfigMap">
+        SELECT * FROM monitor_alert_config
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="isEnabled != null">AND is_enabled = #{isEnabled}</if>
+        </where>
+        ORDER BY monitor_type, alert_level
+    </select>
+
+    <select id="selectAlertConfigCount" resultType="int">
+        SELECT COUNT(*) FROM monitor_alert_config
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="isEnabled != null">AND is_enabled = #{isEnabled}</if>
+        </where>
+    </select>
+
+    <select id="selectEnabledAlertConfigs" resultMap="AlertConfigMap">
+        SELECT * FROM monitor_alert_config WHERE is_enabled = 1
+    </select>
+
+    <!-- Alert History -->
+    <insert id="insertAlertHistory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO monitor_alert_history (config_id, monitor_type, alert_level, alert_value, threshold, message, status)
+        VALUES (#{configId}, #{monitorType}, #{alertLevel}, #{alertValue}, #{threshold}, #{message}, #{status})
+    </insert>
+
+    <update id="updateAlertHistory">
+        UPDATE monitor_alert_history
+        SET status = #{status}, handled_by = #{handledBy}, handled_at = #{handledAt}, handle_remark = #{handleRemark}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectAlertHistoryById" resultMap="AlertHistoryMap">
+        SELECT * FROM monitor_alert_history WHERE id = #{id}
+    </select>
+
+    <select id="selectAlertHistoryList" resultMap="AlertHistoryMap">
+        SELECT * FROM monitor_alert_history
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="startTime != null and startTime != ''">AND created_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND created_at &lt;= #{endTime}</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectAlertHistoryCount" resultType="int">
+        SELECT COUNT(*) FROM monitor_alert_history
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="status != null">AND status = #{status}</if>
+            <if test="startTime != null and startTime != ''">AND created_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND created_at &lt;= #{endTime}</if>
+        </where>
+    </select>
+
+    <select id="selectTodayAlertCount" resultType="int">
+        SELECT COUNT(*) FROM monitor_alert_history WHERE DATE(created_at) = CURDATE()
+    </select>
+
+    <select id="selectPendingAlertCount" resultType="int">
+        SELECT COUNT(*) FROM monitor_alert_history WHERE status = 0
+    </select>
+
+    <!-- Monitor Record -->
+    <insert id="insertMonitorRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO monitor_record (monitor_type, metric_name, metric_value, unit, extra_data, recorded_at)
+        VALUES (#{monitorType}, #{metricName}, #{metricValue}, #{unit}, #{extraData}, #{recordedAt})
+    </insert>
+
+    <insert id="batchInsertMonitorRecord">
+        INSERT INTO monitor_record (monitor_type, metric_name, metric_value, unit, extra_data, recorded_at) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.monitorType}, #{item.metricName}, #{item.metricValue}, #{item.unit}, #{item.extraData}, #{item.recordedAt})
+        </foreach>
+    </insert>
+
+    <select id="selectLatestMonitorRecord" resultMap="MonitorRecordMap">
+        SELECT * FROM monitor_record
+        WHERE monitor_type = #{monitorType} AND metric_name = #{metricName}
+        ORDER BY recorded_at DESC LIMIT 1
+    </select>
+
+    <select id="selectMonitorRecordList" resultMap="MonitorRecordMap">
+        SELECT * FROM monitor_record
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="startTime != null and startTime != ''">AND recorded_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND recorded_at &lt;= #{endTime}</if>
+        </where>
+        ORDER BY recorded_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectMonitorRecordCount" resultType="int">
+        SELECT COUNT(*) FROM monitor_record
+        <where>
+            <if test="monitorType != null and monitorType != ''">AND monitor_type = #{monitorType}</if>
+            <if test="startTime != null and startTime != ''">AND recorded_at >= #{startTime}</if>
+            <if test="endTime != null and endTime != ''">AND recorded_at &lt;= #{endTime}</if>
+        </where>
+    </select>
+
+    <select id="selectMonitorHistory" resultMap="MonitorRecordMap">
+        SELECT * FROM monitor_record
+        WHERE monitor_type = #{monitorType}
+        <if test="startTime != null and startTime != ''">AND recorded_at >= #{startTime}</if>
+        <if test="endTime != null and endTime != ''">AND recorded_at &lt;= #{endTime}</if>
+        ORDER BY recorded_at ASC
+    </select>
+
+</mapper>

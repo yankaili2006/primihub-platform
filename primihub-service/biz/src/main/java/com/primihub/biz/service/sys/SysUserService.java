@@ -14,6 +14,7 @@ import com.primihub.biz.entity.sys.param.*;
 import com.primihub.biz.entity.sys.po.SysRole;
 import com.primihub.biz.entity.sys.po.SysUr;
 import com.primihub.biz.entity.sys.po.SysUser;
+import com.primihub.biz.entity.sys.vo.LoginRestrictionVO;
 import com.primihub.biz.entity.sys.vo.SysAuthNodeVO;
 import com.primihub.biz.entity.sys.vo.SysUserListVO;
 import com.primihub.biz.repository.primarydb.sys.SysUserPrimarydbRepository;
@@ -70,12 +71,13 @@ public class SysUserService {
     private RestTemplate restTemplate;
     @Autowired
     private CaptchaService captchaService;
+    @Autowired
+    private SysConfigService sysConfigService;
 
 
     public BaseResultEntity login(LoginParam loginParam,String ip){
         log.info("ip:{}",ip);
 
-        // Allow login without RSA encryption for API testing
         boolean useRsaEncryption = loginParam.getValidateKeyName() != null && !loginParam.getValidateKeyName().trim().isEmpty();
         String privateKey = null;
 
@@ -90,9 +92,16 @@ public class SysUserService {
         if(sysUser==null||sysUser.getUserId()==null) {
             return BaseResultEntity.failure(BaseResultEnum.ACCOUNT_NOT_FOUND);
         }
+
+        // 读取可配置的登录限制
+        LoginRestrictionVO restriction = getLoginRestrictionConfig();
+        long maxAttempts = restriction.getMaxLoginAttempts() != null ? restriction.getMaxLoginAttempts().longValue() : SysConstant.SYS_USER_PASS_ERRER_NUM;
+
         Long number = sysUserPrimaryRedisRepository.loginVerificationNumber(sysUser.getUserId());
-        if(number >= SysConstant.SYS_USER_PASS_ERRER_NUM){
-            BaseResultEntity failure = BaseResultEntity.failure(BaseResultEnum.RESTRICT_LOGIN,"限制12小时登录，当前未到自动解除时限。您可通过忘记密码解除限制。");
+        if(number >= maxAttempts){
+            int lockMin = restriction.getLockDurationMinutes() != null ? restriction.getLockDurationMinutes() : 720;
+            BaseResultEntity failure = BaseResultEntity.failure(BaseResultEnum.RESTRICT_LOGIN,
+                "限制" + lockMin + "分钟登录，当前未到自动解除时限。您可通过忘记密码解除限制。");
             failure.setResult(number);
             return failure;
         }
@@ -116,7 +125,6 @@ public class SysUserService {
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE,"解密失败");
             }
         } else {
-            // For API testing without RSA encryption, use password directly
             userPassword = loginParam.getUserPassword();
         }
         StringBuffer sb=new StringBuffer().append(baseConfiguration.getDefaultPasswordVector()).append(userPassword);
@@ -126,12 +134,42 @@ public class SysUserService {
             BaseResultEntity failure = BaseResultEntity.failure(BaseResultEnum.PASSWORD_NOT_CORRECT);
             number = sysUserPrimaryRedisRepository.loginErrorRecordNumber(sysUser.getUserId());
             if (number>=3){
-                failure.setMsg(failure.getMsg()+":连续错误6次，账号会被禁止登录。12小时后自动解除限制或通过忘记密码解除限制。");
+                failure.setMsg(failure.getMsg()+":连续错误" + maxAttempts + "次，账号会被禁止登录。" +
+                    (restriction.getLockDurationMinutes() != null ? restriction.getLockDurationMinutes() : 720) +
+                    "分钟后自动解除限制或通过忘记密码解除限制。");
             }
             failure.setResult(number);
             return failure;
         }
+        // 首次登录强制修改密码
+        if (restriction.getForceChangePassword() != null && restriction.getForceChangePassword()
+                && sysUser.getFirstLogin() != null && sysUser.getFirstLogin() == 1) {
+            BaseResultEntity result = baseLogin(sysUser, ip);
+            Map<String, Object> resultMap = new HashMap<>();
+            resultMap.put("forceChangePassword", true);
+            resultMap.put("token", ((Map)result.getResult()).get("token"));
+            resultMap.put("sysUser", ((Map)result.getResult()).get("sysUser"));
+            // 标记为非首次
+            sysUserPrimarydbRepository.updateUserFirstLogin(sysUser.getUserId(), 0);
+            return BaseResultEntity.success(resultMap);
+        }
         return baseLogin(sysUser,ip);
+    }
+
+    private LoginRestrictionVO getLoginRestrictionConfig() {
+        try {
+            BaseResultEntity result = sysConfigService.getLoginRestriction();
+            if (result.getCode() == 0 && result.getResult() != null) {
+                return (LoginRestrictionVO) result.getResult();
+            }
+        } catch (Exception e) {
+            log.warn("读取登录限制配置失败，使用默认值", e);
+        }
+        LoginRestrictionVO vo = new LoginRestrictionVO();
+        vo.setMaxLoginAttempts(SysConstant.SYS_USER_PASS_ERRER_NUM.intValue());
+        vo.setLockDurationMinutes(720);
+        vo.setForceChangePassword(false);
+        return vo;
     }
 
     public BaseResultEntity baseLogin(SysUser sysUser,String ip){

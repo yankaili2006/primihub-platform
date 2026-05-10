@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS sys_user (
     auth_uuid VARCHAR(255),
     ip VARCHAR(255),
     register_type TINYINT NOT NULL,
+    first_login TINYINT(1) DEFAULT 1 COMMENT '是否首次登录(0=否 1=是)',
     UNIQUE KEY ix_unique_user_account (user_account)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -614,3 +615,456 @@ CREATE TABLE IF NOT EXISTS data_task_execution_log (
     KEY idx_log_level (log_level),
     KEY idx_created_time (created_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务执行日志表';
+
+-- 系统配置表
+CREATE TABLE IF NOT EXISTS sys_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_group VARCHAR(50) NOT NULL COMMENT '配置分组: network/time/login_restriction/personalization/ftp',
+    config_key VARCHAR(100) NOT NULL COMMENT '配置键',
+    config_value TEXT COMMENT '配置值',
+    config_desc VARCHAR(500) COMMENT '配置说明',
+    is_encrypted TINYINT(1) DEFAULT 0 COMMENT '是否加密存储',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_group_key (config_group, config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
+
+-- 联邦统计任务表
+CREATE TABLE IF NOT EXISTS federated_stats_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_name VARCHAR(200) NOT NULL COMMENT '任务名称',
+    project_id BIGINT COMMENT '关联项目ID',
+    stats_type VARCHAR(50) NOT NULL COMMENT '统计类型: descriptive/group_by/conditional/proportion/t_test/f_test/chi_square/regression/correlation',
+    algorithm_type VARCHAR(30) COMMENT '算法类型: DH/OT/HE',
+    task_state TINYINT DEFAULT 0 COMMENT '状态: 0待执行 1执行中 2成功 3失败 4取消',
+    task_param JSON COMMENT '任务参数',
+    result_summary VARCHAR(500) COMMENT '结果摘要',
+    error_message VARCHAR(2000) COMMENT '错误信息',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_stats_type (stats_type),
+    INDEX idx_task_state (task_state)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦统计任务表';
+
+-- 联邦统计结果表
+CREATE TABLE IF NOT EXISTS federated_stats_result (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT NOT NULL COMMENT '关联任务ID',
+    result_type VARCHAR(30) DEFAULT 'final' COMMENT '结果类型: interim/final',
+    result_data JSON COMMENT '结果数据',
+    result_file VARCHAR(500) COMMENT '结果文件路径',
+    row_count INT COMMENT '结果行数',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_task_id (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦统计结果表';
+
+-- 联邦统计存储配置表
+CREATE TABLE IF NOT EXISTS federated_stats_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_name VARCHAR(100) NOT NULL COMMENT '配置名称',
+    storage_type VARCHAR(30) NOT NULL COMMENT '存储类型: local/oss/s3',
+    storage_path VARCHAR(500) COMMENT '存储路径',
+    connection_json JSON COMMENT '连接参数',
+    is_default TINYINT(1) DEFAULT 0 COMMENT '是否默认',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦统计存储配置表';
+
+-- 联邦分析任务表
+CREATE TABLE IF NOT EXISTS federated_analysis_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_name VARCHAR(200) NOT NULL COMMENT '任务名称',
+    project_id BIGINT COMMENT '关联项目ID',
+    source_sql TEXT NOT NULL COMMENT '原始SQL',
+    rewritten_sql TEXT COMMENT '改写后SQL',
+    task_state TINYINT DEFAULT 0 COMMENT '状态: 0待执行 1执行中 2成功 3失败',
+    task_param JSON COMMENT '执行参数',
+    result_summary VARCHAR(500) COMMENT '结果摘要',
+    result_row_count INT COMMENT '结果行数',
+    error_message VARCHAR(2000) COMMENT '错误信息',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_project (project_id),
+    INDEX idx_task_state (task_state)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦分析任务表';
+
+-- 联邦分析数据源配置表
+CREATE TABLE IF NOT EXISTS federated_analysis_datasource (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    source_name VARCHAR(100) NOT NULL COMMENT '数据源名称',
+    source_type VARCHAR(30) NOT NULL COMMENT '类型: mysql/postgresql/oracle/spark/hive/flink/oss/s3',
+    source_config JSON NOT NULL COMMENT '连接参数',
+    is_connected TINYINT(1) DEFAULT 0 COMMENT '上次连接测试结果',
+    last_test_time DATETIME COMMENT '最后测试时间',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_source_type (source_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦分析数据源配置表';
+
+-- 联邦分析结果表
+CREATE TABLE IF NOT EXISTS federated_analysis_result (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT NOT NULL COMMENT '关联任务ID',
+    result_type VARCHAR(30) DEFAULT 'final' COMMENT '结果类型: schema/interim/final',
+    result_data JSON COMMENT '结果数据',
+    result_file VARCHAR(500) COMMENT '结果文件路径',
+    column_metadata JSON COMMENT '列元数据',
+    row_count INT COMMENT '结果行数',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_task_id (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦分析结果表';
+
+-- 联邦查询计费规则表
+CREATE TABLE IF NOT EXISTS federated_billing_rule (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    rule_name VARCHAR(100) NOT NULL COMMENT '规则名称',
+    billing_type VARCHAR(30) NOT NULL COMMENT '计费类型: by_count/by_hit/fixed_dedup/rolling_dedup',
+    apply_resource_ids JSON COMMENT '适用资源ID列表',
+    apply_organ_ids JSON COMMENT '适用机构ID列表',
+    base_fee DECIMAL(12,4) DEFAULT 0 COMMENT '基础费',
+    min_charge DECIMAL(12,4) DEFAULT 0 COMMENT '最低收费',
+    is_active TINYINT(1) DEFAULT 0 COMMENT '是否启用',
+    effective_from DATETIME COMMENT '生效时间',
+    effective_to DATETIME COMMENT '失效时间',
+    price_per_query DECIMAL(12,4) COMMENT '每次查询价格',
+    enable_discount TINYINT(1) COMMENT '是否启用折扣',
+    discount_threshold INT COMMENT '折扣阈值',
+    discount_rate DECIMAL(5,4) COMMENT '折扣率',
+    price_per_hit DECIMAL(12,4) COMMENT '每条命中价格',
+    enable_tiered TINYINT(1) COMMENT '是否启用阶梯价',
+    tiered_pricing JSON COMMENT '阶梯价配置',
+    dedup_time_window VARCHAR(20) COMMENT '去重窗口',
+    price_per_unique DECIMAL(12,4) COMMENT '去重后每条价格',
+    repeat_discount DECIMAL(5,4) COMMENT '重复折扣',
+    rolling_window_hours INT COMMENT '滚动窗口(小时)',
+    slide_interval_hours INT COMMENT '滑动间隔(小时)',
+    rolling_price_per_unique DECIMAL(12,4) COMMENT '滚动去重价格',
+    rolling_repeat_discount DECIMAL(5,4) COMMENT '滚动重复折扣',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_billing_type (billing_type),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦查询计费规则表';
+
+-- 联邦查询计费记录表
+CREATE TABLE IF NOT EXISTS federated_billing_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    rule_id BIGINT NOT NULL COMMENT '关联规则ID',
+    task_type VARCHAR(30) NOT NULL COMMENT '任务类型: psi/difference/union/analysis',
+    task_id BIGINT NOT NULL COMMENT '关联任务ID',
+    requester_organ_id VARCHAR(50) NOT NULL COMMENT '请求方机构ID',
+    provider_organ_id VARCHAR(50) COMMENT '提供方机构ID',
+    resource_ids JSON COMMENT '使用资源ID列表',
+    billing_type VARCHAR(30) NOT NULL COMMENT '计费类型',
+    query_count INT DEFAULT 0 COMMENT '查询次数',
+    hit_count INT DEFAULT 0 COMMENT '命中记录数',
+    dedup_key VARCHAR(64) COMMENT '去重KEY',
+    dedup_window_start DATETIME COMMENT '去重窗口开始',
+    dedup_window_end DATETIME COMMENT '去重窗口结束',
+    unit_price DECIMAL(12,4) COMMENT '单价',
+    discount_rate_applied DECIMAL(5,4) COMMENT '实际折扣率',
+    total_charge DECIMAL(12,4) NOT NULL COMMENT '总费用',
+    charge_status TINYINT DEFAULT 0 COMMENT '状态: 0待结算 1已结算 2已退款',
+    billing_time DATETIME NOT NULL COMMENT '计费时间',
+    settled_at DATETIME COMMENT '结算时间',
+    remark VARCHAR(500) COMMENT '备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_task (task_type, task_id),
+    INDEX idx_requester (requester_organ_id),
+    INDEX idx_billing_time (billing_time),
+    INDEX idx_dedup_key (dedup_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦查询计费记录表';
+
+-- 场景定制化任务表
+CREATE TABLE IF NOT EXISTS scene_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    scene_type VARCHAR(50) NOT NULL COMMENT '场景类型: police_fusion/electronic_cert',
+    task_name VARCHAR(200) NOT NULL COMMENT '任务名称',
+    task_type VARCHAR(50) NOT NULL COMMENT '任务子类型',
+    params JSON COMMENT '任务参数',
+    task_state TINYINT DEFAULT 0 COMMENT '状态: 0待执行 1成功 2失败',
+    result_data JSON COMMENT '结果数据',
+    error_message VARCHAR(2000) COMMENT '错误信息',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_scene_type (scene_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='场景定制化任务表';
+
+CREATE TABLE IF NOT EXISTS scene_api_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    scene_type VARCHAR(50) NOT NULL COMMENT '场景类型',
+    api_name VARCHAR(100) NOT NULL COMMENT '接口名称',
+    api_url VARCHAR(500) COMMENT '接口地址',
+    protocol VARCHAR(20) DEFAULT 'REST' COMMENT '协议',
+    auth_type VARCHAR(30) COMMENT '鉴权类型',
+    api_key VARCHAR(500) COMMENT 'API密钥',
+    status TINYINT DEFAULT 1 COMMENT '状态',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='场景API配置表';
+
+CREATE TABLE IF NOT EXISTS scene_key_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    scene_type VARCHAR(50) NOT NULL COMMENT '场景类型',
+    key_name VARCHAR(100) NOT NULL COMMENT '密钥名称',
+    scheme VARCHAR(30) COMMENT '加密方案: BFV/CKKS/BGV',
+    public_key TEXT COMMENT '公钥',
+    private_key TEXT COMMENT '私钥',
+    key_size INT COMMENT '密钥长度',
+    status TINYINT DEFAULT 1 COMMENT '状态',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='场景密钥配置表';
+
+-- ========== 存证管理 ==========
+
+CREATE TABLE IF NOT EXISTS evidence_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    evidence_hash VARCHAR(128) NOT NULL COMMENT '存证哈希',
+    evidence_data LONGTEXT COMMENT '存证数据(JSON)',
+    evidence_type VARCHAR(50) COMMENT '存证类型: file/text/hash',
+    file_name VARCHAR(255) COMMENT '文件名',
+    file_size BIGINT COMMENT '文件大小(字节)',
+    file_type VARCHAR(50) COMMENT '文件MIME类型',
+    status TINYINT DEFAULT 0 COMMENT '状态: 0待上链 1已上链 2已验证 3已过期',
+    block_height BIGINT COMMENT '区块链高度',
+    block_hash VARCHAR(128) COMMENT '区块哈希',
+    tx_hash VARCHAR(128) COMMENT '交易哈希',
+    chain_type VARCHAR(30) DEFAULT 'FABRIC' COMMENT '区块链类型',
+    description VARCHAR(500) COMMENT '存证描述',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_evidence_hash (evidence_hash),
+    INDEX idx_status (status),
+    INDEX idx_created_by (created_by),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证记录表';
+
+CREATE TABLE IF NOT EXISTS evidence_timestamp (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id BIGINT NOT NULL COMMENT '关联存证ID',
+    timestamp_value DATETIME NOT NULL COMMENT '时间戳时间',
+    timestamp_hash VARCHAR(128) COMMENT '时间戳哈希',
+    timestamp_source VARCHAR(50) DEFAULT 'LOCAL' COMMENT '时间戳来源: LOCAL/NTP/BLOCKCHAIN',
+    nonce VARCHAR(64) COMMENT '随机数',
+    status TINYINT DEFAULT 0 COMMENT '状态: 0待确认 1已确认 2已验证',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_evidence_id (evidence_id),
+    INDEX idx_timestamp_value (timestamp_value)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证时间戳表';
+
+CREATE TABLE IF NOT EXISTS evidence_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(64) NOT NULL COMMENT '配置键',
+    config_value TEXT COMMENT '配置值',
+    config_desc VARCHAR(500) COMMENT '配置说明',
+    is_encrypted TINYINT(1) DEFAULT 0 COMMENT '是否加密',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_config_key (config_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证配置表';
+
+CREATE TABLE IF NOT EXISTS evidence_api_key (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    api_key VARCHAR(128) NOT NULL COMMENT 'API密钥',
+    secret_key VARCHAR(256) NOT NULL COMMENT '密钥密文',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0禁用 1启用',
+    expiry_date DATETIME COMMENT '过期时间',
+    description VARCHAR(500) COMMENT '描述',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_api_key (api_key),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证API密钥表';
+
+CREATE TABLE IF NOT EXISTS evidence_export_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    evidence_id BIGINT COMMENT '关联存证ID',
+    export_type VARCHAR(30) NOT NULL COMMENT '导出类型: plain/encrypted',
+    file_name VARCHAR(255) COMMENT '文件名',
+    file_size BIGINT COMMENT '文件大小',
+    is_encrypted TINYINT(1) DEFAULT 0 COMMENT '是否加密',
+    encrypt_algorithm VARCHAR(30) COMMENT '加密算法',
+    status TINYINT DEFAULT 0 COMMENT '状态: 0处理中 1已完成 2失败',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_evidence_id (evidence_id),
+    INDEX idx_created_by (created_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证导出记录表';
+
+CREATE TABLE IF NOT EXISTS evidence_api_call_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    api_key_id BIGINT COMMENT '关联API密钥ID',
+    api_path VARCHAR(255) NOT NULL COMMENT '请求路径',
+    request_method VARCHAR(10) COMMENT '请求方法',
+    request_params TEXT COMMENT '请求参数',
+    response_code INT COMMENT '响应码',
+    response_body TEXT COMMENT '响应体',
+    client_ip VARCHAR(64) COMMENT '客户端IP',
+    execution_time INT COMMENT '执行时间(ms)',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0失败 1成功',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_api_key_id (api_key_id),
+    INDEX idx_api_path (api_path),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='存证API调用日志表';
+
+-- ========== 监控管理 ==========
+
+CREATE TABLE IF NOT EXISTS monitor_alert_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    monitor_type VARCHAR(30) NOT NULL COMMENT '监控类型: CPU/MEMORY/DISK/DATABASE/JVM/REDIS',
+    threshold DECIMAL(10,2) NOT NULL COMMENT '告警阈值',
+    duration INT DEFAULT 300 COMMENT '持续时长(秒)',
+    alert_level TINYINT DEFAULT 1 COMMENT '告警级别: 1警告 2严重 3紧急',
+    notify_method VARCHAR(50) COMMENT '通知方式: email/sms/webhook',
+    notify_target VARCHAR(500) COMMENT '通知目标',
+    is_enabled TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_monitor_type (monitor_type),
+    INDEX idx_is_enabled (is_enabled)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='监控告警配置表';
+
+CREATE TABLE IF NOT EXISTS monitor_alert_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_id BIGINT COMMENT '关联配置ID',
+    monitor_type VARCHAR(30) NOT NULL COMMENT '监控类型',
+    alert_level TINYINT DEFAULT 1 COMMENT '告警级别',
+    alert_value DECIMAL(10,2) COMMENT '触发值',
+    threshold DECIMAL(10,2) COMMENT '阈值',
+    message VARCHAR(1000) COMMENT '告警消息',
+    status TINYINT DEFAULT 0 COMMENT '状态: 0未处理 1已处理 2已忽略',
+    handled_by BIGINT COMMENT '处理人',
+    handled_at DATETIME COMMENT '处理时间',
+    handle_remark VARCHAR(500) COMMENT '处理备注',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_config_id (config_id),
+    INDEX idx_monitor_type (monitor_type),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='监控告警历史表';
+
+CREATE TABLE IF NOT EXISTS monitor_record (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    monitor_type VARCHAR(30) NOT NULL COMMENT '监控类型: CPU/MEMORY/DISK/DATABASE/JVM/REDIS',
+    metric_name VARCHAR(100) NOT NULL COMMENT '指标名称',
+    metric_value DECIMAL(15,4) NOT NULL COMMENT '指标值',
+    unit VARCHAR(20) COMMENT '单位',
+    extra_data JSON COMMENT '扩展数据',
+    recorded_at DATETIME NOT NULL COMMENT '记录时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_monitor_type (monitor_type),
+    INDEX idx_metric_name (metric_name),
+    INDEX idx_recorded_at (recorded_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='监控记录表';
+
+-- ========== 接口管理 ==========
+
+CREATE TABLE IF NOT EXISTS api_definition (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    api_name VARCHAR(100) NOT NULL COMMENT '接口名称',
+    api_path VARCHAR(255) NOT NULL COMMENT '接口路径',
+    api_method VARCHAR(10) NOT NULL COMMENT '请求方法: GET/POST/PUT/DELETE',
+    protocol VARCHAR(20) DEFAULT 'REST' COMMENT '协议',
+    content_type VARCHAR(50) DEFAULT 'application/json' COMMENT 'Content-Type',
+    description VARCHAR(500) COMMENT '接口描述',
+    request_example TEXT COMMENT '请求示例',
+    response_example TEXT COMMENT '响应示例',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0禁用 1启用',
+    is_require_auth TINYINT(1) DEFAULT 1 COMMENT '是否需要授权',
+    rate_limit INT DEFAULT 0 COMMENT '速率限制(次/秒)',
+    timeout INT DEFAULT 30000 COMMENT '超时时间(ms)',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_api_path (api_path),
+    INDEX idx_status (status),
+    INDEX idx_created_by (created_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='接口定义表';
+
+CREATE TABLE IF NOT EXISTS api_auth_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    api_id BIGINT NOT NULL COMMENT '关联接口ID',
+    auth_name VARCHAR(100) NOT NULL COMMENT '授权名称',
+    app_key VARCHAR(128) NOT NULL COMMENT 'AppKey',
+    app_secret VARCHAR(256) NOT NULL COMMENT 'AppSecret',
+    auth_type VARCHAR(30) DEFAULT 'APP_KEY' COMMENT '鉴权类型: APP_KEY/JWT/OAuth2',
+    allowed_ips VARCHAR(500) COMMENT '允许IP列表(逗号分隔)',
+    expire_time DATETIME COMMENT '过期时间',
+    status TINYINT DEFAULT 1 COMMENT '状态: 0禁用 1启用',
+    description VARCHAR(500) COMMENT '描述',
+    created_by BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_app_key (app_key),
+    INDEX idx_api_id (api_id),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='接口授权配置表';
+
+CREATE TABLE IF NOT EXISTS api_call_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    api_id BIGINT COMMENT '关联接口ID',
+    auth_id BIGINT COMMENT '关联授权ID',
+    request_path VARCHAR(255) NOT NULL COMMENT '请求路径',
+    request_method VARCHAR(10) COMMENT '请求方法',
+    request_params TEXT COMMENT '请求参数',
+    request_headers TEXT COMMENT '请求头',
+    response_code INT COMMENT '响应状态码',
+    response_body TEXT COMMENT '响应体',
+    client_ip VARCHAR(64) COMMENT '客户端IP',
+    execution_time INT COMMENT '执行时长(ms)',
+    is_success TINYINT(1) DEFAULT 1 COMMENT '是否成功',
+    error_message VARCHAR(2000) COMMENT '错误信息',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_api_id (api_id),
+    INDEX idx_auth_id (auth_id),
+    INDEX idx_is_success (is_success),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='接口调用日志表';
+
+-- ========== 联邦查询管理 ==========
+
+CREATE TABLE IF NOT EXISTS federated_query_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_name VARCHAR(200) NOT NULL COMMENT '任务名称',
+    algorithm VARCHAR(30) NOT NULL COMMENT '算法: DH/OT/HE',
+    query_mode VARCHAR(30) NOT NULL COMMENT '模式: batch/realtime',
+    query_type VARCHAR(30) DEFAULT 'psi' COMMENT '查询类型: psi/difference/union',
+    task_state TINYINT DEFAULT 0 COMMENT '状态: 0待执行 1执行中 2成功 3失败',
+    source_config JSON COMMENT '数据源配置',
+    result_summary VARCHAR(500) COMMENT '结果摘要',
+    result_row_count INT COMMENT '结果行数',
+    error_message VARCHAR(2000) COMMENT '错误信息',
+    created_by BIGINT COMMENT '创建人',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_algorithm (algorithm),
+    INDEX idx_task_state (task_state),
+    INDEX idx_created_by (created_by),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦查询任务表';
+
+CREATE TABLE IF NOT EXISTS federated_query_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT COMMENT '关联任务ID',
+    log_level VARCHAR(10) DEFAULT 'INFO' COMMENT '日志级别: DEBUG/INFO/WARN/ERROR',
+    log_message TEXT COMMENT '日志内容',
+    log_data JSON COMMENT '结构化日志数据',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_task_id (task_id),
+    INDEX idx_log_level (log_level),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦查询日志表';

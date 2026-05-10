@@ -48,6 +48,11 @@ public class SysUser {
     private Integer registerType;
 
     /**
+     * 是否首次登录(0=否 1=是)
+     */
+    private Integer firstLogin;
+
+    /**
      * 第三方uuid
      */
     private String authUuid;

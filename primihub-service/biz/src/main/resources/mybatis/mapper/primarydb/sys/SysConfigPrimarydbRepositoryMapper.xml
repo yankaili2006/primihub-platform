@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysConfigPrimarydbRepository">
+
+    <resultMap id="BaseResultMap" type="com.primihub.biz.entity.sys.po.SysConfig">
+        <id column="id" property="id"/>
+        <result column="config_group" property="configGroup"/>
+        <result column="config_key" property="configKey"/>
+        <result column="config_value" property="configValue"/>
+        <result column="config_desc" property="configDesc"/>
+        <result column="is_encrypted" property="isEncrypted"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="selectByGroupAndKey" resultMap="BaseResultMap">
+        SELECT * FROM sys_config
+        WHERE config_group = #{configGroup} AND config_key = #{configKey}
+    </select>
+
+    <select id="selectByGroup" resultMap="BaseResultMap">
+        SELECT * FROM sys_config
+        WHERE config_group = #{configGroup}
+        ORDER BY config_key
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM sys_config
+        ORDER BY config_group, config_key
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_config (config_group, config_key, config_value, config_desc, is_encrypted, created_by)
+        VALUES (#{configGroup}, #{configKey}, #{configValue}, #{configDesc}, #{isEncrypted}, #{createdBy})
+    </insert>
+
+    <update id="updateByGroupAndKey">
+        UPDATE sys_config
+        SET config_value = #{configValue},
+            config_desc = #{configDesc},
+            is_encrypted = #{isEncrypted},
+            updated_at = NOW()
+        WHERE config_group = #{configGroup} AND config_key = #{configKey}
+    </update>
+
+    <delete id="deleteByGroup">
+        DELETE FROM sys_config WHERE config_group = #{configGroup}
+    </delete>
+
+    <delete id="deleteByGroupAndKey">
+        DELETE FROM sys_config WHERE config_group = #{configGroup} AND config_key = #{configKey}
+    </delete>
+
+</mapper>

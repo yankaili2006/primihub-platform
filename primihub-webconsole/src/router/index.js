@@ -163,6 +163,15 @@ export const asyncRoutes = [
           activeMenu: '/PSI/list'
         },
         hidden: true
+      }, {
+        path: 'result',
+        name: 'PSIResult',
+        component: () => import('@/views/PSI/result'),
+        meta: {
+          title: '求交结果',
+          activeMenu: '/PSI/list'
+        },
+        hidden: true
       }]
   },
   {
@@ -171,7 +180,6 @@ export const asyncRoutes = [
     name: 'Difference',
     redirect: '/Difference/list',
     meta: { title: '联邦求差', icon: 'el-icon-minus' },
-    hidden: true,
     children: [
       {
         path: 'list',
@@ -187,7 +195,6 @@ export const asyncRoutes = [
     name: 'Union',
     redirect: '/Union/list',
     meta: { title: '联邦求并', icon: 'el-icon-plus' },
-    hidden: true,
     children: [
       {
         path: 'list',
@@ -203,7 +210,6 @@ export const asyncRoutes = [
     name: 'FederatedLearning',
     redirect: '/FederatedLearning/list',
     meta: { title: '联邦学习', icon: 'el-icon-data-analysis' },
-    hidden: true,
     children: [
       {
         path: 'list',
@@ -454,39 +460,153 @@ export const asyncRoutes = [
     path: '/federatedQuery',
     component: Layout,
     name: 'FederatedQuery',
-    redirect: '/federatedQuery/billingByCount',
+    redirect: '/federatedQuery/dh/batch',
     alwaysShow: true,
     meta: { title: '联邦查询', icon: 'el-icon-search' },
     children: [
       {
+        path: 'dh/batch',
+        name: 'FederatedQueryDHBatch',
+        component: () => import('@/views/federatedQuery/dh/batchQuery'),
+        meta: { title: 'DH批量联邦查询' }
+      },
+      {
+        path: 'dh/realtime',
+        name: 'FederatedQueryDHRealtime',
+        component: () => import('@/views/federatedQuery/dh/realtimeQuery'),
+        meta: { title: 'DH实时联邦查询' }
+      },
+      {
+        path: 'ot/batch',
+        name: 'FederatedQueryOTBatch',
+        component: () => import('@/views/federatedQuery/ot/batchQuery'),
+        meta: { title: 'OT批量联邦查询' }
+      },
+      {
+        path: 'ot/realtime',
+        name: 'FederatedQueryOTRealtime',
+        component: () => import('@/views/federatedQuery/ot/realtimeQuery'),
+        meta: { title: 'OT实时联邦查询' }
+      },
+      {
+        path: 'he/batch',
+        name: 'FederatedQueryHEBatch',
+        component: () => import('@/views/federatedQuery/he/batchQuery'),
+        meta: { title: 'HE批量联邦查询' }
+      },
+      {
+        path: 'he/realtime',
+        name: 'FederatedQueryHERealtime',
+        component: () => import('@/views/federatedQuery/he/realtimeQuery'),
+        meta: { title: 'HE实时联邦查询' }
+      },
+      {
+        path: 'intersection/batch',
+        name: 'FederatedQueryIntersectionBatch',
+        component: () => import('@/views/federatedQuery/intersection/batch'),
+        meta: { title: '批量联邦求交' }
+      },
+      {
+        path: 'intersection/realtime',
+        name: 'FederatedQueryIntersectionRealtime',
+        component: () => import('@/views/federatedQuery/intersection/realtime'),
+        meta: { title: '实时联邦求交' }
+      },
+      {
+        path: 'intersection/dedup',
+        name: 'FederatedQueryIntersectionDedup',
+        component: () => import('@/views/federatedQuery/intersection/dedup'),
+        meta: { title: '联邦求交去重' }
+      },
+      {
+        path: 'intersection/multiColumn',
+        name: 'FederatedQueryIntersectionMultiColumn',
+        component: () => import('@/views/federatedQuery/intersection/multiColumn'),
+        meta: { title: '联邦求交多列联合ID' }
+      },
+      {
+        path: 'tools/payloadChunk',
+        name: 'FederatedQueryPayloadChunk',
+        component: () => import('@/views/federatedQuery/tools/payloadChunk'),
+        meta: { title: 'Payload分块' }
+      },
+      {
+        path: 'tools/outputFields',
+        name: 'FederatedQueryOutputFields',
+        component: () => import('@/views/federatedQuery/tools/outputFields'),
+        meta: { title: '输出字段指定' }
+      },
+      {
+        path: 'tools/dedup',
+        name: 'FederatedQueryToolsDedup',
+        component: () => import('@/views/federatedQuery/tools/dedup'),
+        meta: { title: '查询去重' }
+      },
+      {
+        path: 'tools/bucket',
+        name: 'FederatedQueryToolsBucket',
+        component: () => import('@/views/federatedQuery/tools/bucket'),
+        meta: { title: '分桶工具' }
+      },
+      {
+        path: 'tools/codec',
+        name: 'FederatedQueryToolsCodec',
+        component: () => import('@/views/federatedQuery/tools/codec'),
+        meta: { title: '编解码工具' }
+      },
+      {
+        path: 'logs/intersectionRecord',
+        name: 'FederatedQueryLogIntersectionRecord',
+        component: () => import('@/views/federatedQuery/logs/intersectionRecord'),
+        meta: { title: '联邦求交日志' }
+      },
+      {
+        path: 'logs/intersectionExport',
+        name: 'FederatedQueryLogIntersectionExport',
+        component: () => import('@/views/federatedQuery/logs/intersectionExport'),
+        meta: { title: '联邦求交日志导出' }
+      },
+      {
+        path: 'logs/queryRecord',
+        name: 'FederatedQueryLogQueryRecord',
+        component: () => import('@/views/federatedQuery/logs/queryRecord'),
+        meta: { title: '联邦查询日志' }
+      },
+      {
+        path: 'logs/queryExport',
+        name: 'FederatedQueryLogQueryExport',
+        component: () => import('@/views/federatedQuery/logs/queryExport'),
+        meta: { title: '联邦查询日志导出' }
+      },
+      {
         path: 'billingByCount',
         name: 'FederatedQueryBillingByCount',
         component: () => import('@/views/federatedQuery/billingByCount'),
-        meta: { title: '联邦查询计费（按次数）' }
+        meta: { title: '计费配置(按次数)' }
       },
       {
         path: 'billingByHit',
         name: 'FederatedQueryBillingByHit',
         component: () => import('@/views/federatedQuery/billingByHit'),
-        meta: { title: '联邦查询计费（按命中）' }
+        meta: { title: '计费配置(按命中)' }
       },
       {
         path: 'deduplicationFixed',
         name: 'FederatedQueryDeduplicationFixed',
         component: () => import('@/views/federatedQuery/deduplicationFixed'),
-        meta: { title: '联邦查询去重计费（固定时间范围）' }
+        meta: { title: '去重计费(固定窗口)' }
       },
       {
         path: 'deduplicationRolling',
         name: 'FederatedQueryDeduplicationRolling',
         component: () => import('@/views/federatedQuery/deduplicationRolling'),
-        meta: { title: '联邦查询去重计费（滚动时间范围）' }
+        meta: { title: '去重计费(滚动窗口)' }
       },
       {
         path: 'apiValidation',
         name: 'FederatedQueryApiValidation',
         component: () => import('@/views/federatedQuery/apiValidation'),
-        meta: { title: '联邦查询实时接口校验' }
+        meta: { title: '接口校验' }
       }
     ]
   },

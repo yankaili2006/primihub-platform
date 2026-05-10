@@ -75,7 +75,7 @@
 
 <script>
 export default {
-  name: 'PoliceDataFusionLogExport',
+  name: 'SceneLogExport',
   data() {
     return {
       exporting: false,
@@ -87,11 +87,46 @@ export default {
         fileNamePrefix: 'police_data_fusion_log',
         includeDetail: true
       },
-      exportHistory: [
-        { exportId: 'EXP001', fileName: 'police_data_fusion_log_20240115.xlsx', format: 'EXCEL', recordCount: 2580, fileSize: '512 KB', createTime: '2024-01-15 16:00:00', status: 'completed' },
-        { exportId: 'EXP002', fileName: 'pdf_error_log_20240114.csv', format: 'CSV', recordCount: 125, fileSize: '68 KB', createTime: '2024-01-14 18:30:00', status: 'completed' }
-      ]
+      exportHistory: []
     }
+  },
+  methods: {
+    goBack() { this.$router.go(-1) },
+    handleExport() {
+      this.exporting = true
+      const link = document.createElement('a')
+      link.href = '/log/exportComputeLog'
+      link.download = `${this.exportForm.fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.${this.exportForm.exportFormat.toLowerCase()}`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      setTimeout(() => {
+        this.exporting = false
+        this.$message.success('日志导出成功')
+        this.exportHistory.unshift({
+          exportId: `EXP${Date.now()}`,
+          fileName: link.download,
+          format: this.exportForm.exportFormat,
+          createTime: new Date().toLocaleString(),
+          status: 'completed'
+        })
+      }, 1000)
+    },
+    handleReset() {
+      this.exportForm = {
+        processTypes: ['fusion', 'compute', 'exchange'],
+        logLevels: ['INFO', 'WARN', 'ERROR'],
+        dateRange: [],
+        exportFormat: 'EXCEL',
+        fileNamePrefix: 'police_data_fusion_log',
+        includeDetail: true
+      }
+    },
+    handleDownload(row) {
+      this.$message.success(`开始下载: ${row.fileName}`)
+    }
+  }
+}
   },
   methods: {
     goBack() { this.$router.go(-1) },

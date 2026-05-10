@@ -1,7 +1,7 @@
 -- MySQL数据库完整测试数据初始化
 
 -- 插入系统用户 (密码: admin)
-INSERT INTO sys_user (user_id, user_account, user_password, user_name, role_id_list, is_forbid, is_editable, is_del, register_type) VALUES
+INSERT INTO sys_user (user_id, user_account, user_password, user_name, role_id_list, is_forbid, is_editable, is_del, register_type, first_login) VALUES
 (1, 'admin', 'a0f34ffac5a82245e4fca2e21f358a42', '管理员', '1', 0, 1, 0, 1);
 
 -- 插入系统角色
@@ -118,3 +118,76 @@ INSERT INTO data_psi_task (psi_id, task_id, task_state, ascription_type, file_ro
 -- 插入PIR任务
 INSERT INTO data_pir_task (task_id, server_address, provider_organ_name, resource_id, resource_name, is_del) VALUES
 (3, 'http://localhost:8090', '广告公司M', 'res-003', '用户行为数据', 0);
+
+-- 初始化系统配置
+INSERT INTO sys_config (config_group, config_key, config_value, config_desc) VALUES
+('network', 'domain', '', '平台域名'),
+('network', 'api_gateway', '', 'API网关地址'),
+('network', 'websocket_url', '', 'WebSocket地址'),
+('network', 'file_server_url', '', '文件服务器地址'),
+('network', 'http_proxy_host', '', 'HTTP代理主机'),
+('network', 'http_proxy_port', '7890', 'HTTP代理端口'),
+('network', 'cors_enabled', 'true', '是否开启CORS'),
+('network', 'request_timeout', '30000', '请求超时时间'),
+('time', 'timezone', 'Asia/Shanghai', '时区'),
+('time', 'date_format', 'YYYY-MM-DD', '日期格式'),
+('time', 'datetime_format', 'YYYY-MM-DD HH:mm:ss', '日期时间格式'),
+('time', 'ntp_enabled', 'false', '是否启用NTP同步'),
+('time', 'ntp_server', 'ntp.aliyun.com', 'NTP服务器地址'),
+('login_restriction', 'force_change_password', 'true', '首次登录强制修改密码'),
+('login_restriction', 'password_min_length', '8', '密码最小长度'),
+('login_restriction', 'password_require_upper', 'true', '密码需要大写字母'),
+('login_restriction', 'password_require_lower', 'true', '密码需要小写字母'),
+('login_restriction', 'password_require_digit', 'true', '密码需要数字'),
+('login_restriction', 'password_require_special', 'false', '密码需要特殊字符'),
+('login_restriction', 'max_login_attempts', '5', '最大登录尝试次数'),
+('login_restriction', 'lock_duration_minutes', '30', '锁定时长(分钟)'),
+('login_restriction', 'lock_reset_minutes', '60', '锁定次数重置时间'),
+('login_restriction', 'captcha_enabled', 'true', '登录验证码'),
+('login_restriction', 'session_timeout_minutes', '30', '会话超时时间'),
+('personalization', 'platform_name', 'PrimiHub', '平台名称'),
+('personalization', 'platform_short_name', 'PrimiHub', '平台简称'),
+('personalization', 'copyright', '© PrimiHub', '版权信息'),
+('personalization', 'theme_color', '#409EFF', '主题色'),
+('personalization', 'page_size', '10', '默认分页大小'),
+('personalization', 'fixed_header', 'true', '固定顶栏'),
+('ftp', 'enabled', 'false', '是否启用FTP'),
+('ftp', 'host', '', 'FTP服务器地址'),
+('ftp', 'port', '21', 'FTP端口'),
+('ftp', 'username', '', 'FTP用户名'),
+('ftp', 'password', '', 'FTP密码'),
+('ftp', 'mode', 'passive', 'FTP模式'),
+('ftp', 'timeout', '30000', 'FTP超时时间'),
+('ftp', 'max_connections', '5', 'FTP最大连接数');
+
+-- 初始化场景API配置
+INSERT INTO scene_api_config (scene_type, api_name, api_url, protocol, status) VALUES
+('police_fusion', '警务数据查询', 'http://police-api/data/query', 'REST', 1),
+('police_fusion', '保险核验接口', 'http://insurance-api/verify', 'REST', 1),
+('electronic_cert', '电子证件查询', 'http://ecert-api/query', 'REST', 1),
+('electronic_cert', '特征转换服务', 'http://feature-api/convert', 'gRPC', 1);
+
+-- 初始化场景密钥配置
+INSERT INTO scene_key_config (scene_type, key_name, scheme, key_size, status) VALUES
+('police_fusion', '警务BFV密钥', 'BFV', 2048, 1),
+('police_fusion', '保险CKKS密钥', 'CKKS', 4096, 1),
+('electronic_cert', '证件比对密钥', 'BFV', 2048, 1);
+
+-- 初始化存证配置
+INSERT INTO evidence_config (config_key, config_value, config_desc) VALUES
+('blockchain_type', 'FABRIC', '区块链类型'),
+('node_url', 'grpc://localhost:7051', '区块链节点地址'),
+('channel_name', 'mychannel', '区块链通道'),
+('chaincode_name', 'evidence', '链码名称'),
+('enable_timestamp', 'true', '是否启用时间戳'),
+('timestamp_source', 'LOCAL', '时间戳来源'),
+('auto_chain', 'true', '是否自动上链');
+
+-- 初始化监控告警配置
+INSERT INTO monitor_alert_config (monitor_type, threshold, duration, alert_level, is_enabled) VALUES
+('CPU', 80.00, 300, 1, 1),
+('MEMORY', 85.00, 300, 1, 1),
+('DISK', 90.00, 300, 2, 1),
+('DATABASE', 90.00, 300, 2, 1),
+('JVM', 85.00, 300, 1, 1),
+('REDIS', 85.00, 300, 1, 1);

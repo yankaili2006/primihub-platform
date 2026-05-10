@@ -69,31 +69,64 @@
 </template>
 
 <script>
+import { compareFeature } from '@/api/scene'
 export default {
   name: 'FeaturePrivacyCompare',
   data() {
     return {
       comparing: false,
       compareForm: {
+        compareMode: '1:1',
         electronicFeatureId: '',
         onSiteFeatureId: '',
-        compareMode: '1:1',
         privacyProtocol: 'MPC',
-        threshold: 0.85
+        similarityThreshold: 0.85
       },
-      electronicFeatures: [
-        { id: 'EF001', name: '身份证人脸特征库-20240115' },
-        { id: 'EF002', name: '驾驶证人脸特征库-20240114' }
+      electronicFeatureLibraries: [
+        { id: 'EF001', name: '电子身份证特征库-2024' },
+        { id: 'EF002', name: '电子驾驶证特征库-2024' }
       ],
-      onSiteFeatures: [
+      onSiteFeatureLibraries: [
         { id: 'OF001', name: '现场采集-A区-20240115' },
         { id: 'OF002', name: '现场采集-B区-20240115' }
       ],
-      compareResults: [
-        { taskId: 'CMP001', compareMode: '1:1', protocol: 'MPC', totalCount: 1000, matchCount: 985, matchRate: 98, avgSimilarity: '0.952', status: 'completed', statusText: '已完成', createTime: '2024-01-15 11:00:00' },
-        { taskId: 'CMP002', compareMode: '1:N', protocol: 'HE', totalCount: 500, matchCount: 420, matchRate: 84, avgSimilarity: '0.876', status: 'completed', statusText: '已完成', createTime: '2024-01-15 10:30:00' }
-      ]
+      compareResults: []
     }
+  },
+  methods: {
+    goBack() { this.$router.go(-1) },
+    getStatusType(status) {
+      return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
+    },
+    async handleCompare() {
+      if (!this.compareForm.electronicFeatureId || !this.compareForm.onSiteFeatureId) {
+        return this.$message.warning('请选择特征库')
+      }
+      this.comparing = true
+      try {
+        const res = await compareFeature(this.compareForm)
+        if (res.code === 0) {
+          this.$message.success('隐私比对完成')
+          this.compareResults.unshift({
+            taskId: `CMP${Date.now()}`,
+            compareMode: this.compareForm.compareMode,
+            protocol: this.compareForm.privacyProtocol,
+            matchRate: Math.round((res.result.similarity || 0) * 100),
+            status: 'completed',
+            statusText: '已完成',
+            createTime: new Date().toLocaleString()
+          })
+        }
+      } catch (e) {
+        this.$message.error('比对失败')
+      } finally {
+        this.comparing = false
+      }
+    },
+    handleViewDetail(row) { this.$message.info(`查看详情: ${row.taskId}`) },
+    handleExport(row) { this.$message.success(`导出结果: ${row.taskId}`) }
+  }
+}
   },
   methods: {
     goBack() { this.$router.go(-1) },

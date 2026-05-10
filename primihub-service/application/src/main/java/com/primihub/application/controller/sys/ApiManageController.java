@@ -2,8 +2,10 @@ package com.primihub.application.controller.sys;
 
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
+import com.primihub.biz.service.sys.ApiManageService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -12,6 +14,9 @@ import java.util.*;
 @RequestMapping("apiManage")
 @RestController
 public class ApiManageController {
+
+    @Autowired
+    private ApiManageService apiManageService;
 
     // ========== 接口管理 ==========
 
@@ -22,12 +27,7 @@ public class ApiManageController {
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", new ArrayList<>());
-        result.put("total", 0);
-        result.put("pageNum", pageNum);
-        result.put("pageSize", pageSize);
-        return BaseResultEntity.success(result);
+        return apiManageService.findApiPage(keyword, status, pageNum, pageSize);
     }
 
     @ApiOperation(value = "新增接口")
@@ -36,7 +36,7 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        return BaseResultEntity.success();
+        return apiManageService.addApi(data);
     }
 
     @ApiOperation(value = "更新接口")
@@ -45,49 +45,40 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        return BaseResultEntity.success();
+        return apiManageService.updateApi(data);
     }
 
     @ApiOperation(value = "删除接口")
     @PostMapping("deleteApi")
     public BaseResultEntity deleteApi(@RequestBody Map<String, Object> data) {
-        if (data == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
-        }
-        return BaseResultEntity.success();
+        Long id = data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null;
+        return apiManageService.deleteApi(id);
     }
 
     @ApiOperation(value = "批量删除接口")
     @PostMapping("batchDeleteApi")
     public BaseResultEntity batchDeleteApi(@RequestBody Map<String, Object> data) {
-        if (data == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
+        List<Long> ids = new ArrayList<>();
+        if (data.get("ids") instanceof List) {
+            for (Object o : (List<?>) data.get("ids")) {
+                ids.add(Long.valueOf(o.toString()));
+            }
         }
-        return BaseResultEntity.success();
+        return apiManageService.batchDeleteApi(ids);
     }
 
     @ApiOperation(value = "获取接口详情")
     @GetMapping("getApiDetail")
     public BaseResultEntity getApiDetail(@RequestParam Long id) {
-        if (id == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
-        }
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", id);
-        result.put("apiName", "");
-        result.put("apiPath", "");
-        result.put("apiMethod", "");
-        result.put("status", "");
-        return BaseResultEntity.success(result);
+        return apiManageService.getApiDetail(id);
     }
 
     @ApiOperation(value = "启用/禁用接口")
     @PostMapping("toggleApiStatus")
     public BaseResultEntity toggleApiStatus(@RequestBody Map<String, Object> data) {
-        if (data == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
-        }
-        return BaseResultEntity.success();
+        Long id = data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null;
+        Integer status = data.get("status") != null ? Integer.valueOf(data.get("status").toString()) : 1;
+        return apiManageService.toggleApiStatus(id, status);
     }
 
     // ========== 接口授权管理 ==========
@@ -98,12 +89,7 @@ public class ApiManageController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", new ArrayList<>());
-        result.put("total", 0);
-        result.put("pageNum", pageNum);
-        result.put("pageSize", pageSize);
-        return BaseResultEntity.success(result);
+        return apiManageService.findApiAuthPage(keyword, pageNum, pageSize);
     }
 
     @ApiOperation(value = "新增接口授权")
@@ -112,7 +98,7 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        return BaseResultEntity.success();
+        return apiManageService.addApiAuth(data);
     }
 
     @ApiOperation(value = "更新接口授权")
@@ -121,16 +107,14 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        return BaseResultEntity.success();
+        return apiManageService.updateApiAuth(data);
     }
 
     @ApiOperation(value = "删除接口授权")
     @PostMapping("deleteApiAuth")
     public BaseResultEntity deleteApiAuth(@RequestBody Map<String, Object> data) {
-        if (data == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
-        }
-        return BaseResultEntity.success();
+        Long id = data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null;
+        return apiManageService.deleteApiAuth(id);
     }
 
     @ApiOperation(value = "校验接口授权")
@@ -139,10 +123,7 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        Map<String, Object> result = new HashMap<>();
-        result.put("valid", true);
-        result.put("message", "授权验证成功");
-        return BaseResultEntity.success(result);
+        return apiManageService.validateApiAuth(data);
     }
 
     @ApiOperation(value = "获取授权令牌")
@@ -151,10 +132,7 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", UUID.randomUUID().toString());
-        result.put("expiresIn", 3600);
-        return BaseResultEntity.success(result);
+        return apiManageService.getAuthToken(data);
     }
 
     @ApiOperation(value = "刷新授权令牌")
@@ -163,10 +141,7 @@ public class ApiManageController {
         if (data == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
-        Map<String, Object> result = new HashMap<>();
-        result.put("token", UUID.randomUUID().toString());
-        result.put("expiresIn", 3600);
-        return BaseResultEntity.success(result);
+        return apiManageService.refreshAuthToken(data);
     }
 
     // ========== 接口日志管理 ==========
@@ -179,27 +154,13 @@ public class ApiManageController {
             @RequestParam(required = false) String endTime,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", new ArrayList<>());
-        result.put("total", 0);
-        result.put("pageNum", pageNum);
-        result.put("pageSize", pageSize);
-        return BaseResultEntity.success(result);
+        return apiManageService.findApiLogPage(apiPath, startTime, endTime, pageNum, pageSize);
     }
 
     @ApiOperation(value = "获取接口日志详情")
     @GetMapping("getApiLogDetail")
     public BaseResultEntity getApiLogDetail(@RequestParam Long id) {
-        if (id == null) {
-            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
-        }
-        Map<String, Object> result = new HashMap<>();
-        result.put("id", id);
-        result.put("apiPath", "");
-        result.put("requestTime", "");
-        result.put("responseTime", "");
-        result.put("status", "");
-        return BaseResultEntity.success(result);
+        return apiManageService.getApiLogDetail(id);
     }
 
     @ApiOperation(value = "获取接口调用统计")
@@ -207,12 +168,7 @@ public class ApiManageController {
     public BaseResultEntity getApiStatistics(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("totalCalls", 10523);
-        result.put("successCalls", 10245);
-        result.put("failedCalls", 278);
-        result.put("avgResponseTime", 125.6);
-        return BaseResultEntity.success(result);
+        return apiManageService.getApiStatistics(startTime, endTime);
     }
 
     @ApiOperation(value = "导出接口日志")
@@ -220,12 +176,12 @@ public class ApiManageController {
     public BaseResultEntity exportApiLog(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        return BaseResultEntity.success();
+        return apiManageService.exportApiLog(startTime, endTime);
     }
 
     @ApiOperation(value = "清空接口日志")
     @PostMapping("clearApiLog")
     public BaseResultEntity clearApiLog(@RequestBody Map<String, Object> data) {
-        return BaseResultEntity.success();
+        return apiManageService.clearApiLog(data);
     }
 }

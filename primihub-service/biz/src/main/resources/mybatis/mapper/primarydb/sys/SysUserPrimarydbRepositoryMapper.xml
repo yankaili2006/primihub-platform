@@ -3,8 +3,8 @@
 <mapper namespace="com.primihub.biz.repository.primarydb.sys.SysUserPrimarydbRepository">
 
     <insert id="insertSysUser" useGeneratedKeys="true" keyProperty="userId">
-        insert into sys_user(user_account,user_password,user_name,role_id_list,is_forbid,is_editable,auth_uuid,is_del,register_type)
-        values(#{userAccount},#{userPassword},#{userName},#{roleIdList},#{isForbid},#{isEditable},#{authUuid},#{isDel},#{registerType})
+        insert into sys_user(user_account,user_password,user_name,role_id_list,is_forbid,is_editable,auth_uuid,is_del,register_type,first_login)
+        values(#{userAccount},#{userPassword},#{userName},#{roleIdList},#{isForbid},#{isEditable},#{authUuid},#{isDel},#{registerType},1)
     </insert>
 
     <update id="updateSysUserExplicit">
@@ -49,6 +49,10 @@
 
     <update id="updateUserForbidStatus">
         update sys_user set is_forbid=#{isForbid} where user_id=#{userId}
+    </update>
+
+    <update id="updateUserFirstLogin">
+        update sys_user set first_login=#{firstLogin} where user_id=#{userId}
     </update>
 
 </mapper>

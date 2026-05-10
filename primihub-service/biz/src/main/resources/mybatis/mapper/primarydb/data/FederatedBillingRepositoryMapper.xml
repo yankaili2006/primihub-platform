@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedBillingRepository">
+
+    <insert id="insertRule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_billing_rule (rule_name, billing_type, apply_resource_ids, apply_organ_ids,
+            base_fee, min_charge, is_active, effective_from, effective_to,
+            price_per_query, enable_discount, discount_threshold, discount_rate,
+            price_per_hit, enable_tiered, tiered_pricing,
+            dedup_time_window, price_per_unique, repeat_discount,
+            rolling_window_hours, slide_interval_hours, rolling_price_per_unique, rolling_repeat_discount,
+            created_by)
+        VALUES (#{ruleName}, #{billingType}, #{applyResourceIds}, #{applyOrganIds},
+            #{baseFee}, #{minCharge}, #{isActive}, #{effectiveFrom}, #{effectiveTo},
+            #{pricePerQuery}, #{enableDiscount}, #{discountThreshold}, #{discountRate},
+            #{pricePerHit}, #{enableTiered}, #{tieredPricing},
+            #{dedupTimeWindow}, #{pricePerUnique}, #{repeatDiscount},
+            #{rollingWindowHours}, #{slideIntervalHours}, #{rollingPricePerUnique}, #{rollingRepeatDiscount},
+            #{createdBy})
+    </insert>
+
+    <update id="updateRule">
+        UPDATE federated_billing_rule
+        <set>
+            <if test="ruleName != null">rule_name = #{ruleName},</if>
+            <if test="pricePerQuery != null">price_per_query = #{pricePerQuery},</if>
+            <if test="pricePerHit != null">price_per_hit = #{pricePerHit},</if>
+            <if test="minCharge != null">min_charge = #{minCharge},</if>
+            <if test="enableDiscount != null">enable_discount = #{enableDiscount},</if>
+            <if test="discountThreshold != null">discount_threshold = #{discountThreshold},</if>
+            <if test="discountRate != null">discount_rate = #{discountRate},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="effectiveFrom != null">effective_from = #{effectiveFrom},</if>
+            <if test="effectiveTo != null">effective_to = #{effectiveTo},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteRule">
+        DELETE FROM federated_billing_rule WHERE id = #{id}
+    </delete>
+
+    <update id="toggleRule">
+        UPDATE federated_billing_rule SET is_active = #{isActive} WHERE id = #{id}
+    </update>
+
+    <resultMap id="ruleMap" type="com.primihub.biz.entity.data.po.FederatedBillingRule">
+        <id column="id" property="id"/>
+        <result column="billing_type" property="billingType"/>
+        <result column="is_active" property="isActive"/>
+        <result column="effective_from" property="effectiveFrom"/>
+        <result column="effective_to" property="effectiveTo"/>
+        <result column="price_per_query" property="pricePerQuery"/>
+        <result column="enable_discount" property="enableDiscount"/>
+        <result column="discount_threshold" property="discountThreshold"/>
+        <result column="discount_rate" property="discountRate"/>
+        <result column="price_per_hit" property="pricePerHit"/>
+        <result column="enable_tiered" property="enableTiered"/>
+        <result column="dedup_time_window" property="dedupTimeWindow"/>
+        <result column="price_per_unique" property="pricePerUnique"/>
+        <result column="repeat_discount" property="repeatDiscount"/>
+        <result column="rolling_window_hours" property="rollingWindowHours"/>
+        <result column="slide_interval_hours" property="slideIntervalHours"/>
+        <result column="rolling_price_per_unique" property="rollingPricePerUnique"/>
+        <result column="rolling_repeat_discount" property="rollingRepeatDiscount"/>
+    </resultMap>
+
+    <select id="selectRuleById" resultMap="ruleMap">
+        SELECT * FROM federated_billing_rule WHERE id = #{id}
+    </select>
+
+    <select id="selectRuleList" resultMap="ruleMap">
+        SELECT * FROM federated_billing_rule
+        <where>
+            <if test="billingType != null and billingType != ''">AND billing_type = #{billingType}</if>
+            <if test="isActive != null">AND is_active = #{isActive}</if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectRuleCount" resultType="int">
+        SELECT COUNT(*) FROM federated_billing_rule
+        <where>
+            <if test="billingType != null and billingType != ''">AND billing_type = #{billingType}</if>
+            <if test="isActive != null">AND is_active = #{isActive}</if>
+        </where>
+    </select>
+
+    <select id="selectActiveRulesByTaskType" resultMap="ruleMap">
+        SELECT * FROM federated_billing_rule
+        WHERE is_active = 1
+          AND (effective_from IS NULL OR effective_from &lt;= NOW())
+          AND (effective_to IS NULL OR effective_to >= NOW())
+    </select>
+
+    <insert id="insertRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_billing_record (rule_id, task_type, task_id, requester_organ_id, provider_organ_id,
+            resource_ids, billing_type, query_count, hit_count, dedup_key,
+            dedup_window_start, dedup_window_end, unit_price, discount_rate_applied, total_charge,
+            charge_status, billing_time, remark)
+        VALUES (#{ruleId}, #{taskType}, #{taskId}, #{requesterOrganId}, #{providerOrganId},
+            #{resourceIds}, #{billingType}, #{queryCount}, #{hitCount}, #{dedupKey},
+            #{dedupWindowStart}, #{dedupWindowEnd}, #{unitPrice}, #{discountRateApplied}, #{totalCharge},
+            0, NOW(), #{remark})
+    </insert>
+
+    <select id="selectRecordList" resultType="com.primihub.biz.entity.data.po.FederatedBillingRecord">
+        SELECT * FROM federated_billing_record
+        <where>
+            <if test="requesterOrganId != null">AND requester_organ_id = #{requesterOrganId}</if>
+            <if test="billingType != null">AND billing_type = #{billingType}</if>
+            <if test="chargeStatus != null">AND charge_status = #{chargeStatus}</if>
+        </where>
+        ORDER BY billing_time DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectRecordCount" resultType="int">
+        SELECT COUNT(*) FROM federated_billing_record
+        <where>
+            <if test="requesterOrganId != null">AND requester_organ_id = #{requesterOrganId}</if>
+            <if test="billingType != null">AND billing_type = #{billingType}</if>
+            <if test="chargeStatus != null">AND charge_status = #{chargeStatus}</if>
+        </where>
+    </select>
+
+    <select id="selectRecordSummary" resultType="map">
+        SELECT COUNT(*) total_count, COALESCE(SUM(total_charge), 0) total_charge,
+               COALESCE(AVG(total_charge), 0) avg_charge
+        FROM federated_billing_record
+        <where>
+            <if test="requesterOrganId != null">AND requester_organ_id = #{requesterOrganId}</if>
+            <if test="startDate != null">AND billing_time >= #{startDate}</if>
+            <if test="endDate != null">AND billing_time &lt;= #{endDate}</if>
+        </where>
+    </select>
+
+    <select id="selectDailyCharge" resultType="map">
+        SELECT DATE(billing_time) date, COUNT(*) count, COALESCE(SUM(total_charge), 0) total
+        FROM federated_billing_record
+        <where>
+            <if test="startDate != null">AND billing_time >= #{startDate}</if>
+            <if test="endDate != null">AND billing_time &lt;= #{endDate}</if>
+        </where>
+        GROUP BY DATE(billing_time)
+        ORDER BY date
+    </select>
+
+    <select id="existsByDedupKeyAndAfter" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM federated_billing_record
+        WHERE dedup_key = #{dedupKey} AND billing_time >= #{after}
+    </select>
+
+</mapper>

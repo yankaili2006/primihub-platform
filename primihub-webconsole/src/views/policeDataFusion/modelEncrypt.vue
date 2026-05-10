@@ -55,6 +55,7 @@
 </template>
 
 <script>
+import { encryptPoliceData } from "@/api/scene"
 export default {
   name: 'ModelHomomorphicEncrypt',
   data() {
@@ -78,34 +79,30 @@ export default {
   },
   methods: {
     goBack() { this.$router.go(-1) },
-    handleEncrypt() {
+    async handleEncrypt() {
       if (!this.encryptForm.modelId || !this.encryptForm.keyId) {
         this.$message.warning('请选择模型和密钥')
         return
       }
       this.encrypting = true
-      const model = this.modelList.find(m => m.id === this.encryptForm.modelId)
-      const key = this.keyList.find(k => k.id === this.encryptForm.keyId)
-      const newTask = {
-        taskId: `ME-${Date.now()}`,
-        modelName: model.name,
-        keyOrg: key.org,
-        paramCount: Math.floor(Math.random() * 100000) + 50000,
-        encryptedSize: '计算中...',
-        progress: 0,
-        createTime: new Date().toLocaleString()
-      }
-      this.encryptTaskList.unshift(newTask)
-      const timer = setInterval(() => {
-        if (newTask.progress < 100) {
-          newTask.progress += 10
-        } else {
-          clearInterval(timer)
-          newTask.encryptedSize = `${(Math.random() * 3 + 1).toFixed(1)} GB`
-          this.encrypting = false
+      try {
+        const res = await encryptPoliceData({ keyId: this.encryptForm.keyId, data: 'model_' + this.encryptForm.modelId })
+        if (res.code === 0) {
           this.$message.success('模型加密完成')
+          this.encryptTaskList.unshift({
+            taskId: `ME-${Date.now()}`,
+            modelName: (this.modelList.find(m => m.id === this.encryptForm.modelId) || {}).name,
+            keyOrg: (this.keyList.find(k => k.id === this.encryptForm.keyId) || {}).org,
+            encryptedSize: '计算完成',
+            progress: 100,
+            createTime: new Date().toLocaleString()
+          })
         }
-      }, 500)
+      } catch (e) {
+        this.$message.error('加密失败')
+      } finally {
+        this.encrypting = false
+      }
     },
     handleDownload(row) {
       this.$message.success(`开始下载: ${row.modelName} 密文`)

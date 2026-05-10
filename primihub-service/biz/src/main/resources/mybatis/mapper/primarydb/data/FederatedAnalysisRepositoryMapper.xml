@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedAnalysisRepository">
+
+    <resultMap id="taskMap" type="com.primihub.biz.entity.data.po.FederatedAnalysisTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="project_id" property="projectId"/>
+        <result column="source_sql" property="sourceSql"/>
+        <result column="rewritten_sql" property="rewrittenSql"/>
+        <result column="task_state" property="taskState"/>
+        <result column="task_param" property="taskParam"/>
+        <result column="result_summary" property="resultSummary"/>
+        <result column="result_row_count" property="resultRowCount"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insertTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_analysis_task (task_name, project_id, source_sql, task_state, task_param, created_by)
+        VALUES (#{taskName}, #{projectId}, #{sourceSql}, 0, #{taskParam}, #{createdBy})
+    </insert>
+
+    <update id="updateTaskState">
+        UPDATE federated_analysis_task
+        SET task_state = #{taskState},
+            result_summary = #{resultSummary},
+            error_message = #{errorMessage}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateTaskRewrittenSql">
+        UPDATE federated_analysis_task SET rewritten_sql = #{rewrittenSql} WHERE id = #{id}
+    </update>
+
+    <select id="selectTaskById" resultMap="taskMap">
+        SELECT * FROM federated_analysis_task WHERE id = #{id}
+    </select>
+
+    <select id="selectTaskList" resultMap="taskMap">
+        SELECT * FROM federated_analysis_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="projectId != null">AND project_id = #{projectId}</if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectTaskCount" resultType="int">
+        SELECT COUNT(*) FROM federated_analysis_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="projectId != null">AND project_id = #{projectId}</if>
+        </where>
+    </select>
+
+    <insert id="insertResult" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_analysis_result (task_id, result_type, result_data, result_file, column_metadata, row_count)
+        VALUES (#{taskId}, #{resultType}, #{resultData}, #{resultFile}, #{columnMetadata}, #{rowCount})
+    </insert>
+
+    <select id="selectResultsByTaskId" resultType="com.primihub.biz.entity.data.po.FederatedAnalysisResult">
+        SELECT * FROM federated_analysis_result WHERE task_id = #{taskId} ORDER BY created_at
+    </select>
+
+    <insert id="insertDatasource" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_analysis_datasource (source_name, source_type, source_config, created_by)
+        VALUES (#{sourceName}, #{sourceType}, #{sourceConfig}, #{createdBy})
+    </insert>
+
+    <update id="updateDatasource">
+        UPDATE federated_analysis_datasource
+        <set>
+            <if test="sourceName != null">source_name = #{sourceName},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="sourceConfig != null">source_config = #{sourceConfig},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateDatasourceConnection">
+        UPDATE federated_analysis_datasource
+        SET is_connected = #{isConnected}, last_test_time = #{lastTestTime}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteDatasource">
+        DELETE FROM federated_analysis_datasource WHERE id = #{id}
+    </delete>
+
+    <select id="selectDatasourceById" resultType="com.primihub.biz.entity.data.po.FederatedAnalysisDatasource">
+        SELECT * FROM federated_analysis_datasource WHERE id = #{id}
+    </select>
+
+    <select id="selectDatasourceList" resultType="com.primihub.biz.entity.data.po.FederatedAnalysisDatasource">
+        SELECT * FROM federated_analysis_datasource
+        <where>
+            <if test="sourceType != null and sourceType != ''">AND source_type = #{sourceType}</if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+</mapper>

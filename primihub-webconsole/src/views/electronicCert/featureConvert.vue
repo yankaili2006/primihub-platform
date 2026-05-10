@@ -66,6 +66,7 @@
 </template>
 
 <script>
+import { convertFeature } from '@/api/scene'
 export default {
   name: 'ElectronicCertFeatureConvert',
   data() {
@@ -74,14 +75,47 @@ export default {
       fileList: [],
       convertForm: {
         certType: 'idCard',
-        featureTypes: ['photo', 'text'],
+        featureTypes: ['photo'],
         algorithm: 'ArcFace'
       },
-      taskList: [
-        { taskId: 'FC-001', certType: '身份证', featureTypes: '人脸特征, 文字信息', algorithm: 'ArcFace', inputCount: 1000, successCount: 998, status: 'completed', statusText: '已完成', createTime: '2024-01-15 10:00:00' },
-        { taskId: 'FC-002', certType: '驾驶证', featureTypes: '人脸特征', algorithm: 'FaceNet', inputCount: 500, successCount: 450, status: 'running', statusText: '处理中', createTime: '2024-01-15 14:30:00' }
-      ]
+      taskList: []
     }
+  },
+  methods: {
+    goBack() { this.$router.go(-1) },
+    getStatusType(status) {
+      return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
+    },
+    handleFileChange(file, fileList) {
+      this.fileList = fileList
+    },
+    async handleConvert() {
+      this.converting = true
+      try {
+        const res = await convertFeature(this.convertForm)
+        if (res.code === 0) {
+          this.$message.success('特征转换完成')
+          this.taskList.unshift({
+            taskId: `FC-${Date.now()}`,
+            certType: { idCard: '身份证' }[this.convertForm.certType] || this.convertForm.certType,
+            featureTypes: this.convertForm.featureTypes.join(', '),
+            algorithm: this.convertForm.algorithm,
+            inputCount: this.fileList.length || 0,
+            status: 'completed',
+            statusText: '已完成',
+            createTime: new Date().toLocaleString()
+          })
+        }
+      } catch (e) {
+        this.$message.error('特征转换失败')
+      } finally {
+        this.converting = false
+      }
+    },
+    handleView(row) { this.$message.info(`查看任务: ${row.taskId}`) },
+    handleDownload(row) { this.$message.success(`开始下载: ${row.taskId}`) }
+  }
+}
   },
   methods: {
     goBack() { this.$router.go(-1) },

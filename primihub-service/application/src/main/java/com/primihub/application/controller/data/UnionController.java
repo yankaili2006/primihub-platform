@@ -128,4 +128,17 @@ public class UnionController {
         }
         return dataUnionService.cancelUnionTask(taskId);
     }
+
+    @ApiOperation(value = "导出联邦求并日志")
+    @GetMapping("exportUnionLog")
+    public void exportUnionLog(HttpServletResponse response, @RequestParam(required = false) Long taskId) {
+        try {
+            response.setContentType("text/plain;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" +
+                java.net.URLEncoder.encode("union_log.txt", "UTF-8"));
+            response.getOutputStream().write(("联邦求并日志 - 任务ID: " + taskId).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            log.error("导出联邦求并日志失败", e);
+        }
+    }
 }

@@ -69,6 +69,7 @@
 </template>
 
 <script>
+import { generatePoliceKey, getPoliceKeyList } from '@/api/scene'
 export default {
   name: 'HomomorphicKeyManagement',
   data() {
@@ -81,35 +82,34 @@ export default {
         organization: '',
         validUntil: ''
       },
-      keyList: [
-        { keyId: 'HK-001', organization: '平安保险', scheme: 'CKKS', polyModulusDegree: 8192, publicKeyHash: 'a3b2c1d4e5f6...', createTime: '2024-01-10 09:00:00', validUntil: '2025-01-10', status: 'active' },
-        { keyId: 'HK-002', organization: '中国人寿', scheme: 'BFV', polyModulusDegree: 4096, publicKeyHash: 'f1e2d3c4b5a6...', createTime: '2024-01-08 14:30:00', validUntil: '2025-01-08', status: 'active' },
-        { keyId: 'HK-003', organization: '太平洋保险', scheme: 'CKKS', polyModulusDegree: 16384, publicKeyHash: 'b5c6d7e8f9a0...', createTime: '2023-06-15 11:20:00', validUntil: '2024-01-01', status: 'expired' }
-      ]
+      keyList: []
     }
+  },
+  mounted() {
+    this.fetchKeyList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
-    handleGenerate() {
-      if (!this.keyForm.organization) {
-        this.$message.warning('请选择关联机构')
-        return
-      }
+    async fetchKeyList() {
+      try {
+        const res = await getPoliceKeyList()
+        if (res.code === 0) this.keyList = res.result || []
+      } catch (e) { console.error(e) }
+    },
+    async handleGenerate() {
+      if (!this.keyForm.organization) return this.$message.warning('请选择关联机构')
       this.generating = true
-      setTimeout(() => {
+      try {
+        const res = await generatePoliceKey(this.keyForm)
+        if (res.code === 0) {
+          this.$message.success('密钥对生成成功')
+          this.fetchKeyList()
+        }
+      } catch (e) {
+        this.$message.error('生成失败')
+      } finally {
         this.generating = false
-        this.keyList.unshift({
-          keyId: `HK-${Date.now()}`,
-          organization: this.keyForm.organization,
-          scheme: this.keyForm.scheme,
-          polyModulusDegree: this.keyForm.polyModulusDegree,
-          publicKeyHash: Math.random().toString(36).substring(2, 14) + '...',
-          createTime: new Date().toLocaleString(),
-          validUntil: this.keyForm.validUntil || '2025-12-31',
-          status: 'active'
-        })
-        this.$message.success('密钥对生成成功')
-      }, 3000)
+      }
     },
     handleExportPublic(row) {
       this.$message.success(`正在导出 ${row.organization} 的公钥`)

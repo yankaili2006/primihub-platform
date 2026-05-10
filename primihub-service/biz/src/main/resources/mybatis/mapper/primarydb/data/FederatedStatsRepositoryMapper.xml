@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedStatsRepository">
+
+    <resultMap id="taskMap" type="com.primihub.biz.entity.data.po.FederatedStatsTask">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="project_id" property="projectId"/>
+        <result column="stats_type" property="statsType"/>
+        <result column="algorithm_type" property="algorithmType"/>
+        <result column="task_state" property="taskState"/>
+        <result column="task_param" property="taskParam"/>
+        <result column="result_summary" property="resultSummary"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="resultMap" type="com.primihub.biz.entity.data.po.FederatedStatsResult">
+        <id column="id" property="id"/>
+        <result column="task_id" property="taskId"/>
+        <result column="result_type" property="resultType"/>
+        <result column="result_data" property="resultData"/>
+        <result column="result_file" property="resultFile"/>
+        <result column="row_count" property="rowCount"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <insert id="insertTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_stats_task (task_name, project_id, stats_type, algorithm_type, task_state, task_param, created_by)
+        VALUES (#{taskName}, #{projectId}, #{statsType}, #{algorithmType}, 0, #{taskParam}, #{createdBy})
+    </insert>
+
+    <update id="updateTaskState">
+        UPDATE federated_stats_task
+        SET task_state = #{taskState},
+            result_summary = #{resultSummary},
+            error_message = #{errorMessage}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateTask">
+        UPDATE federated_stats_task
+        <set>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="taskState != null">task_state = #{taskState},</if>
+            <if test="resultSummary != null">result_summary = #{resultSummary},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectTaskById" resultMap="taskMap">
+        SELECT * FROM federated_stats_task WHERE id = #{id}
+    </select>
+
+    <select id="selectTaskList" resultMap="taskMap">
+        SELECT * FROM federated_stats_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="statsType != null and statsType != ''">AND stats_type = #{statsType}</if>
+            <if test="projectId != null">AND project_id = #{projectId}</if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectTaskCount" resultType="int">
+        SELECT COUNT(*) FROM federated_stats_task
+        <where>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+            <if test="statsType != null and statsType != ''">AND stats_type = #{statsType}</if>
+            <if test="projectId != null">AND project_id = #{projectId}</if>
+        </where>
+    </select>
+
+    <insert id="insertResult" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_stats_result (task_id, result_type, result_data, result_file, row_count)
+        VALUES (#{taskId}, #{resultType}, #{resultData}, #{resultFile}, #{rowCount})
+    </insert>
+
+    <select id="selectResultsByTaskId" resultMap="resultMap">
+        SELECT * FROM federated_stats_result WHERE task_id = #{taskId} ORDER BY created_at
+    </select>
+
+    <delete id="deleteResultByTaskId">
+        DELETE FROM federated_stats_result WHERE task_id = #{taskId}
+    </delete>
+
+    <insert id="insertConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO federated_stats_config (config_name, storage_type, storage_path, connection_json, is_default, created_by)
+        VALUES (#{configName}, #{storageType}, #{storagePath}, #{connectionJson}, #{isDefault}, #{createdBy})
+    </insert>
+
+    <update id="updateConfig">
+        UPDATE federated_stats_config
+        <set>
+            <if test="configName != null">config_name = #{configName},</if>
+            <if test="storageType != null">storage_type = #{storageType},</if>
+            <if test="storagePath != null">storage_path = #{storagePath},</if>
+            <if test="connectionJson != null">connection_json = #{connectionJson},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteConfig">
+        DELETE FROM federated_stats_config WHERE id = #{id}
+    </delete>
+
+    <select id="selectConfigById" resultType="com.primihub.biz.entity.data.po.FederatedStatsConfig">
+        SELECT * FROM federated_stats_config WHERE id = #{id}
+    </select>
+
+    <select id="selectConfigList" resultType="com.primihub.biz.entity.data.po.FederatedStatsConfig">
+        SELECT * FROM federated_stats_config
+        WHERE created_by = #{createdBy}
+        ORDER BY is_default DESC, created_at DESC
+    </select>
+
+    <select id="selectDefaultConfig" resultType="com.primihub.biz.entity.data.po.FederatedStatsConfig">
+        SELECT * FROM federated_stats_config WHERE is_default = 1 LIMIT 1
+    </select>
+
+</mapper>

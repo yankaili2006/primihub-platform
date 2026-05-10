@@ -73,6 +73,7 @@
 </template>
 
 <script>
+import { savePoliceApi, getPoliceApiList, deletePoliceApi, testPoliceApi } from '@/api/scene'
 export default {
   name: 'InsuranceApiConnect',
   data() {
@@ -80,43 +81,66 @@ export default {
       dialogVisible: false,
       dialogTitle: '新增接口',
       apiForm: { apiName: '', orgName: '', apiUrl: '', protocol: 'HTTPS', authType: 'API Key', apiKey: '' },
-      apiList: [
-        { apiId: 'API001', apiName: '理赔数据查询接口', orgName: '平安保险', apiUrl: 'https://api.pingan.com/v1/claim', protocol: 'HTTPS', authType: 'API Key', status: 'active' },
-        { apiId: 'API002', apiName: '投保信息接口', orgName: '中国人寿', apiUrl: 'https://api.chinalife.com/v1/policy', protocol: 'HTTPS', authType: 'OAuth2.0', status: 'active' },
-        { apiId: 'API003', apiName: '车险数据接口', orgName: '太平洋保险', apiUrl: 'https://api.cpic.com/v1/auto', protocol: 'gRPC', authType: '证书认证', status: 'error' }
-      ]
+      apiList: []
     }
+  },
+  mounted() {
+    this.fetchApiList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    async fetchApiList() {
+      try {
+        const res = await getPoliceApiList()
+        if (res.code === 0) this.apiList = res.result || []
+      } catch (e) { console.error('获取接口列表失败', e) }
+    },
     handleAddApi() {
       this.dialogTitle = '新增接口'
       this.apiForm = { apiName: '', orgName: '', apiUrl: '', protocol: 'HTTPS', authType: 'API Key', apiKey: '' }
       this.dialogVisible = true
     },
-    handleTest(row) {
+    async handleTest(row) {
       this.$message.info(`正在测试接口: ${row.apiName}`)
-      setTimeout(() => {
-        this.$message.success(`接口 ${row.apiName} 连接正常`)
-      }, 1500)
+      try {
+        const res = await testPoliceApi({ id: row.apiId || row.id })
+        if (res.code === 0 && res.result.connected) {
+          this.$message.success(`接口 ${row.apiName} 连接正常 (${res.result.responseTime}ms)`)
+        } else {
+          this.$message.error('接口连接失败')
+        }
+      } catch (e) {
+        this.$message.error('测试异常')
+      }
     },
     handleEdit(row) {
       this.dialogTitle = '编辑接口'
       this.apiForm = { ...row }
       this.dialogVisible = true
     },
-    handleDelete(row) {
-      this.$confirm(`确定删除接口 ${row.apiName}?`, '提示', { type: 'warning' }).then(() => {
-        this.apiList = this.apiList.filter(item => item.apiId !== row.apiId)
-        this.$message.success('删除成功')
-      }).catch(() => {})
-    },
-    handleSave() {
-      if (this.dialogTitle === '新增接口') {
-        this.apiList.unshift({ ...this.apiForm, apiId: `API${Date.now()}`, status: 'active' })
+    async handleDelete(row) {
+      try {
+        await this.$confirm(`确定删除接口 ${row.apiName}?`, '提示', { type: 'warning' })
+        const res = await deletePoliceApi({ id: row.apiId || row.id })
+        if (res.code === 0) {
+          this.$message.success('删除成功')
+          this.fetchApiList()
+        }
+      } catch (e) {
+        if (e !== 'cancel') this.$message.error('删除失败')
       }
-      this.dialogVisible = false
-      this.$message.success('保存成功')
+    },
+    async handleSave() {
+      try {
+        const res = await savePoliceApi(this.apiForm)
+        if (res.code === 0) {
+          this.$message.success('保存成功')
+          this.dialogVisible = false
+          this.fetchApiList()
+        }
+      } catch (e) {
+        this.$message.error('保存失败')
+      }
     }
   }
 }

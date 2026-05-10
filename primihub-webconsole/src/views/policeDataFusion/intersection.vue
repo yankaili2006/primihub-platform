@@ -74,6 +74,7 @@
 </template>
 
 <script>
+import { createPoliceTask, getPoliceTaskList } from '@/api/scene'
 export default {
   name: 'PoliceDataIntersection',
   data() {
@@ -95,12 +96,11 @@ export default {
         { id: 'INS002', name: '财产保险数据库' },
         { id: 'INS003', name: '车辆保险数据库' }
       ],
-      taskList: [
-        { taskId: 'PDI-001', taskName: '车险欺诈检测', policeDataCount: 15000, insuranceDataCount: 28000, intersectCount: 3200, status: 'completed', statusText: '已完成', createTime: '2024-01-15 10:30:00' },
-        { taskId: 'PDI-002', taskName: '身份信息核验', policeDataCount: 8000, insuranceDataCount: 12000, intersectCount: 2100, status: 'running', statusText: '运行中', createTime: '2024-01-15 14:20:00' },
-        { taskId: 'PDI-003', taskName: '理赔数据比对', policeDataCount: 5000, insuranceDataCount: 8500, intersectCount: 1500, status: 'completed', statusText: '已完成', createTime: '2024-01-14 09:15:00' }
-      ]
+      taskList: []
     }
+  },
+  mounted() {
+    this.fetchTaskList()
   },
   methods: {
     goBack() {
@@ -110,22 +110,32 @@ export default {
       const types = { completed: 'success', running: 'warning', failed: 'danger' }
       return types[status] || 'info'
     },
-    handleCompute() {
+    async fetchTaskList() {
+      try {
+        const res = await getPoliceTaskList({ taskType: 'intersection' })
+        if (res.code === 0) this.taskList = res.result.list || []
+      } catch (e) { console.error('获取任务列表失败', e) }
+    },
+    async handleCompute() {
+      if (!this.configForm.policeDataSource || !this.configForm.insuranceDataSource) {
+        return this.$message.warning('请选择数据源')
+      }
       this.computing = true
-      setTimeout(() => {
-        this.computing = false
-        this.$message.success('融合计算任务已提交')
-        this.taskList.unshift({
-          taskId: `PDI-${Date.now()}`,
-          taskName: '新融合任务',
-          policeDataCount: Math.floor(Math.random() * 10000) + 5000,
-          insuranceDataCount: Math.floor(Math.random() * 15000) + 8000,
-          intersectCount: 0,
-          status: 'running',
-          statusText: '运行中',
-          createTime: new Date().toLocaleString()
+      try {
+        const res = await createPoliceTask({
+          taskType: 'intersection',
+          taskName: '警务数据融合',
+          params: this.configForm
         })
-      }, 2000)
+        if (res.code === 0) {
+          this.$message.success('融合计算任务已提交')
+          this.fetchTaskList()
+        }
+      } catch (e) {
+        this.$message.error('提交失败')
+      } finally {
+        this.computing = false
+      }
     },
     handleReset() {
       this.configForm = { policeDataSource: '', insuranceDataSource: '', intersectField: 'idCard', encryptAlgorithm: 'HE' }

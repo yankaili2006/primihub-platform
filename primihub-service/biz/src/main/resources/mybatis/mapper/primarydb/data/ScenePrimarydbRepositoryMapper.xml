@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.ScenePrimarydbRepository">
+
+    <resultMap id="SceneTaskMap" type="com.primihub.biz.entity.data.po.SceneTask">
+        <id column="id" property="id"/>
+        <result column="scene_type" property="sceneType"/>
+        <result column="task_name" property="taskName"/>
+        <result column="task_type" property="taskType"/>
+        <result column="params" property="params"/>
+        <result column="task_state" property="taskState"/>
+        <result column="result_data" property="resultData"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="SceneApiConfigMap" type="com.primihub.biz.entity.data.po.SceneApiConfig">
+        <id column="id" property="id"/>
+        <result column="scene_type" property="sceneType"/>
+        <result column="api_name" property="apiName"/>
+        <result column="api_url" property="apiUrl"/>
+        <result column="protocol" property="protocol"/>
+        <result column="auth_type" property="authType"/>
+        <result column="api_key" property="apiKey"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <resultMap id="SceneKeyConfigMap" type="com.primihub.biz.entity.data.po.SceneKeyConfig">
+        <id column="id" property="id"/>
+        <result column="scene_type" property="sceneType"/>
+        <result column="key_name" property="keyName"/>
+        <result column="scheme" property="scheme"/>
+        <result column="public_key" property="publicKey"/>
+        <result column="private_key" property="privateKey"/>
+        <result column="key_size" property="keySize"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- Scene Task -->
+    <insert id="insertSceneTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO scene_task (scene_type, task_name, task_type, params, task_state, result_data, error_message, created_by)
+        VALUES (#{sceneType}, #{taskName}, #{taskType}, #{params}, #{taskState}, #{resultData}, #{errorMessage}, #{createdBy})
+    </insert>
+
+    <update id="updateSceneTask">
+        UPDATE scene_task
+        <set>
+            <if test="taskState != null">task_state = #{taskState},</if>
+            <if test="resultData != null">result_data = #{resultData},</if>
+            <if test="errorMessage != null">error_message = #{errorMessage},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectSceneTaskById" resultMap="SceneTaskMap">
+        SELECT * FROM scene_task WHERE id = #{id}
+    </select>
+
+    <select id="selectSceneTaskList" resultMap="SceneTaskMap">
+        SELECT * FROM scene_task
+        <where>
+            <if test="sceneType != null and sceneType != ''">AND scene_type = #{sceneType}</if>
+            <if test="taskType != null and taskType != ''">AND task_type = #{taskType}</if>
+            <if test="keyword != null and keyword != ''">AND task_name LIKE CONCAT('%', #{keyword}, '%')</if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectSceneTaskCount" resultType="int">
+        SELECT COUNT(*) FROM scene_task
+        <where>
+            <if test="sceneType != null and sceneType != ''">AND scene_type = #{sceneType}</if>
+            <if test="taskType != null and taskType != ''">AND task_type = #{taskType}</if>
+            <if test="keyword != null and keyword != ''">AND task_name LIKE CONCAT('%', #{keyword}, '%')</if>
+        </where>
+    </select>
+
+    <!-- Scene Api Config -->
+    <insert id="insertSceneApiConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO scene_api_config (scene_type, api_name, api_url, protocol, auth_type, api_key, status, created_by)
+        VALUES (#{sceneType}, #{apiName}, #{apiUrl}, #{protocol}, #{authType}, #{apiKey}, #{status}, #{createdBy})
+    </insert>
+
+    <update id="updateSceneApiConfig">
+        UPDATE scene_api_config
+        <set>
+            <if test="apiName != null">api_name = #{apiName},</if>
+            <if test="apiUrl != null">api_url = #{apiUrl},</if>
+            <if test="protocol != null">protocol = #{protocol},</if>
+            <if test="authType != null">auth_type = #{authType},</if>
+            <if test="apiKey != null">api_key = #{apiKey},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteSceneApiConfig">
+        DELETE FROM scene_api_config WHERE id = #{id}
+    </delete>
+
+    <select id="selectSceneApiConfigById" resultMap="SceneApiConfigMap">
+        SELECT * FROM scene_api_config WHERE id = #{id}
+    </select>
+
+    <select id="selectSceneApiConfigList" resultMap="SceneApiConfigMap">
+        SELECT * FROM scene_api_config WHERE scene_type = #{sceneType} ORDER BY created_at DESC
+    </select>
+
+    <!-- Scene Key Config -->
+    <insert id="insertSceneKeyConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO scene_key_config (scene_type, key_name, scheme, public_key, private_key, key_size, status, created_by)
+        VALUES (#{sceneType}, #{keyName}, #{scheme}, #{publicKey}, #{privateKey}, #{keySize}, #{status}, #{createdBy})
+    </insert>
+
+    <update id="updateSceneKeyConfig">
+        UPDATE scene_key_config
+        <set>
+            <if test="keyName != null">key_name = #{keyName},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteSceneKeyConfig">
+        DELETE FROM scene_key_config WHERE id = #{id}
+    </delete>
+
+    <select id="selectSceneKeyConfigById" resultMap="SceneKeyConfigMap">
+        SELECT * FROM scene_key_config WHERE id = #{id}
+    </select>
+
+    <select id="selectSceneKeyConfigList" resultMap="SceneKeyConfigMap">
+        SELECT * FROM scene_key_config WHERE scene_type = #{sceneType} ORDER BY created_at DESC
+    </select>
+
+</mapper>
