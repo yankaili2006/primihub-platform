@@ -559,6 +559,253 @@ class PrimiHubAPIClient:
                                    params={"pageNum": page, "pageSize": page_size})
 
     # ========================================================================
+    # 存证管理API
+    # ========================================================================
+
+    def get_evidence_page(self, page: int = 1, page_size: int = 10,
+                          keyword: str = None, status: str = None) -> Dict[str, Any]:
+        params = {"pageNum": page, "pageSize": page_size}
+        if keyword: params["keyword"] = keyword
+        if status: params["status"] = status
+        return self._make_request("GET", "/evidence/findEvidencePage", params=params)
+
+    def create_evidence(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/evidence/createEvidence", data=data)
+
+    def verify_evidence(self, evidence_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/evidence/verifyEvidence", data={"id": evidence_id})
+
+    def get_evidence_statistics(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/evidence/getEvidenceStatistics")
+
+    def apply_timestamp(self, evidence_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/evidence/applyTimestamp", data={"evidenceId": evidence_id})
+
+    def get_evidence_config(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/evidence/getEvidenceConfig")
+
+    def save_evidence_config(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/evidence/saveEvidenceConfig", data=data)
+
+    def regenerate_api_key(self, description: str = "") -> Dict[str, Any]:
+        return self._make_request("POST", "/evidence/regenerateApiKey", data={"description": description})
+
+    # ========================================================================
+    # 监控管理API
+    # ========================================================================
+
+    def get_system_monitor(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getSystemMonitor")
+
+    def get_cpu_monitor(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getCpuMonitor")
+
+    def get_memory_monitor(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getMemoryMonitor")
+
+    def get_disk_monitor(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getDiskMonitor")
+
+    def get_jvm_monitor(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getJvmMonitor")
+
+    def get_alert_config(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getAlertConfig")
+
+    def save_alert_config(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/monitor/saveAlertConfig", data=data)
+
+    def get_alert_history(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/monitor/getAlertHistory",
+                                   params={"pageNum": page, "pageSize": page_size})
+
+    def handle_alert(self, alert_id: int, remark: str = "") -> Dict[str, Any]:
+        return self._make_request("POST", "/monitor/handleAlert",
+                                   data={"id": alert_id, "remark": remark})
+
+    # ========================================================================
+    # 接口管理API
+    # ========================================================================
+
+    def get_api_page(self, page: int = 1, page_size: int = 10,
+                     keyword: str = None) -> Dict[str, Any]:
+        params = {"pageNum": page, "pageSize": page_size}
+        if keyword: params["keyword"] = keyword
+        return self._make_request("GET", "/apiManage/findApiPage", params=params)
+
+    def add_api(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/apiManage/addApi", data=data)
+
+    def update_api(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/apiManage/updateApi", data=data)
+
+    def delete_api(self, api_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/apiManage/deleteApi", data={"id": api_id})
+
+    def get_api_detail(self, api_id: int) -> Dict[str, Any]:
+        return self._make_request("GET", "/apiManage/getApiDetail", params={"id": api_id})
+
+    def toggle_api_status(self, api_id: int, status: int = 1) -> Dict[str, Any]:
+        return self._make_request("POST", "/apiManage/toggleApiStatus",
+                                   data={"id": api_id, "status": status})
+
+    def get_api_auth_page(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/apiManage/findApiAuthPage",
+                                   params={"pageNum": page, "pageSize": page_size})
+
+    def add_api_auth(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/apiManage/addApiAuth", data=data)
+
+    def get_api_statistics(self, start_time: str = None, end_time: str = None) -> Dict[str, Any]:
+        params = {}
+        if start_time: params["startTime"] = start_time
+        if end_time: params["endTime"] = end_time
+        return self._make_request("GET", "/apiManage/getApiStatistics", params=params)
+
+    # ========================================================================
+    # 场景定制化API - 警务数据融合
+    # ========================================================================
+
+    def create_police_task(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/policeFusion/task/create", data=data)
+
+    def get_police_task_list(self, task_type: str = None, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        params = {"pageNo": page, "pageSize": page_size}
+        if task_type: params["taskType"] = task_type
+        return self._make_request("GET", "/policeFusion/task/list", params=params)
+
+    def get_police_task_detail(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("GET", "/policeFusion/task/detail", params={"taskId": task_id})
+
+    def save_police_api(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/policeFusion/api/save", data=data)
+
+    def get_police_api_list(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/policeFusion/api/list")
+
+    def generate_police_key(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/policeFusion/key/generate", data=data)
+
+    def encrypt_police_data(self, key_id: int, data_str: str) -> Dict[str, Any]:
+        return self._make_request("POST", "/policeFusion/key/encrypt",
+                                   data={"keyId": key_id, "data": data_str})
+
+    def decrypt_police_data(self, key_id: int, encrypted_data: str) -> Dict[str, Any]:
+        return self._make_request("POST", "/policeFusion/key/decrypt",
+                                   data={"keyId": key_id, "encryptedData": encrypted_data})
+
+    # ========================================================================
+    # 场景定制化API - 电子证件
+    # ========================================================================
+
+    def create_cert_task(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/electronicCert/task/create", data=data)
+
+    def get_cert_api_list(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/electronicCert/api/list")
+
+    def generate_cert_key(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/electronicCert/key/generate", data=data)
+
+    # ========================================================================
+    # 联邦查询API
+    # ========================================================================
+
+    def create_federated_query(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedQuery/create", data=data)
+
+    def get_query_list(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedQuery/list",
+                                   params={"pageNo": page, "pageSize": page_size})
+
+    def run_query(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedQuery/run", data={"taskId": task_id})
+
+    def get_query_result(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedQuery/result", params={"taskId": task_id})
+
+    def get_supported_algorithms(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedQuery/algorithms")
+
+    def test_tool(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedQuery/tools/test", data=data)
+
+    # ========================================================================
+    # 联邦统计API
+    # ========================================================================
+
+    def create_stats_task(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedStatistics/task/create", data=data)
+
+    def get_stats_task_list(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedStatistics/task/list",
+                                   params={"pageNo": page, "pageSize": page_size})
+
+    def run_stats_task(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedStatistics/task/run", data={"taskId": task_id})
+
+    def get_stats_result(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedStatistics/result/list", params={"taskId": task_id})
+
+    # ========================================================================
+    # 联邦分析API
+    # ========================================================================
+
+    def validate_sql(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedAnalysis/sql/validate", data=data)
+
+    def create_analysis_task(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedAnalysis/task/create", data=data)
+
+    def get_analysis_task_list(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedAnalysis/task/list",
+                                   params={"pageNo": page, "pageSize": page_size})
+
+    def run_analysis_task(self, task_id: int) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedAnalysis/task/run", data={"taskId": task_id})
+
+    # ========================================================================
+    # 系统配置API
+    # ========================================================================
+
+    def get_network_config(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/systemConfig/getNetworkConfig")
+
+    def save_network_config(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/systemConfig/saveNetworkConfig", data=data)
+
+    def get_login_restriction(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/systemConfig/getLoginRestriction")
+
+    def get_personalization_config(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/systemConfig/getPersonalizationConfig")
+
+    def get_ftp_config(self) -> Dict[str, Any]:
+        return self._make_request("GET", "/systemConfig/getFtpConfig")
+
+    # ========================================================================
+    # 联邦学习API
+    # ========================================================================
+
+    def create_fl_task(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedLearning/task/create", data=data)
+
+    def get_fl_task_list(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedLearning/task/list",
+                                   params={"pageNo": page, "pageSize": page_size})
+
+    # ========================================================================
+    # 存证/联邦查询计费API
+    # ========================================================================
+
+    def get_billing_rule_list(self, page: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        return self._make_request("GET", "/federatedBilling/rule/list",
+                                   params={"pageNum": page, "pageSize": page_size})
+
+    def create_billing_rule(self, data: Dict) -> Dict[str, Any]:
+        return self._make_request("POST", "/federatedBilling/rule/create", data=data)
+
+    # ========================================================================
     # 健康检查API
     # ========================================================================
 
