@@ -908,8 +908,19 @@ export const asyncRoutes = [
         name: 'SharedDatasetList',
         component: () => import('@/views/resource/sharedDatasetList'),
         meta: { title: '共享数据集列表' }
+      },
+      {
+        path: 'authAudit',
+        name: 'ResourceAuthAudit',
+        component: () => import('@/views/resource/authAudit'),
+        meta: { title: '授权审核' }
+      },
+      {
+        path: 'authRecord',
+        name: 'ResourceAuthRecord',
+        component: () => import('@/views/resource/authRecord'),
+        meta: { title: '授权记录' }
       }
-
     ]
   },
   {
@@ -979,6 +990,12 @@ export const asyncRoutes = [
         name: 'CancelCooperation',
         component: () => import('@/views/setting/cancelCooperation'),
         meta: { title: '节点取消合作' }
+      },
+      {
+        path: 'organ',
+        name: 'OrganManage',
+        component: () => import('@/views/setting/organ'),
+        meta: { title: '机构管理' }
       }
     ]
   },
@@ -1161,6 +1178,13 @@ export const asyncRoutes = [
         name: 'ComputeLog',
         component: () => import('@/views/logManagement/computeLog'),
         meta: { title: '计算日志记录' }
+      },
+      {
+        path: 'detail/:id',
+        name: 'LogDetail',
+        component: () => import('@/views/log/detail'),
+        meta: { title: '日志详情', activeMenu: '/log/index' },
+        hidden: true
       }
     ]
   },
