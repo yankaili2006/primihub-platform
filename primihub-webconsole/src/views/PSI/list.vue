@@ -34,13 +34,14 @@
             end-placeholder="结束时间"
             value-format="yyyy-MM-dd HH:mm:ss"
             :default-time="['00:00:00', '23:59:59']"
+            :picker-options="datePickerOptions"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="search">查询</el-button>
           <el-button icon="el-icon-refresh-right" @click="reset" />
-          <el-button type="success" icon="el-icon-download" @click="handleExportLog">导出日志</el-button>
+          <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExportLog">导出日志</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -125,6 +126,7 @@ import { getAvailableOrganList } from '@/api/center'
 import { getPsiTaskDetails, getPsiTaskList, delPsiTask, cancelTask, exportPsiLog } from '@/api/PSI'
 import PSITaskDetail from '@/components/PSITaskDetail'
 import Pagination from '@/components/Pagination'
+import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
   name: 'PSIDirectory',
@@ -164,6 +166,8 @@ export default {
       resultName: '',
       resultNameB: '',
       timer: null,
+      datePickerOptions: dateRangePickerOptions,
+      exporting: false,
       statusOptions: [ // 任务状态(0未开始 1成功 2运行中 3失败 4取消)
         {
           label: '运行中',
@@ -251,7 +255,7 @@ export default {
             this.$emit('delete', this.allDataPsiTask)
           }
         })
-      }).catch(() => {})
+      }).catch(e => { console.error('取消删除', e) })
     },
     async cancelTask(row) {
       const res = await cancelTask(row.taskIdName)
@@ -355,7 +359,8 @@ export default {
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('导出成功')
-      }).catch(() => {
+      }).catch(e => {
+        console.error('导出失败', e)
         this.$message.error('导出失败')
       })
     }

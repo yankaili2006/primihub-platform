@@ -37,13 +37,14 @@
             end-placeholder="结束时间"
             value-format="yyyy-MM-dd HH:mm:ss"
             :default-time="['00:00:00', '23:59:59']"
+            :picker-options="datePickerOptions"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="search">查询</el-button>
           <el-button icon="el-icon-refresh-right" @click="reset" />
-          <el-button type="success" icon="el-icon-download" @click="handleExportLog">导出日志</el-button>
+          <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExportLog">导出日志</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -143,6 +144,7 @@ import { deleteTask, cancelTask } from '@/api/task'
 import Pagination from '@/components/Pagination'
 import StatusIcon from '@/components/StatusIcon'
 import { getToken } from '@/utils/auth'
+import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
   components: {
@@ -182,7 +184,9 @@ export default {
       total: 0,
       pageCount: 0,
       timer: null,
-      startInterval: true
+      startInterval: true,
+      datePickerOptions: dateRangePickerOptions,
+      exporting: false
     }
   },
   async created() {
@@ -241,7 +245,7 @@ export default {
             clearInterval(this.timer)
           }
         })
-      }).catch(() => {})
+      }).catch(e => { console.error('取消删除', e) })
     },
     toTaskPage() {
       this.$router.push({
@@ -341,7 +345,8 @@ export default {
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('导出成功')
-      }).catch(() => {
+      }).catch(e => {
+        console.error('导出失败', e)
         this.$message.error('导出失败')
       })
     }

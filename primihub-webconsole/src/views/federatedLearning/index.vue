@@ -47,7 +47,7 @@
       </el-row>
 
       <!-- Table -->
-      <el-table v-loading="loading" :data="tableData" border>
+      <el-table v-loading="loading" :data="tableData" border empty-text="暂无数据">
         <el-table-column prop="taskId" label="任务ID" width="120" />
         <el-table-column prop="taskName" label="任务名称" width="180" />
         <el-table-column prop="algorithmType" label="算法类型" width="120">

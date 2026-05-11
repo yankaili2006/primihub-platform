@@ -9,7 +9,7 @@
       <el-tabs v-model="activeTab" type="border-card">
         <!-- 区块链配置 -->
         <el-tab-pane label="区块链配置" name="blockchain">
-          <el-form :model="configForm" label-width="150px">
+          <el-form ref="configForm" :model="configForm" :rules="configRules" label-width="150px">
             <el-divider content-position="left">以太坊配置</el-divider>
             <el-form-item label="启用以太坊">
               <el-switch v-model="configForm.ethereumEnabled" />
@@ -141,6 +141,14 @@ export default {
   data() {
     return {
       activeTab: 'blockchain',
+      configRules: {
+        ethereumUrl: [{ pattern: /^https?:\/\/.+/, message: '请输入正确URL，以 http:// 或 https:// 开头', trigger: 'blur' }],
+        ethereumContract: [{ pattern: /^0x[a-fA-F0-9]{40}$/, message: '请输入有效的以太坊合约地址（0x开头+40位十六进制）', trigger: 'blur' }],
+        ethereumPrivateKey: [{ pattern: /^0x[a-fA-F0-9]{64}$/, message: '请输入有效的私钥（0x开头+64位十六进制）', trigger: 'blur' }],
+        fabricChannel: [{ required: true, message: '请输入通道名称', trigger: 'blur' }],
+        fabricChaincode: [{ required: true, message: '请输入链码名称', trigger: 'blur' }],
+        fiscoNodeIp: [{ pattern: /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/, message: '请输入有效IP:端口格式', trigger: 'blur' }]
+      },
       configForm: {
         // 区块链配置
         ethereumEnabled: false,
@@ -184,10 +192,15 @@ export default {
       }
     },
     async saveConfig() {
-      const res = await saveEvidenceConfig(this.configForm)
-      if (res.code === 0) {
-        this.$message.success('配置保存成功')
-      }
+      this.$refs.configForm.validate(async valid => {
+        if (!valid) return this.$message.warning('请检查表单中的错误')
+        const res = await saveEvidenceConfig(this.configForm)
+        if (res.code === 0) {
+          this.$message.success('配置保存成功')
+        } else {
+          this.$message.error(res.message || '保存失败')
+        }
+      })
     }
   }
 }

@@ -1,13 +1,18 @@
 <template>
   <div class="monitor-container">
     <!-- 整体监控统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
+    <el-skeleton :loading="statsLoading" animated :count="4" style="display:flex;gap:20px;">
+      <template slot="template">
+        <el-card class="stats-card" shadow="hover" style="flex:1;">
+          <el-skeleton-item variant="text" style="width:60%;height:40px;margin:0 auto;" />
+        </el-card>
+      </template>
+    </el-skeleton>
+    <el-row v-show="!statsLoading" :gutter="20" class="stats-row">
       <el-col :span="6">
         <el-card class="stats-card" shadow="hover">
           <div class="stats-content">
-            <div class="stats-icon-wrapper primary">
-              <i class="el-icon-monitor" />
-            </div>
+            <div class="stats-icon-wrapper primary"><i class="el-icon-monitor" /></div>
             <div class="stats-info">
               <div class="stats-label">系统健康度</div>
               <div class="stats-value">{{ statistics.systemHealth || 0 }}%</div>
@@ -18,9 +23,7 @@
       <el-col :span="6">
         <el-card class="stats-card" shadow="hover">
           <div class="stats-content">
-            <div class="stats-icon-wrapper success">
-              <i class="el-icon-circle-check" />
-            </div>
+            <div class="stats-icon-wrapper success"><i class="el-icon-circle-check" /></div>
             <div class="stats-info">
               <div class="stats-label">正常服务</div>
               <div class="stats-value">{{ statistics.normalServices || 0 }}</div>
@@ -31,9 +34,7 @@
       <el-col :span="6">
         <el-card class="stats-card" shadow="hover">
           <div class="stats-content">
-            <div class="stats-icon-wrapper warning">
-              <i class="el-icon-warning" />
-            </div>
+            <div class="stats-icon-wrapper warning"><i class="el-icon-warning" /></div>
             <div class="stats-info">
               <div class="stats-label">今日告警</div>
               <div class="stats-value">{{ statistics.todayAlerts || 0 }}</div>
@@ -44,9 +45,7 @@
       <el-col :span="6">
         <el-card class="stats-card" shadow="hover">
           <div class="stats-content">
-            <div class="stats-icon-wrapper danger">
-              <i class="el-icon-bell" />
-            </div>
+            <div class="stats-icon-wrapper danger"><i class="el-icon-bell" /></div>
             <div class="stats-info">
               <div class="stats-label">未处理告警</div>
               <div class="stats-value">{{ statistics.pendingAlerts || 0 }}</div>
@@ -170,8 +169,10 @@
               </el-radio-group>
             </div>
             <div class="chart-placeholder">
-              <i class="el-icon-data-line" style="font-size: 48px; color: #dcdfe6;" />
-              <p style="color: #909399; margin-top: 10px;">图表组件占位（可集成ECharts）</p>
+              <i class="el-icon-data-line" style="font-size: 48px; color: #409eff;"></i>
+              <p style="color: #606266; margin-top: 10px; font-weight: bold;">监控趋势图</p>
+              <p style="color: #909399; margin-top: 4px; font-size: 13px;">选择上方监控维度查看历史趋势</p>
+              <el-button size="small" style="margin-top: 12px;" @click="refreshMonitorData">刷新数据</el-button>
             </div>
           </el-card>
         </el-tab-pane>
@@ -572,6 +573,7 @@ export default {
       activeTab: 'os',
       osChartType: 'CPU',
       statistics: {},
+      statsLoading: true,
       cpuData: {},
       memoryData: {},
       diskData: {},
@@ -621,20 +623,21 @@ export default {
     this.stopAutoRefresh()
   },
   methods: {
+    refreshMonitorData() {
+      this.$message.info('正在刷新...')
+      this.fetchMonitorData()
+    },
     async fetchStatistics() {
-      // TODO: 调用实际接口获取统计数据
+      this.statsLoading = true
       const res = await getMonitorStatistics()
       if (res && res.code === 0) {
         this.statistics = res.result || {}
       } else {
-        // 模拟数据
         this.statistics = {
-          systemHealth: 95,
-          normalServices: 12,
-          todayAlerts: 3,
-          pendingAlerts: 1
+          systemHealth: 95, normalServices: 12, todayAlerts: 3, pendingAlerts: 1
         }
       }
+      this.statsLoading = false
     },
     async fetchMonitorData() {
       // TODO: 调用实际接口获取监控数据

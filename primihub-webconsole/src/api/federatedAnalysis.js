@@ -254,3 +254,23 @@ export function batchExportFederatedAnalysisLogs(data) {
     responseType: 'blob'
   })
 }
+
+// ==================== SQL 校验与格式化 ====================
+
+export function validateSql(data) {
+  return request({ url: '/federatedAnalysis/sql/validate', method: 'post', type: 'json', data })
+}
+
+export function formatSql(data) {
+  return request({ url: '/federatedAnalysis/sql/format', method: 'post', type: 'json', data })
+}
+
+export function getSqlFunctions(params) {
+  return request({ url: '/federatedAnalysis/sql/functions', method: 'get', params })
+}
+
+// ==================== 任务停止 ====================
+
+export function stopFederatedAnalysis(data) {
+  return request({ url: '/federatedAnalysis/task/stop', method: 'post', type: 'json', data })
+}

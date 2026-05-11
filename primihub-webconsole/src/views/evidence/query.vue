@@ -122,6 +122,7 @@
       <div slot="header" class="card-header">
         <span class="card-title"><i class="el-icon-tickets" /> 存证列表</span>
         <div class="card-actions">
+          <el-button type="success" icon="el-icon-plus" size="small" @click="openCreateDialog">创建存证</el-button>
           <el-button type="primary" icon="el-icon-upload" size="small" @click="openVerifyDialog">验证存证</el-button>
         </div>
       </div>
@@ -179,6 +180,38 @@
       </el-table>
       <pagination v-show="pageCount>0" :limit.sync="pageSize" :page-count="pageCount" :page.sync="pageNum" :total="itemTotalCount" @pagination="handlePagination" />
     </el-card>
+
+    <!-- 创建存证弹窗 -->
+    <el-dialog :visible.sync="createDialogVisible" title="创建存证" width="600px" top="20vh">
+      <el-form ref="createForm" :model="createForm" :rules="createRules" label-width="100px">
+        <el-form-item label="存证类型" prop="evidenceType">
+          <el-select v-model="createForm.evidenceType" placeholder="请选择存证类型" style="width: 100%;">
+            <el-option label="文件存证" value="FILE" />
+            <el-option label="数据存证" value="DATA" />
+            <el-option label="交易存证" value="TRANSACTION" />
+            <el-option label="合约存证" value="CONTRACT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="存证数据" prop="data">
+          <el-input v-model="createForm.data" type="textarea" :rows="4" placeholder="请输入存证内容或上传文件哈希" />
+        </el-form-item>
+        <el-form-item label="区块链" prop="chainType">
+          <el-select v-model="createForm.chainType" placeholder="请选择区块链" style="width: 100%;">
+            <el-option label="Fabric" value="FABRIC" />
+            <el-option label="以太坊" value="ETHEREUM" />
+            <el-option label="FISCO BCOS" value="FISCO" />
+            <el-option label="本地链" value="LOCAL" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="createForm.remark" type="textarea" :rows="2" placeholder="可选" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreate">提交存证</el-button>
+      </div>
+    </el-dialog>
 
     <!-- 存证详情弹窗 -->
     <el-dialog :visible.sync="detailVisible" title="存证详情" width="800px" top="5vh">
@@ -315,7 +348,7 @@
 </template>
 
 <script>
-import { getEvidencePage, getEvidenceDetail, verifyEvidence, getEvidenceStatistics } from '@/api/evidence'
+import { getEvidencePage, getEvidenceDetail, verifyEvidence, getEvidenceStatistics, createEvidence } from '@/api/evidence'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -335,6 +368,14 @@ export default {
       loading: false,
       detailVisible: false,
       detailInfo: {},
+      createDialogVisible: false,
+      createForm: { evidenceType: 'DATA', data: '', chainType: 'FABRIC', remark: '' },
+      createRules: {
+        evidenceType: [{ required: true, message: '请选择存证类型', trigger: 'change' }],
+        data: [{ required: true, message: '请输入存证数据', trigger: 'blur' }],
+        chainType: [{ required: true, message: '请选择区块链', trigger: 'change' }]
+      },
+      creating: false,
       verifyDialogVisible: false,
       verifyType: 'FILE',
       verifyForm: {
@@ -417,6 +458,28 @@ export default {
         this.detailInfo = res.result || {}
         this.detailVisible = true
       }
+    },
+    openCreateDialog() {
+      this.createForm = { evidenceType: 'DATA', data: '', chainType: 'FABRIC', remark: '' }
+      this.createDialogVisible = true
+    },
+    async submitCreate() {
+      this.$refs.createForm.validate(async valid => {
+        if (!valid) return
+        this.creating = true
+        try {
+          const res = await createEvidence(this.createForm)
+          if (res.code === 0) {
+            this.$message.success('存证创建成功')
+            this.createDialogVisible = false
+            this.fetchData()
+            this.fetchStatistics()
+          } else {
+            this.$message.error(res.message || '创建失败')
+          }
+        } catch (e) { this.$message.error('请求异常') }
+        this.creating = false
+      })
     },
     openVerifyDialog() {
       this.verifyType = 'FILE'

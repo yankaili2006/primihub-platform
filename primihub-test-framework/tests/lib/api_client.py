@@ -825,6 +825,363 @@ class PrimiHubAPIClient:
         """
         return self._make_request("GET", "/test/healthConnection")
 
+    # ========================================================================
+    # 联邦求差API (Difference)
+    # ========================================================================
+
+    def save_data_difference(self, data: Dict) -> Dict[str, Any]:
+        """创建并运行联邦求差任务"""
+        return self._make_request("POST", "/difference/saveDataDifference", data=data)
+
+    def get_difference_task_list(self, task_name: str = None, task_state: int = None,
+                                  organ_id: str = None, start_date: str = None,
+                                  end_date: str = None, page_no: int = 1,
+                                  page_size: int = 10) -> Dict[str, Any]:
+        """查询联邦求差任务列表"""
+        params = {"pageNo": page_no, "pageSize": page_size}
+        if task_name: params["taskName"] = task_name
+        if task_state is not None: params["taskState"] = task_state
+        if organ_id: params["organId"] = organ_id
+        if start_date: params["startDate"] = start_date
+        if end_date: params["endDate"] = end_date
+        return self._make_request("GET", "/difference/getDifferenceTaskList", params=params)
+
+    def get_difference_task_details(self, task_id: int) -> Dict[str, Any]:
+        """查询联邦求差任务详情"""
+        return self._make_request("GET", "/difference/getDifferenceTaskDetails",
+                                   params={"taskId": task_id})
+
+    def del_difference_task(self, task_id: int) -> Dict[str, Any]:
+        """删除联邦求差任务"""
+        return self._make_request("GET", "/difference/delDifferenceTask",
+                                   params={"taskId": task_id})
+
+    def cancel_difference_task(self, task_id: int) -> Dict[str, Any]:
+        """取消联邦求差任务"""
+        return self._make_request("GET", "/difference/cancelDifferenceTask",
+                                   params={"taskId": task_id})
+
+    # ========================================================================
+    # 联邦求并API (Union)
+    # ========================================================================
+
+    def save_data_union(self, data: Dict) -> Dict[str, Any]:
+        """创建并运行联邦求并任务"""
+        return self._make_request("POST", "/union/saveDataUnion", data=data)
+
+    def get_union_task_list(self, task_name: str = None, task_state: int = None,
+                             organ_id: str = None, start_date: str = None,
+                             end_date: str = None, page_no: int = 1,
+                             page_size: int = 10) -> Dict[str, Any]:
+        """查询联邦求并任务列表"""
+        params = {"pageNo": page_no, "pageSize": page_size}
+        if task_name: params["taskName"] = task_name
+        if task_state is not None: params["taskState"] = task_state
+        if organ_id: params["organId"] = organ_id
+        if start_date: params["startDate"] = start_date
+        if end_date: params["endDate"] = end_date
+        return self._make_request("GET", "/union/getUnionTaskList", params=params)
+
+    def get_union_task_details(self, task_id: int) -> Dict[str, Any]:
+        """查询联邦求并任务详情"""
+        return self._make_request("GET", "/union/getUnionTaskDetails",
+                                   params={"taskId": task_id})
+
+    def del_union_task(self, task_id: int) -> Dict[str, Any]:
+        """删除联邦求并任务"""
+        return self._make_request("GET", "/union/delUnionTask",
+                                   params={"taskId": task_id})
+
+    def cancel_union_task(self, task_id: int) -> Dict[str, Any]:
+        """取消联邦求并任务"""
+        return self._make_request("GET", "/union/cancelUnionTask",
+                                   params={"taskId": task_id})
+
+    # ========================================================================
+    # 联邦分析API (增强)
+    # ========================================================================
+
+    def format_sql(self, data: Dict) -> Dict[str, Any]:
+        """SQL格式化"""
+        return self._make_request("POST", "/federatedAnalysis/sql/format", data=data)
+
+    def get_sql_functions(self, category: str = None) -> Dict[str, Any]:
+        """获取支持的SQL函数列表"""
+        params = {}
+        if category: params["category"] = category
+        return self._make_request("GET", "/federatedAnalysis/sql/functions", params=params)
+
+    def stop_analysis_task(self, task_id: int) -> Dict[str, Any]:
+        """停止分析任务"""
+        return self._make_request("POST", "/federatedAnalysis/task/stop",
+                                   data={"taskId": task_id})
+
+    def get_analysis_task_detail(self, task_id: int) -> Dict[str, Any]:
+        """获取分析任务详情"""
+        return self._make_request("GET", "/federatedAnalysis/task/detail",
+                                   params={"taskId": task_id})
+
+    def create_analysis_datasource(self, data: Dict) -> Dict[str, Any]:
+        """创建分析数据源"""
+        return self._make_request("POST", "/federatedAnalysis/datasource/create", data=data)
+
+    def update_analysis_datasource(self, data: Dict) -> Dict[str, Any]:
+        """更新分析数据源"""
+        return self._make_request("POST", "/federatedAnalysis/datasource/update", data=data)
+
+    def delete_analysis_datasource(self, datasource_id: int) -> Dict[str, Any]:
+        """删除分析数据源"""
+        return self._make_request("POST", "/federatedAnalysis/datasource/delete",
+                                   data={"id": datasource_id})
+
+    def test_analysis_datasource(self, data: Dict) -> Dict[str, Any]:
+        """测试数据源连接"""
+        return self._make_request("POST", "/federatedAnalysis/datasource/test", data=data)
+
+    def get_analysis_datasource_list(self, source_type: str = None) -> Dict[str, Any]:
+        """获取数据源列表"""
+        params = {}
+        if source_type: params["sourceType"] = source_type
+        return self._make_request("GET", "/federatedAnalysis/datasource/list", params=params)
+
+    def get_analysis_datasource_tables(self, datasource_id: int) -> Dict[str, Any]:
+        """获取数据源表列表"""
+        return self._make_request("GET", "/federatedAnalysis/datasource/tables",
+                                   params={"datasourceId": datasource_id})
+
+    def get_analysis_datasource_columns(self, datasource_id: int, table_name: str) -> Dict[str, Any]:
+        """获取数据源表字段"""
+        return self._make_request("GET", "/federatedAnalysis/datasource/columns",
+                                   params={"datasourceId": datasource_id, "tableName": table_name})
+
+    def get_rdbms_types(self) -> Dict[str, Any]:
+        """获取支持的RDBMS类型"""
+        return self._make_request("GET", "/federatedAnalysis/rdbms/types")
+
+    def get_bigdata_types(self) -> Dict[str, Any]:
+        """获取支持的大数据平台类型"""
+        return self._make_request("GET", "/federatedAnalysis/bigdata/types")
+
+    def get_cloud_types(self) -> Dict[str, Any]:
+        """获取支持的云平台类型"""
+        return self._make_request("GET", "/federatedAnalysis/cloud/types")
+
+    # ========================================================================
+    # 联邦查询计费API (增强)
+    # ========================================================================
+
+    def update_billing_rule(self, data: Dict) -> Dict[str, Any]:
+        """更新计费规则"""
+        return self._make_request("POST", "/federatedBilling/rule/update", data=data)
+
+    def delete_billing_rule(self, rule_id: int) -> Dict[str, Any]:
+        """删除计费规则"""
+        return self._make_request("POST", "/federatedBilling/rule/delete",
+                                   data={"id": rule_id})
+
+    def toggle_billing_rule(self, rule_id: int, is_active: int = 1) -> Dict[str, Any]:
+        """启用/禁用计费规则"""
+        return self._make_request("POST", "/federatedBilling/rule/toggle",
+                                   data={"ruleId": rule_id, "isActive": is_active})
+
+    def get_billing_rule_detail(self, rule_id: int) -> Dict[str, Any]:
+        """获取计费规则详情"""
+        return self._make_request("GET", "/federatedBilling/rule/detail",
+                                   params={"ruleId": rule_id})
+
+    def get_billing_record_list(self, page_num: int = 1, page_size: int = 10,
+                                 rule_id: int = None, start_time: str = None,
+                                 end_time: str = None) -> Dict[str, Any]:
+        """获取计费记录列表"""
+        params = {"pageNum": page_num, "pageSize": page_size}
+        if rule_id: params["ruleId"] = rule_id
+        if start_time: params["startTime"] = start_time
+        if end_time: params["endTime"] = end_time
+        return self._make_request("GET", "/federatedBilling/record/list", params=params)
+
+    def get_billing_statistics(self, start_time: str = None, end_time: str = None,
+                                group_by: str = None) -> Dict[str, Any]:
+        """获取计费统计"""
+        params = {}
+        if start_time: params["startTime"] = start_time
+        if end_time: params["endTime"] = end_time
+        if group_by: params["groupBy"] = group_by
+        return self._make_request("GET", "/federatedBilling/record/statistics", params=params)
+
+    # ========================================================================
+    # 联邦统计API (增强)
+    # ========================================================================
+
+    def get_stats_task_detail(self, task_id: int) -> Dict[str, Any]:
+        """获取统计任务详情"""
+        return self._make_request("GET", "/federatedStatistics/task/detail",
+                                   params={"taskId": task_id})
+
+    def stop_stats_task(self, task_id: int) -> Dict[str, Any]:
+        """停止统计任务"""
+        return self._make_request("POST", "/federatedStatistics/task/stop",
+                                   data={"taskId": task_id})
+
+    def delete_stats_task(self, task_id: int) -> Dict[str, Any]:
+        """删除统计任务"""
+        return self._make_request("DELETE", "/federatedStatistics/task/delete",
+                                   params={"taskId": task_id})
+
+    def save_stats_result(self, data: Dict) -> Dict[str, Any]:
+        """保存统计结果"""
+        return self._make_request("POST", "/federatedStatistics/result/save", data=data)
+
+    def get_stats_storage_config(self) -> Dict[str, Any]:
+        """获取存储配置"""
+        return self._make_request("GET", "/federatedStatistics/storage/config")
+
+    def save_stats_storage_config(self, data: Dict) -> Dict[str, Any]:
+        """保存存储配置"""
+        return self._make_request("POST", "/federatedStatistics/storage/saveConfig", data=data)
+
+    def get_stats_types(self) -> Dict[str, Any]:
+        """获取支持的统计类型列表"""
+        return self._make_request("GET", "/federatedStatistics/types")
+
+    def get_stats_logs(self, page_no: int = 1, page_size: int = 10) -> Dict[str, Any]:
+        """获取统计日志"""
+        return self._make_request("GET", "/federatedStatistics/logs",
+                                   params={"pageNo": page_no, "pageSize": page_size})
+
+    # ========================================================================
+    # 场景定制化API (增强) - 警务数据融合
+    # ========================================================================
+
+    def get_police_key_list(self) -> Dict[str, Any]:
+        """获取警务密钥列表"""
+        return self._make_request("GET", "/policeFusion/key/list")
+
+    def delete_police_key(self, key_id: int) -> Dict[str, Any]:
+        """删除警务密钥"""
+        return self._make_request("POST", "/policeFusion/key/delete",
+                                   data={"id": key_id})
+
+    # ========================================================================
+    # 场景定制化API (增强) - 电子证件
+    # ========================================================================
+
+    def save_cert_api(self, data: Dict) -> Dict[str, Any]:
+        """保存电子证件API配置"""
+        return self._make_request("POST", "/electronicCert/api/save", data=data)
+
+    def delete_cert_api(self, api_id: int) -> Dict[str, Any]:
+        """删除电子证件API配置"""
+        return self._make_request("POST", "/electronicCert/api/delete",
+                                   data={"id": api_id})
+
+    def get_cert_key_list(self) -> Dict[str, Any]:
+        """获取电子证件密钥列表"""
+        return self._make_request("GET", "/electronicCert/key/list")
+
+    def delete_cert_key(self, key_id: int) -> Dict[str, Any]:
+        """删除电子证件密钥"""
+        return self._make_request("POST", "/electronicCert/key/delete",
+                                   data={"id": key_id})
+
+    # ========================================================================
+    # 存证管理API (增强)
+    # ========================================================================
+
+    def get_evidence_detail(self, evidence_id: int) -> Dict[str, Any]:
+        """获取存证详情"""
+        return self._make_request("GET", "/evidence/getEvidenceDetail",
+                                   params={"id": evidence_id})
+
+    def find_timestamp_page(self, page_num: int = 1, page_size: int = 10,
+                             keyword: str = None) -> Dict[str, Any]:
+        """获取时间戳列表"""
+        params = {"pageNum": page_num, "pageSize": page_size}
+        if keyword: params["keyword"] = keyword
+        return self._make_request("GET", "/evidence/findTimestampPage", params=params)
+
+    def get_chain_list(self) -> Dict[str, Any]:
+        """获取支持的区块链列表"""
+        return self._make_request("GET", "/evidence/getChainList")
+
+    def get_evidence_api_list(self) -> Dict[str, Any]:
+        """获取存证API接口列表"""
+        return self._make_request("GET", "/evidence/getApiList")
+
+    def get_evidence_api_key(self) -> Dict[str, Any]:
+        """获取存证API密钥"""
+        return self._make_request("GET", "/evidence/getApiKey")
+
+    # ========================================================================
+    # 监控管理API (增强)
+    # ========================================================================
+
+    def get_database_monitor(self) -> Dict[str, Any]:
+        """获取数据库监控"""
+        return self._make_request("GET", "/monitor/getDatabaseMonitor")
+
+    def get_redis_monitor(self) -> Dict[str, Any]:
+        """获取Redis监控"""
+        return self._make_request("GET", "/monitor/getRedisMonitor")
+
+    def get_monitor_history(self, monitor_type: str = None, start_time: str = None,
+                             end_time: str = None) -> Dict[str, Any]:
+        """获取监控历史数据"""
+        params = {}
+        if monitor_type: params["type"] = monitor_type
+        if start_time: params["startTime"] = start_time
+        if end_time: params["endTime"] = end_time
+        return self._make_request("GET", "/monitor/getMonitorHistory", params=params)
+
+    def get_monitor_statistics(self) -> Dict[str, Any]:
+        """获取监控统计"""
+        return self._make_request("GET", "/monitor/getMonitorStatistics")
+
+    # ========================================================================
+    # 接口管理API (增强)
+    # ========================================================================
+
+    def batch_delete_api(self, api_ids: List[int]) -> Dict[str, Any]:
+        """批量删除接口"""
+        return self._make_request("POST", "/apiManage/batchDeleteApi",
+                                   data={"ids": api_ids})
+
+    def update_api_auth(self, data: Dict) -> Dict[str, Any]:
+        """更新接口授权"""
+        return self._make_request("POST", "/apiManage/updateApiAuth", data=data)
+
+    def delete_api_auth(self, auth_id: int) -> Dict[str, Any]:
+        """删除接口授权"""
+        return self._make_request("POST", "/apiManage/deleteApiAuth",
+                                   data={"id": auth_id})
+
+    # ========================================================================
+    # 系统配置API (增强)
+    # ========================================================================
+
+    def get_time_config(self) -> Dict[str, Any]:
+        """获取时间配置"""
+        return self._make_request("GET", "/systemConfig/getTimeConfig")
+
+    def save_time_config(self, data: Dict) -> Dict[str, Any]:
+        """保存时间配置"""
+        return self._make_request("POST", "/systemConfig/saveTimeConfig", data=data)
+
+    def save_login_restriction(self, data: Dict) -> Dict[str, Any]:
+        """保存登录限制配置"""
+        return self._make_request("POST", "/systemConfig/saveLoginRestriction", data=data)
+
+    def save_personalization_config(self, data: Dict) -> Dict[str, Any]:
+        """保存个性化配置"""
+        return self._make_request("POST", "/systemConfig/savePersonalizationConfig", data=data)
+
+    def save_ftp_config(self, data: Dict) -> Dict[str, Any]:
+        """保存FTP配置"""
+        return self._make_request("POST", "/systemConfig/saveFtpConfig", data=data)
+
+    def test_ftp_connection(self, data: Dict) -> Dict[str, Any]:
+        """测试FTP连接"""
+        return self._make_request("POST", "/systemConfig/testFtpConnection", data=data)
+
 
 if __name__ == "__main__":
     # 简单示例

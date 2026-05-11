@@ -38,7 +38,7 @@
     </el-row>
 
     <!-- Table -->
-    <el-table v-loading="loading" :data="tableData" border @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="tableData" border empty-text="暂无数据，请创建联邦统计任务" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" />
       <el-table-column prop="taskId" label="任务ID" width="120" />
       <el-table-column prop="taskName" label="任务名称" width="180" />
@@ -491,12 +491,12 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.total || 0
         } else {
-          // Use mock data if API not ready
+          this.$message.warning('联邦统计接口暂未就绪，显示示例数据')
           this.tableData = this.getMockData()
           this.total = this.tableData.length
         }
       } catch (error) {
-        // Use mock data on error
+        this.$message.warning('加载远程数据失败，显示示例数据: ' + (error.message || ''))
         this.tableData = this.getMockData()
         this.total = this.tableData.length
       }

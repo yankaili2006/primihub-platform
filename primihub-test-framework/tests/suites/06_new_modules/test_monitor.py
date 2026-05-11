@@ -24,7 +24,11 @@ class MonitorTest:
             self.test_cpu_monitor()
             self.test_memory_monitor()
             self.test_disk_monitor()
+            self.test_database_monitor()
             self.test_jvm_monitor()
+            self.test_redis_monitor()
+            self.test_monitor_history()
+            self.test_monitor_statistics()
             self.test_alert_config()
             self.test_alert_history()
             self.generate_report()
@@ -72,6 +76,13 @@ class MonitorTest:
         self.report.add_test_result("监控管理", "磁盘监控", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 磁盘监控")
 
+    def test_database_monitor(self):
+        s = time.time()
+        r = self.client.get_database_monitor()
+        ok = r.get('code') == 0
+        self.report.add_test_result("监控管理", "数据库监控", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 数据库监控")
+
     def test_jvm_monitor(self):
         s = time.time()
         r = self.client.get_jvm_monitor()
@@ -79,6 +90,27 @@ class MonitorTest:
         self.report.add_test_result("监控管理", "JVM监控", "passed" if ok else "failed", time.time()-s)
         heap = r.get('result', {}).get('heapUsage', 'N/A')
         print(f"{'✅' if ok else '❌'} JVM监控 (堆:{heap}%)")
+
+    def test_redis_monitor(self):
+        s = time.time()
+        r = self.client.get_redis_monitor()
+        ok = r.get('code') == 0
+        self.report.add_test_result("监控管理", "Redis监控", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} Redis监控")
+
+    def test_monitor_history(self):
+        s = time.time()
+        r = self.client.get_monitor_history("cpu")
+        ok = r.get('code') == 0
+        self.report.add_test_result("监控管理", "监控历史", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 监控历史")
+
+    def test_monitor_statistics(self):
+        s = time.time()
+        r = self.client.get_monitor_statistics()
+        ok = r.get('code') == 0
+        self.report.add_test_result("监控管理", "监控统计", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 监控统计")
 
     def test_alert_config(self):
         s = time.time()
@@ -96,7 +128,8 @@ class MonitorTest:
         r = self.client.get_alert_history()
         ok = r.get('code') == 0
         self.report.add_test_result("监控管理", "告警历史", "passed" if ok else "failed", time.time()-s)
-        print(f"{'✅' if ok else '❌'} 告警历史")
+        count = len(r.get('result', {}).get('list', []))
+        print(f"{'✅' if ok else '❌'} 告警历史 ({count}条)")
 
     def generate_report(self):
         d = os.path.join(os.path.dirname(__file__), '../../reports')

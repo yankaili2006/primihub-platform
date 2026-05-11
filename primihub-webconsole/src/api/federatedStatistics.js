@@ -134,3 +134,33 @@ export function deleteFederatedStatistics(data) {
     data
   })
 }
+
+// ==================== 结果存储配置 ====================
+
+export function getStatsStorageConfig() {
+  return request({ url: '/federatedStatistics/storage/config', method: 'get' })
+}
+
+export function saveStatsStorageConfig(data) {
+  return request({ url: '/federatedStatistics/storage/saveConfig', method: 'post', type: 'json', data })
+}
+
+export function testStatsStorageConnection(data) {
+  return request({ url: '/federatedStatistics/storage/testConnection', method: 'post', type: 'json', data })
+}
+
+export function getStoredResults(params) {
+  return request({ url: '/federatedStatistics/storage/results', method: 'get', params })
+}
+
+export function previewStoredResult(params) {
+  return request({ url: '/federatedStatistics/storage/preview', method: 'get', params })
+}
+
+export function downloadStoredResult(params) {
+  return request({ url: '/federatedStatistics/storage/download', method: 'get', params, responseType: 'blob' })
+}
+
+export function deleteStoredResult(data) {
+  return request({ url: '/federatedStatistics/storage/delete', method: 'delete', data })
+}

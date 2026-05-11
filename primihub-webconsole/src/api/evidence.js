@@ -1,5 +1,10 @@
 import request from '@/utils/request'
 
+// 存证创建
+export function createEvidence(data) {
+  return request({ url: '/evidence/createEvidence', method: 'post', data })
+}
+
 // 存证查询相关
 export function getEvidencePage(params) {
   return request({

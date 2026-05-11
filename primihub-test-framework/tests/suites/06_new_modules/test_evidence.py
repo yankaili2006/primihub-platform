@@ -22,10 +22,14 @@ class EvidenceTest:
         try:
             self.test_login()
             self.test_create_evidence()
+            self.test_evidence_detail()
             self.test_verify_evidence()
             self.test_get_statistics()
             self.test_apply_timestamp()
+            self.test_timestamp_page()
             self.test_evidence_config()
+            self.test_chain_list()
+            self.test_api_list_and_key()
             self.test_regenerate_api_key()
             self.test_get_evidence_page()
             self.generate_report()
@@ -52,6 +56,14 @@ class EvidenceTest:
         self.report.add_test_result("存证管理", "创建存证", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 创建存证 (ID: {self.evidence_id})")
 
+    def test_evidence_detail(self):
+        if not self.evidence_id: return
+        s = time.time()
+        r = self.client.get_evidence_detail(self.evidence_id)
+        ok = r.get('code') == 0
+        self.report.add_test_result("存证管理", "存证详情", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 存证详情")
+
     def test_verify_evidence(self):
         if not self.evidence_id: return
         s = time.time()
@@ -75,6 +87,14 @@ class EvidenceTest:
         self.report.add_test_result("存证管理", "申请时间戳", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 申请时间戳")
 
+    def test_timestamp_page(self):
+        s = time.time()
+        r = self.client.find_timestamp_page()
+        ok = r.get('code') == 0
+        count = len(r.get('result', {}).get('list', []))
+        self.report.add_test_result("存证管理", "时间戳列表", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 时间戳列表 ({count}条)")
+
     def test_evidence_config(self):
         s = time.time()
         r = self.client.get_evidence_config()
@@ -85,6 +105,26 @@ class EvidenceTest:
         ok2 = r2.get('code') == 0
         self.report.add_test_result("存证管理", "保存配置", "passed" if ok2 else "failed", time.time()-s2)
         print(f"{'✅' if ok else '❌'} 查询配置 | {'✅' if ok2 else '❌'} 保存配置")
+
+    def test_chain_list(self):
+        s = time.time()
+        r = self.client.get_chain_list()
+        ok = r.get('code') == 0
+        chains = r.get('result', [])
+        chain_names = [c.get('name', c.get('type', '')) for c in chains] if chains else []
+        self.report.add_test_result("存证管理", "区块链列表", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 区块链列表 ({'/'.join(chain_names)})")
+
+    def test_api_list_and_key(self):
+        s = time.time()
+        r = self.client.get_evidence_api_list()
+        ok = r.get('code') == 0
+        self.report.add_test_result("存证管理", "API接口列表", "passed" if ok else "failed", time.time()-s)
+        s2 = time.time()
+        r2 = self.client.get_evidence_api_key()
+        ok2 = r2.get('code') == 0
+        self.report.add_test_result("存证管理", "API密钥查询", "passed" if ok2 else "failed", time.time()-s2)
+        print(f"{'✅' if ok else '❌'} API接口 | {'✅' if ok2 else '❌'} API密钥")
 
     def test_regenerate_api_key(self):
         s = time.time()

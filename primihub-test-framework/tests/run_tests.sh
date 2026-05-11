@@ -74,9 +74,9 @@ PrimiHub 测试框架运行器
 选项:
   --all                 运行所有测试
   --suite SUITE         运行特定测试套件
-                        可选: user_management, data_management,
-                              project_task, privacy_computing,
-                              system_features
+                         可选: user_management, data_management,
+                               project_task, privacy_computing,
+                               system_features, new_modules
   --type TYPE           运行特定类型的测试
                         可选: api, flow, db
   --performance         运行性能测试
@@ -270,6 +270,7 @@ run_all_tests() {
         "03_project_task"
         "04_privacy_computing"
         "05_system_features"
+        "06_new_modules"
     )
 
     for suite in "${test_suites[@]}"; do

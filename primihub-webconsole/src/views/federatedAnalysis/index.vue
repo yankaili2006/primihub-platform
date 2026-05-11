@@ -6,6 +6,7 @@
       <el-tab-pane label="数据源管理" name="datasource" />
       <el-tab-pane label="日志记录" name="logs" />
     </el-tabs>
+    <el-button size="small" icon="el-icon-edit" style="margin-bottom: 16px;" @click="$router.push({name:'FederatedAnalysisSqlValidator'})">SQL校验工具</el-button>
 
     <!-- Tasks Panel -->
     <div v-show="activeTab === 'tasks'">
@@ -43,7 +44,7 @@
       </el-row>
 
       <!-- Table -->
-      <el-table v-loading="loading" :data="tableData" border @selection-change="handleSelectionChange">
+      <el-table v-loading="loading" :data="tableData" border empty-text="暂无数据，请创建联邦分析任务" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="taskId" label="任务ID" width="120" />
         <el-table-column prop="taskName" label="任务名称" width="180" />
@@ -760,6 +761,7 @@ export default {
           this.total = this.tableData.length
         }
       } catch (error) {
+        this.$message.warning('加载远程数据失败，显示示例数据: ' + (error.message || ''))
         this.tableData = this.getMockData()
         this.total = this.tableData.length
       }

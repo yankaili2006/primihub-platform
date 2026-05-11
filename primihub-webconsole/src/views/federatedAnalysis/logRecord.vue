@@ -30,7 +30,7 @@
       </el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="logData" border>
+    <el-table v-loading="loading" :data="logData" border empty-text="暂无日志记录">
       <el-table-column type="selection" width="50" />
       <el-table-column prop="logId" label="日志ID" width="100" />
       <el-table-column prop="taskId" label="任务ID" width="100" />

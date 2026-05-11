@@ -2,7 +2,7 @@
 
 -- 插入系统用户 (密码: admin)
 INSERT INTO sys_user (user_id, user_account, user_password, user_name, role_id_list, is_forbid, is_editable, is_del, register_type, first_login) VALUES
-(1, 'admin', 'a0f34ffac5a82245e4fca2e21f358a42', '管理员', '1', 0, 1, 0, 1);
+(1, 'admin', 'a0f34ffac5a82245e4fca2e21f358a42', '管理员', '1', 0, 1, 0, 1, 0);
 
 -- 插入系统角色
 INSERT INTO sys_role (role_id, role_name, is_editable, is_del) VALUES

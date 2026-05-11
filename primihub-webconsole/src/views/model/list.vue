@@ -109,6 +109,7 @@
 <script>
 import { getModelTaskSuccessList } from '@/api/model'
 import Pagination from '@/components/Pagination'
+import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
   components: {
@@ -129,6 +130,7 @@ export default {
       pageSize: 10,
       total: 0,
       pageCount: 0,
+      datePickerOptions: dateRangePickerOptions,
       modelTypeOptions: [
         {
           'key': '2',
@@ -221,7 +223,8 @@ export default {
         setTimeout(() => {
           this.listLoading = false
         }, 200)
-      }).catch(() => {
+      }).catch(e => {
+        console.error('获取模型列表失败', e)
         this.listLoading = false
       })
     },

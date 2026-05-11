@@ -119,6 +119,8 @@
 </template>
 
 <script>
+import { createBillingRule, updateBillingRule, getBillingRecordList, getBillingStatistics, exportBillingRecords } from '@/api/federatedBilling'
+
 export default {
   name: 'FederatedQueryBillingByCount',
   data() {
@@ -131,42 +133,83 @@ export default {
       },
       dateRange: [],
       currentPage: 1,
-      total: 100,
-      queryRecords: [
-        { queryId: 'FQ-001', userId: 'U001', queryType: 'PSI', queryCount: 10, unitPrice: 0.5, totalFee: 5.0, queryTime: '2024-01-15 10:30:00', status: 'completed', statusText: '已完成' },
-        { queryId: 'FQ-002', userId: 'U002', queryType: 'PIR', queryCount: 5, unitPrice: 0.5, totalFee: 2.5, queryTime: '2024-01-15 11:20:00', status: 'completed', statusText: '已完成' },
-        { queryId: 'FQ-003', userId: 'U003', queryType: 'PSI', queryCount: 20, unitPrice: 0.5, totalFee: 10.0, queryTime: '2024-01-15 14:15:00', status: 'completed', statusText: '已完成' }
-      ],
+      total: 0,
+      queryRecords: [],
       statistics: {
-        totalQueries: 1250,
-        totalFee: 625.0,
-        avgFee: 0.5,
-        todayQueries: 35
-      }
+        totalQueries: 0, totalFee: 0, avgFee: 0, todayQueries: 0
+      },
+      ruleId: null
     }
   },
+  created() {
+    this.fetchRecords()
+    this.fetchStats()
+  },
   methods: {
-    goBack() {
-      this.$router.go(-1)
-    },
+    goBack() { this.$router.go(-1) },
     getStatusType(status) {
       const types = { completed: 'success', processing: 'warning', failed: 'danger' }
       return types[status] || 'info'
     },
-    handleSaveConfig() {
-      this.$message.success('配置已保存')
+    async handleSaveConfig() {
+      try {
+        const payload = {
+          ruleName: '按次数计费_' + Date.now(),
+          billingType: 'by_count',
+          pricePerQuery: this.configForm.pricePerQuery,
+          minCharge: this.configForm.minCharge,
+          enableDiscount: this.configForm.enableDiscount ? 1 : 0,
+          discountThreshold: this.configForm.enableDiscount ? this.configForm.discountThreshold : 0,
+          isActive: 1
+        }
+        const res = this.ruleId
+          ? await updateBillingRule({ id: this.ruleId, ...payload })
+          : await createBillingRule(payload)
+        if (res.code === 0) {
+          if (!this.ruleId) this.ruleId = res.result?.ruleId
+          this.$message.success('配置已保存')
+        } else {
+          this.$message.error(res.message || '保存失败')
+        }
+      } catch (e) { this.$message.error('请求异常') }
     },
     handleReset() {
       this.configForm = { pricePerQuery: 0.5, minCharge: 1.0, enableDiscount: false, discountThreshold: 100 }
     },
-    handleQuery() {
-      this.$message.info('查询中...')
+    async handleQuery() {
+      this.currentPage = 1
+      await this.fetchRecords()
     },
-    handleExport() {
-      this.$message.success('导出成功')
+    async handleExport() {
+      try {
+        const res = await exportBillingRecords({ startTime: this.dateRange?.[0] || '', endTime: this.dateRange?.[1] || '' })
+        const blob = new Blob([res], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url; link.download = `billing_records_${Date.now()}.csv`
+        link.click(); window.URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      } catch (e) { this.$message.error('导出失败') }
     },
-    handlePageChange(page) {
-      this.currentPage = page
+    handlePageChange(page) { this.currentPage = page; this.fetchRecords() },
+    async fetchRecords() {
+      try {
+        const params = {
+          pageNum: this.currentPage, pageSize: 10,
+          startTime: this.dateRange?.[0] || '', endTime: this.dateRange?.[1] || ''
+        }
+        const res = await getBillingRecordList(params)
+        if (res.code === 0) {
+          this.queryRecords = res.result?.list || []
+          this.total = res.result?.total || 0
+        }
+      } catch (e) { console.error(e) }
+    },
+    async fetchStats() {
+      try {
+        const res = await getBillingStatistics()
+        if (res.code === 0) this.statistics = res.result || { totalQueries: 0, totalFee: 0, avgFee: 0, todayQueries: 0 }
+      } catch (e) { console.error(e) }
     }
   }
 }

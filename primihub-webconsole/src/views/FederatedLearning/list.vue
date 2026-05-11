@@ -44,13 +44,14 @@
             end-placeholder="结束时间"
             value-format="yyyy-MM-dd HH:mm:ss"
             :default-time="['00:00:00', '23:59:59']"
+            :picker-options="datePickerOptions"
             @change="handleDateChange"
           />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="el-icon-search" @click="search">查询</el-button>
           <el-button icon="el-icon-refresh-right" @click="reset" />
-          <el-button type="success" icon="el-icon-download" @click="handleExportLog">导出日志</el-button>
+          <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExportLog">导出日志</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -162,6 +163,7 @@
 <script>
 import { getTaskList, deleteTask, cancelTask, downloadModel, downloadResult, exportFederatedLearningLog } from '@/api/federatedLearning'
 import Pagination from '@/components/Pagination'
+import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
   name: 'FederatedLearningList',
@@ -207,7 +209,9 @@ export default {
         { label: '成功', value: 1 },
         { label: '失败', value: 3 },
         { label: '已取消', value: 4 }
-      ]
+      ],
+      datePickerOptions: dateRangePickerOptions,
+      exporting: false
     }
   },
   created() {
@@ -277,7 +281,7 @@ export default {
             clearInterval(this.timer)
           }
         })
-      }).catch(() => {})
+      }).catch(e => { console.error('取消删除', e) })
     },
     async cancelTask(row) {
       const res = await cancelTask({ taskId: row.taskId })
@@ -301,7 +305,8 @@ export default {
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('下载成功')
-      }).catch(() => {
+      }).catch(e => {
+        console.error('下载失败', e)
         this.$message.error('下载失败')
       })
     },
@@ -315,7 +320,8 @@ export default {
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('下载成功')
-      }).catch(() => {
+      }).catch(e => {
+        console.error('下载失败', e)
         this.$message.error('下载失败')
       })
     },
@@ -382,7 +388,8 @@ export default {
         link.click()
         window.URL.revokeObjectURL(url)
         this.$message.success('导出成功')
-      }).catch(() => {
+      }).catch(e => {
+        console.error('导出失败', e)
         this.$message.error('导出失败')
       })
     }

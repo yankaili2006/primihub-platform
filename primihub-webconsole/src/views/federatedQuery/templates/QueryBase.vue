@@ -4,9 +4,9 @@
 
     <el-card class="query-form">
       <div slot="header"><span>{{ pageTitle }}</span></div>
-      <el-form :model="form" label-width="120px">
-        <el-form-item label="任务名称" required>
-          <el-input v-model="form.taskName" placeholder="请输入任务名称" />
+      <el-form ref="queryForm" :model="form" :rules="rules" label-width="120px">
+        <el-form-item label="任务名称" prop="taskName">
+          <el-input v-model="form.taskName" placeholder="请输入任务名称" maxlength="64" show-word-limit />
         </el-form-item>
 
         <PartySelector v-model="form.parties" />
@@ -39,26 +39,34 @@ export default {
     return {
       algorithmConfig: { algorithm: this.defaultAlgorithm, mode: this.defaultMode },
       form: { taskName: '', parties: [], advancedConfig: {} },
-      loading: false
+      loading: false,
+      rules: {
+        taskName: [
+          { required: true, message: '请输入任务名称', trigger: 'blur' },
+          { max: 64, message: '任务名称不能超过64个字符', trigger: 'blur' }
+        ]
+      }
     }
   },
   methods: {
     async submitQuery() {
-      if (!this.form.taskName) return this.$message.warning('请输入任务名称')
-      this.loading = true
-      try {
-        await createFederatedQuery({
-          ...this.form,
-          algorithm: this.algorithmConfig.algorithm,
-          mode: this.algorithmConfig.mode
-        })
-        this.$message.success('提交成功')
-        this.$router.push('/federatedQuery/list')
-      } catch (e) {
-        this.$message.error('提交失败')
-      } finally {
-        this.loading = false
-      }
+      this.$refs.queryForm.validate(async valid => {
+        if (!valid) return
+        this.loading = true
+        try {
+          await createFederatedQuery({
+            ...this.form,
+            algorithm: this.algorithmConfig.algorithm,
+            mode: this.algorithmConfig.mode
+          })
+          this.$message.success('提交成功')
+          this.$router.push('/federatedQuery/list')
+        } catch (e) {
+          this.$message.error(e.response?.data?.message || '提交失败，请检查网络或参数')
+        } finally {
+          this.loading = false
+        }
+      })
     }
   }
 }

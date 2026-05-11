@@ -146,8 +146,19 @@ export default {
         }
       })
     },
-    revokeKey() {
-      this.$message.info('撤销功能开发中...')
+    async revokeKey() {
+      this.$confirm('撤销密钥后，所有使用该密钥的应用将无法调用存证API，是否继续？', '警告', { confirmButtonText: '确认撤销', cancelButtonText: '取消', type: 'warning' }).then(async() => {
+        try {
+          const res = await regenerateApiKey({ action: 'revoke' })
+          if (res.code === 0) {
+            this.$message.success('密钥已撤销')
+            this.apiKey = ''
+            this.secretKey = ''
+          } else {
+            this.$message.error(res.message || '撤销失败')
+          }
+        } catch (e) { this.$message.error('请求异常') }
+      }).catch(() => {})
     },
     async testApi() {
       this.testing = true

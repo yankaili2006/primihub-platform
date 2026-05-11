@@ -47,12 +47,13 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-  sql:
-    init:
-      mode: always
-      continue-on-error: true
-      schema-locations: classpath:schema-complete-h2.sql
-      data-locations: classpath:data-complete-h2.sql
+  datasource:
+    initialization-mode: always
+    continue-on-error: true
+    schema:
+      - classpath:schema-complete-h2.sql
+    data:
+      - classpath:data-complete-h2.sql
   h2:
     console:
       enabled: true

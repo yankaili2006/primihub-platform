@@ -4,7 +4,7 @@
 
     <el-card>
       <div slot="header"><span>数据源配置</span></div>
-      <el-form ref="configForm" :model="configForm" label-width="120px">
+      <el-form ref="configForm" :model="configForm" :rules="formRules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="警务数据源">
@@ -80,6 +80,12 @@ export default {
   data() {
     return {
       computing: false,
+      formRules: {
+        policeDataSource: [{ required: true, message: '请选择警务数据源', trigger: 'change' }],
+        insuranceDataSource: [{ required: true, message: '请选择保险数据源', trigger: 'change' }],
+        intersectField: [{ required: true, message: '请选择交集字段', trigger: 'change' }],
+        encryptAlgorithm: [{ required: true, message: '请选择加密算法', trigger: 'change' }]
+      },
       configForm: {
         policeDataSource: '',
         insuranceDataSource: '',

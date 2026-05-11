@@ -9,7 +9,7 @@
       <el-tabs v-model="activeTab" type="border-card">
         <!-- 网络地址设置 -->
         <el-tab-pane label="网络地址设置" name="network">
-          <el-form :model="networkConfig" label-width="180px">
+          <el-form ref="networkForm" :model="networkConfig" :rules="networkRules" label-width="180px">
             <el-divider content-position="left">基础网络配置</el-divider>
             <el-form-item label="平台域名">
               <el-input v-model="networkConfig.platformDomain" placeholder="https://platform.example.com" />
@@ -360,6 +360,12 @@ export default {
   data() {
     return {
       activeTab: 'network',
+      networkRules: {
+        platformDomain: [{ pattern: /^https?:\/\/.+/, message: '请输入正确URL，以 http:// 或 https:// 开头', trigger: 'blur' }],
+        apiGateway: [{ pattern: /^https?:\/\/.+/, message: '请输入正确URL', trigger: 'blur' }],
+        websocketUrl: [{ pattern: /^wss?:\/\/.+/, message: '请输入正确WebSocket地址，以 ws:// 或 wss:// 开头', trigger: 'blur' }],
+        fileServerUrl: [{ pattern: /^https?:\/\/.+/, message: '请输入正确URL', trigger: 'blur' }]
+      },
       networkConfig: {
         platformDomain: '',
         apiGateway: '',

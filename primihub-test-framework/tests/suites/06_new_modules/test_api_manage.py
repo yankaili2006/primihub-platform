@@ -26,6 +26,7 @@ class ApiManageTest:
             self.test_get_api_detail()
             self.test_toggle_api_status()
             self.test_add_api_auth()
+            self.test_update_api_auth()
             self.test_get_api_statistics()
             self.test_get_api_page()
             self.test_delete_api()
@@ -87,8 +88,23 @@ class ApiManageTest:
                 "authType": "APP_KEY", "description": "接口授权测试"}
         r = self.client.add_api_auth(data)
         ok = r.get('code') == 0
+        if ok:
+            r2 = self.client.get_api_auth_page(page=1, page_size=100)
+            items = r2.get('result', {}).get('list', [])
+            for item in items:
+                if item.get('apiId') == self.api_id:
+                    self.auth_id = item.get('id')
+                    break
         self.report.add_test_result("接口管理", "新增授权", "passed" if ok else "failed", time.time()-s)
-        print(f"{'✅' if ok else '❌'} 新增授权")
+        print(f"{'✅' if ok else '❌'} 新增授权 (AuthID: {self.auth_id})")
+
+    def test_update_api_auth(self):
+        if not self.auth_id: return
+        s = time.time()
+        r = self.client.update_api_auth({"id": self.auth_id, "description": "已更新的授权描述"})
+        ok = r.get('code') == 0
+        self.report.add_test_result("接口管理", "更新授权", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 更新授权")
 
     def test_get_api_statistics(self):
         s = time.time()

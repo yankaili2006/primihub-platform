@@ -4,7 +4,7 @@
 
     <el-card>
       <div slot="header"><span>特征转换配置</span></div>
-      <el-form ref="convertForm" :model="convertForm" label-width="120px">
+      <el-form ref="convertForm" :model="convertForm" :rules="formRules" label-width="120px">
         <el-form-item label="证件类型">
           <el-select v-model="convertForm.certType" placeholder="请选择证件类型" style="width: 300px;">
             <el-option label="身份证" value="idCard" />
@@ -73,6 +73,11 @@ export default {
     return {
       converting: false,
       fileList: [],
+      formRules: {
+        certType: [{ required: true, message: '请选择证件类型', trigger: 'change' }],
+        featureTypes: [{ required: true, message: '请至少选择一项特征', trigger: 'change' }],
+        algorithm: [{ required: true, message: '请选择算法', trigger: 'change' }]
+      },
       convertForm: {
         certType: 'idCard',
         featureTypes: ['photo'],
@@ -116,40 +121,3 @@ export default {
     handleDownload(row) { this.$message.success(`开始下载: ${row.taskId}`) }
   }
 }
-  },
-  methods: {
-    goBack() { this.$router.go(-1) },
-    getStatusType(status) {
-      return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
-    },
-    handleFileChange(file, fileList) {
-      this.fileList = fileList
-    },
-    handleConvert() {
-      this.converting = true
-      setTimeout(() => {
-        this.converting = false
-        this.taskList.unshift({
-          taskId: `FC-${Date.now()}`,
-          certType: { idCard: '身份证', passport: '护照', driverLicense: '驾驶证', socialCard: '社保卡' }[this.convertForm.certType],
-          featureTypes: this.convertForm.featureTypes.map(t => ({ photo: '人脸特征', fingerprint: '指纹特征', text: '文字信息', barcode: '条码信息' }[t])).join(', '),
-          algorithm: this.convertForm.algorithm,
-          inputCount: this.fileList.length || Math.floor(Math.random() * 500) + 100,
-          successCount: 0,
-          status: 'completed',
-          statusText: '已完成',
-          createTime: new Date().toLocaleString()
-        })
-        this.taskList[0].successCount = this.taskList[0].inputCount - Math.floor(Math.random() * 5)
-        this.$message.success('特征转换完成')
-      }, 2000)
-    },
-    handleView(row) { this.$message.info(`查看任务: ${row.taskId}`) },
-    handleDownload(row) { this.$message.success(`开始下载: ${row.taskId}`) }
-  }
-}
-</script>
-
-<style scoped>
-.app-container { padding: 20px; }
-</style>

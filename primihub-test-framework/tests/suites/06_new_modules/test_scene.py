@@ -27,10 +27,13 @@ class SceneTest:
             self.test_police_task_list()
             self.test_police_save_api()
             self.test_police_generate_key()
+            self.test_police_key_list()
             self.test_police_encrypt_decrypt()
             self.test_cert_create_task()
-            self.test_cert_api()
+            self.test_cert_save_api()
+            self.test_cert_api_list()
             self.test_cert_generate_key()
+            self.test_cert_key_list()
             self.generate_report()
         except Exception as e:
             print(f"\n错误: {e}")
@@ -81,6 +84,14 @@ class SceneTest:
         self.report.add_test_result("场景定制化", "警务-生成密钥", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 警务-生成密钥 (ID: {self.police_key_id})")
 
+    def test_police_key_list(self):
+        s = time.time()
+        r = self.client.get_police_key_list()
+        ok = r.get('code') == 0
+        count = len(r.get('result', []))
+        self.report.add_test_result("场景定制化", "警务-密钥列表", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 警务-密钥列表 ({count}个)")
+
     def test_police_encrypt_decrypt(self):
         if not self.police_key_id: return
         s = time.time()
@@ -102,12 +113,20 @@ class SceneTest:
         self.report.add_test_result("场景定制化", "电子证件-创建任务", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 电子证件-创建任务 (ID: {self.cert_task_id})")
 
-    def test_cert_api(self):
+    def test_cert_save_api(self):
+        s = time.time()
+        r = self.client.save_cert_api({"apiName": f"测试证件API_{int(time.time())}", "apiUrl": "http://test.cert/api/verify"})
+        ok = r.get('code') == 0
+        self.report.add_test_result("场景定制化", "电子证件-保存API", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 电子证件-保存API")
+
+    def test_cert_api_list(self):
         s = time.time()
         r = self.client.get_cert_api_list()
         ok = r.get('code') == 0
         self.report.add_test_result("场景定制化", "电子证件-API列表", "passed" if ok else "failed", time.time()-s)
-        print(f"{'✅' if ok else '❌'} 电子证件-API列表")
+        count = len(r.get('result', []))
+        print(f"{'✅' if ok else '❌'} 电子证件-API列表 ({count}个)")
 
     def test_cert_generate_key(self):
         s = time.time()
@@ -115,6 +134,14 @@ class SceneTest:
         ok = r.get('code') == 0
         self.report.add_test_result("场景定制化", "电子证件-生成密钥", "passed" if ok else "failed", time.time()-s)
         print(f"{'✅' if ok else '❌'} 电子证件-生成密钥")
+
+    def test_cert_key_list(self):
+        s = time.time()
+        r = self.client.get_cert_key_list()
+        ok = r.get('code') == 0
+        count = len(r.get('result', []))
+        self.report.add_test_result("场景定制化", "电子证件-密钥列表", "passed" if ok else "failed", time.time()-s)
+        print(f"{'✅' if ok else '❌'} 电子证件-密钥列表 ({count}个)")
 
     def generate_report(self):
         d = os.path.join(os.path.dirname(__file__), '../../reports')

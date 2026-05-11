@@ -186,6 +186,49 @@ export const asyncRoutes = [
         name: 'DifferenceList',
         component: () => import('@/views/Difference/list'),
         meta: { title: '联邦求差', breadcrumb: false }
+      },
+      {
+        path: 'task',
+        name: 'DifferenceTask',
+        hidden: true,
+        component: () => import('@/views/Difference/task'),
+        meta: { title: '求差任务', activeMenu: '/Difference/list' }
+      },
+      {
+        path: 'detail/:id',
+        name: 'DifferenceDetail',
+        hidden: true,
+        component: () => import('@/views/Difference/detail'),
+        meta: { title: '求差详情', activeMenu: '/Difference/list' }
+      }
+    ]
+  },
+  {
+    path: '/SingleParty',
+    component: Layout,
+    name: 'SingleParty',
+    redirect: '/SingleParty/list',
+    meta: { title: '单方算法', icon: 'el-icon-s-data' },
+    children: [
+      {
+        path: 'list',
+        name: 'SinglePartyList',
+        component: () => import('@/views/singleParty/list'),
+        meta: { title: '单方算法', breadcrumb: false }
+      },
+      {
+        path: 'task',
+        name: 'SinglePartyTask',
+        hidden: true,
+        component: () => import('@/views/singleParty/task'),
+        meta: { title: '创建任务', activeMenu: '/SingleParty/list' }
+      },
+      {
+        path: 'detail/:id',
+        name: 'SinglePartyDetail',
+        hidden: true,
+        component: () => import('@/views/singleParty/detail'),
+        meta: { title: '任务详情', activeMenu: '/SingleParty/list' }
       }
     ]
   },
@@ -201,6 +244,20 @@ export const asyncRoutes = [
         name: 'UnionList',
         component: () => import('@/views/Union/list'),
         meta: { title: '联邦求并', breadcrumb: false }
+      },
+      {
+        path: 'task',
+        name: 'UnionTask',
+        hidden: true,
+        component: () => import('@/views/Union/task'),
+        meta: { title: '求并任务', activeMenu: '/Union/list' }
+      },
+      {
+        path: 'detail/:id',
+        name: 'UnionDetail',
+        hidden: true,
+        component: () => import('@/views/Union/detail'),
+        meta: { title: '求并详情', activeMenu: '/Union/list' }
       }
     ]
   },
@@ -383,6 +440,12 @@ export const asyncRoutes = [
         name: 'FederatedAnalysisIndex',
         component: () => import('@/views/federatedAnalysis/index'),
         meta: { title: '联邦分析' }
+      },
+      {
+        path: 'sqlValidator',
+        name: 'FederatedAnalysisSqlValidator',
+        component: () => import('@/views/federatedAnalysis/sqlValidator'),
+        meta: { title: 'SQL校验工具' }
       },
       {
         path: 'relationalDB',
