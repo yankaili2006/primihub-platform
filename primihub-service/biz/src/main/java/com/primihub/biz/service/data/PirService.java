@@ -47,7 +47,7 @@ public class PirService {
     }
     public BaseResultEntity pirSubmitTask(DataPirReq req, String pirParam) {
         BaseResultEntity dataResource = otherBusinessesService.getDataResource(req.getResourceId());
-        if (dataResource.getCode()!=0) {
+        if (dataResource.getCode()!=0 || dataResource.getResult() == null) {
             return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"资源查询失败");
         }
         Map<String, Object> pirDataResource = (LinkedHashMap)dataResource.getResult();
