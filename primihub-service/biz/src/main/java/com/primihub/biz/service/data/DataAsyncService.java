@@ -355,6 +355,7 @@ public class DataAsyncService implements ApplicationContextAware {
                 taskParam.getTaskContentParam().setQueryParam(querys);
                 taskParam.getTaskContentParam().setServerData(dataPirTask.getResourceId());
                 taskParam.getTaskContentParam().setOutputFullFilename(sb.toString());
+                taskParam.getTaskContentParam().setPirType(0);
                 List<String> columns = Arrays.asList(resourceColumnNames.split(","));
                 List<String> keyColumns = Arrays.asList(dataPirKeyQuery.getKey());
                 taskParam.getTaskContentParam().setKeyColumns(keyColumns.stream().map(columns::indexOf).toArray(Integer[]::new));

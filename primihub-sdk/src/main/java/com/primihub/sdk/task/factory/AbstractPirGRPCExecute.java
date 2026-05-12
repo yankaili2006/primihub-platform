@@ -45,7 +45,7 @@ public class AbstractPirGRPCExecute extends AbstractGRPCExecuteFactory {
             }
             Common.ParamValue clientDataParamValue = Common.ParamValue.newBuilder().setIsArray(true).setValueStringArray(builder).build();
             Common.ParamValue serverDataParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(param.getTaskContentParam().getServerData().getBytes(StandardCharsets.UTF_8))).build();
-            Common.ParamValue pirTagParamValue = Common.ParamValue.newBuilder().setValueInt32(1).build();
+            Common.ParamValue pirTagParamValue = Common.ParamValue.newBuilder().setValueInt32(param.getTaskContentParam().getPirType()).build();
             Common.ParamValue outputFullFilenameParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(param.getTaskContentParam().getOutputFullFilename().getBytes(StandardCharsets.UTF_8))).build();
             String queryConfig = "";
             if (param.getTaskContentParam().getKeyColumns() == null || param.getTaskContentParam().getKeyColumns().length==0){
