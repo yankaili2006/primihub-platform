@@ -224,38 +224,17 @@ public class DataAsyncService implements ApplicationContextAware {
         }
         String resourceId, resourceColumnNameList;
         int available;
-        if (dataPsi.getOtherOrganId().equals(organConfiguration.getSysLocalOrganId())) {
-            DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
-            resourceId = StringUtils.isNotBlank(otherDataResource.getResourceFusionId()) ? otherDataResource.getResourceFusionId() : otherDataResource.getResourceId().toString();
-            resourceColumnNameList = otherDataResource.getFileHandleField();
-            available = otherDataResource.getResourceState();
-        } else {
-            BaseResultEntity dataResource = otherBusinessesService.getDataResource(dataPsi.getOtherResourceId());
-            if (dataResource == null || dataResource.getCode() != 0 || dataResource.getResult() == null || !(dataResource.getResult() instanceof Map)) {
-                // Fallback to local database query for all-in-one deployment
-                log.warn("Remote resource query failed for resourceId: {}, falling back to local database", dataPsi.getOtherResourceId());
-                DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
-                if (otherDataResource == null) {
-                    log.error("Failed to query resource from both remote and local database for resourceId: {}", dataPsi.getOtherResourceId());
-                    psiTask.setTaskState(TaskStateEnum.FAIL.getStateType());
-                    dataPsiPrRepository.updateDataPsiTask(psiTask);
-                    return;
-                }
-                resourceId = StringUtils.isNotBlank(otherDataResource.getResourceFusionId()) ? otherDataResource.getResourceFusionId() : otherDataResource.getResourceId().toString();
-                resourceColumnNameList = otherDataResource.getFileHandleField();
-                available = otherDataResource.getResourceState();
-            } else {
-                Map<String, Object> otherDataResource = (LinkedHashMap) dataResource.getResult();
-                resourceId = otherDataResource.getOrDefault("resourceId", "1").toString();
-                resourceColumnNameList = otherDataResource.getOrDefault("resourceColumnNameList", "").toString();
-                available = Integer.parseInt(otherDataResource.getOrDefault("available", "1").toString());
-                // For PSI execution, always prefer the locally-known fusion ID
-                DataResource localResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
-                if (localResource != null && StringUtils.isNotBlank(localResource.getResourceFusionId())) {
-                    resourceId = localResource.getResourceFusionId();
-                }
-            }
+        // Always use local database for PSI resource lookup (all-in-one deployment)
+        DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+        if (otherDataResource == null) {
+            log.error("Failed to query other resource from local database for resourceId: {}", dataPsi.getOtherResourceId());
+            psiTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+            dataPsiPrRepository.updateDataPsiTask(psiTask);
+            return;
         }
+        resourceId = StringUtils.isNotBlank(otherDataResource.getResourceFusionId()) ? otherDataResource.getResourceFusionId() : otherDataResource.getResourceId().toString();
+        resourceColumnNameList = otherDataResource.getFileHandleField();
+        available = otherDataResource.getResourceState();
         DataTask dataTask = new DataTask();
         dataTask.setTaskIdName(psiTask.getTaskId());
         if (taskName == null){
