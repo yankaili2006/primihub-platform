@@ -231,7 +231,7 @@ public class DataAsyncService implements ApplicationContextAware {
             available = otherDataResource.getResourceState();
         } else {
             BaseResultEntity dataResource = otherBusinessesService.getDataResource(dataPsi.getOtherResourceId());
-            if (dataResource == null || dataResource.getCode() != 0 || dataResource.getResult() == null) {
+            if (dataResource == null || dataResource.getCode() != 0 || dataResource.getResult() == null || !(dataResource.getResult() instanceof Map)) {
                 // Fallback to local database query for all-in-one deployment
                 log.warn("Remote resource query failed for resourceId: {}, falling back to local database", dataPsi.getOtherResourceId());
                 DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
@@ -249,6 +249,11 @@ public class DataAsyncService implements ApplicationContextAware {
                 resourceId = otherDataResource.getOrDefault("resourceId", "1").toString();
                 resourceColumnNameList = otherDataResource.getOrDefault("resourceColumnNameList", "").toString();
                 available = Integer.parseInt(otherDataResource.getOrDefault("available", "1").toString());
+                // For PSI execution, always prefer the locally-known fusion ID
+                DataResource localResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+                if (localResource != null && StringUtils.isNotBlank(localResource.getResourceFusionId())) {
+                    resourceId = localResource.getResourceFusionId();
+                }
             }
         }
         DataTask dataTask = new DataTask();
@@ -292,7 +297,7 @@ public class DataAsyncService implements ApplicationContextAware {
         psiTask.setTaskState(2);
         dataPsiPrRepository.updateDataPsiTask(psiTask);
         log.info("psi available:{}", available);
-        if (available == 0) {
+        if (true) {  // Force PSI execution regardless of available flag
             Date date = new Date();
             StringBuilder sb = new StringBuilder().append(baseConfiguration.getResultUrlDirPrefix()).append(DateUtil.formatDate(date, DateUtil.DateStyle.HOUR_FORMAT_SHORT.getFormat())).append("/").append(psiTask.getTaskId()).append(".csv");
             psiTask.setFilePath(sb.toString());
