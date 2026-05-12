@@ -96,7 +96,7 @@ export default {
   },
   data() {
     return {
-      datePickerOptions,
+      datePickerOptions: dateRangePickerOptions,
       query: { organId: '', taskName: '', taskState: '', createDate: [] },
       allDataUnionTask: [], organList: [], listLoading: false, exporting: false,
       pageSize: 10, totalPage: 0, total: 0, pageNo: 1, timer: null,

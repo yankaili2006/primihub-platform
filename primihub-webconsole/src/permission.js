@@ -10,6 +10,7 @@ NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
 const whiteList = ['/register', '/login', '/forgotPwd', '/auth'] // no redirect whitelist
 let flag = 0
+let _retryCount = 0
 
 router.beforeEach(async(to, from, next) => {
   // start progress bar
@@ -30,6 +31,7 @@ router.beforeEach(async(to, from, next) => {
       NProgress.done()
     } else {
       if (flag === 0) { // 刷新后空白问题
+        _retryCount = 0
         try {
           // 恢复用户信息到 store（包括 userId）
           await store.dispatch('user/getInfo')
@@ -47,6 +49,15 @@ router.beforeEach(async(to, from, next) => {
       } else {
         // 检查路由是否匹配，如果未匹配则尝试重新生成路由（处理无痕模式等场景）
         if (to.matched.length === 0) {
+          if (_retryCount >= 1) {
+            console.warn('路由重试次数过多，跳转登录页', to.path)
+            Message({ message: '暂无页面权限，请重新登录', type: 'warning' })
+            await store.dispatch('user/resetToken')
+            next(`/login?redirect=${to.fullPath}`)
+            NProgress.done()
+            return
+          }
+          _retryCount++
           console.log('未匹配到路由，尝试重新生成', to.path)
           try {
             const permissionList = await store.dispatch('user/getPermission')
@@ -54,23 +65,16 @@ router.beforeEach(async(to, from, next) => {
               await store.dispatch('permission/generateRoutes', permissionList)
               next({ ...to, replace: true })
             } else {
-              Message({
-                message: '暂无权限',
-                type: 'warning'
-              })
-              next('/') // 不存在跳转首页
+              next(`/login?redirect=${to.fullPath}`)
               NProgress.done()
             }
           } catch (error) {
             console.error('重新生成路由失败', error)
-            Message({
-              message: '暂无权限',
-              type: 'warning'
-            })
-            next('/') // 不存在跳转首页
+            next(`/login?redirect=${to.fullPath}`)
             NProgress.done()
           }
         } else {
+          _retryCount = 0
           next()
         }
       }

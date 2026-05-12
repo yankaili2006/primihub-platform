@@ -26,7 +26,7 @@ public class ReasoningController {
      */
     @GetMapping("getReasoningList")
     public BaseResultEntity getReasoningList(ReasoningListReq req,
-                                             @RequestHeader("userId") Long userId){
+                                             @RequestHeader(value = "userId", required = false) Long userId){
         if (userId==null || userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }
@@ -35,7 +35,7 @@ public class ReasoningController {
     }
     @PostMapping("saveReasoning")
     public BaseResultEntity saveReasoning(DataReasoningReq req,
-                                          @RequestHeader("userId") Long userId){
+                                          @RequestHeader(value = "userId", required = false) Long userId){
         if (userId==null || userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }

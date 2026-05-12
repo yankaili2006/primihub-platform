@@ -48,6 +48,7 @@ const mutations = {
   },
   SET_PERMISSION(state, list) {
     localStorage.setItem(PER_KEY, JSON.stringify(list))
+    localStorage.setItem(PER_KEY + '_cnt', String(list ? list.length : 0))
     state.permissionList = list
   },
   RESET_STATE: (state) => {
@@ -130,19 +131,50 @@ const actions = {
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
-      const userData = JSON.parse(localStorage.getItem(USER_INFO))
-      commit('SET_USER_INFO', userData)
-      commit('SET_USER_NAME', userData.userName)
-      commit('SET_USER_ORGAN_ID', userData.organIdList)
-      commit('SET_USER_ORGAN_NAME', userData.organIdListDesc)
-      resolve(userData)
+      try {
+        const raw = localStorage.getItem(USER_INFO)
+        if (!raw) {
+          commit('RESET_STATE')
+          resolve({})
+          return
+        }
+        const userData = JSON.parse(raw)
+        if (!userData) {
+          resolve({})
+          return
+        }
+        commit('SET_USER_INFO', userData)
+        commit('SET_USER_NAME', userData.userName || '')
+        commit('SET_USER_ORGAN_ID', userData.organIdList || '')
+        commit('SET_USER_ORGAN_NAME', userData.organIdListDesc || '')
+        resolve(userData)
+      } catch (e) {
+        commit('RESET_STATE')
+        resolve({})
+      }
     })
   },
   getPermission({ commit, state }) {
-    return new Promise((resolve, reject) => {
-      const permissionList = JSON.parse(localStorage.getItem(PER_KEY))
-      commit('SET_PERMISSION', permissionList)
-      resolve(permissionList)
+    return new Promise((resolve) => {
+      try {
+        const raw = localStorage.getItem(PER_KEY)
+        if (!raw) {
+          commit('SET_PERMISSION', [])
+          resolve([])
+          return
+        }
+        const permissionList = JSON.parse(raw)
+        if (!Array.isArray(permissionList)) {
+          commit('SET_PERMISSION', [])
+          resolve([])
+          return
+        }
+        commit('SET_PERMISSION', permissionList)
+        resolve(permissionList)
+      } catch (e) {
+        commit('SET_PERMISSION', [])
+        resolve([])
+      }
     })
   },
 

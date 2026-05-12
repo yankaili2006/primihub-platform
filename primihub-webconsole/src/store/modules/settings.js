@@ -34,7 +34,7 @@ const state = {
   isShowLogo,
   isOpenTracing,
   isHideBigModel: true,
-  isHideNodeMap: true
+  isHideNodeMap: false
 }
 
 const mutations = {

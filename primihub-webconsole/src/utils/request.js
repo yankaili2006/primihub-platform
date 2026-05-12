@@ -7,6 +7,7 @@ import { message } from '@/utils/resetMessage'
 
 let loadingInstance = null
 let needLoadingRequestCount = 0
+let loadingTimer = null
 
 function startLoading() {
   if (needLoadingRequestCount === 0) {
@@ -16,13 +17,24 @@ function startLoading() {
       spinner: 'el-icon-loading',
       background: 'rgba(255,255,255,0.5)'
     })
+    clearTimeout(loadingTimer)
+    loadingTimer = setTimeout(() => {
+      if (needLoadingRequestCount > 0) {
+        needLoadingRequestCount = 0
+        loadingInstance && loadingInstance.close()
+      }
+    }, 15000)
   }
   needLoadingRequestCount++
 }
 function endLoading() {
-  needLoadingRequestCount--
-  if (needLoadingRequestCount <= 0) {
-    loadingInstance && loadingInstance.close()
+  needLoadingRequestCount = Math.max(0, needLoadingRequestCount - 1)
+  if (needLoadingRequestCount === 0) {
+    clearTimeout(loadingTimer)
+    if (loadingInstance) {
+      loadingInstance.close()
+      loadingInstance = null
+    }
   }
 }
 
@@ -42,9 +54,6 @@ service.interceptors.request.use(
     // 获取 token，如果不存在则使用空字符串（确保参数存在）
     const token = getToken() || ''
 
-    if (config.showLoading === undefined) {
-      config.showLoading = true
-    }
     if (config.showLoading) {
       startLoading()
     }
@@ -109,9 +118,6 @@ service.interceptors.request.use(
 // response interceptor
 service.interceptors.response.use(
   response => {
-    if (response.config.showLoading === undefined) {
-      response.config.showLoading = true
-    }
     endLoading()
     const { data } = response
     const { code, msg, result } = data

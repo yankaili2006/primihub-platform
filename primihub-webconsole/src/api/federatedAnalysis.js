@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取联邦分析任务列表
 export function getFederatedAnalysisList(params) {
   return request({
-    url: '/data/federatedAnalysis/list',
+    url: '/data/federatedAnalysis/task/list',
     method: 'get',
     params
   })
@@ -12,7 +12,7 @@ export function getFederatedAnalysisList(params) {
 // 创建联邦分析任务
 export function createFederatedAnalysis(data) {
   return request({
-    url: '/data/federatedAnalysis/create',
+    url: '/data/federatedAnalysis/task/create',
     method: 'post',
     type: 'json',
     data
@@ -22,7 +22,7 @@ export function createFederatedAnalysis(data) {
 // 获取联邦分析任务详情
 export function getFederatedAnalysisDetail(params) {
   return request({
-    url: '/data/federatedAnalysis/detail',
+    url: '/data/federatedAnalysis/task/detail',
     method: 'get',
     params
   })
@@ -31,7 +31,7 @@ export function getFederatedAnalysisDetail(params) {
 // 执行联邦分析任务
 export function startFederatedAnalysis(data) {
   return request({
-    url: '/data/federatedAnalysis/start',
+    url: '/data/federatedAnalysis/task/run',
     method: 'post',
     data
   })
@@ -40,7 +40,7 @@ export function startFederatedAnalysis(data) {
 // 导出分析结果
 export function exportFederatedAnalysisResult(params) {
   return request({
-    url: '/data/federatedAnalysis/exportResult',
+    url: '/data/federatedAnalysis/result/export',
     method: 'get',
     params,
     responseType: 'blob'

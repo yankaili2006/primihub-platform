@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 
 import javax.servlet.*;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Slf4j
+@Component
 @WebFilter(filterName = "standaloneAuthFilter", urlPatterns = {"/*"})
 public class StandaloneAuthFilter implements Filter {
 
@@ -69,7 +71,9 @@ public class StandaloneAuthFilter implements Filter {
             // Extend token expiration
             sysUserPrimaryRedisRepository.expireUserLoginStatus(token, sysUserListVO.getUserId());
 
-            // Add userId header to request
+            // Add userId as request attribute AND header via wrapper
+            httpRequest.setAttribute("userId", sysUserListVO.getUserId());
+
             HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpRequest) {
                 @Override
                 public String getHeader(String name) {
@@ -95,7 +99,17 @@ public class StandaloneAuthFilter implements Filter {
             chain.doFilter(wrapper, response);
 
         } catch (Exception e) {
-            log.error("Error validating token for path: {}", requestPath, e);
+            log.warn("Auth filter bypass for path: {} (error: {})", requestPath, e.getMessage());
+            // Still set userId attribute from token if possible
+            try {
+                String t = getToken(httpRequest);
+                if (StringUtils.isNotBlank(t)) {
+                    SysUserListVO u = sysUserPrimaryRedisRepository.findUserLoginStatus(t);
+                    if (u != null) {
+                        httpRequest.setAttribute("userId", u.getUserId());
+                    }
+                }
+            } catch (Exception ignored) {}
             chain.doFilter(request, response);
         }
     }

@@ -96,7 +96,7 @@ export const constantRoutes = [
   {
     path: '/',
     component: Layout,
-    redirect: '/map/index'
+    redirect: '/project/list'
   }
 ]
 

@@ -10,43 +10,34 @@ import router, { constantRoutes, asyncRoutes, resetRouter } from '@/router'
 
 function getRoutes(routers, rootList) {
   const realRoutes = []
-  let curRoutes = {}
-  // 根据当前router authCode做比对
-  const filter = (code) => {
-    return rootList.find(cur => {
-      return cur.authCode === code
-    })
-  }
-  routers.forEach((item, index) => {
-    const current = filter(item.name)
-    if (current) {
-      curRoutes = Object.assign({}, curRoutes, {
-        name: item.name,
-        path: item.path,
-        component: item.component,
-        meta: item.meta,
-        hidden: item.hidden || false,
-        redirect: item.redirect || ''
-      })
-
-      curRoutes.children = []
-      if (item.children && item.children.length > 0) {
-        item.children.forEach(item => {
-          const current = filter(item.name)
-          if (current) {
-            curRoutes.children.push({
-              name: item.name,
-              path: item.path,
-              component: item.component,
-              meta: item.meta,
-              hidden: item.hidden || false,
-              redirect: item.redirect || ''
-            })
-          }
-        })
-      }
-      realRoutes.push(curRoutes)
+  const filter = (code) => rootList.find(cur => cur.authCode === code)
+  routers.forEach((item) => {
+    if (!filter(item.name)) return
+    const route = {
+      name: item.name,
+      path: item.path,
+      component: item.component,
+      meta: item.meta,
+      hidden: item.hidden || false,
+      redirect: item.redirect || '',
+      children: [],
     }
+    if (item.children && item.children.length > 0) {
+      item.children.forEach(child => {
+        if (filter(child.name)) {
+          route.children.push({
+            name: child.name,
+            path: child.path,
+            component: child.component,
+            meta: child.meta,
+            hidden: child.hidden || false,
+            redirect: child.redirect || '',
+          })
+        }
+      })
+    }
+    if (item.children && item.children.length > 0 && route.children.length === 0) return
+    realRoutes.push(route)
   })
   return realRoutes
 }

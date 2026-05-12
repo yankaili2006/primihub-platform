@@ -50,7 +50,7 @@ public class ModelController {
             @ApiImplicitParam(name="taskId", value = "任务ID", dataType = "Long", paramType = "query")
     })
     @GetMapping("getdatamodel")
-    public BaseResultEntity getDataModel(@RequestHeader("userId") Long userId,Long taskId){
+    public BaseResultEntity getDataModel(@RequestHeader(value = "userId", required = false) Long userId,Long taskId){
         if (taskId==null||taskId==0L){
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"taskId");
         }
@@ -75,7 +75,7 @@ public class ModelController {
             @ApiImplicitParam(name="projectId", value = "项目ID", dataType = "Long", paramType = "query")
     })
     @GetMapping("getModelComponentDetail")
-    public BaseResultEntity getModelComponentDetail(@RequestHeader("userId") Long userId,
+    public BaseResultEntity getModelComponentDetail(@RequestHeader(value = "userId", required = false) Long userId,
                                                     Long modelId,
                                                     Long projectId){
         if (userId==null||userId==0L){
@@ -87,7 +87,7 @@ public class ModelController {
 
     @ApiOperation(value = "获取模型组件列表详情",httpMethod = "GET",consumes = MediaType.APPLICATION_JSON_VALUE)
     @PostMapping("saveModelAndComponent")
-    public BaseResultEntity saveModelAndComponent(@RequestHeader("userId") Long userId,
+    public BaseResultEntity saveModelAndComponent(@RequestHeader(value = "userId", required = false) Long userId,
                                                   @RequestBody BaseJsonParam<DataModelAndComponentReq> req){
         if (userId<0){
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
@@ -113,7 +113,7 @@ public class ModelController {
             @ApiImplicitParam(name="modelId", value = "模型ID", dataType = "Long", paramType = "query")
     })
     @GetMapping("runTaskModel")
-    public BaseResultEntity runTaskModel(@RequestHeader("userId") Long userId,Long modelId){
+    public BaseResultEntity runTaskModel(@RequestHeader(value = "userId", required = false) Long userId,Long modelId){
         if (modelId==null||modelId==0L){
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"modelId");
         }
@@ -154,7 +154,7 @@ public class ModelController {
     @ApiOperation(value = "运行成功的模型列表",httpMethod = "GET",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     @ApiImplicitParam(name="userId", value = "用户ID,不用填写getaway处理", dataType = "Long", paramType = "header")
     @GetMapping("getModelTaskSuccessList")
-    public BaseResultEntity getModelTaskSuccessList(@RequestHeader("userId") Long userId,ModelTaskSuccessReq req){
+    public BaseResultEntity getModelTaskSuccessList(@RequestHeader(value = "userId", required = false) Long userId, ModelTaskSuccessReq req){
         if (userId==null||userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }
@@ -163,7 +163,7 @@ public class ModelController {
     }
 
     @PostMapping("saveOrUpdateComponentDraft")
-    public BaseResultEntity saveOrUpdateComponentDraft(@RequestHeader("userId") Long userId, ComponentDraftReq req){
+    public BaseResultEntity saveOrUpdateComponentDraft(@RequestHeader(value = "userId", required = false) Long userId, ComponentDraftReq req){
         if (userId==null||userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }
@@ -178,7 +178,7 @@ public class ModelController {
     }
 
     @GetMapping("getComponentDraftList")
-    public BaseResultEntity getComponentDraftList(@RequestHeader("userId") Long userId){
+    public BaseResultEntity getComponentDraftList(@RequestHeader(value = "userId", required = false) Long userId){
         if (userId==null||userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }
@@ -186,7 +186,7 @@ public class ModelController {
     }
 
     @GetMapping("deleteComponentDraft")
-    public BaseResultEntity deleteComponentDraft(@RequestHeader("userId") Long userId,Long draftId){
+    public BaseResultEntity deleteComponentDraft(@RequestHeader(value = "userId", required = false) Long userId,Long draftId){
         if (userId==null||userId==0L) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"userId");
         }
