@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataDifferencePrRepository">
+    <insert id="saveDataDifference" keyProperty="id" useGeneratedKeys="true" parameterType="com.primihub.biz.entity.data.po.DataDifference">
+        insert into data_difference (own_organ_id,own_resource_id,own_keyword,other_organ_id,other_resource_id,other_keyword,output_file_path_type,output_no_repeat,tag,result_name,output_format,result_organ_ids,difference_direction,tee_organ_id,remarks,user_id,is_del,create_date,update_date)
+        values (#{ownOrganId},#{ownResourceId},#{ownKeyword},#{otherOrganId},#{otherResourceId},#{otherKeyword},#{outputFilePathType},#{outputNoRepeat},#{tag},#{resultName},#{outputFormat},#{resultOrganIds},#{differenceDirection},#{teeOrganId},#{remarks},#{userId},0,now(),now())
+    </insert>
+    <insert id="saveDataDifferenceTask" keyProperty="id" useGeneratedKeys="true" parameterType="com.primihub.biz.entity.data.po.DataDifferenceTask">
+        insert into data_difference_task (difference_id,task_id,task_state,ascription,ascription_type,file_rows,file_path,is_del,create_date,update_date)
+        values (#{differenceId},#{taskId},#{taskState},#{ascription},#{ascriptionType},#{fileRows},#{filePath},0,now(),now())
+    </insert>
+
+    <update id="updateDataDifferenceTask" parameterType="com.primihub.biz.entity.data.po.DataDifferenceTask">
+        update data_difference_task
+        <set>
+            <if test="differenceId!=null">difference_id = #{differenceId},</if>
+            <if test="taskId!=null">task_id = #{taskId},</if>
+            <if test="taskState!=null">task_state = #{taskState},</if>
+            <if test="ascription!=null">ascription = #{ascription},</if>
+            <if test="filePath!=null">file_path = #{filePath},</if>
+            <if test="fileRows!=null">file_rows = #{fileRows},</if>
+            <if test="fileContent!=null">file_content = #{fileContent},</if>
+            update_date = now()
+        </set>
+        where id = #{id}
+    </update>
+    <update id="updateDataDifference">
+        update data_difference set result_name = #{resultName} where id = #{id}
+    </update>
+    <delete id="delDifferenceTask">
+        delete from data_difference_task where id = #{taskId}
+    </delete>
+    <delete id="delDifference">
+        delete from data_difference where id = #{differenceId}
+    </delete>
+</mapper>

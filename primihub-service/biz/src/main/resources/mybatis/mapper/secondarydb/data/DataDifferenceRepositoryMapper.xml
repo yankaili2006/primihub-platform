@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.DataDifferenceRepository">
+
+    <select id="selectTaskPage" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            dd.id AS dataDifferenceId,
+            dd.result_name AS resultName,
+            dd.other_organ_id as otherOrganId,
+            dd.tag as differenceTag,
+            ddt.id as taskId,
+            ddt.task_id as taskIdName,
+            dt.task_name as taskName,
+            dt.task_start_time as taskStart,
+            dt.task_end_time as taskEnd,
+            ddt.task_state as taskState,
+            ddt.ascription as ascription,
+            ddt.create_date as createDate
+        FROM
+            data_difference dd,
+            data_difference_task ddt
+        LEFT JOIN data_task dt ON ddt.task_id = dt.task_id_name
+        WHERE
+            dd.id = ddt.difference_id
+        <include refid="pageListWhere"/>
+        ORDER BY dd.id desc
+        LIMIT #{offset},#{pageSize}
+    </select>
+    <select id="selectTaskPageCount" resultType="java.lang.Long" parameterType="java.util.Map">
+        SELECT
+            count(dd.id)
+        FROM
+            data_difference dd,
+            data_difference_task ddt
+        WHERE
+            dd.id = ddt.difference_id
+        <include refid="pageListWhere"/>
+    </select>
+
+    <sql id="pageListWhere">
+        <if test="resultName!=null"> and dd.result_name like CONCAT('%',#{resultName},'%')</if>
+        <if test="organId!=null"> and dd.other_organ_id = #{organId}</if>
+        <if test="taskState!=null"> and ddt.task_state = #{taskState}</if>
+        <if test="startDate!=null">and ddt.create_date &gt;= #{startDate} </if>
+        <if test="endDate!=null">and ddt.create_date &lt;= #{endDate} </if>
+    </sql>
+
+    <select id="selectTaskById" resultType="com.primihub.biz.entity.data.po.DataDifferenceTask">
+        SELECT
+            id,difference_id as differenceId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+        FROM
+            data_difference_task
+        WHERE
+            id = #{id}
+    </select>
+    <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.DataDifferenceTask">
+        SELECT
+            id,difference_id as differenceId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+        FROM
+            data_difference_task
+        WHERE
+            task_id = #{taskId}
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.data.po.DataDifference">
+        select
+            id,own_organ_id as ownOrganId,own_resource_id as ownResourceId,own_keyword as ownKeyword,
+            other_organ_id as otherOrganId,other_resource_id as otherResourceId,other_keyword as otherKeyword,
+            output_file_path_type as outputFilePathType,output_no_repeat as outputNoRepeat,tag as tag,
+            result_name as resultName,output_format as outputFormat,result_organ_ids as resultOrganIds,
+            difference_direction as differenceDirection,
+            remarks,user_id as userId,create_date as createDate,tee_organ_id as teeOrganId
+        from
+            data_difference
+        where
+            id = #{id}
+    </select>
+</mapper>

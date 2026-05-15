@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.DataUnionRepository">
+
+    <select id="selectTaskPage" resultType="java.util.Map" parameterType="java.util.Map">
+        SELECT
+            du.id AS dataUnionId,
+            du.result_name AS resultName,
+            du.other_organ_id as otherOrganId,
+            du.tag as unionTag,
+            dut.id as taskId,
+            dut.task_id as taskIdName,
+            dt.task_name as taskName,
+            dt.task_start_time as taskStart,
+            dt.task_end_time as taskEnd,
+            dut.task_state as taskState,
+            dut.ascription as ascription,
+            dut.create_date as createDate
+        FROM
+            data_union du,
+            data_union_task dut
+        LEFT JOIN data_task dt ON dut.task_id = dt.task_id_name
+        WHERE
+            du.id = dut.union_id
+        <include refid="pageListWhere"/>
+        ORDER BY du.id desc
+        LIMIT #{offset},#{pageSize}
+    </select>
+    <select id="selectTaskPageCount" resultType="java.lang.Long" parameterType="java.util.Map">
+        SELECT
+            count(du.id)
+        FROM
+            data_union du,
+            data_union_task dut
+        WHERE
+            du.id = dut.union_id
+        <include refid="pageListWhere"/>
+    </select>
+
+    <sql id="pageListWhere">
+        <if test="resultName!=null"> and du.result_name like CONCAT('%',#{resultName},'%')</if>
+        <if test="organId!=null"> and du.other_organ_id = #{organId}</if>
+        <if test="taskState!=null"> and dut.task_state = #{taskState}</if>
+        <if test="startDate!=null">and dut.create_date &gt;= #{startDate} </if>
+        <if test="endDate!=null">and dut.create_date &lt;= #{endDate} </if>
+    </sql>
+
+    <select id="selectTaskById" resultType="com.primihub.biz.entity.data.po.DataUnionTask">
+        SELECT
+            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+        FROM
+            data_union_task
+        WHERE
+            id = #{id}
+    </select>
+    <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.DataUnionTask">
+        SELECT
+            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+        FROM
+            data_union_task
+        WHERE
+            task_id = #{taskId}
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.data.po.DataUnion">
+        select
+            id,own_organ_id as ownOrganId,own_resource_id as ownResourceId,own_keyword as ownKeyword,
+            other_organ_id as otherOrganId,other_resource_id as otherResourceId,other_keyword as otherKeyword,
+            output_file_path_type as outputFilePathType,output_no_repeat as outputNoRepeat,tag as tag,
+            result_name as resultName,output_format as outputFormat,result_organ_ids as resultOrganIds,
+            remarks,user_id as userId,create_date as createDate,tee_organ_id as teeOrganId
+        from
+            data_union
+        where
+            id = #{id}
+    </select>
+</mapper>
