@@ -596,39 +596,93 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
 
     @Override
     public BaseResultEntity testStorageConnection(StorageConfigReq req) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("connected", true);
-        result.put("message", "连接成功");
-        return BaseResultEntity.success(result);
+        try {
+            String type = req.getStorageType() != null ? req.getStorageType() : "local";
+            String path = req.getStoragePath() != null ? req.getStoragePath() : "/tmp";
+            switch (type) {
+                case "local":
+                    java.io.File dir = new java.io.File(path);
+                    boolean writable = dir.exists() || dir.mkdirs();
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("connected", writable);
+                    result.put("message", writable ? "本地路径可写入" : "路径不可写入");
+                    result.put("type", type);
+                    result.put("path", path);
+                    return BaseResultEntity.success(result);
+                case "s3":
+                case "oss":
+                case "cos":
+                    result = new HashMap<>();
+                    result.put("connected", true);
+                    result.put("message", type.toUpperCase() + "连接配置已保存(需部署环境凭证)");
+                    result.put("type", type);
+                    return BaseResultEntity.success(result);
+                default:
+                    result = new HashMap<>();
+                    result.put("connected", false);
+                    result.put("message", "不支持的存储类型: " + type);
+                    return BaseResultEntity.success(result);
+            }
+        } catch (Exception e) {
+            log.warn("存储连接测试异常", e);
+            Map<String, Object> result = new HashMap<>();
+            result.put("connected", false);
+            result.put("message", "连接异常: " + e.getMessage());
+            return BaseResultEntity.success(result);
+        }
     }
 
     @Override
     public BaseResultEntity getStoredResults(Integer pageNo, Integer pageSize, Long userId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", Collections.emptyList());
-        result.put("total", 0);
-        return BaseResultEntity.success(result);
+        try {
+            List<FederatedStatsResult> results = federatedStatsRepository.selectResultsByUserId(userId);
+            if (results == null) results = Collections.emptyList();
+            int from = (pageNo - 1) * pageSize;
+            int to = Math.min(from + pageSize, results.size());
+            List<FederatedStatsResult> page = from < results.size() ? results.subList(from, to) : Collections.emptyList();
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", page);
+            result.put("total", results.size());
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("获取存储结果列表失败", e);
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", Collections.emptyList());
+            result.put("total", 0);
+            return BaseResultEntity.success(result);
+        }
     }
 
     @Override
     public BaseResultEntity previewStoredResult(Long resultId, Integer rows) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("headers", new String[]{"字段1", "字段2", "字段3"});
-        result.put("rows", Arrays.asList(
-            new String[]{"数据1", "数据2", "数据3"},
-            new String[]{"数据4", "数据5", "数据6"}
-        ));
-        return BaseResultEntity.success(result);
+        try {
+            FederatedStatsResult stored = federatedStatsRepository.selectResultById(resultId);
+            if (stored == null || stored.getResultData() == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "结果不存在");
+            }
+            String data = stored.getResultData();
+            Map<String, Object> result = new HashMap<>();
+            result.put("headers", new String[]{"结果类型", "数据内容"});
+            result.put("rows", Arrays.asList(
+                new String[]{stored.getResultType(), data.length() > 200 ? data.substring(0, 200) + "..." : data}
+            ));
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("预览结果失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "预览失败");
+        }
     }
 
     @Override
     public void downloadStoredResult(Long resultId, HttpServletResponse response) {
         try {
+            FederatedStatsResult stored = federatedStatsRepository.selectResultById(resultId);
+            String content = stored != null && stored.getResultData() != null ? stored.getResultData() : "无数据";
             response.setContentType("text/plain;charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment;filename=" +
                 URLEncoder.encode("result_" + resultId + ".txt", StandardCharsets.UTF_8.name()));
             OutputStream os = response.getOutputStream();
-            os.write("统计结果数据".getBytes(StandardCharsets.UTF_8));
+            os.write(content.getBytes(StandardCharsets.UTF_8));
             os.flush();
         } catch (Exception e) {
             log.error("下载存储结果失败", e);
@@ -638,32 +692,62 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity deleteStoredResult(Long resultId) {
-        return BaseResultEntity.success();
+        try {
+            federatedStatsRepository.deleteResult(resultId);
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("删除存储结果失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "删除失败");
+        }
     }
 
     // ==================== 日志 ====================
 
     @Override
     public BaseResultEntity getLogs(LogQueryReq req) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("list", Collections.emptyList());
-        result.put("total", 0);
-        return BaseResultEntity.success(result);
+        try {
+            List<Map<String, Object>> logs = federatedStatsRepository.selectLogList(req);
+            int total = federatedStatsRepository.selectLogCount(req);
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", logs != null ? logs : Collections.emptyList());
+            result.put("total", total);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.warn("查询统计日志失败", e);
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", Collections.emptyList());
+            result.put("total", 0);
+            return BaseResultEntity.success(result);
+        }
     }
 
     @Override
     public BaseResultEntity getLogDetail(Long logId) {
-        return BaseResultEntity.success(new HashMap<>());
+        try {
+            Map<String, Object> logDetail = federatedStatsRepository.selectLogById(logId);
+            return BaseResultEntity.success(logDetail != null ? logDetail : Collections.emptyMap());
+        } catch (Exception e) {
+            log.warn("查询日志详情失败", e);
+            return BaseResultEntity.success(Collections.emptyMap());
+        }
     }
 
     @Override
     public void exportLogs(LogExportReq req, HttpServletResponse response) {
         try {
+            List<Map<String, Object>> logs = federatedStatsRepository.selectLogList(
+                new LogQueryReq(req.getTaskId(), req.getStartDate(), req.getEndDate()));
+            StringBuilder sb = new StringBuilder();
+            if (logs != null) {
+                for (Map<String, Object> logEntry : logs) {
+                    sb.append(logEntry.toString()).append("\n");
+                }
+            }
             response.setContentType("text/plain;charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment;filename=" +
                 URLEncoder.encode("stats_log.txt", StandardCharsets.UTF_8.name()));
             OutputStream os = response.getOutputStream();
-            os.write("统计日志".getBytes(StandardCharsets.UTF_8));
+            os.write(sb.toString().getBytes(StandardCharsets.UTF_8));
             os.flush();
         } catch (Exception e) {
             log.error("导出统计日志失败", e);
