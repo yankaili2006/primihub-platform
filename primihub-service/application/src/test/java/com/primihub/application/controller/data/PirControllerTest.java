@@ -184,4 +184,51 @@ public class PirControllerTest {
         controller.downloadPirTask(response, TASK_ID, taskDate);
         verify(pirService).getResultFilePath(TASK_ID, taskDate);
     }
+
+    // ===== 联邦查询功能 — PIR =====
+
+    @Test public void testFunction_pir_submitTask() {
+        String pirParam = "param1,param2";
+        when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, "PIR-Test");
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_pir_getTaskList() {
+        DataPirTaskReq req = new DataPirTaskReq();
+        when(pirService.getPirTaskList(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPirTaskList(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_pir_getTaskDetail() {
+        Long taskId = 200L;
+        when(pirService.getPirTaskDetail(taskId)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPirTaskDetail(taskId);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_pir_downloadTask() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        when(pirService.getResultFilePath(TASK_ID, "2025-01-01")).thenReturn("/tmp/pir.csv");
+        controller.downloadPirTask(resp, TASK_ID, "2025-01-01");
+        verify(pirService).getResultFilePath(TASK_ID, "2025-01-01");
+    }
+
+    @Test public void testFunction_pir_submitWithDefaultName() {
+        String pirParam = "query1";
+        when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, null);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_pir_taskListWithFilters() {
+        DataPirTaskReq req = new DataPirTaskReq();
+        req.setTaskName("test-pir");
+        req.setTaskState(1);
+        req.setOrganName("orgA");
+        when(pirService.getPirTaskList(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPirTaskList(req);
+        assertNotNull(result);
+    }
 }

@@ -3,6 +3,8 @@ package com.primihub.application.controller.data;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.req.DataUnionReq;
+import com.primihub.biz.repository.primarydb.data.DataUnionPrRepository;
+import com.primihub.biz.repository.secondarydb.data.DataUnionRepository;
 import com.primihub.biz.service.data.DataUnionService;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,6 +22,12 @@ public class UnionControllerTest {
 
     @Mock
     private DataUnionService dataUnionService;
+
+    @Mock
+    private DataUnionRepository dataUnionRepository;
+
+    @Mock
+    private DataUnionPrRepository dataUnionPrRepository;
 
     @InjectMocks
     private UnionController controller;
@@ -245,5 +253,58 @@ public class UnionControllerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         controller.exportUnionLog(response, null);
         assertEquals("text/plain;charset=UTF-8", response.getContentType());
+    }
+
+    // ===== 联邦查询功能 — Union =====
+
+    @Test public void testFunction_union_saveDataUnion() {
+        DataUnionReq req = validReq();
+        when(dataUnionService.saveDataUnion(req, USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.saveDataUnion(USER_ID, req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_union_getTaskList() {
+        when(dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10))
+                .thenReturn(successResult);
+        BaseResultEntity result = controller.getUnionTaskList(null, null, null, null, null, 1, 10);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_union_getTaskDetails() {
+        when(dataUnionService.getUnionTaskDetails(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.getUnionTaskDetails(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_union_downloadTask() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        controller.downloadUnionTask(resp, TASK_ID);
+        verify(dataUnionService).downloadUnionTask(resp, TASK_ID);
+    }
+
+    @Test public void testFunction_union_deleteTask() {
+        when(dataUnionService.delUnionTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.delUnionTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_union_cancelTask() {
+        when(dataUnionService.cancelUnionTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.cancelUnionTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_union_exportLog() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        controller.exportUnionLog(resp, TASK_ID);
+        assertEquals("text/plain;charset=UTF-8", resp.getContentType());
+    }
+
+    @Test public void testFunction_union_taskListWithFilters() {
+        when(dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+                .thenReturn(successResult);
+        BaseResultEntity result = controller.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        assertNotNull(result);
     }
 }

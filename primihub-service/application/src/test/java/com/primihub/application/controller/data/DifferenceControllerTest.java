@@ -3,6 +3,8 @@ package com.primihub.application.controller.data;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.req.DataDifferenceReq;
+import com.primihub.biz.repository.primarydb.data.DataDifferencePrRepository;
+import com.primihub.biz.repository.secondarydb.data.DataDifferenceRepository;
 import com.primihub.biz.service.data.DataDifferenceService;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,6 +22,12 @@ public class DifferenceControllerTest {
 
     @Mock
     private DataDifferenceService dataDifferenceService;
+
+    @Mock
+    private DataDifferenceRepository dataDifferenceRepository;
+
+    @Mock
+    private DataDifferencePrRepository dataDifferencePrRepository;
 
     @InjectMocks
     private DifferenceController controller;
@@ -238,5 +246,58 @@ public class DifferenceControllerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         controller.exportDifferenceLog(response, null);
         assertEquals("text/plain;charset=UTF-8", response.getContentType());
+    }
+
+    // ===== 联邦查询功能 — Difference =====
+
+    @Test public void testFunction_diff_saveDataDifference() {
+        DataDifferenceReq req = validReq();
+        when(dataDifferenceService.saveDataDifference(req, USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.saveDataDifference(USER_ID, req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_diff_getTaskList() {
+        when(dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, 1, 10))
+                .thenReturn(successResult);
+        BaseResultEntity result = controller.getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_diff_getTaskDetails() {
+        when(dataDifferenceService.getDifferenceTaskDetails(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.getDifferenceTaskDetails(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_diff_downloadTask() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        controller.downloadDifferenceTask(resp, TASK_ID);
+        verify(dataDifferenceService).downloadDifferenceTask(resp, TASK_ID);
+    }
+
+    @Test public void testFunction_diff_deleteTask() {
+        when(dataDifferenceService.delDifferenceTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.delDifferenceTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_diff_cancelTask() {
+        when(dataDifferenceService.cancelDifferenceTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.cancelDifferenceTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_diff_exportLog() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        controller.exportDifferenceLog(resp, TASK_ID);
+        assertEquals("text/plain;charset=UTF-8", resp.getContentType());
+    }
+
+    @Test public void testFunction_diff_taskListWithFilters() {
+        when(dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+                .thenReturn(successResult);
+        BaseResultEntity result = controller.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        assertNotNull(result);
     }
 }

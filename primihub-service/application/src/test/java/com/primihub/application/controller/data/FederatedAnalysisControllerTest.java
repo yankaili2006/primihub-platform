@@ -631,4 +631,160 @@ public class FederatedAnalysisControllerTest {
 
         verify(federatedAnalysisService).exportLogs(req, response);
     }
+
+    // ===== 需求#142-#161: 联邦分析功能 =====
+
+    @Test public void testFunction142_sqlValidate() {
+        SqlValidateReq req = new SqlValidateReq();
+        req.setSql("SELECT * FROM table");
+        when(federatedAnalysisService.validateSql(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.validateSql(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction143_fieldConfidentiality() {
+        SqlValidateReq req = new SqlValidateReq();
+        req.setSql("SELECT name FROM users");
+        req.setFieldConfidentiality(true);
+        when(federatedAnalysisService.validateSql(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.validateSql(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction144_filterOperator() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("filter-operator-test");
+        req.setSqlCondition("WHERE age > 18");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction145_joinOperator() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("join-operator-test");
+        req.setJoinType("INNER");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction146_aggregateOperator() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("aggregate-test");
+        req.setAggregateType("SUM");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction147_groupOperator() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("group-test");
+        req.setGroupByFields("dept");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction148_sortOperator() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("sort-test");
+        req.setOrderByFields("name ASC");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction149_windowFunction() {
+        AnalysisTaskReq req = new AnalysisTaskReq();
+        req.setTaskName("window-test");
+        req.setWindowFunction("ROW_NUMBER() OVER (PARTITION BY dept)");
+        when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction150_correlatedSubquery() {
+        SqlValidateReq req = new SqlValidateReq();
+        req.setSql("SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE t1.id = t2.id)");
+        when(federatedAnalysisService.validateSql(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.validateSql(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction151_nonCorrelatedSubquery() {
+        SqlValidateReq req = new SqlValidateReq();
+        req.setSql("SELECT * FROM t1 WHERE id IN (SELECT id FROM t2)");
+        when(federatedAnalysisService.validateSql(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.validateSql(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction152_relationalDB() {
+        when(federatedAnalysisService.getSupportedRdbms()).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getSupportedRdbms();
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction153_bigData() {
+        when(federatedAnalysisService.getSupportedBigDataPlatforms()).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getSupportedBigDataPlatforms();
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction154_publicCloud() {
+        when(federatedAnalysisService.getSupportedCloudPlatforms()).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getSupportedCloudPlatforms();
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction155_analysisLogRecord() {
+        LogQueryReq req = new LogQueryReq();
+        req.setTaskId(1L);
+        when(federatedAnalysisService.getLogs(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getLogs(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction156_analysisLogExport() {
+        LogExportReq req = new LogExportReq();
+        req.setTaskId(1L);
+        HttpServletResponse resp = mock(HttpServletResponse.class);
+        doNothing().when(federatedAnalysisService).exportLogs(req, resp);
+        controller.exportLogs(req, resp);
+        verify(federatedAnalysisService).exportLogs(req, resp);
+    }
+
+    @Test public void testFunction157_charFunctions() {
+        when(federatedAnalysisService.getFunctions("char")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getFunctions("char");
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction158_dateFunctions() {
+        when(federatedAnalysisService.getFunctions("date")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getFunctions("date");
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction159_timestampFunctions() {
+        when(federatedAnalysisService.getFunctions("timestamp")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getFunctions("timestamp");
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction160_sqlFormatter() {
+        SqlFormatReq req = new SqlFormatReq();
+        req.setSql("SELECT * FROM table");
+        when(federatedAnalysisService.formatSql(req)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.formatSql(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction161_floatFunctions() {
+        when(federatedAnalysisService.getFunctions("float")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getFunctions("float");
+        assertNotNull(result);
+    }
 }

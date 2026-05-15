@@ -423,4 +423,146 @@ public class SceneControllerTest {
         assertEquals("realtime", result.getResult());
         verify(sceneService).createTask(CERT, req, TEST_USER_ID);
     }
+
+    // ===== 需求#205-#224: 场景功能 =====
+
+    @Test public void testFunction205_createPoliceTask() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(POLICE, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createPoliceTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction206_getPoliceTaskList() {
+        when(sceneService.getTaskList(POLICE, null, 1, 10)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getPoliceTaskList(null, null, null);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction207_getPoliceTaskDetail() {
+        when(sceneService.getTaskDetail(100L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getPoliceTaskDetail(100L);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction208_savePoliceApi() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.saveApiConfig(POLICE, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.savePoliceApi(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction209_getPoliceApiList() {
+        when(sceneService.getApiConfigList(POLICE)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getPoliceApiList();
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction210_deletePoliceApi() {
+        Map<String, Object> req = new HashMap<>();
+        req.put("id", 42L);
+        when(sceneService.deleteApiConfig(42L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.deletePoliceApi(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction211_testPoliceApi() {
+        when(sceneService.testApiConnection(42L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.testPoliceApi(42L);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction212_generatePoliceKey() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.generateKey(POLICE, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.generatePoliceKey(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction213_getPoliceKeyList() {
+        when(sceneService.getKeyList(POLICE)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getPoliceKeyList();
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction214_deletePoliceKey() {
+        Map<String, Object> req = new HashMap<>();
+        req.put("id", 7L);
+        when(sceneService.deleteKey(7L)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.deletePoliceKey(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction215_encryptPoliceData() {
+        Map<String, Object> req = new HashMap<>();
+        req.put("keyId", 1L);
+        req.put("data", "plaintext");
+        when(sceneService.encryptData(1L, "plaintext")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.encryptPoliceData(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction216_decryptPoliceData() {
+        Map<String, Object> req = new HashMap<>();
+        req.put("keyId", 2L);
+        req.put("encryptedData", "cipher");
+        when(sceneService.decryptData(2L, "cipher")).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.decryptPoliceData(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction217_createCertTask() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.createCertTask(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction218_getCertTaskList() {
+        when(sceneService.getTaskList(CERT, null, 1, 10)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.getCertTaskList(null, null, null);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction219_convertFeature() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.convertFeature(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction220_compareFeature() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.compareFeature(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction221_importData() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.importData(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction222_exportData() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.exportData(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction223_batchExchange() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.batchExchange(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction224_realtimeExchange() {
+        Map<String, Object> req = new HashMap<>();
+        when(sceneService.createTask(CERT, req, TEST_USER_ID)).thenReturn(BaseResultEntity.success());
+        BaseResultEntity result = controller.realtimeExchange(req);
+        assertNotNull(result);
+    }
 }

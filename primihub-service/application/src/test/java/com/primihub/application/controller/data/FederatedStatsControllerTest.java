@@ -520,4 +520,128 @@ public class FederatedStatsControllerTest {
         assertNotNull(controller.getClass().getDeclaredMethod("getResultCompat", Long.class));
         assertNotNull(controller.getClass().getDeclaredMethod("deleteTaskCompat", IdReq.class));
     }
+
+    // ===== 需求#129-#141: 联邦统计功能 =====
+
+    @Test public void testFunction129_descriptiveStats() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("描述性统计测试");
+        req.setStatsType("descriptive");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction130_groupStats() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("分组统计测试");
+        req.setStatsType("group");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction131_conditionStats() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("条件统计测试");
+        req.setStatsType("condition");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction132_ratioStats() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("占比统计测试");
+        req.setStatsType("ratio");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction133_tTest() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("T检验测试");
+        req.setStatsType("ttest");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction134_fTest() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("F检验测试");
+        req.setStatsType("ftest");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction135_chiSquareTest() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("卡方检验测试");
+        req.setStatsType("chisquare");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction136_regressionAnalysis() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("回归分析测试");
+        req.setStatsType("regression");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction137_correlationAnalysis() {
+        FederatedStatsReq req = new FederatedStatsReq();
+        req.setTaskName("相关性分析测试");
+        req.setStatsType("correlation");
+        when(federatedStatsService.createTask(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.createTask(req);
+        assertNotNull(result);
+        verify(federatedStatsService).createTask(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction138_resultStorage() {
+        SaveResultReq req = new SaveResultReq();
+        req.setTaskId(TASK_ID);
+        req.setStorageConfigId(CONFIG_ID);
+        when(federatedStatsService.saveResult(req, TEST_USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.saveResult(req);
+        assertNotNull(result);
+        verify(federatedStatsService).saveResult(req, TEST_USER_ID);
+    }
+
+    @Test public void testFunction139_resultExport() {
+        controller.exportResult(TASK_ID, "CSV", response);
+        verify(federatedStatsService).exportResult(TASK_ID, "CSV", response);
+    }
+
+    @Test public void testFunction140_logRecord() {
+        LogQueryReq req = new LogQueryReq();
+        req.setTaskId(TASK_ID);
+        when(federatedStatsService.getLogs(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getLogs(req);
+        assertNotNull(result);
+        verify(federatedStatsService).getLogs(req);
+    }
+
+    @Test public void testFunction141_logExport() {
+        LogExportReq req = new LogExportReq();
+        req.setTaskId(TASK_ID);
+        req.setFormat("CSV");
+        controller.exportLogs(req, response);
+        verify(federatedStatsService).exportLogs(req, response);
+    }
 }

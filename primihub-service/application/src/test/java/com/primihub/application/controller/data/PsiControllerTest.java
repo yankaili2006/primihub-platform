@@ -322,4 +322,80 @@ public class PsiControllerTest {
         assertEquals(BaseResultEnum.LACK_OF_PARAM.getReturnCode(), result.getCode());
         verify(dataPsiService, never()).retryPsiTask(any());
     }
+
+    // ===== 联邦查询功能 — PSI =====
+
+    @Test public void testFunction_psi_saveDataPsi() {
+        DataPsiReq req = validPsiReq();
+        when(dataPsiService.saveDataPsi(req, USER_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.saveDataPsi(USER_ID, req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_updateResultName() {
+        DataPsiReq req = new DataPsiReq();
+        req.setId(TASK_ID);
+        req.setResultName("new-name");
+        when(dataPsiService.updateDataPsiResultName(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.updateDataPsiResultName(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_getResourceList() {
+        DataResourceReq req = new DataResourceReq();
+        when(dataPsiService.getPsiResourceList(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPsiResourceList(req, 1L);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_getTaskList() {
+        DataPsiQueryReq req = new DataPsiQueryReq();
+        when(dataPsiService.getPsiTaskList(req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPsiTaskList(req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_getTaskDetails() {
+        when(dataPsiService.getPsiTaskDetails(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.getPsiTaskDetails(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_downloadTask() {
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        when(dataPsiService.getPsiTaskDetails(TASK_ID)).thenReturn(successResult);
+        controller.downloadPsiTask(resp, TASK_ID);
+    }
+
+    @Test public void testFunction_psi_deleteTask() {
+        when(dataPsiService.delPsiTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.delPsiTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_cancelTask() {
+        when(dataPsiService.cancelPsiTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.cancelPsiTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_retryTask() {
+        when(dataPsiService.retryPsiTask(TASK_ID)).thenReturn(successResult);
+        BaseResultEntity result = controller.retryPsiTask(TASK_ID);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_getOrganPsiTask() {
+        PageReq req = new PageReq();
+        when(dataPsiService.getOrganPsiTask(USER_ID, "result1", req)).thenReturn(successResult);
+        BaseResultEntity result = controller.getOrganPsiTask(USER_ID, "result1", req);
+        assertNotNull(result);
+    }
+
+    @Test public void testFunction_psi_getResourceAllocation() {
+        PageReq req = new PageReq();
+        when(dataPsiService.getPsiResourceAllocationList(req, "orgA", "res")).thenReturn(successResult);
+        BaseResultEntity result = controller.getPsiResourceDataList(req, "orgA", "res");
+        assertNotNull(result);
+    }
 }
