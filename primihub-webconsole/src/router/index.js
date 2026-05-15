@@ -229,6 +229,84 @@ export const asyncRoutes = [
         hidden: true,
         component: () => import('@/views/singleParty/detail'),
         meta: { title: '任务详情', activeMenu: '/SingleParty/list' }
+      },
+      {
+        path: 'dataStats',
+        name: 'SinglePartyDataStats',
+        component: () => import('@/views/singleParty/dataStats'),
+        meta: { title: '单方数据统计' }
+      },
+      {
+        path: 'dataCleaning',
+        name: 'SinglePartyDataCleaning',
+        component: () => import('@/views/singleParty/dataCleaning'),
+        meta: { title: '单方数据清洗' }
+      },
+      {
+        path: 'dataScaling',
+        name: 'SinglePartyDataScaling',
+        component: () => import('@/views/singleParty/dataScaling'),
+        meta: { title: '单方数据缩放' }
+      },
+      {
+        path: 'featureEncode',
+        name: 'SinglePartyFeatureEncode',
+        component: () => import('@/views/singleParty/featureEncode'),
+        meta: { title: '单方特征编码' }
+      },
+      {
+        path: 'featureBin',
+        name: 'SinglePartyFeatureBin',
+        component: () => import('@/views/singleParty/featureBin'),
+        meta: { title: '单方特征分箱' }
+      },
+      {
+        path: 'featureSelect',
+        name: 'SinglePartyFeatureSelect',
+        component: () => import('@/views/singleParty/featureSelect'),
+        meta: { title: '单方特征筛选' }
+      },
+      {
+        path: 'featureDerive',
+        name: 'SinglePartyFeatureDerive',
+        component: () => import('@/views/singleParty/featureDerive'),
+        meta: { title: '单方特征衍生' }
+      },
+      {
+        path: 'pythonScript',
+        name: 'SinglePartyPythonScript',
+        component: () => import('@/views/singleParty/pythonScript'),
+        meta: { title: '单方Python脚本处理' }
+      },
+      {
+        path: 'sqlProcess',
+        name: 'SinglePartySqlProcess',
+        component: () => import('@/views/singleParty/sqlProcess'),
+        meta: { title: '单方SQL处理' }
+      },
+      {
+        path: 'logRecord',
+        name: 'SinglePartyLogRecord',
+        component: () => import('@/views/singleParty/logRecord'),
+        meta: { title: '单方学习日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'SinglePartyLogExport',
+        component: () => import('@/views/singleParty/logExport'),
+        meta: { title: '单方学习日志导出' }
+      },
+      {
+        path: 'lrAlgorithm',
+        name: 'SinglePartyLRAlgorithm',
+        component: () => import('@/views/singleParty/lrAlgorithm'),
+        meta: { title: '单方机器学习LR算法' }
+      },
+      {
+        path: 'xgbAlgorithm',
+        name: 'SinglePartyXGBAlgorithm',
+        component: () => import('@/views/singleParty/xgbAlgorithm'),
+        meta: { title: '单方机器学习XGB算法' }
       }
     ]
   },
@@ -372,6 +450,30 @@ export const asyncRoutes = [
         name: 'ProjectLedgerExport',
         component: () => import('@/views/project/ledgerExport'),
         meta: { title: '项目台账导出' }
+      },
+      {
+        path: 'approvalConfig',
+        name: 'ProjectApprovalConfig',
+        component: () => import('@/views/project/approvalConfig'),
+        meta: { title: '项目流程审核配置' }
+      },
+      {
+        path: 'federatedLearning',
+        name: 'ProjectFLTasks',
+        component: () => import('@/views/project/federatedLearning'),
+        meta: { title: '项目联邦学习任务' }
+      },
+      {
+        path: 'federatedAnalysis',
+        name: 'ProjectFATasks',
+        component: () => import('@/views/project/federatedAnalysis'),
+        meta: { title: '项目联邦分析任务' }
+      },
+      {
+        path: 'federatedStatistics',
+        name: 'ProjectFSTasks',
+        component: () => import('@/views/project/federatedStatistics'),
+        meta: { title: '项目联邦统计任务' }
       }
     ]
   },
@@ -388,6 +490,12 @@ export const asyncRoutes = [
         name: 'FederatedLearningIndex',
         component: () => import('@/views/federatedLearning/index'),
         meta: { title: '联邦学习' }
+      },
+      {
+        path: 'dataFusion',
+        name: 'FLDataFusion',
+        component: () => import('@/views/federatedLearning/dataFusion'),
+        meta: { title: '联邦学习-数据融合' }
       },
       {
         path: 'paramTuning',
@@ -424,6 +532,108 @@ export const asyncRoutes = [
         name: 'FederatedLearningSinglePartyDataMerge',
         component: () => import('@/views/federatedLearning/dataMerge'),
         meta: { title: '单方数据合并模块' }
+      },
+      {
+        path: 'featureSimilarity',
+        name: 'FLFeatureSimilarity',
+        component: () => import('@/views/federatedLearning/featureSimilarity'),
+        meta: { title: '联邦学习-特征相似度分析' }
+      },
+      {
+        path: 'featureEncodeFL',
+        name: 'FLFeatureEncode',
+        component: () => import('@/views/federatedLearning/featureEncodeFL'),
+        meta: { title: '联邦学习-特征编码' }
+      },
+      {
+        path: 'featureAlign',
+        name: 'FLFeatureAlign',
+        component: () => import('@/views/federatedLearning/featureAlign'),
+        meta: { title: '联邦学习-特征对齐' }
+      },
+      {
+        path: 'featureShare',
+        name: 'FLFeatureShare',
+        component: () => import('@/views/federatedLearning/featureShare'),
+        meta: { title: '联邦学习-特征分享' }
+      },
+      {
+        path: 'featureFill',
+        name: 'FLFeatureFill',
+        component: () => import('@/views/federatedLearning/featureFill'),
+        meta: { title: '联邦学习-特征填充' }
+      },
+      {
+        path: 'sampleExpand',
+        name: 'FLSampleExpand',
+        component: () => import('@/views/federatedLearning/sampleExpand'),
+        meta: { title: '联邦学习-样本列扩展' }
+      },
+      {
+        path: 'sampleWeight',
+        name: 'FLSampleWeight',
+        component: () => import('@/views/federatedLearning/sampleWeight'),
+        meta: { title: '联邦学习-样本加权' }
+      },
+      {
+        path: 'metricModeling',
+        name: 'FLMetricModeling',
+        component: () => import('@/views/federatedLearning/metricModeling'),
+        meta: { title: '联邦学习-指标建模分析' }
+      },
+      {
+        path: 'featureWarehouse',
+        name: 'FLFeatureWarehouse',
+        component: () => import('@/views/federatedLearning/featureWarehouse'),
+        meta: { title: '联邦学习-特征装仓' }
+      },
+      {
+        path: 'dataSplit',
+        name: 'FLDataSplit',
+        component: () => import('@/views/federatedLearning/dataSplit'),
+        meta: { title: '联邦学习-数据分割' }
+      },
+      {
+        path: 'dataTransform',
+        name: 'FLDataTransform',
+        component: () => import('@/views/federatedLearning/dataTransform'),
+        meta: { title: '联邦学习-数据转换' }
+      },
+      {
+        path: 'verticalLinearTrain',
+        name: 'FLVerticalLinearTrain',
+        component: () => import('@/views/federatedLearning/verticalLinearTrain'),
+        meta: { title: '线性回归建模（纵向）' }
+      },
+      {
+        path: 'verticalLogisticTrain',
+        name: 'FLVerticalLogisticTrain',
+        component: () => import('@/views/federatedLearning/verticalLogisticTrain'),
+        meta: { title: '逻辑回归建模（纵向）' }
+      },
+      {
+        path: 'verticalXGBoostTrain',
+        name: 'FLVerticalXGBoostTrain',
+        component: () => import('@/views/federatedLearning/verticalXGBoostTrain'),
+        meta: { title: 'XGBoost建模（纵向）' }
+      },
+      {
+        path: 'verticalLinearPredict',
+        name: 'FLVerticalLinearPredict',
+        component: () => import('@/views/federatedLearning/verticalLinearPredict'),
+        meta: { title: '线性回归预测（纵向）' }
+      },
+      {
+        path: 'verticalLogisticPredict',
+        name: 'FLVerticalLogisticPredict',
+        component: () => import('@/views/federatedLearning/verticalLogisticPredict'),
+        meta: { title: '逻辑回归预测（纵向）' }
+      },
+      {
+        path: 'verticalXGBoostPredict',
+        name: 'FLVerticalXGBoostPredict',
+        component: () => import('@/views/federatedLearning/verticalXGBoostPredict'),
+        meta: { title: 'XGBoost预测（纵向）' }
       }
     ]
   },
@@ -476,6 +686,90 @@ export const asyncRoutes = [
         name: 'FederatedAnalysisLogExport',
         component: () => import('@/views/federatedAnalysis/logExport'),
         meta: { title: '联邦分析日志导出' }
+      },
+      {
+        path: 'fieldConfidentiality',
+        name: 'FederatedAnalysisFieldConfidentiality',
+        component: () => import('@/views/federatedAnalysis/fieldConfidentiality'),
+        meta: { title: '字段保密属性' }
+      },
+      {
+        path: 'filterOperator',
+        name: 'FAFilterOperator',
+        component: () => import('@/views/federatedAnalysis/filterOperator'),
+        meta: { title: '联邦分析-筛选算子' }
+      },
+      {
+        path: 'joinOperator',
+        name: 'FAJoinOperator',
+        component: () => import('@/views/federatedAnalysis/joinOperator'),
+        meta: { title: '联邦分析-连接算子' }
+      },
+      {
+        path: 'aggregateOperator',
+        name: 'FAAggregateOperator',
+        component: () => import('@/views/federatedAnalysis/aggregateOperator'),
+        meta: { title: '联邦分析-聚合算子' }
+      },
+      {
+        path: 'groupOperator',
+        name: 'FAGroupOperator',
+        component: () => import('@/views/federatedAnalysis/groupOperator'),
+        meta: { title: '联邦分析-分组算子' }
+      },
+      {
+        path: 'sortOperator',
+        name: 'FASortOperator',
+        component: () => import('@/views/federatedAnalysis/sortOperator'),
+        meta: { title: '联邦分析-排序算子' }
+      },
+      {
+        path: 'windowFunction',
+        name: 'FAWindowFunction',
+        component: () => import('@/views/federatedAnalysis/windowFunction'),
+        meta: { title: '联邦分析-窗口函数' }
+      },
+      {
+        path: 'correlatedSubquery',
+        name: 'FACorrelatedSubquery',
+        component: () => import('@/views/federatedAnalysis/correlatedSubquery'),
+        meta: { title: '联邦分析-关联子查询' }
+      },
+      {
+        path: 'nonCorrelatedSubquery',
+        name: 'FANonCorrelatedSubquery',
+        component: () => import('@/views/federatedAnalysis/nonCorrelatedSubquery'),
+        meta: { title: '联邦分析-非关联子查询' }
+      },
+      {
+        path: 'charFunctions',
+        name: 'FACharFunctions',
+        component: () => import('@/views/federatedAnalysis/charFunctions'),
+        meta: { title: '联邦分析-字符类型函数' }
+      },
+      {
+        path: 'dateFunctions',
+        name: 'FADateFunctions',
+        component: () => import('@/views/federatedAnalysis/dateFunctions'),
+        meta: { title: '联邦分析-日期类型函数' }
+      },
+      {
+        path: 'timestampFunctions',
+        name: 'FATimestampFunctions',
+        component: () => import('@/views/federatedAnalysis/timestampFunctions'),
+        meta: { title: '联邦分析-时间戳类型函数' }
+      },
+      {
+        path: 'sqlFormatter',
+        name: 'FASqlFormatter',
+        component: () => import('@/views/federatedAnalysis/sqlFormatter'),
+        meta: { title: '联邦分析-SQL格式化' }
+      },
+      {
+        path: 'floatFunctions',
+        name: 'FAFloatFunctions',
+        component: () => import('@/views/federatedAnalysis/floatFunctions'),
+        meta: { title: '联邦分析-浮点类型函数' }
       }
     ]
   },
@@ -516,6 +810,54 @@ export const asyncRoutes = [
         name: 'FederatedStatisticsLogExport',
         component: () => import('@/views/federatedStatistics/logExport'),
         meta: { title: '联邦统计日志导出' }
+      },
+      {
+        path: 'groupStats',
+        name: 'FederatedStatisticsGroupStats',
+        component: () => import('@/views/federatedStatistics/groupStats'),
+        meta: { title: '联邦统计-分组统计' }
+      },
+      {
+        path: 'conditionStats',
+        name: 'FederatedStatisticsConditionStats',
+        component: () => import('@/views/federatedStatistics/conditionStats'),
+        meta: { title: '联邦统计-条件统计' }
+      },
+      {
+        path: 'ratioStats',
+        name: 'FederatedStatisticsRatioStats',
+        component: () => import('@/views/federatedStatistics/ratioStats'),
+        meta: { title: '联邦统计-占比统计' }
+      },
+      {
+        path: 'tTest',
+        name: 'FederatedStatisticsTTest',
+        component: () => import('@/views/federatedStatistics/tTest'),
+        meta: { title: '联邦统计-T检验' }
+      },
+      {
+        path: 'fTest',
+        name: 'FederatedStatisticsFTest',
+        component: () => import('@/views/federatedStatistics/fTest'),
+        meta: { title: '联邦统计-F检验' }
+      },
+      {
+        path: 'chiSquareTest',
+        name: 'FederatedStatisticsChiSquareTest',
+        component: () => import('@/views/federatedStatistics/chiSquareTest'),
+        meta: { title: '联邦统计-卡方检验' }
+      },
+      {
+        path: 'regressionAnalysis',
+        name: 'FederatedStatisticsRegressionAnalysis',
+        component: () => import('@/views/federatedStatistics/regressionAnalysis'),
+        meta: { title: '联邦统计-回归分析' }
+      },
+      {
+        path: 'correlationAnalysis',
+        name: 'FederatedStatisticsCorrelationAnalysis',
+        component: () => import('@/views/federatedStatistics/correlationAnalysis'),
+        meta: { title: '联邦统计-相关性分析' }
       }
     ]
   },
@@ -616,6 +958,18 @@ export const asyncRoutes = [
         name: 'FederatedQueryToolsCodec',
         component: () => import('@/views/federatedQuery/tools/codec'),
         meta: { title: '编解码工具' }
+      },
+      {
+        path: 'tools/compress',
+        name: 'FederatedQueryToolsCompress',
+        component: () => import('@/views/federatedQuery/tools/compress'),
+        meta: { title: '压缩工具' }
+      },
+      {
+        path: 'tools/decompress',
+        name: 'FederatedQueryToolsDecompress',
+        component: () => import('@/views/federatedQuery/tools/decompress'),
+        meta: { title: '解压工具' }
       },
       {
         path: 'logs/intersectionRecord',
@@ -1111,6 +1465,18 @@ export const asyncRoutes = [
           activeMenu: '/tenant/list'
         },
         hidden: true
+      },
+      {
+        path: 'isolationConfig',
+        name: 'TenantIsolationConfig',
+        component: () => import('@/views/tenant/isolationConfig'),
+        meta: { title: '租户间计算流程隔离' }
+      },
+      {
+        path: 'dataIsolation',
+        name: 'TenantDataIsolation',
+        component: () => import('@/views/tenant/dataIsolation'),
+        meta: { title: '租户数据隔离' }
       }
     ]
   },
@@ -1159,12 +1525,38 @@ export const asyncRoutes = [
     name: 'Monitor',
     redirect: '/monitor/index',
     meta: { title: '监控管理', icon: 'el-icon-data-line' },
-    children: [{
-      path: 'index',
-      name: 'MonitorIndex',
-      component: () => import('@/views/monitor/index'),
-      meta: { title: '监控管理', breadcrumb: false }
-    }]
+    children: [
+      {
+        path: 'index',
+        name: 'MonitorIndex',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '监控管理', breadcrumb: false }
+      },
+      {
+        path: 'os',
+        name: 'MonitorOs',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '操作系统监控', breadcrumb: false }
+      },
+      {
+        path: 'database',
+        name: 'MonitorDatabase',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '数据库监控', breadcrumb: false }
+      },
+      {
+        path: 'middleware',
+        name: 'MonitorMiddleware',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '中间件监控', breadcrumb: false }
+      },
+      {
+        path: 'alerts',
+        name: 'MonitorAlerts',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '告警历史', breadcrumb: false }
+      }
+    ]
   },
   {
     path: '/api',
@@ -1241,6 +1633,12 @@ export const asyncRoutes = [
         name: 'ComputeLog',
         component: () => import('@/views/logManagement/computeLog'),
         meta: { title: '计算日志记录' }
+      },
+      {
+        path: 'logExport',
+        name: 'LogExport',
+        component: () => import('@/views/logManagement/logExport'),
+        meta: { title: '日志导出' }
       },
       {
         path: 'detail/:id',

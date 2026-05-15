@@ -391,3 +391,63 @@ export function getTrainingLogs(params) {
     showLoading: false
   })
 }
+
+// ==================== 联邦学习预处理 ====================
+
+/**
+ * 获取预处理任务列表
+ */
+export function getFLPreprocessList(params) {
+  return request({
+    url: '/federatedLearning/preprocess/list',
+    method: 'get',
+    params,
+    showLoading: false
+  })
+}
+
+/**
+ * 创建预处理任务
+ */
+export function createFLPreprocess(data) {
+  return request({
+    url: '/federatedLearning/preprocess/create',
+    method: 'post',
+    type: 'json',
+    data
+  })
+}
+
+/**
+ * 执行预处理任务
+ */
+export function runFLPreprocess(data) {
+  return request({
+    url: '/federatedLearning/preprocess/run',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除预处理任务
+ */
+export function deleteFLPreprocess(data) {
+  return request({
+    url: '/federatedLearning/preprocess/delete',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 下载预处理结果
+ */
+export function downloadFLPreprocessResult(params) {
+  return request({
+    url: '/federatedLearning/preprocess/download',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

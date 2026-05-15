@@ -87,6 +87,43 @@ export function deleteDataSource(data) {
   })
 }
 
+// ==================== 联邦分析 SQL 算子任务 ====================
+
+/**
+ * 创建联邦分析 SQL 算子任务
+ */
+export function createFederatedAnalysisTask(data) {
+  return request({
+    url: '/data/federatedAnalysis/sqlTask/create',
+    method: 'post',
+    type: 'json',
+    data
+  })
+}
+
+/**
+ * 获取联邦分析 SQL 算子任务列表
+ */
+export function getFederatedAnalysisTaskList(params) {
+  return request({
+    url: '/data/federatedAnalysis/sqlTask/list',
+    method: 'get',
+    params,
+    showLoading: false
+  })
+}
+
+/**
+ * 删除联邦分析 SQL 算子任务
+ */
+export function deleteFederatedAnalysisTask(data) {
+  return request({
+    url: '/data/federatedAnalysis/sqlTask/delete',
+    method: 'post',
+    data
+  })
+}
+
 // 测试数据源连接
 export function testDataSourceConnection(data) {
   return request({
