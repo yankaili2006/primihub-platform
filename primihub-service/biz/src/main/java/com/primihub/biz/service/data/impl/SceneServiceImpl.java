@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -329,15 +330,28 @@ public class SceneServiceImpl implements SceneService {
             }
 
             byte[] keyBytes = Base64.getDecoder().decode(config.getPrivateKey());
-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            java.security.spec.KeySpec spec = new javax.crypto.spec.PBEKeySpec(
+                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())) : "PrimiHubScene".toCharArray(),
+                java.util.Arrays.copyOf(keyBytes, 16), 65536, 256);
+            javax.crypto.SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec keySpec = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            byte[] iv = new byte[12];
+            java.security.SecureRandom.getInstanceStrong().nextBytes(iv);
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
             byte[] encrypted = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
 
+            byte[] combined = new byte[iv.length + encrypted.length];
+            System.arraycopy(iv, 0, combined, 0, iv.length);
+            System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
+
             Map<String, Object> result = new HashMap<>();
-            result.put("encryptedData", Base64.getEncoder().encodeToString(encrypted));
+            result.put("encryptedData", Base64.getEncoder().encodeToString(combined));
             result.put("keyId", keyId);
-            result.put("algorithm", config.getScheme());
+            result.put("algorithm", "AES-256-GCM");
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("加密数据失败", e);
@@ -353,10 +367,27 @@ public class SceneServiceImpl implements SceneService {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "密钥不存在");
             }
 
+            byte[] combined = Base64.getDecoder().decode(encryptedData);
+            if (combined.length < 13) {
+                return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "无效的密文数据");
+            }
+
+            byte[] iv = new byte[12];
+            byte[] ciphertext = new byte[combined.length - 12];
+            System.arraycopy(combined, 0, iv, 0, iv.length);
+            System.arraycopy(combined, iv.length, ciphertext, 0, ciphertext.length);
+
             byte[] keyBytes = Base64.getDecoder().decode(config.getPrivateKey());
-            SecretKeySpec keySpec = new SecretKeySpec(Arrays.copyOf(keyBytes, 16), "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            java.security.spec.KeySpec spec = new javax.crypto.spec.PBEKeySpec(
+                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())) : "PrimiHubScene".toCharArray(),
+                java.util.Arrays.copyOf(keyBytes, 16), 65536, 256);
+            javax.crypto.SecretKey tmp = factory.generateSecret(spec);
+            SecretKeySpec keySpec = new SecretKeySpec(tmp.getEncoded(), "AES");
+
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encryptedData));
 
             Map<String, Object> result = new HashMap<>();

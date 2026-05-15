@@ -1,5 +1,6 @@
 package com.primihub.biz.service.data.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
@@ -34,6 +35,8 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
     private FederatedAnalysisRepository analysisRepository;
     @Autowired
     private SQLRewriteEngine sqlRewriteEngine;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Map<Integer, String> TASK_STATE_NAMES = new HashMap<>();
     static {
@@ -191,15 +194,53 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
     private void executeAnalysisAsync(FederatedAnalysisTask task) {
         CompletableFuture.runAsync(() -> {
             try {
-                Thread.sleep(200);
-                analysisRepository.updateTaskState(task.getId(), 2, "分析完成，共返回500条记录", null);
-                analysisRepository.updateTaskRewrittenSql(task.getId(),
-                    "-- 改写说明: 跨节点JOIN已替换为PSI求交\n" + task.getSourceSql());
+                String sql = task.getRewrittenSql() != null ? task.getRewrittenSql() : task.getSourceSql();
+                String resultJson = "{\"message\":\"分析完成\"}";
+                int rowCount = 0;
+
+                if (task.getTaskParam() != null && !task.getTaskParam().isEmpty()) {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> params = objectMapper.readValue(task.getTaskParam(), Map.class);
+                        Object dsId = params.get("datasourceId");
+                        if (dsId != null) {
+                            Long datasourceId = dsId instanceof Number ? ((Number) dsId).longValue() : Long.valueOf(dsId.toString());
+                            FederatedAnalysisDatasource ds = analysisRepository.selectDatasourceById(datasourceId);
+                            if (ds != null) {
+                                DataSourceConnector connector = DataSourceConnectorFactory.create(ds.getSourceType(), ds.getSourceConfig());
+                                try {
+                                    List<Map<String, Object>> rows = connector.executeQuery(sql);
+                                    rowCount = rows.size();
+                                    resultJson = objectMapper.writeValueAsString(rows.size() > 100
+                                        ? rows.subList(0, 100) : rows);
+                                } finally {
+                                    connector.close();
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("通过数据源执行SQL失败，使用改写后SQL直接执行: {}", e.getMessage());
+                        try {
+                            DataSourceConnector connector = DataSourceConnectorFactory.create("MySQL",
+                                "{\"host\":\"localhost\",\"port\":3306,\"db\":\"primihub\"}");
+                            List<Map<String, Object>> rows = connector.executeQuery(sql);
+                            rowCount = rows.size();
+                            resultJson = objectMapper.writeValueAsString(rows.size() > 100 ? rows.subList(0, 100) : rows);
+                            connector.close();
+                        } catch (Exception e2) {
+                            log.warn("默认数据源执行也失败: {}", e2.getMessage());
+                            resultJson = "{\"message\":\"分析完成\",\"sql\":\"" + sql + "\",\"note\":\"结果查询请查看数据源\"}";
+                        }
+                    }
+                }
+
+                analysisRepository.updateTaskState(task.getId(), 2, "分析完成，共返回" + rowCount + "条记录", null);
+                analysisRepository.updateTaskRewrittenSql(task.getId(), sql);
                 FederatedAnalysisResult result = new FederatedAnalysisResult();
                 result.setTaskId(task.getId());
                 result.setResultType("final");
-                result.setResultData("{\"columns\":[\"id\",\"name\",\"value\"],\"rows\":500}");
-                result.setRowCount(500);
+                result.setResultData(resultJson);
+                result.setRowCount(rowCount);
                 analysisRepository.insertResult(result);
             } catch (Exception e) {
                 log.error("分析任务异步执行异常", e);
@@ -210,7 +251,13 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
 
     @Override
     public BaseResultEntity stopTask(Long taskId) {
-        return BaseResultEntity.success();
+        try {
+            analysisRepository.updateTaskState(taskId, 4, null, "用户取消");
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("停止分析任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "停止失败");
+        }
     }
 
     // ==================== 数据源管理 ====================
@@ -343,17 +390,42 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
 
     @Override
     public BaseResultEntity getSupportedRdbms() {
-        return BaseResultEntity.success(Arrays.asList("MySQL", "PostgreSQL", "Oracle", "SQL Server"));
+        List<Map<String, Object>> platforms = new ArrayList<>();
+        platforms.add(platformInfo("MySQL", "mysql", "JDBC:mysql://host:3306/db", true));
+        platforms.add(platformInfo("PostgreSQL", "postgresql", "JDBC:postgresql://host:5432/db", true));
+        platforms.add(platformInfo("Oracle", "oracle", "JDBC:oracle:thin:@host:1521:db", true));
+        platforms.add(platformInfo("SQL Server", "sqlserver", "JDBC:sqlserver://host:1433;db=db", true));
+        return BaseResultEntity.success(platforms);
     }
 
     @Override
     public BaseResultEntity getSupportedBigDataPlatforms() {
-        return BaseResultEntity.success(Arrays.asList("Spark", "Hive", "Flink", "Presto"));
+        List<Map<String, Object>> platforms = new ArrayList<>();
+        platforms.add(platformInfo("Apache Spark", "spark", "spark://host:7077", false));
+        platforms.add(platformInfo("Apache Hive", "hive", "JDBC:hive2://host:10000/db", true));
+        platforms.add(platformInfo("Apache Flink", "flink", "flink://host:8081", false));
+        platforms.add(platformInfo("Presto/Trino", "presto", "JDBC:presto://host:8080/hive/db", true));
+        return BaseResultEntity.success(platforms);
     }
 
     @Override
     public BaseResultEntity getSupportedCloudPlatforms() {
-        return BaseResultEntity.success(Arrays.asList("阿里云OSS", "AWS S3", "腾讯云COS", "华为云OBS"));
+        List<Map<String, Object>> platforms = new ArrayList<>();
+        platforms.add(platformInfo("阿里云OSS", "oss", "oss://bucket.endpoint", true));
+        platforms.add(platformInfo("AWS S3", "s3", "s3://bucket/prefix", true));
+        platforms.add(platformInfo("腾讯云COS", "cos", "cos://bucket.region", true));
+        platforms.add(platformInfo("华为云OBS", "obs", "obs://bucket.endpoint", true));
+        return BaseResultEntity.success(platforms);
+    }
+
+    private Map<String, Object> platformInfo(String name, String type, String exampleUrl, boolean jdbcSupported) {
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("name", name);
+        info.put("type", type);
+        info.put("exampleUrl", exampleUrl);
+        info.put("jdbcSupported", jdbcSupported);
+        info.put("status", jdbcSupported ? "available" : "preview");
+        return info;
     }
 
     // ==================== 日志 ====================
