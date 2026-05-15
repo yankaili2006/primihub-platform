@@ -614,6 +614,9 @@ export default {
     }
   },
   created() {
+    const nameToTab = { MonitorOs: 'os', MonitorDatabase: 'database', MonitorMiddleware: 'middleware', MonitorAlerts: 'alerts' }
+    const tab = this.$route?.query?.tab || nameToTab[this.$route?.name]
+    if (tab && ['os', 'database', 'middleware', 'alerts'].includes(tab)) this.activeTab = tab
     this.fetchStatistics()
     this.fetchMonitorData()
     this.fetchAlertHistory()

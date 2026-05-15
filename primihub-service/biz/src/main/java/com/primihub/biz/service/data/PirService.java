@@ -56,6 +56,7 @@ public class PirService {
         // Try local database lookup first (works without Fusion service)
         BaseResultEntity dataResource = otherBusinessesService.getDataResource(req.getResourceId());
         Map<String, Object> pirDataResource = null;
+        DataResource localResource = null;
         String resourceColumnNames = null;
         String organName = null;
         String resourceName = null;
@@ -71,7 +72,6 @@ public class PirService {
             resourceName = pirDataResource.get("resourceName").toString();
         } else {
             // Fallback: lookup resource from local database
-            DataResource localResource = null;
             try {
                 localResource = dataResourceRepository.queryDataResourceById(Long.parseLong(req.getResourceId()));
             } catch (NumberFormatException e) {
@@ -113,7 +113,11 @@ public class PirService {
         dataPirTask.setRetrievalId(pirParam);
         dataPirTask.setProviderOrganName(organName);
         dataPirTask.setResourceName(resourceName);
-        dataPirTask.setResourceId(req.getResourceId());
+        // Use fusion resource ID (not local DB ID) so the engine can resolve the dataset via meta service
+        String engineResourceId = useFusion && pirDataResource != null
+            ? req.getResourceId()
+            : (localResource != null ? localResource.getResourceFusionId() : req.getResourceId());
+        dataPirTask.setResourceId(engineResourceId);
         dataTaskPrRepository.saveDataPirTask(dataPirTask);
         dataAsyncService.pirGrpcTask(dataTask,dataPirTask,resourceColumnNames,dataPirKeyQueries);
         Map<String, Object> map = new HashMap<>();

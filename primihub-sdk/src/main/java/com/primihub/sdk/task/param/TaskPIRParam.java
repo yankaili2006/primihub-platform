@@ -29,6 +29,8 @@ public class TaskPIRParam {
 
     private Integer[] keyColumns;
 
+    private Integer[] labelColumns;
+
     public String[] getQueryParam() {
         return queryParam;
     }
@@ -73,6 +75,18 @@ public class TaskPIRParam {
         this.keyColumns = keyColumns;
     }
 
+    public Integer[] getLabelColumns() {
+        return labelColumns;
+    }
+
+    public String getLabelColumnsString() {
+        return labelColumns != null ? Arrays.toString(labelColumns) : "[]";
+    }
+
+    public void setLabelColumns(Integer[] labelColumns) {
+        this.labelColumns = labelColumns;
+    }
+
     @Override
     public String toString() {
         return "PirTaskParam{" +
@@ -81,6 +95,7 @@ public class TaskPIRParam {
                 ", pirType=" + pirType +
                 ", outputFullFilename='" + outputFullFilename + '\'' +
                 ", keyColumns='" + getKeyColumnsString() + '\'' +
+                ", labelColumns='" + getLabelColumnsString() + '\'' +
                 '}';
     }
 }

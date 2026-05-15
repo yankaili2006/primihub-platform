@@ -358,7 +358,13 @@ public class DataAsyncService implements ApplicationContextAware {
                 taskParam.getTaskContentParam().setPirType(0);
                 List<String> columns = Arrays.asList(resourceColumnNames.split(","));
                 List<String> keyColumns = Arrays.asList(dataPirKeyQuery.getKey());
-                taskParam.getTaskContentParam().setKeyColumns(keyColumns.stream().map(columns::indexOf).toArray(Integer[]::new));
+                Integer[] keyIdx = keyColumns.stream().map(columns::indexOf).toArray(Integer[]::new);
+                taskParam.getTaskContentParam().setKeyColumns(keyIdx);
+                // label_columns: all columns except key columns
+                Integer[] labelIdx = java.util.stream.IntStream.range(0, columns.size())
+                    .filter(i -> !Arrays.asList(keyIdx).contains(i))
+                    .boxed().toArray(Integer[]::new);
+                taskParam.getTaskContentParam().setLabelColumns(labelIdx);
                 taskHelper.submit(taskParam);
                 if (taskParam.getSuccess()){
                     dataRedisRepository.pirTaskResultHandle(dataTask.getTaskIdName(),CsvUtil.csvReader(sb.toString(), null));

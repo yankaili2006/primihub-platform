@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 public class AbstractPirGRPCExecute extends AbstractGRPCExecuteFactory {
 
-    private final static String QUERY_CONFIG_JSON = "{ \"SERVER\": {\"key_columns\": <key_columns>} }";
+    private final static String QUERY_CONFIG_JSON = "{ \"SERVER\": {\"key_columns\": <key_columns>, \"label_columns\": <label_columns>} }";
 
     private final static Logger log = LoggerFactory.getLogger(AbstractPirGRPCExecute.class);
 
@@ -39,35 +39,56 @@ public class AbstractPirGRPCExecute extends AbstractGRPCExecuteFactory {
     private void runPir(Channel channel, TaskParam<TaskPIRParam> param){
         try {
             log.info("grpc run {} - time:{}", param.toString(), System.currentTimeMillis());
-            Common.string_array.Builder builder = Common.string_array.newBuilder();
-            for (String str : param.getTaskContentParam().getQueryParam()) {
-                builder.addValueStringArray(ByteString.copyFrom(str.getBytes(StandardCharsets.UTF_8)));
-            }
-            Common.ParamValue clientDataParamValue = Common.ParamValue.newBuilder().setIsArray(true).setValueStringArray(builder).build();
+            Common.Params.Builder paramsBuilder = Common.Params.newBuilder();
             Common.ParamValue serverDataParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(param.getTaskContentParam().getServerData().getBytes(StandardCharsets.UTF_8))).build();
             Common.ParamValue pirTagParamValue = Common.ParamValue.newBuilder().setValueInt32(param.getTaskContentParam().getPirType()).build();
             Common.ParamValue outputFullFilenameParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(param.getTaskContentParam().getOutputFullFilename().getBytes(StandardCharsets.UTF_8))).build();
-            String queryConfig = "";
-            if (param.getTaskContentParam().getKeyColumns() == null || param.getTaskContentParam().getKeyColumns().length==0){
-                param.setError("KeyColumns 不可以为空");
-                param.setSuccess(false);
-                param.setEnd(true);
-                log.info("grpc end {} - time:{}", param.toString(), System.currentTimeMillis());
-                return;
-            }
-            queryConfig = QUERY_CONFIG_JSON.replace("<key_columns>",param.getTaskContentParam().getKeyColumnsString());
-            Common.ParamValue aueryConfigParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(queryConfig.getBytes(StandardCharsets.UTF_8))).build();
-            Common.Params params = Common.Params.newBuilder()
-                    .putParamMap("clientData", clientDataParamValue)
-                    .putParamMap("serverData", serverDataParamValue)
-                    .putParamMap("pirType", pirTagParamValue)
-                    .putParamMap("outputFullFilename", outputFullFilenameParamValue)
-                    .putParamMap("QueryConfig", aueryConfigParamValue)
+            paramsBuilder.putParamMap("serverData", serverDataParamValue);
+            paramsBuilder.putParamMap("pirType", pirTagParamValue);
+            paramsBuilder.putParamMap("outputFullFilename", outputFullFilenameParamValue);
+
+            if (param.getTaskContentParam().getPirType() == 0) {
+                // ID_PIR: use queryIndeies (range format "start:count")
+                String joined = String.join(",", param.getTaskContentParam().getQueryParam());
+                Common.ParamValue queryIndeiesParamValue = Common.ParamValue.newBuilder()
+                    .setValueString(ByteString.copyFrom(joined.getBytes(StandardCharsets.UTF_8)))
                     .build();
+                paramsBuilder.putParamMap("queryIndeies", queryIndeiesParamValue);
+                // ID_PIR also needs QueryConfig for label columns
+                String queryConfig = QUERY_CONFIG_JSON
+                    .replace("<key_columns>", param.getTaskContentParam().getKeyColumnsString() != null ?
+                        param.getTaskContentParam().getKeyColumnsString() : "[]")
+                    .replace("<label_columns>", param.getTaskContentParam().getLabelColumnsString() != null ?
+                        param.getTaskContentParam().getLabelColumnsString() : "[]");
+                Common.ParamValue aueryConfigParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(queryConfig.getBytes(StandardCharsets.UTF_8))).build();
+                paramsBuilder.putParamMap("QueryConfig", aueryConfigParamValue);
+            } else {
+                // KEY_PIR: use clientData + QueryConfig
+                Common.string_array.Builder builder = Common.string_array.newBuilder();
+                for (String str : param.getTaskContentParam().getQueryParam()) {
+                    builder.addValueStringArray(ByteString.copyFrom(str.getBytes(StandardCharsets.UTF_8)));
+                }
+                Common.ParamValue clientDataParamValue = Common.ParamValue.newBuilder().setIsArray(true).setValueStringArray(builder).build();
+                paramsBuilder.putParamMap("clientData", clientDataParamValue);
+
+                String queryConfig = "";
+                if (param.getTaskContentParam().getKeyColumns() == null || param.getTaskContentParam().getKeyColumns().length==0){
+                    param.setError("KeyColumns 不可以为空");
+                    param.setSuccess(false);
+                    param.setEnd(true);
+                    log.info("grpc end {} - time:{}", param.toString(), System.currentTimeMillis());
+                    return;
+                }
+                queryConfig = QUERY_CONFIG_JSON
+                    .replace("<key_columns>", param.getTaskContentParam().getKeyColumnsString())
+                    .replace("<label_columns>", param.getTaskContentParam().getLabelColumnsString());
+                Common.ParamValue aueryConfigParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(queryConfig.getBytes(StandardCharsets.UTF_8))).build();
+                paramsBuilder.putParamMap("QueryConfig", aueryConfigParamValue);
+            }
             Common.TaskContext taskBuild = assembleTaskContext(param);
             Common.Task task = Common.Task.newBuilder()
                     .setType(Common.TaskType.PIR_TASK)
-                    .setParams(params)
+                    .setParams(paramsBuilder.build())
                     .setName("pirTask")
                     .setTaskInfo(taskBuild)
                     .setLanguage(Common.Language.PROTO)
