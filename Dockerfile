@@ -2,13 +2,19 @@ FROM maven:3.8.6-openjdk-8 as build
 
 WORKDIR /opt
 
+# Aliyun Maven mirror
+COPY settings.xml /tmp/settings.xml
+
 ADD . /opt/
 
-RUN ARCH=`arch | sed s/arm64/aarch_64/ | sed s/aarch64/aarch_64/ | sed s/amd64/x86_64/` \
+RUN --mount=type=cache,target=/root/.m2/repository \
+  ARCH=`arch | sed s/arm64/aarch_64/ | sed s/aarch64/aarch_64/ | sed s/amd64/x86_64/` \
   && cd primihub-sdk \
-  && mvn clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true -Dos.detected.classifier=linux-${ARCH}
-RUN cd primihub-service \
-  && mvn clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true
+  && mvn -s /tmp/settings.xml -T 1C clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true -Dos.detected.classifier=linux-${ARCH}
+RUN --mount=type=cache,target=/root/.m2/repository \
+  cd primihub-service \
+  && mvn -s /tmp/settings.xml -T 1C clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true \
+  && rm -f /tmp/settings.xml
 
 FROM amazoncorretto:8
 

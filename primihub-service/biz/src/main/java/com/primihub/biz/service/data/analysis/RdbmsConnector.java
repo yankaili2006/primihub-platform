@@ -83,14 +83,25 @@ public class RdbmsConnector implements DataSourceConnector {
     }
 
     @Override
-    public ResultSet executeQuery(String sql) {
-        try {
-            Statement stmt = connection.createStatement();
+    public List<Map<String, Object>> executeQuery(String sql) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        try (Statement stmt = connection.createStatement()) {
             stmt.setQueryTimeout(30);
-            return stmt.executeQuery(sql);
+            try (ResultSet rs = stmt.executeQuery(sql)) {
+                ResultSetMetaData meta = rs.getMetaData();
+                int columnCount = meta.getColumnCount();
+                while (rs.next()) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        row.put(meta.getColumnLabel(i), rs.getObject(i));
+                    }
+                    results.add(row);
+                }
+            }
         } catch (SQLException e) {
             throw new RuntimeException("SQL执行失败: " + e.getMessage(), e);
         }
+        return results;
     }
 
     @Override

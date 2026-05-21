@@ -6,4 +6,6 @@ import lombok.Data;
 public class LogExportReq {
     private Long taskId;
     private String format;
+    private String startDate;
+    private String endDate;
 }

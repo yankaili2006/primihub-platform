@@ -332,7 +332,7 @@ public class SceneServiceImpl implements SceneService {
             byte[] keyBytes = Base64.getDecoder().decode(config.getPrivateKey());
             javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             java.security.spec.KeySpec spec = new javax.crypto.spec.PBEKeySpec(
-                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())) : "PrimiHubScene".toCharArray(),
+                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())).toCharArray() : "PrimiHubScene".toCharArray(),
                 java.util.Arrays.copyOf(keyBytes, 16), 65536, 256);
             javax.crypto.SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec keySpec = new SecretKeySpec(tmp.getEncoded(), "AES");
@@ -380,7 +380,7 @@ public class SceneServiceImpl implements SceneService {
             byte[] keyBytes = Base64.getDecoder().decode(config.getPrivateKey());
             javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             java.security.spec.KeySpec spec = new javax.crypto.spec.PBEKeySpec(
-                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())) : "PrimiHubScene".toCharArray(),
+                config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())).toCharArray() : "PrimiHubScene".toCharArray(),
                 java.util.Arrays.copyOf(keyBytes, 16), 65536, 256);
             javax.crypto.SecretKey tmp = factory.generateSecret(spec);
             SecretKeySpec keySpec = new SecretKeySpec(tmp.getEncoded(), "AES");

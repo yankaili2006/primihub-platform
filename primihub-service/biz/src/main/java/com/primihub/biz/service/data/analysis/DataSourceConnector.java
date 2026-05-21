@@ -7,6 +7,6 @@ public interface DataSourceConnector {
     boolean testConnection();
     List<String> getTables();
     List<Map<String, String>> getColumns(String tableName);
-    ResultSet executeQuery(String sql);
+    List<Map<String, Object>> executeQuery(String sql);
     void close();
 }

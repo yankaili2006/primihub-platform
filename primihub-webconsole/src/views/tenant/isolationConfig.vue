@@ -197,7 +197,7 @@ export default {
       this.saving = true
       try {
         const res = await request({ url: '/tenant/isolation/config', method: 'post', type: 'json', data: this.form })
-        if (res.code === 0) this.$message.success('隔离配置已保存') else this.$message.error(res.message || '保存失败')
+        if (res.code === 0) { this.$message.success('隔离配置已保存') } else { this.$message.error(res.message || '保存失败') }
       } catch (e) { this.$message.error('请求异常') } finally { this.saving = false }
     },
     async handleTest() {

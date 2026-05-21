@@ -90,6 +90,45 @@
         DELETE FROM federated_stats_result WHERE task_id = #{taskId}
     </delete>
 
+    <select id="selectResultsByUserId" resultMap="resultMap">
+        SELECT r.* FROM federated_stats_result r
+        JOIN federated_stats_task t ON r.task_id = t.id
+        WHERE t.created_by = #{userId}
+        ORDER BY r.created_at DESC
+    </select>
+
+    <select id="selectResultById" resultMap="resultMap">
+        SELECT * FROM federated_stats_result WHERE id = #{id}
+    </select>
+
+    <delete id="deleteResult">
+        DELETE FROM federated_stats_result WHERE id = #{id}
+    </delete>
+
+    <select id="selectLogList" resultType="java.util.Map">
+        SELECT * FROM federated_stats_task_log
+        <where>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+        ORDER BY created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectLogCount" resultType="int">
+        SELECT COUNT(*) FROM federated_stats_task_log
+        <where>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+            <if test="startDate != null and startDate != ''">AND created_at >= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND created_at &lt;= #{endDate}</if>
+        </where>
+    </select>
+
+    <select id="selectLogById" resultType="java.util.Map">
+        SELECT * FROM federated_stats_task_log WHERE id = #{id}
+    </select>
+
     <insert id="insertConfig" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO federated_stats_config (config_name, storage_type, storage_path, connection_json, is_default, created_by)
         VALUES (#{configName}, #{storageType}, #{storagePath}, #{connectionJson}, #{isDefault}, #{createdBy})
