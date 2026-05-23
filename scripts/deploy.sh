@@ -455,6 +455,20 @@ main() {
     # 显示总结
     deployment_summary
 
+    # 修复缺失的前端路由权限
+    print_header "修复前端路由权限"
+    FIX_SQL="$BASE_DIR/fix_missing_auth_entries.sql"
+    if [ -f "$FIX_SQL" ] && command -v mysql &>/dev/null; then
+        print_step "应用权限修复SQL..."
+        MYSQL_USER="${MYSQL_USER:-root}"
+        MYSQL_PASS="${MYSQL_PASS:-}"
+        mysql -u"$MYSQL_USER" -p"$MYSQL_PASS" privacy < "$FIX_SQL" 2>/dev/null && \
+            print_success "权限修复完成" || \
+            print_warn "权限修复失败，可手动执行: mysql -uroot privacy < $FIX_SQL"
+    else
+        print_info "跳过权限修复（SQL文件不存在或MySQL客户端未安装）"
+    fi
+
     print_success "部署流程完成！"
 }
 

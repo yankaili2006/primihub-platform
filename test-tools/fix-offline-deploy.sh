@@ -98,6 +98,22 @@ sleep 30
 curl -s http://localhost:8848/nacos &>/dev/null && \
     echo "✓ Nacos已就绪" || echo "⚠ Nacos仍在启动中"
 
+# 9. 修复缺失的前端权限
+echo "步骤9: 修复缺失的前端路由权限..."
+FIX_SQL="../fix_missing_auth_entries.sql"
+if [ -f "$FIX_SQL" ]; then
+    echo "应用权限修复SQL..."
+    # 查找privacy数据库的用户和密码
+    MYSQL_USER="${MYSQL_USER:-root}"
+    MYSQL_PASS="${MYSQL_PASS:-1qazmko0}"
+    docker exec -i mysql mysql -u"$MYSQL_USER" -p"$MYSQL_PASS" privacy < "$FIX_SQL" 2>/dev/null && \
+        echo "✓ 权限修复完成" || echo "⚠ 权限修复失败，可手动执行: docker exec -i mysql mysql -uroot privacy < $FIX_SQL"
+else
+    echo "⚠ 未找到权限修复SQL ($FIX_SQL)，跳过"
+    echo "  如需修复请手动执行: docker exec -i mysql mysql -uroot privacy < fix_missing_auth_entries.sql"
+fi
+echo ""
+
 echo ""
 echo "=========================================="
 echo "   修复完成"
@@ -111,4 +127,8 @@ echo ""
 echo "查看服务状态: docker-compose ps"
 echo "查看日志: docker-compose logs -f"
 echo "健康检查: bash health_check.sh"
+echo ""
+
+echo "📋 后续步骤:"
+echo "  所有用户需要重新登录以使权限生效（清除浏览器缓存或退出重新登录）"
 echo ""

@@ -38,6 +38,15 @@ cp -r data/initsql "$PACKAGE_DIR/data/"
 echo "✓ 配置文件已复制"
 
 echo ""
+echo "3.5. 复制权限修复SQL..."
+if [ -f "../fix_missing_auth_entries.sql" ]; then
+    cp ../fix_missing_auth_entries.sql "$PACKAGE_DIR/"
+    echo "✓ 权限修复SQL已复制"
+else
+    echo "⚠ 未找到 fix_missing_auth_entries.sql"
+fi
+
+echo ""
 echo "4. 复制文档..."
 cp *.md "$PACKAGE_DIR/" 2>/dev/null
 echo "✓ 文档已复制"
