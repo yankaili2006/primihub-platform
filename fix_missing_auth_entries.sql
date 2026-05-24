@@ -167,3 +167,24 @@ WHERE user_account = 'admin';
 
 SELECT CONCAT('Auth count: ', COUNT(*)) AS result FROM sys_auth;
 SELECT CONCAT('RA count: ', COUNT(*)) AS result FROM sys_ra WHERE role_id = 1;
+
+-- 20. 电子证件子页面 (Electronic Cert children, parent is auth_id 1070)
+INSERT IGNORE INTO sys_auth (auth_id,auth_name,auth_code,auth_type,p_auth_id,r_auth_id,full_path,auth_url,data_auth_code,auth_index,auth_depth,is_show,is_editable,is_del,c_time,u_time)
+VALUES
+(1168,'电子证件特征转换','ElectronicCertFeatureConvert',2,1070,3249,'1001,1070,1168','','own',3249,1,1,1,0,NOW(),NOW()),
+(1169,'现场证件特征转换','OnSiteCertFeatureConvert',2,1070,3250,'1001,1070,1169','','own',3250,1,1,1,0,NOW(),NOW()),
+(1170,'特征数据隐私比对','FeaturePrivacyCompare',2,1070,3251,'1001,1070,1170','','own',3251,1,1,1,0,NOW(),NOW()),
+(1171,'警务数据对接(电子证件)','ElectronicCertPoliceConnect',2,1070,3252,'1001,1070,1171','','own',3252,1,1,1,0,NOW(),NOW()),
+(1172,'使用机构数据接入','OrgDataImport',2,1070,3253,'1001,1070,1172','','own',3253,1,1,1,0,NOW(),NOW()),
+(1173,'使用机构数据导出','OrgDataExport',2,1070,3254,'1001,1070,1173','','own',3254,1,1,1,0,NOW(),NOW()),
+(1174,'特征密文数据安全交换(批量)','FeatureCipherBatchExchange',2,1070,3255,'1001,1070,1174','','own',3255,1,1,1,0,NOW(),NOW()),
+(1175,'特征密文数据安全交换(实时)','FeatureCipherRealTimeExchange',2,1070,3256,'1001,1070,1175','','own',3256,1,1,1,0,NOW(),NOW()),
+(1176,'流程执行日志记录(证件)','ElectronicCertLogRecord',2,1070,3257,'1001,1070,1176','','own',3257,1,1,1,0,NOW(),NOW()),
+(1177,'流程执行日志导出(证件)','ElectronicCertLogExport',2,1070,3258,'1001,1070,1177','','own',3258,1,1,1,0,NOW(),NOW());
+
+INSERT IGNORE INTO sys_ra (id,role_id,auth_id,is_del,c_time,u_time)
+VALUES
+(NULL,1,1168,0,NOW(),NOW()),(NULL,1,1169,0,NOW(),NOW()),(NULL,1,1170,0,NOW(),NOW()),
+(NULL,1,1171,0,NOW(),NOW()),(NULL,1,1172,0,NOW(),NOW()),(NULL,1,1173,0,NOW(),NOW()),
+(NULL,1,1174,0,NOW(),NOW()),(NULL,1,1175,0,NOW(),NOW()),(NULL,1,1176,0,NOW(),NOW()),
+(NULL,1,1177,0,NOW(),NOW());
