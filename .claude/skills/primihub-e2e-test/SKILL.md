@@ -125,7 +125,30 @@ python3 deploy_verify.py --fix-db --full
 | pve101-VM101 (v2.7.x) | 167/167 ✅ | 223/223 ✅ | 99/99 ✅ |
 | pve101-VM105 (v2.8.0) | 167/167 ✅ | 223/223 ✅ | - |
 
-## 8. 技术栈
+## 8. 离线部署常见问题
+
+### PVE VM 创建
+| 问题 | 现象 | 解决 |
+|------|------|------|
+| SSH 密钥不生效 | `qm set --sshkey` 后仍 Permission denied | `virt-customize -a <disk> --ssh-inject "root:file:<key>"` |
+| VM 锁住 | `can't lock file ... lock-<VMID>.conf` | `rm -f /var/lock/qemu-server/lock-<VMID>.conf` |
+| 磁盘空间不足 | "No space left on device" | `qm resize <VMID> scsi0 30G` + `growpart` + `resize2fs` |
+
+### 平台部署
+| 问题 | 现象 | 解决 |
+|------|------|------|
+| Nacos 配置跳过 | 日志 "Nacos 不可访问，跳过配置推送" | `docker restart application0 gateway0 gateway1 gateway2` |
+| application0 不健康 | `(unhealthy)` 状态 | 等待 30-60s 自动恢复 |
+| node 重启循环 | `Restarting (127)` | 等待所有节点启动后自动稳定 |
+
+### 环境要求
+| 资源 | 最低 | 推荐 |
+|------|:----:|:----:|
+| CPU | 4核 | 8核 |
+| 内存 | 8GB | 16GB |
+| 磁盘 | 30GB | 50GB |
+
+## 9. 技术栈
 
 - **Browser**: Playwright (Chromium headless)
 - **API Client**: httpx

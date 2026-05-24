@@ -1,12 +1,25 @@
 #!/bin/bash
 
 # 修复离线部署问题
+# 覆盖: Nacos配置推送、磁盘空间、容器重启、数据库修复
 
 set -e
 
 echo "=========================================="
 echo "   修复离线部署配置"
 echo "=========================================="
+echo ""
+
+# 0. 检查磁盘空间
+DISK_AVAIL=$(df / | tail -1 | awk '{print $4}')
+DISK_AVAIL_GB=$((DISK_AVAIL / 1024 / 1024))
+echo "步骤0: 检查磁盘空间..."
+echo "  可用: ${DISK_AVAIL_GB}GB"
+if [ "$DISK_AVAIL_GB" -lt 10 ]; then
+    echo "  ⚠️ 磁盘空间不足 10GB，部署可能失败"
+    echo "  建议扩容: qm resize <VMID> scsi0 30G"
+    echo "  然后: growpart /dev/sda 1 && resize2fs /dev/sda1"
+fi
 echo ""
 
 cd "$(dirname "$0")"

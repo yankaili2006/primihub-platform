@@ -66,6 +66,17 @@ while [[ $# -gt 0 ]]; do
 done
 
 # 打印函数
+# 磁盘空间检查
+check_disk_space() {
+    local avail=$(df / | tail -1 | awk '{print $4}')
+    local avail_gb=$((avail / 1024 / 1024))
+    print_step "磁盘空间检查: ${avail_gb}GB 可用"
+    if [ "$avail_gb" -lt 10 ]; then
+        print_warn "磁盘空间不足 10GB，部署可能失败"
+        print_info "建议: qm resize <VMID> scsi0 30G 后 growpart + resize2fs"
+    fi
+}
+
 print_header() {
     echo -e "\n${BLUE}========================================${NC}"
     echo -e "${BLUE}$1${NC}"
@@ -437,6 +448,9 @@ main() {
     echo "部署模式: $DEPLOY_MODE"
     echo "基础目录: $BASE_DIR"
     echo ""
+
+    # 检查磁盘空间
+    check_disk_space
 
     # 检测目录
     detect_primihub_dirs
