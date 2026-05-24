@@ -1,4 +1,20 @@
 -- PrimiHub 隐私计算平台 - 缺失数据库表初始化
+-- 目标数据库: privacy0, privacy1, privacy2 (应用数据库)
+--            fusion0, fusion1, fusion2 (元数据数据库)
+-- 
+-- 注意: 不要创建 privacy 数据库，该名称已被 Nacos 配置弃用
+-- 真实连接串: jdbc:mysql://mysql:3306/privacy0 (tenant demo0)
+--            jdbc:mysql://mysql:3306/privacy1 (tenant demo1)
+--            jdbc:mysql://mysql:3306/privacy2 (tenant demo2)
+--
+-- 执行方式:
+--   for db in privacy0 privacy1 privacy2; do
+--     mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS \$db DEFAULT CHARSET utf8mb4"
+--     mysql -uroot -proot \$db < init-privacy-db-tables.sql
+--   done
+-- =============================================
+
+-- PrimiHub 隐私计算平台 - 缺失数据库表初始化
 -- 目标数据库: privacy (primary)
 -- 在 docker-compose up 之后执行: mysql -uroot -proot privacy < init-privacy-db-tables.sql
 

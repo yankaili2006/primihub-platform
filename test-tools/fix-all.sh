@@ -16,7 +16,10 @@ MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-root}"
 # 2. 初始化数据库表
 echo "步骤1: 初始化缺失的数据库表..."
 if [ -f "init-privacy-db-tables.sql" ]; then
-  docker exec -i mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" privacy < init-privacy-db-tables.sql 2>/dev/null && \
+  docker exec -i mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" privacy0 < init-privacy-db-tables.sql
+  for db in privacy0 privacy1 privacy2; do
+    mysql -uroot -proot $db < init-privacy-db-tables.sql
+  done 2>/dev/null && \
     echo "  ✅ 核心表初始化完成" || echo "  ⚠️  表初始化失败"
   
   # 额外表：api_definition, evidence_record, tenant等
