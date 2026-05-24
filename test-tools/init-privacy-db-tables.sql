@@ -318,3 +318,24 @@ CREATE TABLE IF NOT EXISTS sys_user_whitelist (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SELECT CONCAT('Tables initialized: ', COUNT(*)) AS result FROM information_schema.tables WHERE table_schema = 'privacy';
+
+-- =============================================
+-- 9. api_manage (接口管理)
+-- =============================================
+CREATE TABLE IF NOT EXISTS api_manage (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  api_name VARCHAR(255) DEFAULT NULL,
+  api_path VARCHAR(500) DEFAULT NULL,
+  api_type INT(11) DEFAULT NULL,
+  api_desc TEXT DEFAULT NULL,
+  api_status INT(11) DEFAULT 1,
+  api_category VARCHAR(64) DEFAULT NULL,
+  api_method VARCHAR(10) DEFAULT NULL,
+  api_version VARCHAR(32) DEFAULT NULL,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  create_user_id BIGINT(20) DEFAULT NULL,
+  update_user_id BIGINT(20) DEFAULT NULL,
+  is_del TINYINT(4) DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
