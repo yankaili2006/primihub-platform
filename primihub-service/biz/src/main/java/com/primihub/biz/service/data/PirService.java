@@ -60,10 +60,14 @@ public class PirService {
         String resourceColumnNames = null;
         String organName = null;
         String resourceName = null;
-        boolean useFusion = dataResource.getCode() == 0 && dataResource.getResult() != null;
+        boolean useFusion = dataResource.getCode() == 0
+                && dataResource.getResult() != null
+                && !(dataResource.getResult() instanceof LinkedHashMap
+                     && ((LinkedHashMap)dataResource.getResult()).isEmpty());
         if (useFusion) {
             pirDataResource = (LinkedHashMap)dataResource.getResult();
-            int available = Integer.parseInt(pirDataResource.getOrDefault("available","1").toString());
+            String availableStr = pirDataResource.getOrDefault("available","0").toString();
+            int available = Integer.parseInt(availableStr);
             if (available == 1) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"资源不可用");
             }
