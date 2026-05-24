@@ -85,7 +85,67 @@
 - **根因**: Vue Router 状态累积导致权限验证失败
 - **解决**: 分批测试（每 20 页刷新浏览器上下文）
 
-## 5. 环境要求总结
+## 5. 数据库表缺失问题
+
+### 5.1 sys_operation_log 表结构不完整
+- **现象**: 所有需要写入操作日志的 API 返回 `code=-1 "系统异常"`
+- **根因**: 社区版 `create_platform.sql` 未包含完整 DDL，表缺少 `user_name`、`error_message` 等列
+- **解决**: 执行 `test-tools/init-privacy-db-tables.sql` 重建表
+- **影响API**: 所有 POST 请求（创建项目/PSI/PIR/FL等都可能因事务回滚而失败）
+- **状态**: ✅ 已修复
+
+### 5.2 sys_config 表列名不匹配
+- **现象**: `saveFtpConfig`、`saveTimeConfig` 等返回 `"保存失败"`
+- **根因**: MyBatis 映射需要 `id`、`created_by`、`created_at`、`updated_at` 列，但默认表使用 `config_id`、`c_time`、`u_time`
+- **解决**: 执行 `init-privacy-db-tables.sql` 重建表
+- **状态**: ✅ 已修复
+
+### 5.3 federated_stats/analysis/learning/single_party 等模块表缺失
+- **现象**: 相应 API 返回 `"查询失败"` 或 `"创建失败"`
+- **根因**: 这些模块的表未被初始 DDL 脚本创建
+- **解决**: 执行 `init-privacy-db-tables.sql` 一次性创建所有缺失表
+- **状态**: ✅ 已修复
+
+## 6. 运行时依赖缺失
+
+### 6.1 application0 容器缺少 Python3
+- **现象**: FL 训练/预测、单方算法任务失败 (taskState=3)
+- **根因**: 容器为 Amazon Linux 2，默认无 Python3
+- **解决**: 执行 `test-tools/setup-python-algorithms.sh` 自动安装 Python3 + 脚本
+- **状态**: ✅ 已修复
+
+### 6.2 FL 算法 Python 脚本缺失
+- **现象**: FL 训练/预测任务创建成功但执行失败
+- **根因**: 算法路径 `/home/primihub/primihub-platform/python-algorithms/` 下无对应脚本
+- **解决**: 执行 `setup-python-algorithms.sh` 自动创建 16 个算法脚本
+- **状态**: ✅ 已修复
+
+## 7. 代码 Bug
+
+### 7.1 PIR 提交 - Fusion 空结果导致"资源不可用"
+- **现象**: `POST /pir/pirSubmitTask` 返回 `code:1007 "资源不可用"`
+- **根因**: `PirService.java` 中 Fusion 服务返回空 `{}` 结果时，`getOrDefault("available","1")` 默认返回 `"1"`，而代码将 `available == 1` 视为不可用
+- **修复**: 
+  ```java
+  // 增加空结果判断，跳过 Fusion 路径回退本地数据库
+  boolean useFusion = dataResource.getCode() == 0
+      && dataResource.getResult() != null
+      && !(dataResource.getResult() instanceof LinkedHashMap
+           && ((LinkedHashMap)dataResource.getResult()).isEmpty());
+  // 默认 available 改为 "0"
+  String availableStr = pirDataResource.getOrDefault("available","0").toString();
+  ```
+- **提交**: `c9be7d2f` (primihub-platform)
+- **状态**: ✅ 已修复
+
+### 7.2 Python SDK 跨测试污染
+- **现象**: 运行全部测试时出现 31 个失败的测试，单独运行则通过
+- **根因**: `tests/test_fl_feature_engineering.py` 在模块级替换了 `sys.modules` 中的多个模块（`primihub.FL.crypto.*`、`google.*` 等），污染后续测试
+- **修复**: 在 `primihub/tests/conftest.py` 添加 session-scoped autouse fixture，在运行前清理被 mock 的模块
+- **提交**: `1be2c201` (primihub)
+- **状态**: ✅ 已修复
+
+## 8. 环境要求总结
 
 | 资源 | 最低要求 | 推荐配置 |
 |------|---------|---------|
