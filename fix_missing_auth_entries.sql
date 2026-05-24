@@ -188,3 +188,9 @@ VALUES
 (NULL,1,1171,0,NOW(),NOW()),(NULL,1,1172,0,NOW(),NOW()),(NULL,1,1173,0,NOW(),NOW()),
 (NULL,1,1174,0,NOW(),NOW()),(NULL,1,1175,0,NOW(),NOW()),(NULL,1,1176,0,NOW(),NOW()),
 (NULL,1,1177,0,NOW(),NOW());
+
+-- 21. 修复 sys_user 表缺少 first_login 字段
+-- 后端代码 INSERT 语句引用 first_login 列但表结构缺失
+ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS first_login tinyint(4) DEFAULT 1 COMMENT '首次登录标志' AFTER register_type;
+
+SELECT 'Migration complete: first_login column added' AS result;
