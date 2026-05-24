@@ -339,3 +339,200 @@ CREATE TABLE IF NOT EXISTS api_manage (
   is_del TINYINT(4) DEFAULT 0,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Table: tenant
+CREATE TABLE `tenant` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `tenant_name` varchar(255) DEFAULT NULL,
+  `tenant_code` varchar(64) DEFAULT NULL,
+  `status` int(11) DEFAULT '1',
+  `contact_name` varchar(64) DEFAULT NULL,
+  `contact_phone` varchar(32) DEFAULT NULL,
+  `expire_date` datetime DEFAULT NULL,
+  `description` text,
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: tenant_resource
+CREATE TABLE `tenant_resource` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `tenant_id` bigint(20) DEFAULT NULL,
+  `resource_id` varchar(64) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: evidence
+CREATE TABLE `evidence` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `evidence_content` text,
+  `evidence_hash` varchar(128) DEFAULT NULL,
+  `evidence_type` varchar(32) DEFAULT NULL,
+  `chain_id` int(11) DEFAULT NULL,
+  `chain_tx_id` varchar(255) DEFAULT NULL,
+  `chain_block_height` bigint(20) DEFAULT NULL,
+  `status` int(11) DEFAULT '1',
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: log_definition
+CREATE TABLE `log_definition` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `log_type` varchar(32) DEFAULT NULL COMMENT 'operation/schedule/compute',
+  `log_name` varchar(255) DEFAULT NULL,
+  `log_desc` text,
+  `retention_days` int(11) DEFAULT '90',
+  `status` int(11) DEFAULT '1',
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: monitor_alert
+CREATE TABLE `monitor_alert` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `alert_name` varchar(255) DEFAULT NULL,
+  `monitor_type` varchar(32) DEFAULT NULL,
+  `threshold` decimal(10,2) DEFAULT NULL,
+  `alert_level` int(11) DEFAULT '0',
+  `enabled` tinyint(4) DEFAULT '1',
+  `notify_channels` varchar(255) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: node_workflow
+CREATE TABLE `node_workflow` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `workflow_name` varchar(255) DEFAULT NULL,
+  `workflow_type` int(11) DEFAULT NULL,
+  `requester_organ_id` varchar(64) DEFAULT NULL,
+  `target_organ_id` varchar(64) DEFAULT NULL,
+  `workflow_state` int(11) DEFAULT '0',
+  `config_json` text,
+  `approver_organ_ids` text,
+  `description` text,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: data_requirement
+CREATE TABLE `data_requirement` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `requirement_name` varchar(255) DEFAULT NULL,
+  `description` text,
+  `data_resource_ids` text,
+  `status` int(11) DEFAULT '0',
+  `requester_organ_id` varchar(64) DEFAULT NULL,
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: shared_dataset
+CREATE TABLE `shared_dataset` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `dataset_name` varchar(255) DEFAULT NULL,
+  `resource_ids` text,
+  `organ_ids` text,
+  `share_type` int(11) DEFAULT '0',
+  `status` int(11) DEFAULT '1',
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: police_fusion_key
+CREATE TABLE `police_fusion_key` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `key_name` varchar(255) DEFAULT NULL,
+  `key_type` varchar(32) DEFAULT NULL,
+  `public_key` text,
+  `private_key` text,
+  `status` int(11) DEFAULT '1',
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: police_fusion_api
+CREATE TABLE `police_fusion_api` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `api_name` varchar(255) DEFAULT NULL,
+  `api_url` varchar(500) DEFAULT NULL,
+  `api_type` varchar(32) DEFAULT NULL,
+  `api_key_id` bigint(20) DEFAULT NULL,
+  `status` int(11) DEFAULT '1',
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: electronic_cert_key
+CREATE TABLE `electronic_cert_key` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `key_name` varchar(255) DEFAULT NULL,
+  `key_type` varchar(32) DEFAULT NULL,
+  `algorithm` varchar(32) DEFAULT NULL,
+  `key_value` text,
+  `status` int(11) DEFAULT '1',
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: api_manage
+CREATE TABLE `api_manage` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `api_name` varchar(255) DEFAULT NULL,
+  `api_path` varchar(500) DEFAULT NULL,
+  `api_type` int(11) DEFAULT NULL,
+  `api_desc` text,
+  `api_status` int(11) DEFAULT '1',
+  `api_category` varchar(64) DEFAULT NULL,
+  `api_method` varchar(10) DEFAULT NULL,
+  `api_version` varchar(32) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `update_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
+-- Table: api_auth
+CREATE TABLE `api_auth` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `auth_name` varchar(255) DEFAULT NULL,
+  `organ_id` varchar(64) DEFAULT NULL,
+  `api_ids` text,
+  `auth_token` varchar(500) DEFAULT NULL,
+  `expire_date` datetime DEFAULT NULL,
+  `auth_status` int(11) DEFAULT '1',
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_date` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+
