@@ -1,0 +1,31 @@
+{
+  "name": "primihub-e2e-test",
+  "description": "PrimiHub 平台端到端自动化测试",
+  "commands": [
+    {
+      "name": "test-all",
+      "description": "运行全量测试（路由+API+交互）",
+      "command": "bash -c 'python3 test-tools/e2e_all_167.py && python3 test-tools/api_test_all.py && python3 test-tools/e2e_final_v5.py'"
+    },
+    {
+      "name": "test-routes",
+      "description": "测试所有前端路由页面",
+      "command": "python3 test-tools/e2e_all_167.py"
+    },
+    {
+      "name": "test-api",
+      "description": "测试全部 223 个 API 功能点",
+      "command": "python3 test-tools/api_test_all.py"
+    },
+    {
+      "name": "test-interactive",
+      "description": "测试页面交互操作",
+      "command": "python3 test-tools/e2e_final_v5.py"
+    },
+    {
+      "name": "fix-db",
+      "description": "修复数据库（权限+字段）",
+      "command": "mysql -uroot privacy < fix_missing_auth_entries.sql"
+    }
+  ]
+}

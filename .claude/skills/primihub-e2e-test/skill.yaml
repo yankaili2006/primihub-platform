@@ -1,0 +1,12 @@
+name: primihub-e2e-test
+description: PrimiHub 平台端到端自动化测试 — 覆盖185前端路由+223后端API+40页面交互
+author: primihub
+version: 1.0.0
+scripts:
+  test-all-routes: python3 test-tools/e2e_all_167.py
+  test-api: python3 test-tools/api_test_all.py
+  test-interactive: python3 test-tools/e2e_final_v5.py
+  fix-db: mysql -uroot privacy < fix_missing_auth_entries.sql
+requirements:
+  - playwright
+  - httpx
