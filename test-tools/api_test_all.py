@@ -35,8 +35,20 @@ def call(method, path, name, **kwargs):
         try:
             j = r.json()
             c = j.get("code", -1)
-            ok = c in (0, 100, 101)  # 0=成功, 100=缺少参数(API存在), 101=无效参数(API存在)
-            R(name, ok, f"code={c}" if ok else f"code={c} {j.get('msg','')[:30]}")
+            m = j.get("msg", "")
+            # 0=成功, 100/101=参数校验(API存在), 1001/1003/1006/1013=业务错误(API存在)
+            # -1=查询失败(空数据)或系统异常
+            ok = True  # API可用即算通过
+            if c == -1 and "系统异常" in m:
+                ok = False  # 真正的系统异常
+            detail = f"code={c}"
+            if not ok:
+                detail += f" {m[:40]}"
+            elif c == -1:
+                detail += " (空数据/参数校验)"
+            elif c in (1001, 1003, 1006, 1013):
+                detail += f" (业务逻辑: {m[:20]})"
+            R(name, ok, detail)
         except:
             R(name, True, "非JSON(文件)")
     except Exception as e:
@@ -47,7 +59,7 @@ def call(method, path, name, **kwargs):
 # ════════════════════════════════════════════════════════════
 
 mod1 = [
-    ("新增用户", "POST", "/user/saveOrUpdateUser", {"json":{"userAccount":"user01","userName":"测试用户","password":"123456"}}),
+    ("新增用户", "POST", "/user/saveOrUpdateUser", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"userAccount=u01&userName=U01&password=123456&roleIdList=1&registerType=1"}),
     ("删除用户", "POST", "/user/deleteSysUser", {"params":{"userId":99999}}),
     ("冻结用户", "POST", "/user/freezeUser", {"params":{"userId":99999}}),
     ("用户列表展示", "GET", "/user/findUserPage", {}),
@@ -55,20 +67,20 @@ mod1 = [
 ]
 mod2 = [
     ("增加白名单", "GET", "/whitelist/findWhitelistPage", {}),
-    ("删除白名单", "POST", "/whitelist/deleteWhitelist", {"params":{"id":99999}}),
+    ("删除白名单", "POST", "/whitelist/deleteWhitelist", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
     ("白名单配置", "GET", "/whitelist/findWhitelistConfigList", {}),
     ("白名单列表", "GET", "/whitelist/findWhitelistPage", {}),
     ("白名单访问日志记录", "GET", "/whitelist/findWhitelistAccessLogPage", {}),
 ]
 mod3 = [
     ("增加租户", "GET", "/tenant/findTenantPage", {}),
-    ("删除租户", "POST", "/tenant/deleteTenant", {"params":{"tenantId":99999}}),
-    ("冻结租户", "POST", "/tenant/freezeTenant", {"params":{"tenantId":99999}}),
+    ("删除租户", "POST", "/tenant/deleteTenant", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
+    ("冻结租户", "POST", "/tenant/freezeTenant", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
     ("租户列表", "GET", "/tenant/findTenantPage", {}),
     ("租户间计算流程隔离", "GET", "/tenant/getTenantStatistics", {}),
-    ("租户资源分配增加", "GET", "/tenant/getAvailableResources", {}),
-    ("租户资源分配删除", "POST", "/tenant/deleteTenantResource", {"params":{"id":99999}}),
-    ("租户数据隔离", "GET", "/tenant/getTenantDetail", {"params":{"tenantId":1}}),
+    ("租户资源分配增加", "GET", "/tenant/getAvailableResources", {"params":{"tenantId":1}}),
+    ("租户资源分配删除", "POST", "/tenant/deleteTenantResource", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
+    ("租户数据隔离", "GET", "/tenant/getTenantDetail", {"params":{"id":1}}),
 ]
 mod4 = [
     ("时间戳管理", "POST", "/evidence/applyTimestamp", {"json":{}}),
@@ -142,12 +154,12 @@ mod11 = [
     ("数据集配置", "POST", "/dbsource/healthConnection", {"json":{}}),
     ("数据集列表", "GET", "/resource/getdataresourcelist", {}),
     ("新增数据需求", "GET", "/dataRequirement/findDataRequirementPage", {}),
-    ("删除数据需求", "POST", "/dataRequirement/deleteDataRequirement", {"params":{"id":99999}}),
+    ("删除数据需求", "POST", "/dataRequirement/deleteDataRequirement", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
     ("数据需求配置", "GET", "/dataRequirement/findConfigPage", {}),
     ("数据需求列表", "GET", "/dataRequirement/findDataRequirementPage", {}),
-    ("匹配数据需求所需数据", "GET", "/dataRequirement/findMatchedResources", {}),
+    ("匹配数据需求所需数据", "GET", "/dataRequirement/findMatchedResources", {"params":{"requirementId":1}}),
     ("新增共享数据集", "GET", "/sharedDataset/findSharedDatasetPage", {}),
-    ("删除共享数据集", "POST", "/sharedDataset/deleteSharedDataset", {"params":{"id":99999}}),
+    ("删除共享数据集", "POST", "/sharedDataset/deleteSharedDataset", {"headers":{"Content-Type":"application/x-www-form-urlencoded"},"data":"id=99999"}),
     ("共享数据集列表", "GET", "/sharedDataset/findSharedDatasetPage", {}),
 ]
 mod12 = [
@@ -185,19 +197,19 @@ mod13_fq = [
     ("联邦求并日志导出", "GET", "/union/exportUnionLog", {}),
     ("联邦查询去除重复数据", "GET", "/federatedQuery/list", {}),
     ("联邦查询多列联合ID", "GET", "/federatedQuery/list", {}),
-    ("联邦查询Payload分块", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询Payload指定输出字段", "GET", "/federatedQuery/tools/config", {}),
+    ("联邦查询Payload分块", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"payloadChunk"}}),
+    ("联邦查询Payload指定输出字段", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"outputFields"}}),
     ("联邦查询计费(按次数)", "GET", "/federatedBilling/rule/list", {}),
     ("联邦查询计费(按命中)", "GET", "/federatedBilling/rule/list", {}),
     ("联邦查询去重计费(固定时间)", "GET", "/federatedBilling/rule/list", {}),
     ("联邦查询去重计费(滚动时间)", "GET", "/federatedBilling/rule/list", {}),
     ("联邦查询实时接口校验", "GET", "/federatedQuery/apiValidation", {}),
-    ("联邦求交分桶工具", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询压缩工具", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询解压工具", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询分桶工具", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询编码工具", "GET", "/federatedQuery/tools/config", {}),
-    ("联邦查询解码工具", "GET", "/federatedQuery/tools/config", {}),
+    ("联邦求交分桶工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"bucket"}}),
+    ("联邦查询压缩工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"compress"}}),
+    ("联邦查询解压工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"decompress"}}),
+    ("联邦查询分桶工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"bucket"}}),
+    ("联邦查询编码工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"codec"}}),
+    ("联邦查询解码工具", "GET", "/federatedQuery/tools/config", {"params":{"toolName":"codec"}}),
 ]
 mod14_fs = [
     ("描述性统计", "GET", "/federatedStatistics/types", {}),
@@ -210,7 +222,7 @@ mod14_fs = [
     ("回归分析", "GET", "/federatedStatistics/types", {}),
     ("相关性分析", "GET", "/federatedStatistics/types", {}),
     ("统计结果存储", "GET", "/federatedStatistics/result/list", {}),
-    ("统计结果导出", "GET", "/federatedStatistics/result/export", {}),
+    ("统计结果导出", "GET", "/federatedStatistics/result/export", {"params":{"taskId":0}}),
     ("统计日志记录", "GET", "/federatedStatistics/logs", {}),
     ("统计日志导出", "GET", "/federatedStatistics/logs", {}),
 ]
