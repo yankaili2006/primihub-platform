@@ -7,6 +7,7 @@ import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -21,10 +22,23 @@ public class SecondaryNacosDatabaseConfigConfiguration {
     @Value("classpath*:/mybatis/mapper/secondarydb/**/*.xml")
     private String locationPattern;
 
+    @Value("${spring.datasource.druid.secondary.url:jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false}")
+    private String secondaryUrl;
+
+    @Value("${spring.datasource.druid.secondary.username:root}")
+    private String secondaryUsername;
+
+    @Value("${spring.datasource.druid.secondary.password:root}")
+    private String secondaryPassword;
+
     @Bean(name = "secondaryDB",initMethod = "init")
     public DruidDataSource dataSource() {
-        log.info("Init Secondary DruidDataSource");
-        return new SecondaryDruidDataSourceWrapper();
+        log.info("Init Secondary DruidDataSource, URL: {}", secondaryUrl);
+        SecondaryDruidDataSourceWrapper ds = new SecondaryDruidDataSourceWrapper();
+        ds.setUrl(secondaryUrl);
+        ds.setUsername(secondaryUsername);
+        ds.setPassword(secondaryPassword);
+        return ds;
     }
 
     @Bean("secondarySessionFactory")
