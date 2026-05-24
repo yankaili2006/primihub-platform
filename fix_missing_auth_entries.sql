@@ -194,3 +194,26 @@ VALUES
 ALTER TABLE sys_user ADD COLUMN IF NOT EXISTS first_login tinyint(4) DEFAULT 1 COMMENT '首次登录标志' AFTER register_type;
 
 SELECT 'Migration complete: first_login column added' AS result;
+
+-- 22. 修复 sys_config 表缺失（v2.8.0 离线包未包含此表）
+CREATE TABLE IF NOT EXISTS sys_config (
+    config_id bigint(20) NOT NULL AUTO_INCREMENT,
+    config_key varchar(255) NOT NULL,
+    config_value text,
+    config_group varchar(255),
+    config_desc varchar(500),
+    is_del tinyint(4) DEFAULT 0,
+    c_time datetime(3) DEFAULT CURRENT_TIMESTAMP(3),
+    u_time datetime(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (config_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO sys_config (config_key, config_value, config_group, config_desc) VALUES
+("domain", "", "network", "平台域名"),
+("apiGateway", "", "network", "API网关地址"),
+("websocketUrl", "", "network", "WebSocket地址"),
+("fileServerUrl", "", "network", "文件服务器地址"),
+("httpProxyHost", "", "network", "HTTP代理主机"),
+("httpProxyPort", "7890", "network", "HTTP代理端口"),
+("corsEnabled", "true", "network", "跨域支持"),
+("requestTimeout", "30000", "network", "请求超时(ms)");
