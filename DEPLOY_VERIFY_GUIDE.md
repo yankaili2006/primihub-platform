@@ -1,133 +1,121 @@
 # PrimiHub 新环境部署验证指南
 
-## 1. 环境准备
+## 1. 全流程概览
 
-### 1.1 PVE 上创建 VM
+```
+PVE 创建 VM → 部署平台 → 修复数据库 → 一键验证
+```
+
+## 2. PVE 上创建 VM
+
 ```bash
-# 从 Cloud-Init Template 克隆
+# 从 Cloud-Init Template 克隆（模板 ID 9024）
 qm clone 9024 <VMID> --name <NAME> --full 1
 qm set <VMID> --cores <N> --memory <MB>
 qm start <VMID>
 ```
 
-### 1.2 部署 PrimiHub 平台
+## 3. 部署 PrimiHub 平台
+
+### 方式 A：离线部署（推荐）
 
 ```bash
-# 进入平台目录
-cd ~/github/primihub-platform
-
-# 启动 Docker 容器
+# 已打包离线工具
+cd ~/primihub-offline
 bash deploy-offline.sh
-# 或手动启动
+```
+
+部署脚本会自动执行：
+1. 启动 Docker 容器
+2. 修复数据库（权限 + 字段）
+3. **执行自动化验证**（路由 167 页 + API 223 点）
+
+### 方式 B：源码部署
+
+```bash
+cd ~/github/primihub-platform
+bash scripts/deploy.sh
+# 或
 docker-compose up -d
-
-# 等待服务就绪（约 2 分钟）
-docker-compose ps
+mysql -uroot privacy < fix_missing_auth_entries.sql
 ```
 
-### 1.3 数据库初始化
-
-```bash
-# 修复缺失的权限和字段
-mysql -uroot -p<password> privacy < fix_missing_auth_entries.sql
-
-# 确认 auth 条目完整
-mysql -uroot -p<password> privacy -e "SELECT COUNT(*) FROM sys_auth"
-# 预期: 166+ 条
-```
-
-## 2. 测试环境准备
-
-### 2.1 本机（测试执行机）安装依赖
-
-```bash
-# Playwright
-pip install playwright httpx
-python3 -m playwright install chromium
-
-# 确保能访问目标 VM
-# 方式1: 直连
-ping <VM-IP>
-curl http://<VM-IP>:30811/
-
-# 方式2: 通过 PVE 跳板机 socat 代理
-ssh <PVE_HOST>
-socat TCP-LISTEN:13081,fork TCP:<VM-IP>:30811 &
-# 访问 http://<PVE_HOST>:13081/
-```
-
-### 2.2 配置测试目标地址
-
-```bash
-export TEST_BASE="http://<PVE_HOST>:13081"
-# 或直接
-export TEST_BASE="http://<VM-IP>:30811"
-```
-
-## 3. 执行验证
-
-### 3.1 一键验证（推荐）
+## 4. 一键验证
 
 ```bash
 cd ~/github/primihub-platform
 
-# 快速验证（路由+API，~10分钟）
+# 快速验证（路由+API，~10 分钟）
 python3 deploy_verify.py
 
-# 完整验证（含交互测试，~20分钟）
+# 完整验证（含交互测试，~20 分钟）
 python3 deploy_verify.py --full
 
-# 指定目标 + 修复数据库
-python3 deploy_verify.py --base http://<ip>:30811 --fix-db
+# 指定目标地址
+python3 deploy_verify.py --base http://192.168.99.101:30811
+
+# 先修复数据库再验证
+python3 deploy_verify.py --fix-db
+
+# 完整命令
+python3 deploy_verify.py --base http://<ip>:<port> --fix-db --full
 ```
 
-### 3.2 单个运行（调试用）
+## 5. 验证内容
+
+| 测试 | 覆盖 | 耗时 | 说明 |
+|------|------|:----:|------|
+| 路由测试 | 167 页面 | ~8 min | 验证所有前端路由可访问 |
+| API 测试 | 223 功能点 | ~2 min | 验证所有后端接口可用 |
+| 交互测试 | 40 页 × 99 操作 | ~8 min | 模拟用户操作（--full 时启用）|
+
+## 6. 手动验证（调试用）
 
 ```bash
-cd ~/github/primihub-platform
-
-# 路由测试（8 分钟）
+# 路由测试
 python3 test-tools/e2e_all_167.py
 
-# API 测试（2 分钟）
+# API 测试
 python3 test-tools/api_test_all.py
 
-# 交互测试（8 分钟，可选）
+# 交互测试
 python3 test-tools/e2e_final_v6.py
 ```
 
-## 4. 预期结果
+## 7. 测试脚本清单
 
-| 测试 | 预期通过率 | 耗时 |
-|------|:---------:|:----:|
-| 路由加载（167 页） | 100% | ~8 分钟 |
-| API 功能（223 点） | 100% | ~2 分钟 |
-| 页面交互（99 操作） | 100% | ~6 分钟 |
+| 脚本 | 用途 |
+|------|------|
+| `deploy_verify.py` | **一键验证入口** |
+| `test-tools/e2e_all_167.py` | 全量路由测试（20 页一批）|
+| `test-tools/api_test_all.py` | 223 功能点 API 测试 |
+| `test-tools/e2e_final_v6.py` | 40 页面交互测试 |
+| `fix_missing_auth_entries.sql` | 数据库修复（权限+字段）|
 
-## 5. 常见问题处理
+## 8. 测试环境准备
 
-### 5.1 路由跳转到登录页
+```bash
+# 本机安装依赖
+pip install playwright httpx
+python3 -m playwright install chromium
 
-- 检查 `auth_codes.txt` 中是否包含所有 route name
-- 确保 `window.location.href` 在单页应用中使用 hash 导航
+# 配置目标地址
+export TEST_BASE="http://<vm-ip>:30811"
+# 或直连
+export TEST_BASE="http://100.64.0.25:13081"
+```
+
+## 9. 常见问题
+
+### 路由跳转到登录页
+- 检查 `auth_codes.txt` 是否包含所有 route name
 - 分页测试（每 20 页刷新）避免 SPA 状态退化
 
-### 5.2 API 返回 code=-1
-
+### API 返回 code=-1
 - `查询失败` → 空数据库，API 正常
 - `系统异常` → 参数错误，检查参数名和格式
-- `1001/1003/1006/1013` → 业务逻辑错误，需 gRPC 后端
+- `1001/1003/1006/1013` → 业务逻辑错误（需 gRPC 后端）
 
-### 5.3 交互元素不可见
-
-- 检查 Element UI 组件渲染时机（`wait_for_selector`）
-- 区分 readonly 输入框（select/date）和可写输入框
+### 交互元素不可见
 - 使用 `input[type=text]:not([readonly])` 选择器
-
-## 6. 测试数据说明
-
-| 测试数据 | 来源 |
-|---------|------|
-| 登录账号 | `admin / 123456` |
-| 权限注入 | `test-tools/auth_codes.txt` |
-| 数据库修复 | `fix_missing_auth_entries.sql` |
+- Element UI 组件需等待渲染
