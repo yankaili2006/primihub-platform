@@ -189,36 +189,91 @@ python3 deploy_verify.py --fix-db --full
 **根因**: MyBatis 期望 `api_definition` 和 `evidence_record` 表
 **修复**: 创建 `api_definition`, `api_auth_config`, `api_call_log`, `evidence_record`, `evidence_timestamp`, `evidence_config`, `evidence_api_key` 表
 
-## 10. 一键修复
+### 9.9 数据库硬编码 — `privacy` 应为 `privacy0/1/2`
+**现象**: 应用启动参数指定 `privacy0` 但日志显示连接 `privacy`
+**根因**: `PrimaryNacosDatabaseConfigConfiguration.java` 和 `SecondaryDruidDataSourceWrapper.java` 硬编码 `jdbc:mysql://mysql:3306/privacy`
+**修复**: 提交 `6e2bd578`，改用 `@Value` 注入，配合环境变量覆盖
+**文件**: `primihub-service/biz/src/main/java/.../PrimaryNacosDatabaseConfigConfiguration.java`
+         `primihub-service/biz/src/main/java/.../SecondaryNacosDatabaseConfigConfiguration.java`
+
+### 9.10 fusion0 缺少主库表
+**现象**: 登录返回 `Table 'fusion0.sys_user' doesn't exist`
+**根因**: 部分 `secondarydb` 的 MyBatis mapper 查询主库表，但 fusion0 中不存在
+**修复**: `DELETE FROM fusion0.$table; INSERT INTO fusion0.$table SELECT * FROM privacy0.$table`
+
+### 9.11 多租户启动内存不足
+**现象**: 同时启动 application0/1/2 导致 OOM
+**根因**: 每个 Java 进程 ~1024m，3 个实例超 VM 内存上限
+**解决**: 需至少 8GB 可用内存，推荐 16GB
+
+## 10. 新架构部署
+
+### 数据库架构
+```
+application0 → privacy0 (primary) + fusion0 (secondary)
+application1 → privacy1 (primary) + fusion1 (secondary)
+application2 → privacy2 (primary) + fusion2 (secondary)
+```
+
+### 部署步骤
 
 ```bash
-# 拉取最新代码
+# 0. 构建含 @Value 修复的 jar
 cd ~/github/primihub-platform
 git pull origin develop
+cd primihub-service && mvn clean package -DskipTests -Dmaven.test.skip=true
 
-# 执行一键修复
-bash test-tools/fix-all.sh
+# 1. 初始化所有数据库
+for db in privacy0 privacy1 privacy2; do
+  mysql -uroot -proot $db < test-tools/init-privacy-db-tables.sql
+done
 
-# 或分步修复
-# 步骤1: 数据库
-docker exec -i mysql mysql -uroot -proot privacy < test-tools/init-privacy-db-tables.sql
+# 2. 同步主库表到从库
+for src_db in privacy0 privacy1 privacy2; do
+  dst_fusion="${src_db/privacy/fusion}"
+  mysql -uroot -proot -e "
+    SET @tables = (SELECT GROUP_CONCAT(table_name) FROM information_schema.tables WHERE table_schema='$src_db');
+    -- 复制: CREATE TABLE $dst_fusion.$table LIKE $src_db.$table; INSERT INTO $dst_fusion.$table SELECT * FROM $src_db.$table;
+  "
+done
 
-# 步骤2: Python算法
+# 3. 启动应用（必须设置环境变量！）
+docker run -d --name application0 \
+  -e SPRING_DATASOURCE_DRUID_PRIMARY_URL="jdbc:mysql://mysql:3306/privacy0?..." \
+  -e SPRING_DATASOURCE_DRUID_SECONDARY_URL="jdbc:mysql://mysql:3306/fusion0?..." \
+  --nacos.config.namespace=demo0 \
+  primihub-platform:latest
+
+docker run -d --name application1 \
+  -e SPRING_DATASOURCE_DRUID_PRIMARY_URL="jdbc:mysql://mysql:3306/privacy1?..." \
+  -e SPRING_DATASOURCE_DRUID_SECONDARY_URL="jdbc:mysql://mysql:3306/fusion1?..." \
+  --nacos.config.namespace=demo1 \
+  primihub-platform:latest
+
+# 4. 验证
+docker logs application0 2>&1 | grep "Init Primary"
+# 预期: URL: jdbc:mysql://mysql:3306/privacy0?...
+
+# 5. Python算法
 bash test-tools/setup-python-algorithms.sh
 
-# 步骤3: 重启
-docker restart application0 application1 application2
-
-# 步骤4: 验证
+# 6. API测试
 python3 test-tools/primihub-cli.py health --url http://<host>:30811
 ```
+
+### 已知问题
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| 启动参数 --spring.datasource.druid.primary.url 不生效 | Shell 截断 `&` 字符 | 改用环境变量 `SPRING_DATASOURCE_DRUID_PRIMARY_URL` |
+| application.yml 硬编码 privacy1 | 默认配置为 privacy1 | 环境变量优先级高于 yaml，设置后覆盖 |
+| fusion 查询主库表失败 | secondarydb mapper 引用 sys_user 等表 | 手动同步 privacy → fusion 全表 |
 
 ## 11. 技术栈
 
 - **Browser**: Playwright (Chromium headless)
 - **API Client**: httpx
 - **Target**: PrimiHub Platform (Vue.js SPA + Spring Boot)
-- **Database**: MySQL 5.7, Nacos config center
+- **Database**: MySQL 5.7 (privacy0/1/2 + fusion0/1/2), Nacos config center
 - **Messaging**: RabbitMQ 3.6.15 cluster
 - **Cache**: Redis 7
 - **Auth**: JWT token, localStorage key `DataItemPer`
