@@ -66,29 +66,34 @@ export TEST_BASE="http://<VM-IP>:30811"
 
 ## 3. 执行验证
 
-### 3.1 单个运行
+### 3.1 一键验证（推荐）
 
 ```bash
 cd ~/github/primihub-platform
 
-# 路由测试（20 分钟）
-python3 test-tools/e2e_all_167.py
+# 快速验证（路由+API，~10分钟）
+python3 deploy_verify.py
 
-# API 测试（3 分钟）
-python3 test-tools/api_test_all.py
+# 完整验证（含交互测试，~20分钟）
+python3 deploy_verify.py --full
 
-# 交互测试（8 分钟）
-python3 test-tools/e2e_final_v6.py
+# 指定目标 + 修复数据库
+python3 deploy_verify.py --base http://<ip>:30811 --fix-db
 ```
 
-### 3.2 一键全量验证
+### 3.2 单个运行（调试用）
 
 ```bash
-bash -c '
-echo "=== 路由测试 ===" && python3 test-tools/e2e_all_167.py 2>&1 | tail -5
-echo "=== API 测试 ===" && python3 test-tools/api_test_all.py 2>&1 | tail -3
-echo "=== 交互测试 ===" && python3 test-tools/e2e_final_v6.py 2>&1 | tail -3
-'
+cd ~/github/primihub-platform
+
+# 路由测试（8 分钟）
+python3 test-tools/e2e_all_167.py
+
+# API 测试（2 分钟）
+python3 test-tools/api_test_all.py
+
+# 交互测试（8 分钟，可选）
+python3 test-tools/e2e_final_v6.py
 ```
 
 ## 4. 预期结果

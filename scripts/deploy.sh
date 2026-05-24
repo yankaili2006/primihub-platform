@@ -469,6 +469,16 @@ main() {
         print_info "跳过权限修复（SQL文件不存在或MySQL客户端未安装）"
     fi
 
+    # 执行自动化验证
+    print_header "执行自动化验证"
+    if [ -f "$BASE_DIR/deploy_verify.py" ]; then
+        print_step "运行快速测试（路由+API）..."
+        python3 "$BASE_DIR/deploy_verify.py" 2>&1 | tail -15
+        print_success "验证完成"
+    else
+        print_info "跳过验证（未找到 deploy_verify.py）"
+    fi
+
     print_success "部署流程完成！"
 }
 

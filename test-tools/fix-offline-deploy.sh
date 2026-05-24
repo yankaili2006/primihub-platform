@@ -132,3 +132,17 @@ echo ""
 echo "📋 后续步骤:"
 echo "  所有用户需要重新登录以使权限生效（清除浏览器缓存或退出重新登录）"
 echo ""
+
+# 10. 执行验证测试
+echo "步骤10: 执行自动化验证..."
+cd "$(dirname "$0")/.."
+if [ -f "deploy_verify.py" ]; then
+    echo "运行快速验证（路由+API）..."
+    python3 deploy_verify.py --base "http://${HOST_IP}:30811" 2>&1 | tail -15
+    echo "✓ 验证完成"
+    echo ""
+    echo "完整验证（含交互测试）: python3 deploy_verify.py --full --base http://${HOST_IP}:30811"
+else
+    echo "⚠ 未找到 deploy_verify.py，跳过验证"
+fi
+echo ""
