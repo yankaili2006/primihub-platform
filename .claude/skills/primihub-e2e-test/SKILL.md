@@ -148,7 +148,72 @@ python3 deploy_verify.py --fix-db --full
 | 内存 | 8GB | 16GB |
 | 磁盘 | 30GB | 50GB |
 
-## 9. 技术栈
+## 9. 已知问题修复清单
+
+### 9.1 数据库表缺失（10 张表）
+**现象**: API 返回 `"查询失败"` 或 `"系统异常"`
+**修复**: `mysql -uroot -proot privacy < test-tools/init-privacy-db-tables.sql`
+**涉及模块**: `federated_stats*`, `federated_analysis*`, `federated_learning*`, `single_party*`, `whitelist*`, `sys_operation_log`, `sys_config`
+
+### 9.2 sys_config 列名不匹配
+**现象**: `saveFtpConfig` 返回 `"保存失败"`
+**根因**: MyBatis 需要 `id`, `created_by`, `created_at`, `updated_at` 列（非 `config_id`, `c_time`, `u_time`）
+**修复**: `init-privacy-db-tables.sql` 已使用正确列名
+
+### 9.3 sys_operation_log 列缺失
+**现象**: 所有写操作 API 失败（事务回滚）
+**根因**: 缺少 `user_name`, `error_message`, `operation_module` 等列
+**修复**: 执行 `init-privacy-db-tables.sql` 重建表
+
+### 9.4 PIR 提交失败 — `"资源不可用"`
+**现象**: `POST /pir/pirSubmitTask` → `code:1007`
+**根因**: `PirService.java` 中 Fusion 空结果导致 `available=1` 默认判断
+**修复**: 提交 `c9be7d2f`，空结果时回退本地数据库
+**文件**: `primihub-service/biz/src/main/java/.../PirService.java`
+
+### 9.5 application0 容器缺少 Python3
+**现象**: FL/单方训练任务 state=3 (失败)
+**修复**: `test-tools/setup-python-algorithms.sh` 自动安装
+
+### 9.6 FL 算法路径缺失
+**现象**: FL 任务创建成功但执行失败
+**修复**: `setup-python-algorithms.sh` 创建 16 个算法脚本
+
+### 9.7 跨测试污染（Python SDK）
+**现象**: 31 个测试一起运行失败，单独运行通过
+**根因**: `test_fl_feature_engineering.py` 模块级 mock 污染
+**修复**: `primihub/tests/conftest.py` 添加 session-scoped 清理 fixture
+
+### 9.8 API/Evidence 表名不匹配
+**现象**: `apiManage/findApiPage` 和 `evidence/findEvidencePage` 返回 `"查询失败"`
+**根因**: MyBatis 期望 `api_definition` 和 `evidence_record` 表
+**修复**: 创建 `api_definition`, `api_auth_config`, `api_call_log`, `evidence_record`, `evidence_timestamp`, `evidence_config`, `evidence_api_key` 表
+
+## 10. 一键修复
+
+```bash
+# 拉取最新代码
+cd ~/github/primihub-platform
+git pull origin develop
+
+# 执行一键修复
+bash test-tools/fix-all.sh
+
+# 或分步修复
+# 步骤1: 数据库
+docker exec -i mysql mysql -uroot -proot privacy < test-tools/init-privacy-db-tables.sql
+
+# 步骤2: Python算法
+bash test-tools/setup-python-algorithms.sh
+
+# 步骤3: 重启
+docker restart application0 application1 application2
+
+# 步骤4: 验证
+python3 test-tools/primihub-cli.py health --url http://<host>:30811
+```
+
+## 11. 技术栈
 
 - **Browser**: Playwright (Chromium headless)
 - **API Client**: httpx
