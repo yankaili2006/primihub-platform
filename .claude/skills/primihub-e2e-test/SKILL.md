@@ -78,3 +78,17 @@ mysql -uroot privacy < fix_missing_auth_entries.sql
 - **API Client**: httpx
 - **Target**: PrimiHub Platform (Vue.js SPA + Spring Boot)
 - **Auth**: JWT token in localStorage (`DataItemPer` key)
+
+## PVE VM 创建
+
+```bash
+# 一键创建 VM（自动注入 SSH 密钥）
+bash scripts/create-vm.sh <VMID> <IP_LAST> [TEMPLATE_ID]
+# 示例
+bash scripts/create-vm.sh 106 106 9010
+```
+
+### 已知问题
+- `--sshkey` 在部分 Ubuntu cloud-init 模板中不生效
+- 必须使用 `virt-customize --ssh-inject` 注入密钥
+- 需要 `--ciuser root --cipassword` 配合

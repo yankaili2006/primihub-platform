@@ -9,10 +9,26 @@ PVE 创建 VM → 部署平台 → 修复数据库 → 一键验证
 ## 2. PVE 上创建 VM
 
 ```bash
-# 从 Cloud-Init Template 克隆（模板 ID 9024）
-qm clone 9024 <VMID> --name <NAME> --full 1
-qm set <VMID> --cores <N> --memory <MB>
-qm start <VMID>
+# 从 Cloud-Init Template 克隆（Ubuntu 22.04 模板 ID 9010）
+VMID=105
+NAME=test-offline
+qm clone 9010 $VMID --name $NAME --full 1
+
+# ⚠️ 注意：必须使用 virt-customize 注入 SSH 密钥
+# cloud-init 的 --sshkey 参数在部分模板中不生效
+echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA..." > /tmp/sshkey
+qm set $VMID --cores 4 --memory 8192 \
+  --ipconfig0 ip=192.168.99.$VMID/24,gw=192.168.99.1 \
+  --ciuser root --cipassword 1qazmko0
+qm stop $VMID --skiplock
+virt-customize -a /dev/pve/vm-$VMID-disk-0 --ssh-inject "root:file:/tmp/sshkey"
+qm start $VMID
+
+# 等待 SSH 就绪
+for i in $(seq 1 30); do
+  ssh -o StrictHostKeyChecking=no root@192.168.99.$VMID "hostname" && break
+  sleep 4
+done
 ```
 
 ## 3. 部署 PrimiHub 平台
@@ -107,8 +123,24 @@ export TEST_BASE="http://100.64.0.25:13081"
 
 ## 9. 常见问题
 
+### PVE VM 创建
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| SSH 密钥不生效 | cloud-init 模板的 `--sshkey` 参数不兼容 | 改用 `virt-customize -a <disk> --ssh-inject` |
+| SSH 连接被拒 | cloud-init 未完成、sshd 未启动 | 等待 60-120s；配置 `--ciuser root --cipassword` |
+| VM 锁住 | 并发操作导致 | `rm -f /var/lock/qemu-server/lock-<VMID>.conf` |
+| qemu-guest-agent 未运行 | Ubuntu 模板默认不含 | 需额外安装 `apt install qemu-guest-agent` |
+
+推荐使用 `scripts/create-vm.sh` 一键创建：
+
+```bash
+bash scripts/create-vm.sh 106 106 9010
+```
+
 ### 路由跳转到登录页
-- 检查 `auth_codes.txt` 是否包含所有 route name
+- 检查 `auth_codes.txt` 中是否包含所有 route name
+- 确保 `window.location.href` 在单页应用中使用 hash 导航
 - 分页测试（每 20 页刷新）避免 SPA 状态退化
 
 ### API 返回 code=-1
