@@ -93,7 +93,7 @@ bash fix-all.sh
    bash fix-all.sh
 
 📚 详细文档：
-- OFFLINE_DEPLOYMENT_PACKAGE.md
+- NEW_DEPLOYMENT_GUIDE.md - 全新部署完整验证指南
 - OFFLINE_DEPLOY_README.md
 - OFFLINE_FIX_GUIDE.md
 
