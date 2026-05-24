@@ -27,7 +27,7 @@ done
 echo "Waiting for MySQL..."
 sleep 40
 
-docker run -d --name nacos-server --network $NET \
+docker run -d --name nacos --network-alias nacos --network $NET \
   -e MYSQL_SERVICE_HOST=mysql -e MYSQL_SERVICE_DB_NAME=nacos_config \
   -e MYSQL_SERVICE_USER=root -e MYSQL_SERVICE_PASSWORD=$PASS \
   -p 8848:8848 registry.cn-beijing.aliyuncs.com/primihub/nacos-server:v2.0.4
