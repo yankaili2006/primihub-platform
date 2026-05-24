@@ -22,6 +22,9 @@ echo "✓ 核心脚本已复制"
 echo ""
 echo "2. 复制修复工具..."
 cp fix-offline-deploy.sh "$PACKAGE_DIR/"
+cp fix-all.sh "$PACKAGE_DIR/"
+cp setup-python-algorithms.sh "$PACKAGE_DIR/"
+cp init-privacy-db-tables.sql "$PACKAGE_DIR/"
 cp fix-mysql-connection.sh "$PACKAGE_DIR/"
 cp fix-healthcheck.sh "$PACKAGE_DIR/"
 cp diagnose-nacos.sh "$PACKAGE_DIR/"
@@ -55,18 +58,25 @@ echo ""
 echo "5. 创建README..."
 cat > "$PACKAGE_DIR/README_FIRST.txt" << 'EOFREADME'
 ========================================
-PrimiHub 离线部署工具包
+========================================
+PrimiHub 离线部署工具包 (新架构)
 ========================================
 
 📦 本工具包包含：
 - 离线部署脚本
 - 故障修复工具
-- 诊断工具
+- 数据库初始化 SQL (privacy0/1/2)
+- Python 算法脚本 (16个)
 - 完整文档
 
 ⚠️ 重要：还需要镜像文件
 - primihub-images-*.tar (2.4GB)
 - 需单独复制到本目录
+
+🚀 新架构数据库:
+  application0 → privacy0 + fusion0
+  application1 → privacy1 + fusion1
+  application2 → privacy2 + fusion2
 
 🚀 快速开始：
 
@@ -75,26 +85,36 @@ PrimiHub 离线部署工具包
 
 2. 执行部署
    bash deploy-offline.sh
+echo ""
+echo "步骤2: 执行一键修复..."
+bash fix-all.sh
+
+3. 执行一键修复
+   bash fix-all.sh
 
 📚 详细文档：
-- OFFLINE_DEPLOYMENT_PACKAGE.md - 完整工具包说明
-- OFFLINE_DEPLOY_README.md - 部署指南
-- OFFLINE_FIX_GUIDE.md - 故障修复
+- OFFLINE_DEPLOYMENT_PACKAGE.md
+- OFFLINE_DEPLOY_README.md
+- OFFLINE_FIX_GUIDE.md
 
-🆘 如果遇到问题：
+🆘 常见问题：
 
-问题1: Nacos显示"no DataSource set"
+问题1: Nacos无数据源
 解决: bash fix-mysql-connection.sh
 
-问题2: MySQL报"Access denied"
+问题2: MySQL拒绝访问
 解决: bash fix-healthcheck.sh
 
-问题3: 需要完全重新部署
-解决: bash deploy-offline.sh
+问题3: 表不存在
+解决: bash fix-all.sh
+
+问题4: Unknown database privacy
+解决: 需重建镜像或设环境变量
+   SPRING_DATASOURCE_DRUID_PRIMARY_URL
 
 ========================================
-更新时间: 2026-01-14
-版本: v1.1.0
+更新时间: 2026-05-25
+版本: v2.0.0 (新架构)
 ========================================
 EOFREADME
 
@@ -148,6 +168,9 @@ echo "=========================================="
 echo ""
 
 bash deploy-offline.sh
+echo ""
+echo "步骤2: 执行一键修复..."
+bash fix-all.sh
 
 echo ""
 echo "=========================================="
