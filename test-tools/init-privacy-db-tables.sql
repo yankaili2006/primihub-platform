@@ -1044,3 +1044,4 @@ CREATE TABLE `scene_task` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 
+SELECT CONCAT('Tables initialized: ', COUNT(*)) AS result FROM information_schema.tables WHERE table_schema = 'privacy';
