@@ -219,13 +219,16 @@ public class DataAsyncService implements ApplicationContextAware {
     @Async
     public void psiGrpcRun(DataPsiTask psiTask, DataPsi dataPsi,String taskName) {
         DataResource ownDataResource = dataResourceRepository.queryDataResourceByResourceFusionId(dataPsi.getOwnResourceId());
-        if (ownDataResource==null){
+        if (ownDataResource==null && StringUtils.isNumeric(dataPsi.getOwnResourceId())){
             ownDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOwnResourceId()));
         }
         String resourceId, resourceColumnNameList;
         int available;
-        // Always use local database for PSI resource lookup (all-in-one deployment)
-        DataResource otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+        // Resolve other resource by fusion-id first (cross-org refs are UUIDs), fall back to numeric id.
+        DataResource otherDataResource = dataResourceRepository.queryDataResourceByResourceFusionId(dataPsi.getOtherResourceId());
+        if (otherDataResource == null && StringUtils.isNumeric(dataPsi.getOtherResourceId())) {
+            otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+        }
         if (otherDataResource == null) {
             log.error("Failed to query other resource from local database for resourceId: {}", dataPsi.getOtherResourceId());
             psiTask.setTaskState(TaskStateEnum.FAIL.getStateType());
@@ -553,7 +556,7 @@ public class DataAsyncService implements ApplicationContextAware {
 
     public void updateTaskState(DataTask dataTask) {
         DataTask rawDataTask = dataTaskRepository.selectDataTaskByTaskId(dataTask.getTaskId());
-        if (rawDataTask.getTaskState().equals(TaskStateEnum.CANCEL.getStateType())) {
+        if (rawDataTask != null && rawDataTask.getTaskState().equals(TaskStateEnum.CANCEL.getStateType())) {
             dataTask.setTaskState(TaskStateEnum.CANCEL.getStateType());
         } else {
             dataTaskPrRepository.updateDataTask(dataTask);
