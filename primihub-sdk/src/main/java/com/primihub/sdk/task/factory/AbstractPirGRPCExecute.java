@@ -62,6 +62,15 @@ public class AbstractPirGRPCExecute extends AbstractGRPCExecuteFactory {
                         param.getTaskContentParam().getLabelColumnsString() : "[]");
                 Common.ParamValue aueryConfigParamValue = Common.ParamValue.newBuilder().setValueString(ByteString.copyFrom(queryConfig.getBytes(StandardCharsets.UTF_8))).build();
                 paramsBuilder.putParamMap("QueryConfig", aueryConfigParamValue);
+                // clientData (array) signals the node's PIR scheduler to add the
+                // requesting (client) node as the 2nd party; without it the task
+                // is dispatched with a single party and rejected ("need 2 party").
+                Common.string_array.Builder clientBuilder = Common.string_array.newBuilder();
+                for (String str : param.getTaskContentParam().getQueryParam()) {
+                    clientBuilder.addValueStringArray(ByteString.copyFrom(str.getBytes(StandardCharsets.UTF_8)));
+                }
+                Common.ParamValue idPirClientDataParamValue = Common.ParamValue.newBuilder().setIsArray(true).setValueStringArray(clientBuilder).build();
+                paramsBuilder.putParamMap("clientData", idPirClientDataParamValue);
             } else {
                 // KEY_PIR: use clientData + QueryConfig
                 Common.string_array.Builder builder = Common.string_array.newBuilder();
