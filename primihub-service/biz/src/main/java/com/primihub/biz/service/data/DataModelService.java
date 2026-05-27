@@ -25,6 +25,7 @@ import com.primihub.biz.repository.secondarydb.data.DataModelRepository;
 import com.primihub.biz.repository.secondarydb.data.DataProjectRepository;
 import com.primihub.biz.repository.secondarydb.data.DataTaskRepository;
 import com.primihub.biz.util.FileUtil;
+import com.primihub.biz.util.ModelComponentDag;
 import com.primihub.biz.util.crypt.DateUtil;
 import com.primihub.biz.util.snowflake.SnowflakeId;
 import lombok.extern.slf4j.Slf4j;
@@ -386,17 +387,13 @@ public class DataModelService {
         Map<String, DataComponentReq> modelComponentMap = new HashMap<>();
         if (modelComponents != null && !modelComponents.isEmpty()) {
             modelComponentMap = modelComponents.stream().collect(Collectors.toMap(DataComponentReq::getComponentCode, Function.identity()));
-            // 将组件中的`componentCode`按照组件顺序进行排序
-            List<DataComponentReq> zComponentList = modelComponents.stream().filter(dataComponentReq -> dataComponentReq.getInput().isEmpty()).collect(Collectors.toList());
-            zComponentCodeList= new ArrayList<>();
-            if (zComponentList.isEmpty()) {
-                return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"未查询到模型组件信息");
+            try {
+                // Kahn 拓扑排序：支持多根/扇入/扇出/菱形，含悬挂边校验与环检测
+                zComponentCodeList = ModelComponentDag.build(modelComponents).topoSort();
+            } catch (IllegalArgumentException e) {
+                log.error("模型组件DAG排序失败:{}", e.getMessage());
+                return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL, e.getMessage());
             }
-            // 开头的code
-            zComponentCodeList.add(zComponentList.get(0).getComponentCode());
-
-            // 递归方法，排序componentCode
-            sortComponent(zComponentList.get(0).getOutput(), zComponentCodeList, modelComponentMap);
             log.info("sort后的组件顺序:{}", zComponentCodeList);
         } else {
             return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"未查询到模型组件信息");
@@ -444,16 +441,6 @@ public class DataModelService {
         returnMap.put("modelId",modelId);
         returnMap.put("taskId",dataTask.getTaskId());
         return BaseResultEntity.success(returnMap);
-    }
-
-    private void sortComponent(List<DataComponentRelationReq> dataComponentRelationReqs, List<String> zComponentCodeList,  Map<String, DataComponentReq> componentMap) {
-        if (dataComponentRelationReqs.isEmpty()) {
-            return;
-        }
-        DataComponentRelationReq dataComponentRelationReq = dataComponentRelationReqs.get(0);
-        zComponentCodeList.add(dataComponentRelationReq.getComponentCode());
-        DataComponentReq dataComponentReq = componentMap.get(dataComponentRelationReq.getComponentCode());
-        sortComponent(dataComponentReq.getOutput(), zComponentCodeList, componentMap);
     }
 
     public BaseResultEntity restartTaskModel(Long taskId) {
