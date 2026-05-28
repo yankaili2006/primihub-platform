@@ -24,12 +24,12 @@ module.exports = {
    * @description for google analytics
    */
   googleAnalytics: true,
-  loginLogoUrl: '/images/logo-DataItem.png', // login page logo
+  loginLogoUrl: '', // login page logo
   isShowLogo: true,
   isOpenTracing: false,
   logoUrl: '/images/logo-primihub.png', // navbar logo
-  logoTitle: 'DataItem', // navbar logo title
-  showLogoTitle: true,
+  logoTitle: '', // navbar logo title
+  showLogoTitle: false,
   favicon: '', // browser icon
   isHideFadeBack: true, // show or hide suggestions and feedback
   isHideAppMarket: true, // show or hide application market

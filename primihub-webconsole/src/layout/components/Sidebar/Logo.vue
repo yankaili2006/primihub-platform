@@ -24,7 +24,7 @@ export default {
   },
   data() {
     return {
-      title: 'DataItem',
+      title: '',
       logo: require('@/assets/logo-primihub.png')
     }
   }
