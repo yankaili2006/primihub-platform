@@ -1,0 +1,58 @@
+name: build-arm-images
+
+# Build the latest primihub-platform (backend) and primihub-web (console) images
+# for linux/arm64 natively on a GitHub-hosted ARM64 runner, and export them as
+# tarball artifacts (no registry credentials required — usable for offline deploy).
+on:
+  push:
+    branches: [ ci/arm-images ]
+  workflow_dispatch:
+
+jobs:
+  build-arm64-images:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify runner arch
+        run: uname -m
+
+      # ---------- Backend: primihub-platform (Maven build, arm64-aware Dockerfile) ----------
+      - name: Build backend arm64 image (primihub-platform)
+        run: |
+          docker build -f Dockerfile -t primihub/primihub-platform:1.8.1-arm64 .
+          docker image inspect primihub/primihub-platform:1.8.1-arm64 -f 'platform={{.Os}}/{{.Architecture}}'
+
+      # ---------- Web console: build dist/ then nginx image (arch-independent static + arm64 nginx) ----------
+      - name: Set up Node 16
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.20.2'
+
+      - name: Build webconsole dist
+        working-directory: primihub-webconsole
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund
+          npm run build:prod
+          test -d dist && echo "dist built: $(du -sh dist | cut -f1)"
+
+      - name: Build web arm64 image (primihub-web)
+        run: |
+          docker build -f primihub-webconsole/Dockerfile -t primihub/primihub-web:1.8.1-arm64 primihub-webconsole
+          docker image inspect primihub/primihub-web:1.8.1-arm64 -f 'platform={{.Os}}/{{.Architecture}}'
+
+      # ---------- Export both as tarballs ----------
+      - name: Save image tarballs
+        run: |
+          mkdir -p out
+          docker save primihub/primihub-platform:1.8.1-arm64 | gzip > out/primihub-platform-1.8.1-arm64.tar.gz
+          docker save primihub/primihub-web:1.8.1-arm64      | gzip > out/primihub-web-1.8.1-arm64.tar.gz
+          ( cd out && sha256sum *.tar.gz > SHA256SUMS && ls -la )
+
+      - name: Upload arm64 image tarballs
+        uses: actions/upload-artifact@v4
+        with:
+          name: primihub-platform-arm64-images
+          path: out/*
+          if-no-files-found: error
