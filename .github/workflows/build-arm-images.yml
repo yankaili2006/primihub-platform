@@ -21,7 +21,14 @@ jobs:
       # ---------- Backend: primihub-platform (Maven build, arm64-aware Dockerfile) ----------
       - name: Build backend arm64 image (primihub-platform)
         run: |
-          docker build -f Dockerfile -t primihub/primihub-platform:1.8.1-arm64 .
+          # Retry: aliyun maven mirror intermittently 502s; the BuildKit --mount=type=cache
+          # .m2 persists across retries within this job, so retries resume with cached deps.
+          ok=0
+          for i in 1 2 3 4 5; do
+            if DOCKER_BUILDKIT=1 docker build -f Dockerfile -t primihub/primihub-platform:1.8.1-arm64 .; then ok=1; break; fi
+            echo "::warning::backend build attempt $i failed (likely transient maven 502), retrying in 20s..."; sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "::error::backend build failed after 5 attempts"; exit 1; }
           docker image inspect primihub/primihub-platform:1.8.1-arm64 -f 'platform={{.Os}}/{{.Architecture}}'
 
       # ---------- Web console: build dist/ then nginx image (arch-independent static + arm64 nginx) ----------
