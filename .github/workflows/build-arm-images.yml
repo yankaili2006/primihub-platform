@@ -1,12 +1,20 @@
 name: build-arm-images
 
-# Build the latest primihub-platform (backend) and primihub-web (console) images
-# for linux/arm64 natively on a GitHub-hosted ARM64 runner, and export them as
-# tarball artifacts (no registry credentials required — usable for offline deploy).
+# Build the latest primihub backend + web console images for linux/arm64 natively
+# on a GitHub-hosted ARM64 runner, then push to Aliyun ACR (fast from CI; pulled
+# fast domestically for offline-package assembly).
+# Image names match the offline package .env mapping:
+#   backend  -> registry.cn-beijing.aliyuncs.com/primihub/privacy:1.8.1-arm64
+#   web      -> registry.cn-beijing.aliyuncs.com/primihub/platform:1.8.1-arm64
 on:
   push:
     branches: [ ci/arm-images ]
   workflow_dispatch:
+
+env:
+  ACR: registry.cn-beijing.aliyuncs.com
+  BACKEND_IMG: registry.cn-beijing.aliyuncs.com/primihub/privacy:1.8.1-arm64
+  WEB_IMG: registry.cn-beijing.aliyuncs.com/primihub/platform:1.8.1-arm64
 
 jobs:
   build-arm64-images:
@@ -18,20 +26,26 @@ jobs:
       - name: Verify runner arch
         run: uname -m
 
-      # ---------- Backend: primihub-platform (Maven build, arm64-aware Dockerfile) ----------
-      - name: Build backend arm64 image (primihub-platform)
+      - name: Login to Aliyun ACR
         run: |
-          # Retry: aliyun maven mirror intermittently 502s; the BuildKit --mount=type=cache
-          # .m2 persists across retries within this job, so retries resume with cached deps.
+          echo "${{ secrets.ALIYUN_PASSWORD }}" | docker login "$ACR" \
+            --username "${{ secrets.ALIYUN_USERNAME }}" --password-stdin
+
+      # ---------- Backend: primihub-platform (Maven, arm64-aware Dockerfile) ----------
+      - name: Build & push backend arm64 image
+        run: |
+          # aliyun maven mirror intermittently 502s; BuildKit --mount=type=cache .m2
+          # persists across retries within this job, so retries resume with cached deps.
           ok=0
           for i in 1 2 3 4 5; do
-            if DOCKER_BUILDKIT=1 docker build -f Dockerfile -t primihub/primihub-platform:1.8.1-arm64 .; then ok=1; break; fi
-            echo "::warning::backend build attempt $i failed (likely transient maven 502), retrying in 20s..."; sleep 20
+            if DOCKER_BUILDKIT=1 docker build -f Dockerfile -t "$BACKEND_IMG" .; then ok=1; break; fi
+            echo "::warning::backend build attempt $i failed (likely transient maven 502), retry in 20s"; sleep 20
           done
           [ "$ok" = 1 ] || { echo "::error::backend build failed after 5 attempts"; exit 1; }
-          docker image inspect primihub/primihub-platform:1.8.1-arm64 -f 'platform={{.Os}}/{{.Architecture}}'
+          docker image inspect "$BACKEND_IMG" -f 'arch={{.Os}}/{{.Architecture}}'
+          docker push "$BACKEND_IMG"
 
-      # ---------- Web console: build dist/ then nginx image (arch-independent static + arm64 nginx) ----------
+      # ---------- Web console: npm build dist/ then nginx image ----------
       - name: Set up Node 16
         uses: actions/setup-node@v4
         with:
@@ -44,22 +58,14 @@ jobs:
           npm run build:prod
           test -d dist && echo "dist built: $(du -sh dist | cut -f1)"
 
-      - name: Build web arm64 image (primihub-web)
+      - name: Build & push web arm64 image
         run: |
-          docker build -f primihub-webconsole/Dockerfile -t primihub/primihub-web:1.8.1-arm64 primihub-webconsole
-          docker image inspect primihub/primihub-web:1.8.1-arm64 -f 'platform={{.Os}}/{{.Architecture}}'
+          docker build -f primihub-webconsole/Dockerfile -t "$WEB_IMG" primihub-webconsole
+          docker image inspect "$WEB_IMG" -f 'arch={{.Os}}/{{.Architecture}}'
+          docker push "$WEB_IMG"
 
-      # ---------- Export both as tarballs ----------
-      - name: Save image tarballs
+      - name: Summary
         run: |
-          mkdir -p out
-          docker save primihub/primihub-platform:1.8.1-arm64 | gzip > out/primihub-platform-1.8.1-arm64.tar.gz
-          docker save primihub/primihub-web:1.8.1-arm64      | gzip > out/primihub-web-1.8.1-arm64.tar.gz
-          ( cd out && sha256sum *.tar.gz > SHA256SUMS && ls -la )
-
-      - name: Upload arm64 image tarballs
-        uses: actions/upload-artifact@v4
-        with:
-          name: primihub-platform-arm64-images
-          path: out/*
-          if-no-files-found: error
+          echo "Pushed arm64 images to Aliyun ACR:"
+          echo "  $BACKEND_IMG"
+          echo "  $WEB_IMG"
