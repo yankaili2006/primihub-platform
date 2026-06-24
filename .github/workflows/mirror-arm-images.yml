@@ -29,7 +29,7 @@ jobs:
           docker.io/primihub/primihub-node:1.7.0|primihub-node:1.7.0-arm64
           docker.io/library/redis:7|redis:7-arm64
           docker.io/library/rabbitmq:3.6.15-management|rabbitmq:3.6.15-management-arm64
-          docker.io/nacos/nacos-server:v2.0.4|nacos-server:v2.0.4-arm64
+          docker.io/nacos/nacos-server:v2.4.3|nacos-server:v2.4.3-arm64
           docker.io/grafana/loki:2.9.0|loki:2.9.0-arm64
           docker.io/library/mariadb:10.11|mariadb:10.11-arm64
           "
