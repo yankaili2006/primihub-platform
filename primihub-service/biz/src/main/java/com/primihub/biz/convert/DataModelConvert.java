@@ -44,7 +44,9 @@ public class DataModelConvert {
         DataComponent dataComponent = new DataComponent();
         dataComponent.setFrontComponentId(req.getFrontComponentId());
         dataComponent.setComponentCode(req.getComponentCode());
-        dataComponent.setComponentId(StringUtils.isNotBlank(req.getComponentId())?Long.parseLong(req.getComponentId()):null);
+        // componentId 仅当为纯数字字符串时才解析为 Long; 非数字(如前端只传 frontComponentId)或空 -> null,
+        // 避免 Long.parseLong 抛 NumberFormatException 被上层吞成泛化的"组件执行异常"。
+        dataComponent.setComponentId((StringUtils.isNotBlank(req.getComponentId()) && req.getComponentId().matches("-?\\d+")) ? Long.parseLong(req.getComponentId()) : null);
         dataComponent.setComponentName(req.getComponentName());
         dataComponent.setCoordinateX(req.getCoordinateX());
         dataComponent.setCoordinateY(req.getCoordinateY());

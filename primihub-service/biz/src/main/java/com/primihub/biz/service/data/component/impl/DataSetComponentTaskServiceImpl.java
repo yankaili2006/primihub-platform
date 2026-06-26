@@ -71,7 +71,7 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
                 return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"联邦资源查询失败:"+baseResult.getMsg());
             }
             List<LinkedHashMap<String,Object>> voList = (List<LinkedHashMap<String,Object>>)baseResult.getResult();
-            if (voList == null && voList.size()==0) {
+            if (voList == null || voList.size()==0) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"联邦资源查询失败:无数据信息");
             }
             taskReq.setFusionResourceList(voList);
@@ -114,7 +114,18 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
             }else {
                 taskReq.getFreemarkerMap().put(DataConstant.PYTHON_GUEST_DATASET , modelProjectResourceVo.getResourceId());
             }
-            String fileName = StringUtils.isBlank(modelProjectResourceVo.getCalculationField())?"null":modelProjectResourceVo.getCalculationField();
+            // selected_column(label_field*) 在 homo_lr.ftl 等模板中以 ${label_fieldN} 原样渲染(不加引号),
+            // 必须是合法 JSON 数组。前端可能传逗号分隔列名(x0,x1,...)或已是 JSON 数组([...]);
+            // 这里统一规整为 JSON 数组字符串, 逗号串也能跑通, 避免渲染出非法 JSON 导致节点解析失败。
+            String calcField = modelProjectResourceVo.getCalculationField();
+            String fileName;
+            if (StringUtils.isBlank(calcField)) {
+                fileName = "null";
+            } else if (calcField.trim().startsWith("[")) {
+                fileName = calcField;
+            } else {
+                fileName = JSONObject.toJSONString(Arrays.asList(calcField.split(",")));
+            }
             taskReq.getFreemarkerMap().put(DataConstant.PYTHON_CALCULATION_FIELD+i,fileName);
             DataModelResource dataModelResource = new DataModelResource(taskReq.getDataModel().getModelId());
             dataModelResource.setTaskId(taskReq.getDataTask().getTaskId());
