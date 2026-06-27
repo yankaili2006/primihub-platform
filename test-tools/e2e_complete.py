@@ -103,10 +103,10 @@ async def main():
         auth_js = json.dumps([{"authId": 3000+i, "authCode": c, "authName": c, "authType": 2, "isShow": 1}
                               for i, c in enumerate(set(ALL_AUTH))])
         await page.evaluate(f"""
-            const p = JSON.parse(localStorage.getItem('DataItemPer') || '[]');
+            const p = JSON.parse(localStorage.getItem('PrimiHubPer') || '[]');
             const seen = new Set(p.map(x => x.authCode));
             for (const e of {auth_js}) {{ if (!seen.has(e.authCode)) {{ p.push(e); seen.add(e.authCode); }} }}
-            localStorage.setItem('DataItemPer', JSON.stringify(p));
+            localStorage.setItem('PrimiHubPer', JSON.stringify(p));
         """)
 
         def R(n, o, d=""):

@@ -276,4 +276,4 @@ python3 test-tools/primihub-cli.py health --url http://<host>:30811
 - **Database**: MySQL 5.7 (privacy0/1/2 + fusion0/1/2), Nacos config center
 - **Messaging**: RabbitMQ 3.6.15 cluster
 - **Cache**: Redis 7
-- **Auth**: JWT token, localStorage key `DataItemPer`
+- **Auth**: JWT token, localStorage key `PrimiHubPer`

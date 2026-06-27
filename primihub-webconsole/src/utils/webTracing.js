@@ -10,7 +10,7 @@ export function setUpTracing() {
       Vue.use(WebTracing, {
         dsn: '/ali/log/save',
         appCode: 'primihub-platform',
-        appName: 'DataItem隐私计算平台',
+        appName: 'PrimiHub隐私计算平台',
         debug: !!developEnv,
         pv: true,
         performance: false,

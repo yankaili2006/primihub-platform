@@ -114,7 +114,7 @@ async def main():
             await page.click('.el-button--primary')
             await page.wait_for_timeout(4000)
             aj = json.dumps([{"authId":i,"authCode":c,"authName":c,"authType":2,"isShow":1} for i,c in enumerate(set(AUTH),3000)])
-            await page.evaluate(f"const p=JSON.parse(localStorage.getItem('DataItemPer')||'[]');const s=new Set(p.map(x=>x.authCode));for(const e of {aj}){{if(!s.has(e.authCode)){{p.push(e);s.add(e.authCode);}}}}localStorage.setItem('DataItemPer',JSON.stringify(p));")
+            await page.evaluate(f"const p=JSON.parse(localStorage.getItem('PrimiHubPer')||'[]');const s=new Set(p.map(x=>x.authCode));for(const e of {aj}){{if(!s.has(e.authCode)){{p.push(e);s.add(e.authCode);}}}}localStorage.setItem('PrimiHubPer',JSON.stringify(p));")
             print(f"\n批 {bs//B+1}/{(len(ALL)-1)//B+1}:")
             for j, (name, route) in enumerate(batch):
                 idx = bs + j + 1

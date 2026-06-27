@@ -402,10 +402,10 @@ export default {
         maxConcurrentLogin: 3
       },
       personalizationConfig: {
-        platformName: 'DataItem隐私计算平台',
-        platformShortName: 'DataItem',
+        platformName: 'PrimiHub隐私计算平台',
+        platformShortName: 'PrimiHub',
         platformDescription: '基于隐私保护的分布式计算平台',
-        copyright: 'Copyright © 2026 海会科技. All rights reserved.',
+        copyright: 'Copyright © 2026 原语科技. All rights reserved.',
         icpNumber: '',
         themeColor: '#409EFF',
         sidebarTheme: 'dark',
