@@ -162,15 +162,18 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar --spring.profiles.active=dev \
         --spring.rabbitmq.host=rabbitmq0 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
-        --nacos.config.server-addr=nacos:8848"
+        --nacos.config.server-addr=nacos:8848 --nacos.config.namespace=demo0"
     environment:
       - TZ=Asia/Shanghai
       # 使用环境变量设置命名空间，优先级高于 application-dev.yaml 中的硬编码值
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=demo0
       - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=demo0
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
     depends_on:
       nacos:
         condition: service_healthy
@@ -190,14 +193,16 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar --spring.profiles.active=dev \
         --spring.rabbitmq.host=rabbitmq1 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
-        --nacos.config.server-addr=nacos:8848"
+        --nacos.config.server-addr=nacos:8848 --nacos.config.namespace=demo1"
     environment:
       - TZ=Asia/Shanghai
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=demo1
       - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=demo1
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy2?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy2?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
     depends_on:
       - application0
 
@@ -211,14 +216,16 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/application.jar --spring.profiles.active=dev \
         --spring.rabbitmq.host=rabbitmq2 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
-        --nacos.config.server-addr=nacos:8848"
+        --nacos.config.server-addr=nacos:8848 --nacos.config.namespace=demo2"
     environment:
       - TZ=Asia/Shanghai
       - SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE=demo2
       - SPRING_CLOUD_NACOS_CONFIG_NAMESPACE=demo2
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy3?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy3?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
     depends_on:
       - application0
 
@@ -230,7 +237,7 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar --spring.profiles.active=dev \
         --server.port=8080 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
         --nacos.config.server-addr=nacos:8848 \
@@ -239,6 +246,8 @@ services:
         --openSwagger=true"
     environment:
       - TZ=Asia/Shanghai
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
       - SPRING_APPLICATION_JSON={"base":{"tokenValidateUriBlackList":["/sys/user/login","/user/login","/user/register","/user/sendVerificationCode","/user/forgetPassword","/captcha/get","/captcha/check","/oauth/getAuthList","/oauth/authLogin","/oauth/authRegister","/common/getValidatePublicKey","/common/getTrackingID","/shareData/syncProject","/shareData/syncModel","/organ/getHomepage","/swagger-ui.html","/v2/api-docs","/swagger-resources","/webjars"]}}
     depends_on:
       - application0
@@ -251,7 +260,7 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar --spring.profiles.active=dev \
         --server.port=8080 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
         --nacos.config.server-addr=nacos:8848 \
@@ -260,6 +269,8 @@ services:
         --openSwagger=true"
     environment:
       - TZ=Asia/Shanghai
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy2?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy2?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
     depends_on:
       - application1
   
@@ -271,7 +282,7 @@ services:
     entrypoint:
       - "/bin/sh"
       - "-c"
-      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar \
+      - "java -jar -Xmx1536m -Xms1536m -Dfile.encoding=UTF-8 /applications/gateway.jar --spring.profiles.active=dev \
         --server.port=8080 \
         --spring.cloud.nacos.discovery.server-addr=nacos:8848 \
         --nacos.config.server-addr=nacos:8848 \
@@ -280,6 +291,8 @@ services:
         --openSwagger=true"
     environment:
       - TZ=Asia/Shanghai
+      - "SPRING_DATASOURCE_DRUID_PRIMARY_URL=jdbc:mysql://mysql:3306/privacy3?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
+      - "SPRING_DATASOURCE_DRUID_SECONDARY_URL=jdbc:mysql://mysql:3306/privacy3?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false"
     depends_on:
       - application2
 
