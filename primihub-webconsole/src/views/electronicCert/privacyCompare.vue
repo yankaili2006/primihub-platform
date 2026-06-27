@@ -127,3 +127,4 @@ export default {
     handleExport(row) { this.$message.success(`导出结果: ${row.taskId}`) }
   }
 }
+</script>
