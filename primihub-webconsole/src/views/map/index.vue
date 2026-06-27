@@ -218,7 +218,7 @@ export default {
       const labelDataFeatures = []
       const { code, result } = await getCoordinates()
       if (code === 0) {
-        this.data = result.sort((a, b) => { return b.online - a.online })
+        this.data = (result || []).sort((a, b) => { return b.online - a.online })
         for (let i = 0; i < this.data.length; i++) {
           const item = this.data[i]
           for (const key in polygonData2.features) {
