@@ -17,8 +17,35 @@ PORTS="${PORTS:-30811 30812 30813}"
 COMPOSE="docker compose --env-file .env"
 red(){ printf '\033[31m%s\033[0m\n' "$*"; }; grn(){ printf '\033[32m%s\033[0m\n' "$*"; }; ylw(){ printf '\033[33m%s\033[0m\n' "$*"; }
 
-command -v docker >/dev/null || { red "未找到 docker"; exit 1; }
+# 离线安装 docker (无 docker 且包内带 docker-bins.tar 时, 适配无公网/CentOS8 EOL)
+if ! command -v docker >/dev/null 2>&1 && [ -f docker-bins.tar ]; then
+  grn "== 离线安装 docker (docker-bins.tar) =="
+  tar xf docker-bins.tar -C /usr/local/bin
+  mkdir -p /usr/local/lib/docker/cli-plugins
+  [ -f /usr/local/bin/docker-compose ] && mv -f /usr/local/bin/docker-compose /usr/local/lib/docker/cli-plugins/docker-compose || true
+  chmod +x /usr/local/bin/* /usr/local/lib/docker/cli-plugins/docker-compose 2>/dev/null || true
+  cat >/etc/systemd/system/docker.service <<'UNIT'
+[Unit]
+Description=Docker Engine
+After=network-online.target
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/dockerd
+Restart=always
+Delegate=yes
+LimitNOFILE=1048576
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload && systemctl enable --now docker && sleep 5
+  export PATH=$PATH:/usr/local/bin
+fi
+command -v docker >/dev/null || { red "未找到 docker (且无 docker-bins.tar)"; exit 1; }
 docker compose version >/dev/null 2>&1 || COMPOSE="docker-compose --env-file .env"
+
+grn "== 0. 主机调优 (arm64 redis COW / overcommit) =="
+sysctl -w vm.overcommit_memory=1 >/dev/null 2>&1 || true
+grep -q "vm.overcommit_memory" /etc/sysctl.conf 2>/dev/null || echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
 
 grn "== 1. 准备运行目录 =="
 mkdir -p data/mysql data/log primihub-node data/result
