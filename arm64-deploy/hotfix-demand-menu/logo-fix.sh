@@ -45,7 +45,11 @@ if [ -n "$COMPOSE" ]; then
   if [ "${NO_RECREATE:-0}" != "1" ] && grep -q "logo-primihub.png" "$COMPOSE"; then
     SVCS="$(awk '/^  [A-Za-z0-9_-]+:[[:space:]]*$/{s=$1} /container_name:[[:space:]]*manage-web/{gsub(":","",s);print s}' "$COMPOSE"|tr '\n' ' ')"
     ylw "重建前端服务: $SVCS"
-    (cd "$CD" && docker compose up -d $SVCS 2>&1 | grep -iE 'start|recreat|creat' | tail -6) || ylw "请手动: cd $CD && docker compose up -d $SVCS"
+    if ( cd "$CD" && docker compose up -d $SVCS ) >/tmp/_logo_recreate.log 2>&1; then
+      grn "前端已重建(logo 挂载生效)"
+    else
+      ylw "自动重建失败, 请手动: cd $CD && docker compose up -d $SVCS"; tail -3 /tmp/_logo_recreate.log 2>/dev/null
+    fi
   fi
 fi
 
@@ -56,3 +60,5 @@ done; done
 
 echo; grn "✅ Logo 已替换为 PrimiHub。浏览器强刷(Ctrl+F5)或重新登录查看。"
 [ -z "$COMPOSE" ] && ylw "未定位 compose: 仅即时生效, 容器重建后请重跑 logo-fix.sh(或手动加 bind-mount 持久化)。"
+
+exit 0

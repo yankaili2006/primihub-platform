@@ -25,19 +25,32 @@ red(){ printf '\033[31m%s\033[0m\n' "$*"; }; grn(){ printf '\033[32m%s\033[0m\n'
 ylw(){ printf '\033[33m%s\033[0m\n' "$*"; }; die(){ red "ERROR: $*"; exit 1; }
 
 command -v docker >/dev/null || die "未找到 docker"
+DK="docker"; $DK ps >/dev/null 2>&1 || { sudo -n docker ps >/dev/null 2>&1 && DK="sudo docker" || die "docker 不可用(权限?)：请用 root 运行, 或确认当前用户在 docker 组。"; }
 
-# ---- 1. 定位 mysql / redis 容器 -------------------------------------------
-detect(){ # $1 keyword
-  docker ps --format '{{.Names}}\t{{.Image}}' | awk -v k="$1" 'tolower($0) ~ k {print $1; exit}'
-}
-[ -z "$MYSQL_CONTAINER" ] && MYSQL_CONTAINER="$(docker ps --format '{{.Names}}' | grep -x mysql || true)"
-[ -z "$MYSQL_CONTAINER" ] && MYSQL_CONTAINER="$(detect 'mysql|mariadb')"
-[ -z "$MYSQL_CONTAINER" ] && die "未找到 mysql/mariadb 容器, 请用 MYSQL_CONTAINER=<名字> 指定"
-[ -z "$REDIS_CONTAINER" ] && REDIS_CONTAINER="$(docker ps --format '{{.Names}}' | grep -x redis || true)"
-[ -z "$REDIS_CONTAINER" ] && REDIS_CONTAINER="$(detect 'redis')"
+# ---- 1. 定位 mysql / redis 容器 (多重探测, 兼容各种命名) -------------------
+by_kw(){ $DK ps --format '{{.Names}}\t{{.Image}}' | awk -v k="$1" 'tolower($0) ~ k {print $1; exit}'; }
+# 探针: 容器内有 mysql/mariadb 客户端的即数据库容器(不依赖命名/镜像名)
+probe_db(){ for x in $($DK ps --format '{{.Names}}'); do
+    $DK exec "$x" sh -c 'command -v mysql >/dev/null 2>&1 || command -v mariadb >/dev/null 2>&1' 2>/dev/null && { echo "$x"; return; }
+  done; }
+probe_redis(){ for x in $($DK ps --format '{{.Names}}'); do
+    $DK exec "$x" sh -c 'command -v redis-cli >/dev/null 2>&1' 2>/dev/null && { echo "$x"; return; }
+  done; }
+
+[ -z "$MYSQL_CONTAINER" ] && MYSQL_CONTAINER="$($DK ps --format '{{.Names}}' | grep -xiE 'mysql|mariadb' | head -1)"
+[ -z "$MYSQL_CONTAINER" ] && MYSQL_CONTAINER="$(by_kw 'mysql|mariadb|percona')"
+[ -z "$MYSQL_CONTAINER" ] && { ylw "按名称/镜像未命中, 改用客户端探针扫描容器..."; MYSQL_CONTAINER="$(probe_db)"; }
+if [ -z "$MYSQL_CONTAINER" ]; then
+  red "未找到数据库容器。当前运行中的容器如下, 请用 MYSQL_CONTAINER=<名字> 重试:"
+  $DK ps --format '  {{.Names}}\t{{.Image}}'
+  exit 1
+fi
+[ -z "$REDIS_CONTAINER" ] && REDIS_CONTAINER="$($DK ps --format '{{.Names}}' | grep -xiE 'redis' | head -1)"
+[ -z "$REDIS_CONTAINER" ] && REDIS_CONTAINER="$(by_kw 'redis')"
+[ -z "$REDIS_CONTAINER" ] && REDIS_CONTAINER="$(probe_redis)"
 grn "mysql 容器 = $MYSQL_CONTAINER ; redis 容器 = ${REDIS_CONTAINER:-<未找到, 将跳过清缓存>}"
 
-MYSQL(){ docker exec -i "$MYSQL_CONTAINER" mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4 "$@" 2>/dev/null; }
+MYSQL(){ $DK exec -i "$MYSQL_CONTAINER" mysql -uroot -p"$MYSQL_ROOT_PASSWORD" --default-character-set=utf8mb4 "$@" 2>/dev/null; }
 echo "SELECT 1;" | MYSQL >/dev/null || die "无法用 root 连接 mysql (检查 MYSQL_ROOT_PASSWORD)"
 
 # ---- 2. 确定目标库 ---------------------------------------------------------
@@ -56,7 +69,7 @@ grn "目标数据库: $DBS"
 mkdir -p "$BK_DIR"
 for d in $DBS; do
   ylw "[$d] 备份 sys_auth + sys_ra -> backups/$TS/${d}.sql"
-  docker exec "$MYSQL_CONTAINER" sh -c "mysqldump -uroot -p'$MYSQL_ROOT_PASSWORD' --default-character-set=utf8mb4 $d sys_auth sys_ra" > "$BK_DIR/${d}.sql" 2>/dev/null
+  $DK exec "$MYSQL_CONTAINER" sh -c "mysqldump -uroot -p'$MYSQL_ROOT_PASSWORD' --default-character-set=utf8mb4 $d sys_auth sys_ra" > "$BK_DIR/${d}.sql" 2>/dev/null
   [ -s "$BK_DIR/${d}.sql" ] || die "[$d] 备份失败, 中止 (未做任何修改)"
 done
 for d in $DBS; do
@@ -69,8 +82,8 @@ done
 # ---- 4. 清后端菜单缓存 -----------------------------------------------------
 if [ -n "$REDIS_CONTAINER" ]; then
   ylw "清 redis 缓存 key: $CACHE_KEY"
-  docker exec "$REDIS_CONTAINER" sh -c "redis-cli -a '$REDIS_PASSWORD' --no-auth-warning DEL $CACHE_KEY" >/dev/null 2>&1 \
-    || docker exec "$REDIS_CONTAINER" redis-cli DEL "$CACHE_KEY" >/dev/null 2>&1 \
+  $DK exec "$REDIS_CONTAINER" sh -c "redis-cli -a '$REDIS_PASSWORD' --no-auth-warning DEL $CACHE_KEY" >/dev/null 2>&1 \
+    || $DK exec "$REDIS_CONTAINER" redis-cli DEL "$CACHE_KEY" >/dev/null 2>&1 \
     || ylw "  清缓存失败(可忽略): 请手动 DEL $CACHE_KEY 或重启 application 容器"
 fi
 
@@ -86,6 +99,14 @@ done
 if [ -f "$SCRIPT_DIR/logo-fix.sh" ] && [ "${SKIP_LOGO:-0}" != "1" ]; then
   echo; ylw "===== 应用 Logo 修复 (PrimiHub) ====="
   bash "$SCRIPT_DIR/logo-fix.sh" || ylw "logo 修复未完全成功(不影响菜单), 可单独重跑 logo-fix.sh"
+fi
+
+# ---- 7. 浏览器模拟登录验证 (功能菜单 + 页面解锁) --------------------------
+if [ -f "$SCRIPT_DIR/verify_menus.py" ] && command -v python3 >/dev/null && command -v openssl >/dev/null; then
+  echo; ylw "===== 浏览器模拟登录验证 ====="
+  VPORT="${VERIFY_PORT:-30811}"
+  python3 "$SCRIPT_DIR/verify_menus.py" "http://127.0.0.1:$VPORT" admin "${ADMIN_PWD:-123456}" \
+    || ylw "登录验证未通过(可能需等后端就绪/重新登录), 可单独重跑: python3 verify_menus.py http://127.0.0.1:$VPORT"
 fi
 
 echo

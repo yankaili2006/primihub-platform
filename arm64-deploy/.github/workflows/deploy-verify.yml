@@ -1,0 +1,89 @@
+name: arm64-offline-deploy-verify
+
+# Full 22-container arm64 offline deploy verification on a GitHub-hosted ARM64 runner
+# (16 GB) — pulls all 9 arm64 images from Aliyun ACR, brings up docker-compose, and
+# verifies login (POST /prod-api/user/login -> code=0) on the 3 web ports.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  ACR: registry.cn-beijing.aliyuncs.com
+
+jobs:
+  deploy-verify:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: uname -m && free -h && docker --version
+
+      - name: Login to Aliyun ACR
+        run: echo "${{ secrets.ALIYUN_PASSWORD }}" | docker login "$ACR" --username "${{ secrets.ALIYUN_USERNAME }}" --password-stdin
+
+      - name: Prepare runtime dirs
+        run: mkdir -p data/mysql data/log primihub-node data/result
+
+      - name: Pull all arm64 images
+        run: docker compose --env-file .env pull
+
+      - name: Deploy (compose up)
+        run: docker compose --env-file .env up -d
+
+      - name: Wait & verify containers + login
+        run: |
+          echo "=== initial container states ==="
+          sleep 30; docker compose --env-file .env ps
+          echo "=== waiting for 22 containers + login (up to ~40 min) ==="
+          PASS=0
+          for round in $(seq 1 80); do
+            sleep 30
+            up=$(docker ps --format '{{.Names}}' | wc -l | tr -d ' ')
+            ok=0
+            for p in 30811 30812 30813; do
+              code=$(curl -s -m 8 -X POST "http://127.0.0.1:$p/prod-api/user/login" \
+                     -H 'Content-Type: application/x-www-form-urlencoded' \
+                     -d 'username=admin&userPassword=123456' 2>/dev/null \
+                     | python3 -c "import sys,json;print(json.load(sys.stdin).get('code'))" 2>/dev/null)
+              [ "$code" = "0" ] && ok=$((ok+1))
+            done
+            echo "[round $round] containers_up=$up login_pass=$ok/3"
+            if [ "$ok" = "3" ]; then PASS=1; echo "LOGIN 3/3 PASS"; break; fi
+          done
+          echo "=== final container states ==="
+          docker compose --env-file .env ps -a
+          docker ps -a --format 'table {{.Names}}\t{{.Status}}' 
+          if [ "$PASS" != "1" ]; then echo "::error::login did not reach 3/3"; fi
+          echo "DEPLOY_RESULT=$([ "$PASS" = 1 ] && echo SUCCESS || echo FAILED)"
+
+      - name: Verify function menus (browser-equivalent login)
+        run: |
+          # 浏览器模拟登录: 校验 224 功能点菜单 + 侧边栏页面解锁(各 web 端口)
+          MPASS=1
+          for p in 30811 30812 30813; do
+            echo "---- :$p ----"
+            python3 scripts/verify_menus.py "http://127.0.0.1:$p" admin 123456 || MPASS=0
+          done
+          [ "$MPASS" = "1" ] && echo "MENU_VERIFY=SUCCESS" || { echo "::error::menu verify failed"; exit 1; }
+
+      - name: Verify PrimiHub logo replaced
+        run: |
+          EXP=$(wc -c < config/logo-primihub.png | tr -d ' ')
+          for p in 30811 30812 30813; do
+            got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
+            echo ":$p logo bytes=$got (expect $EXP)"
+            [ "$got" = "$EXP" ] || { echo "::error::logo not replaced on $p"; exit 1; }
+          done
+
+      - name: Dump logs on failure
+        if: always()
+        run: |
+          mkdir -p out
+          docker compose --env-file .env ps -a > out/ps.txt 2>&1 || true
+          for c in mysql nacos-server application0 gateway0 manage-web0 primihub-meta0 primihub-node0; do
+            docker logs --tail 120 "$c" > "out/$c.log" 2>&1 || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: deploy-logs, path: out/* }
