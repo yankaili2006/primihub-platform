@@ -316,19 +316,20 @@
         WHERE id = #{id} AND is_del = 0
     </select>
 
+    <!-- 列对齐真实部署表(app 启动 schema-mysql.sql 建的设计)：主键 log_id、无
+         log_code/organ_id/organ_name/status/error_msg/execution_time/create_date，
+         改用 is_success/exception_msg/operation_time/created_time，别名回 PO 字段、缺列取 NULL。
+         原实现按 script/log_management.sql 的另一套列名写 → 线上 "Unknown column 'id'" 查询失败。 -->
     <select id="selectOperationLogList" resultType="com.primihub.biz.entity.sys.po.OperationLog">
-        SELECT id, log_code as logCode, user_id as userId, user_name as userName,
-               organ_id as organId, organ_name as organName,
+        SELECT log_id as id, NULL as logCode, user_id as userId, user_name as userName,
+               NULL as organId, NULL as organName,
                operation_type as operationType, operation_module as operationModule,
                operation_desc as operationDesc, request_method as requestMethod,
                request_url as requestUrl, ip_address as ipAddress,
-               status, error_msg as errorMsg, execution_time as executionTime,
-               create_date as createDate
+               is_success as status, exception_msg as errorMsg, operation_time as executionTime,
+               created_time as createDate
         FROM sys_operation_log
         WHERE is_del = 0
-        <if test="logCode != null and logCode != ''">
-            AND log_code = #{logCode}
-        </if>
         <if test="userId != null">
             AND user_id = #{userId}
         </if>
@@ -342,15 +343,15 @@
             AND operation_module = #{operationModule}
         </if>
         <if test="status != null">
-            AND status = #{status}
+            AND is_success = #{status}
         </if>
         <if test="startTime != null and startTime != ''">
-            AND create_date &gt;= #{startTime}
+            AND created_time &gt;= #{startTime}
         </if>
         <if test="endTime != null and endTime != ''">
-            AND create_date &lt;= #{endTime}
+            AND created_time &lt;= #{endTime}
         </if>
-        ORDER BY create_date DESC
+        ORDER BY created_time DESC
         <if test="pageSize != null and offset != null">
             LIMIT #{offset}, #{pageSize}
         </if>
@@ -359,9 +360,6 @@
     <select id="selectOperationLogCount" resultType="int">
         SELECT COUNT(*) FROM sys_operation_log
         WHERE is_del = 0
-        <if test="logCode != null and logCode != ''">
-            AND log_code = #{logCode}
-        </if>
         <if test="userId != null">
             AND user_id = #{userId}
         </if>
@@ -375,13 +373,13 @@
             AND operation_module = #{operationModule}
         </if>
         <if test="status != null">
-            AND status = #{status}
+            AND is_success = #{status}
         </if>
         <if test="startTime != null and startTime != ''">
-            AND create_date &gt;= #{startTime}
+            AND created_time &gt;= #{startTime}
         </if>
         <if test="endTime != null and endTime != ''">
-            AND create_date &lt;= #{endTime}
+            AND created_time &lt;= #{endTime}
         </if>
     </select>
 
