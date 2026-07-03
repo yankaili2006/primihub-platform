@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.SharedDatasetPrimarydbRepository">
+
+    <resultMap id="SharedDatasetMap" type="com.primihub.biz.entity.data.po.SharedDataset">
+        <id column="id" property="id"/>
+        <result column="dataset_code" property="datasetCode"/>
+        <result column="dataset_name" property="datasetName"/>
+        <result column="dataset_desc" property="datasetDesc"/>
+        <result column="data_type" property="dataType"/>
+        <result column="data_format" property="dataFormat"/>
+        <result column="data_fields" property="dataFields"/>
+        <result column="data_volume" property="dataVolume"/>
+        <result column="share_status" property="shareStatus"/>
+        <result column="share_scope" property="shareScope"/>
+        <result column="target_organ_ids" property="targetOrganIds"/>
+        <result column="resource_id" property="resourceId"/>
+        <result column="resource_name" property="resourceName"/>
+        <result column="usage_terms" property="usageTerms"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="remark" property="remark"/>
+        <result column="is_del" property="isDel"/>
+        <result column="create_date" property="createDate"/>
+        <result column="update_date" property="updateDate"/>
+    </resultMap>
+
+    <sql id="cols">
+        id, dataset_code, dataset_name, dataset_desc, data_type, data_format, data_fields,
+        data_volume, share_status, share_scope, target_organ_ids, resource_id, resource_name,
+        usage_terms, user_id, user_name, organ_id, organ_name, start_date, end_date, remark,
+        is_del, create_date, update_date
+    </sql>
+
+    <insert id="insertSharedDataset" parameterType="com.primihub.biz.entity.data.po.SharedDataset"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO shared_dataset (
+            dataset_code, dataset_name, dataset_desc, data_type, data_format, data_fields,
+            data_volume, share_status, share_scope, target_organ_ids, resource_id, resource_name,
+            usage_terms, user_id, user_name, organ_id, organ_name, start_date, end_date, remark,
+            is_del, create_date, update_date
+        ) VALUES (
+            #{datasetCode}, #{datasetName}, #{datasetDesc}, #{dataType}, #{dataFormat}, #{dataFields},
+            #{dataVolume}, #{shareStatus}, #{shareScope}, #{targetOrganIds}, #{resourceId}, #{resourceName},
+            #{usageTerms}, #{userId}, #{userName}, #{organId}, #{organName}, #{startDate}, #{endDate}, #{remark},
+            0, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateSharedDataset" parameterType="com.primihub.biz.entity.data.po.SharedDataset">
+        UPDATE shared_dataset
+        <set>
+            <if test="datasetName != null">dataset_name = #{datasetName},</if>
+            <if test="datasetDesc != null">dataset_desc = #{datasetDesc},</if>
+            <if test="dataType != null">data_type = #{dataType},</if>
+            <if test="dataFormat != null">data_format = #{dataFormat},</if>
+            <if test="dataFields != null">data_fields = #{dataFields},</if>
+            <if test="dataVolume != null">data_volume = #{dataVolume},</if>
+            <if test="shareStatus != null">share_status = #{shareStatus},</if>
+            <if test="shareScope != null">share_scope = #{shareScope},</if>
+            <if test="targetOrganIds != null">target_organ_ids = #{targetOrganIds},</if>
+            <if test="resourceId != null">resource_id = #{resourceId},</if>
+            <if test="resourceName != null">resource_name = #{resourceName},</if>
+            <if test="usageTerms != null">usage_terms = #{usageTerms},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteSharedDataset">
+        UPDATE shared_dataset SET is_del = 1, update_date = NOW() WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="batchDeleteSharedDataset">
+        UPDATE shared_dataset SET is_del = 1, update_date = NOW()
+        WHERE is_del = 0 AND id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateSharedDatasetStatus">
+        UPDATE shared_dataset SET share_status = #{shareStatus}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectSharedDatasetById" resultMap="SharedDatasetMap">
+        SELECT <include refid="cols"/> FROM shared_dataset WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectSharedDatasetByCode" resultMap="SharedDatasetMap">
+        SELECT <include refid="cols"/> FROM shared_dataset WHERE dataset_code = #{datasetCode} AND is_del = 0 LIMIT 1
+    </select>
+
+    <select id="selectSharedDatasetList" parameterType="map" resultMap="SharedDatasetMap">
+        SELECT <include refid="cols"/> FROM shared_dataset
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (dataset_code LIKE CONCAT('%', #{keyword}, '%')
+                OR dataset_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="dataType != null and dataType != ''">
+                AND data_type = #{dataType}
+            </if>
+            <if test="shareStatus != null">
+                AND share_status = #{shareStatus}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+        </where>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectSharedDatasetCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM shared_dataset
+        <where>
+            is_del = 0
+            <if test="keyword != null and keyword != ''">
+                AND (dataset_code LIKE CONCAT('%', #{keyword}, '%')
+                OR dataset_name LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="dataType != null and dataType != ''">
+                AND data_type = #{dataType}
+            </if>
+            <if test="shareStatus != null">
+                AND share_status = #{shareStatus}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 可共享资源下拉：查真实 data_resource（授权类型公开的、未删的） -->
+    <select id="selectShareableResources" resultType="java.util.HashMap">
+        SELECT resource_id AS resourceId, resource_name AS resourceName
+        FROM data_resource
+        WHERE is_del = 0
+        <if test="organId != null">
+            AND organ_id = #{organId}
+        </if>
+        ORDER BY resource_id DESC
+        LIMIT 200
+    </select>
+
+</mapper>
