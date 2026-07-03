@@ -62,7 +62,12 @@ public class DataRequirementController {
      */
     @ApiOperation(value = "添加数据需求")
     @PostMapping("addDataRequirement")
-    public BaseResultEntity addDataRequirement(@RequestBody DataRequirement dataRequirement) {
+    public BaseResultEntity addDataRequirement(@RequestBody DataRequirement dataRequirement,
+            @RequestHeader(value = "userId", required = false) Long userId) {
+        // user_id 是 NOT NULL 但前端不传、service 也不设 → 插入必失败(#26)。从鉴权头补上。
+        if (userId != null && dataRequirement.getUserId() == null) {
+            dataRequirement.setUserId(userId);
+        }
         return dataRequirementService.addDataRequirement(dataRequirement);
     }
 
