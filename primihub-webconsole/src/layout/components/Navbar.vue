@@ -10,7 +10,7 @@
       </div>
     </div>
     <div class="right-menu">
-      <el-link v-if="false" slot="reference" type="primary" style="margin-right: 10px;" @click="toBigModelPage">DataItem隐私计算大模型</el-link>
+      <el-link v-if="false" slot="reference" type="primary" style="margin-right: 10px;" @click="toBigModelPage">{{brand.modelName}}</el-link>
       <el-button v-if="!isHideAppMarket" type="primary" size="small" style="margin-right: 10px;" @click="toApplicationPage">应用市场</el-button>
       <el-dropdown class="avatar-container" trigger="click">
         <div class="avatar-wrapper">
@@ -47,6 +47,7 @@
 </template>
 
 <script>
+import brand from "@/brand.config"
 import { mapGetters, mapState, mapActions } from 'vuex'
 import UpdatePwdForm from '@/components/UpdatePwdForm'
 import BindPhoneDialog from '@/components/BindPhoneDialog'
@@ -54,6 +55,7 @@ import BindPhoneDialog from '@/components/BindPhoneDialog'
 const phonePattern = /^[1][\d][0-9]{9}$/
 
 export default {
+  computed: { brand() { return brand } },
   components: {
     UpdatePwdForm,
     BindPhoneDialog

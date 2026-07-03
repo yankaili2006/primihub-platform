@@ -1,3 +1,8 @@
+<script>
+import brand from "@/brand.config"
+export default { data() { return { brand } } }
+</script>
+
 <template>
   <section class="app-main" :class="{'padding':!routePath}">
     <div v-if="!routePath" class="flex justify-content-between">
@@ -29,7 +34,7 @@
               <el-dropdown-item>
                 <div class="contact-server">
                   <p>微信扫描二维码</p>
-                  <img src="/static/img/assitant.001dc94b.png" alt="海会科技">
+                  <img src="/static/img/assitant.001dc94b.png" :alt="brand.assistantAlt">
                 </div>
               </el-dropdown-item>
             </el-dropdown-menu>

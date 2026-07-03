@@ -1,3 +1,4 @@
+import brand from '@/brand.config'
 import Vue from 'vue'
 import { getHomepage } from '@/api/system'
 import WebTracing, { options } from '@web-tracing/vue2'
@@ -10,7 +11,7 @@ export function setUpTracing() {
       Vue.use(WebTracing, {
         dsn: '/ali/log/save',
         appCode: 'primihub-platform',
-        appName: 'DataItem隐私计算平台',
+        appName: brand.appName,
         debug: !!developEnv,
         pv: true,
         performance: false,

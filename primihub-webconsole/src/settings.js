@@ -1,3 +1,4 @@
+import brand from '@/brand.config'
 module.exports = {
   title: '隐私计算平台',
 
@@ -34,5 +35,5 @@ module.exports = {
   isHideFadeBack: true, // show or hide suggestions and feedback
   isHideAppMarket: true, // show or hide application market
   isHideFooterVersion: true, // show or hide footer text
-  footerText: '海会科技 V1.6.0' // when show footer text
+  footerText: brand.footer // when show footer text
 }
