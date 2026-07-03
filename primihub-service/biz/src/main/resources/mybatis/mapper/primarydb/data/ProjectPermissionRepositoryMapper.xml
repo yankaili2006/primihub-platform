@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.ProjectPermissionRepository">
+
+    <sql id="cols">
+        id, project_id AS projectId, project_name AS projectName, organ_id AS organId,
+        organ_name AS organName, permission_type AS permissionType, permission_status AS permissionStatus,
+        template_id AS templateId, resource_ids AS resourceIds, grant_date AS grantDate,
+        expire_date AS expireDate, grant_user_id AS grantUserId, grant_user_name AS grantUserName,
+        revoke_user_id AS revokeUserId, revoke_user_name AS revokeUserName, remark,
+        create_date AS createDate, update_date AS updateDate
+    </sql>
+
+    <sql id="whereClause">
+        <where>
+            is_del = 0
+            <if test="projectName != null and projectName != ''">
+                AND project_name LIKE CONCAT('%', #{projectName}, '%')
+            </if>
+            <if test="organName != null and organName != ''">
+                AND organ_name LIKE CONCAT('%', #{organName}, '%')
+            </if>
+            <if test="permissionType != null and permissionType != ''">
+                AND permission_type = #{permissionType}
+            </if>
+            <if test="permissionStatus != null">
+                AND permission_status = #{permissionStatus}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectPermissionPage" parameterType="map" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/> FROM project_permission
+        <include refid="whereClause"/>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectPermissionCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM project_permission
+        <include refid="whereClause"/>
+    </select>
+
+    <select id="selectPermissionById" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/> FROM project_permission WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <insert id="insertPermission" parameterType="map" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO project_permission
+            (project_id, project_name, organ_id, organ_name, permission_type, permission_status,
+             template_id, resource_ids, grant_date, expire_date, grant_user_id, grant_user_name,
+             remark, create_date, update_date)
+        VALUES
+            (#{projectId}, #{projectName}, #{organId}, #{organName}, #{permissionType}, #{permissionStatus},
+             #{templateId}, #{resourceIds}, #{grantDate}, #{expireDate}, #{grantUserId}, #{grantUserName},
+             #{remark}, NOW(), NOW())
+    </insert>
+
+    <update id="updatePermission" parameterType="map">
+        UPDATE project_permission
+        <set>
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="projectName != null">project_name = #{projectName},</if>
+            <if test="organId != null">organ_id = #{organId},</if>
+            <if test="organName != null">organ_name = #{organName},</if>
+            <if test="permissionType != null">permission_type = #{permissionType},</if>
+            <if test="permissionStatus != null">permission_status = #{permissionStatus},</if>
+            <if test="templateId != null">template_id = #{templateId},</if>
+            <if test="resourceIds != null">resource_ids = #{resourceIds},</if>
+            <if test="expireDate != null">expire_date = #{expireDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="revokePermission" parameterType="map">
+        UPDATE project_permission
+        SET permission_status = 3, revoke_user_id = #{userId}, revoke_user_name = #{userName}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="batchRevokePermission" parameterType="map">
+        UPDATE project_permission
+        SET permission_status = 3, revoke_user_id = #{userId}, revoke_user_name = #{userName}, update_date = NOW()
+        WHERE is_del = 0 AND id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="approvePermission" parameterType="map">
+        UPDATE project_permission
+        SET permission_status = 1, grant_date = NOW(), grant_user_id = #{userId},
+            grant_user_name = #{userName}, update_date = NOW()
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <select id="selectProjectName" resultType="java.lang.String">
+        SELECT project_name FROM data_project WHERE project_id = #{projectId} AND is_del = 0 LIMIT 1
+    </select>
+
+    <select id="selectOrganName" resultType="java.lang.String">
+        SELECT organ_name FROM sys_organ WHERE organ_id = #{organId} LIMIT 1
+    </select>
+
+    <!-- ===== 权限模板 ===== -->
+    <select id="selectTemplates" resultType="java.util.LinkedHashMap">
+        SELECT id, template_name AS templateName, template_desc AS templateDesc,
+               permissions, create_date AS createDate
+        FROM project_permission_template WHERE is_del = 0 ORDER BY create_date DESC
+    </select>
+
+    <select id="selectTemplateById" resultType="java.util.LinkedHashMap">
+        SELECT id, template_name AS templateName, template_desc AS templateDesc,
+               permissions, create_date AS createDate
+        FROM project_permission_template WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <insert id="insertTemplate" parameterType="map" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO project_permission_template
+            (template_name, template_desc, permissions, create_user_id, create_date, update_date)
+        VALUES (#{templateName}, #{templateDesc}, #{permissions}, #{createUserId}, NOW(), NOW())
+    </insert>
+
+    <update id="updateTemplate" parameterType="map">
+        UPDATE project_permission_template
+        <set>
+            <if test="templateName != null">template_name = #{templateName},</if>
+            <if test="templateDesc != null">template_desc = #{templateDesc},</if>
+            <if test="permissions != null">permissions = #{permissions},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="deleteTemplate">
+        UPDATE project_permission_template SET is_del = 1 WHERE id = #{id} AND is_del = 0
+    </update>
+
+</mapper>

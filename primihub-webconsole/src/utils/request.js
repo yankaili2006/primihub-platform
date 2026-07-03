@@ -89,12 +89,20 @@ service.interceptors.request.use(
     } else if (config.method === 'post') {
       if (config.type === 'json') {
         config.headers['Content-Type'] = 'application/json;charset=UTF-8'
-        config.data = JSON.stringify({
-          ...config.data,
-          timestamp,
-          nonce,
-          token
-        })
+        if (Array.isArray(config.data)) {
+          // 数组 body（批量接口，如 batchSave/batchDelete/batchRevoke）不能展开注入，
+          // 否则 {...[1,2]} 会变成 {0:1,1:2,...} 破坏数组结构、后端 @RequestBody List 反序列化失败。
+          // token 已在 header；timestamp/nonce 放 query（后端不校验签名，安全）。
+          config.params = { ...config.params, timestamp, nonce, token }
+          config.data = JSON.stringify(config.data)
+        } else {
+          config.data = JSON.stringify({
+            ...config.data,
+            timestamp,
+            nonce,
+            token
+          })
+        }
       } else {
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
         const data = qs.parse(config.data)
