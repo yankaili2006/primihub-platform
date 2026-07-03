@@ -13,7 +13,7 @@ export function getOperationLogDefinitionPage(params) {
 export function addOperationLogDefinition(data) {
   return request({
     url: '/log/addOperationLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -21,7 +21,7 @@ export function addOperationLogDefinition(data) {
 export function updateOperationLogDefinition(data) {
   return request({
     url: '/log/updateOperationLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -55,7 +55,7 @@ export function getScheduleLogDefinitionPage(params) {
 export function addScheduleLogDefinition(data) {
   return request({
     url: '/log/addScheduleLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -63,7 +63,7 @@ export function addScheduleLogDefinition(data) {
 export function updateScheduleLogDefinition(data) {
   return request({
     url: '/log/updateScheduleLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -89,7 +89,7 @@ export function getComputeLogDefinitionPage(params) {
 export function addComputeLogDefinition(data) {
   return request({
     url: '/log/addComputeLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -97,7 +97,7 @@ export function addComputeLogDefinition(data) {
 export function updateComputeLogDefinition(data) {
   return request({
     url: '/log/updateComputeLogDefinition',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

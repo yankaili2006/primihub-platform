@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 // 存证创建
 export function createEvidence(data) {
-  return request({ url: '/evidence/createEvidence', method: 'post', data })
+  return request({ url: '/evidence/createEvidence', method: 'post', type: 'json', data })
 }
 
 // 存证查询相关
@@ -25,7 +25,7 @@ export function getEvidenceDetail(params) {
 export function verifyEvidence(data) {
   return request({
     url: '/evidence/verifyEvidence',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -49,7 +49,7 @@ export function getTimestampPage(params) {
 export function applyTimestamp(data) {
   return request({
     url: '/evidence/applyTimestamp',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -57,7 +57,7 @@ export function applyTimestamp(data) {
 export function verifyTimestamp(data) {
   return request({
     url: '/evidence/verifyTimestamp',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -81,7 +81,7 @@ export function getEvidenceConfig() {
 export function saveEvidenceConfig(data) {
   return request({
     url: '/evidence/saveEvidenceConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -97,7 +97,7 @@ export function getChainList() {
 export function exportEvidence(data) {
   return request({
     url: '/evidence/exportEvidence',
-    method: 'post',
+    method: 'post', type: 'json',
     data,
     responseType: 'blob'
   })
@@ -106,7 +106,7 @@ export function exportEvidence(data) {
 export function encryptExport(data) {
   return request({
     url: '/evidence/encryptExport',
-    method: 'post',
+    method: 'post', type: 'json',
     data,
     responseType: 'blob'
   })
@@ -139,7 +139,7 @@ export function getApiKey(params) {
 export function regenerateApiKey(data) {
   return request({
     url: '/evidence/regenerateApiKey',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -155,7 +155,7 @@ export function getApiCallLog(params) {
 export function testApiConnection(data) {
   return request({
     url: '/evidence/testApiConnection',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

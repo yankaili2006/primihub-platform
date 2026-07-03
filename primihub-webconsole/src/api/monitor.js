@@ -85,7 +85,7 @@ export function getAlertConfig(params) {
 export function saveAlertConfig(data) {
   return request({
     url: '/monitor/saveAlertConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -103,7 +103,7 @@ export function getAlertHistory(params) {
 export function handleAlert(data) {
   return request({
     url: '/monitor/handleAlert',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

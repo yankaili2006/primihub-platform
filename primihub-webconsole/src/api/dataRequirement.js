@@ -30,7 +30,7 @@ export function getDataRequirementById(id) {
 export function addDataRequirement(data) {
   return request({
     url: '/dataRequirement/addDataRequirement',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -41,7 +41,7 @@ export function addDataRequirement(data) {
 export function updateDataRequirement(data) {
   return request({
     url: '/dataRequirement/updateDataRequirement',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -63,7 +63,7 @@ export function deleteDataRequirement(id) {
 export function batchDeleteDataRequirement(ids) {
   return request({
     url: '/dataRequirement/batchDeleteDataRequirement',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids
   })
 }
@@ -87,7 +87,7 @@ export function findConfigPage(params) {
 export function addConfig(data) {
   return request({
     url: '/dataRequirement/addConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -98,7 +98,7 @@ export function addConfig(data) {
 export function updateConfig(data) {
   return request({
     url: '/dataRequirement/updateConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
