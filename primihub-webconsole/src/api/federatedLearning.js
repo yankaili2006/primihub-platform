@@ -210,6 +210,7 @@ export function createParamTuning(data) {
   return request({
     url: '/federatedLearning/paramTuning/create',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -232,6 +233,7 @@ export function applyBestParams(data) {
   return request({
     url: '/federatedLearning/paramTuning/apply',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -306,6 +308,7 @@ export function generateTrainingReport(data) {
   return request({
     url: '/federatedLearning/report/generate',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -425,6 +428,7 @@ export function runFLPreprocess(data) {
   return request({
     url: '/federatedLearning/preprocess/run',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -436,6 +440,7 @@ export function deleteFLPreprocess(data) {
   return request({
     url: '/federatedLearning/preprocess/delete',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -450,4 +455,30 @@ export function downloadFLPreprocessResult(params) {
     params,
     responseType: 'blob'
   })
+}
+
+// ==================== 建模工作台（真实后端，modelingWorkbench.vue 用）====================
+export function flWorkbenchOverview() {
+  return request({ url: '/federatedLearning/workbench/overview', method: 'get' })
+}
+export function flWorkbenchOptions(params) {
+  return request({ url: '/federatedLearning/workbench/options', method: 'get', params })
+}
+export function flWorkflowList(params) {
+  return request({ url: '/federatedLearning/workflow/list', method: 'get', params })
+}
+export function flWorkflowGet(workflowId) {
+  return request({ url: '/federatedLearning/workflow/get', method: 'get', params: { workflowId } })
+}
+export function flWorkflowSave(data) {
+  return request({ url: '/federatedLearning/workflow/save', method: 'post', type: 'json', data })
+}
+export function flWorkflowRun(data) {
+  return request({ url: '/federatedLearning/workflow/run', method: 'post', type: 'json', data })
+}
+export function flWorkflowLogs(workflowId) {
+  return request({ url: '/federatedLearning/workflow/logs', method: 'get', params: { workflowId } })
+}
+export function flWorkflowDelete(workflowId) {
+  return request({ url: '/federatedLearning/workflow/delete', method: 'post', params: { workflowId } })
 }

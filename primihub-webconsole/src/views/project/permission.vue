@@ -332,7 +332,7 @@ export default {
       this.loading = true
       findProjectPermissionPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -423,7 +423,7 @@ export default {
     },
     loadTemplates() {
       findPermissionTemplates().then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.templateData = res.result || []
         } else {
           this.templateData = this.getMockTemplates()
@@ -505,7 +505,7 @@ export default {
         type: 'success'
       }).then(() => {
         approveProjectPermission(row.id, this.userId, this.userName).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('授权成功')
             this.fetchData()
           } else {
@@ -526,7 +526,7 @@ export default {
         type: 'warning'
       }).then(() => {
         revokeProjectPermission(row.id, this.userId, this.userName).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('撤销成功')
             this.fetchData()
           } else {
@@ -547,7 +547,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchRevokeProjectPermission(ids, this.userId, this.userName).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量撤销成功')
             this.fetchData()
           } else {
@@ -585,7 +585,7 @@ export default {
         if (valid) {
           const apiFunc = this.isEdit ? updateProjectPermission : addProjectPermission
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功')
               this.dialogVisible = false
               this.fetchData()
@@ -628,7 +628,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deletePermissionTemplate(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.loadTemplates()
           } else {
@@ -645,7 +645,7 @@ export default {
         if (valid) {
           const apiFunc = this.templateFormData.id ? updatePermissionTemplate : addPermissionTemplate
           apiFunc(this.templateFormData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('保存成功')
               this.templateDialogVisible = false
               this.loadTemplates()

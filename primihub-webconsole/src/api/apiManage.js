@@ -13,7 +13,7 @@ export function getApiPage(params) {
 export function addApi(data) {
   return request({
     url: '/apiManage/addApi',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -22,7 +22,7 @@ export function addApi(data) {
 export function updateApi(data) {
   return request({
     url: '/apiManage/updateApi',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -31,7 +31,7 @@ export function updateApi(data) {
 export function deleteApi(data) {
   return request({
     url: '/apiManage/deleteApi',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -40,7 +40,7 @@ export function deleteApi(data) {
 export function batchDeleteApi(data) {
   return request({
     url: '/apiManage/batchDeleteApi',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -58,7 +58,7 @@ export function getApiDetail(params) {
 export function toggleApiStatus(data) {
   return request({
     url: '/apiManage/toggleApiStatus',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -76,7 +76,7 @@ export function getApiAuthPage(params) {
 export function addApiAuth(data) {
   return request({
     url: '/apiManage/addApiAuth',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -85,7 +85,7 @@ export function addApiAuth(data) {
 export function updateApiAuth(data) {
   return request({
     url: '/apiManage/updateApiAuth',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -94,7 +94,7 @@ export function updateApiAuth(data) {
 export function deleteApiAuth(data) {
   return request({
     url: '/apiManage/deleteApiAuth',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -103,7 +103,7 @@ export function deleteApiAuth(data) {
 export function validateApiAuth(data) {
   return request({
     url: '/apiManage/validateApiAuth',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -112,7 +112,7 @@ export function validateApiAuth(data) {
 export function getAuthToken(data) {
   return request({
     url: '/apiManage/getAuthToken',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -121,7 +121,7 @@ export function getAuthToken(data) {
 export function refreshAuthToken(data) {
   return request({
     url: '/apiManage/refreshAuthToken',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -167,7 +167,7 @@ export function exportApiLog(params) {
 export function clearApiLog(data) {
   return request({
     url: '/apiManage/clearApiLog',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

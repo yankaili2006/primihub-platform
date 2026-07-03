@@ -27,5 +27,5 @@ const brands = {
   },
 }
 
-export const brand = brands[BRAND] || brands.primihub
-export default brand
+const brand = brands[BRAND] || brands.primihub
+module.exports = brand

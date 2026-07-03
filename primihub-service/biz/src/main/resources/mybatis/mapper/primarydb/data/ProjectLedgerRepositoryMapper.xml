@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.ProjectLedgerRepository">
+
+    <!-- 台账行：对 data_project 聚合，参与方/资源/任务数走关联子查询。返回 camelCase Map。 -->
+    <sql id="ledgerSelect">
+        SELECT p.project_id AS projectId, p.project_name AS projectName, p.project_desc AS projectDesc,
+               p.status AS projectStatus, p.created_username AS ownerName,
+               p.created_organ_name AS createdOrganName, p.provider_organ_names AS providerOrganNames,
+               p.create_date AS createDate, p.update_date AS updateDate,
+               (SELECT COUNT(*) FROM data_project_organ o WHERE o.project_id = p.project_id AND o.is_del = 0) AS participantCount,
+               (SELECT COUNT(*) FROM data_project_resource r WHERE r.project_id = p.project_id AND r.is_del = 0) AS resourceCount,
+               (SELECT COUNT(*) FROM data_model m WHERE m.project_id = p.project_id AND m.is_del = 0) AS taskCount,
+               (SELECT COUNT(*) FROM data_model m WHERE m.project_id = p.project_id AND m.is_del = 0 AND m.is_draft = 0) AS completedTaskCount
+        FROM data_project p
+    </sql>
+
+    <sql id="ledgerWhere">
+        <where>
+            p.is_del = 0
+            <if test="projectName != null and projectName != ''">
+                AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND p.create_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND p.create_date &lt;= #{endDate}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectLedgerPage" parameterType="map" resultType="java.util.LinkedHashMap">
+        <include refid="ledgerSelect"/>
+        <include refid="ledgerWhere"/>
+        ORDER BY p.create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectLedgerCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM data_project p
+        <include refid="ledgerWhere"/>
+    </select>
+
+    <select id="selectLedgerByProjectId" resultType="java.util.LinkedHashMap">
+        <include refid="ledgerSelect"/>
+        WHERE p.is_del = 0 AND p.project_id = #{projectId}
+        LIMIT 1
+    </select>
+
+    <!-- 详情用：项目使用的资源名（关联真实 data_resource） -->
+    <select id="selectProjectResources" resultType="java.util.LinkedHashMap">
+        SELECT pr.resource_id AS resourceId, dr.resource_name AS resourceName
+        FROM data_project_resource pr
+        LEFT JOIN data_resource dr ON dr.resource_id = pr.resource_id
+        WHERE pr.project_id = #{projectId} AND pr.is_del = 0
+    </select>
+
+    <!-- 导出记录 -->
+    <insert id="insertExport" parameterType="map" useGeneratedKeys="true" keyProperty="exportId" keyColumn="export_id">
+        INSERT INTO project_ledger_export
+            (export_type, export_format, project_count, project_ids, export_status,
+             export_user_id, export_user_name, file_name, file_content, error_msg, export_date, is_del)
+        VALUES
+            (#{exportType}, #{exportFormat}, #{projectCount}, #{projectIds}, #{exportStatus},
+             #{exportUserId}, #{exportUserName}, #{fileName}, #{fileContent}, #{errorMsg}, NOW(), 0)
+    </insert>
+
+    <update id="updateExport" parameterType="map">
+        UPDATE project_ledger_export
+        <set>
+            <if test="exportStatus != null">export_status = #{exportStatus},</if>
+            <if test="fileContent != null">file_content = #{fileContent},</if>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="projectCount != null">project_count = #{projectCount},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            export_date = NOW()
+        </set>
+        WHERE export_id = #{exportId}
+    </update>
+
+    <select id="selectExportById" resultType="java.util.LinkedHashMap">
+        SELECT export_id AS exportId, export_type AS exportType, export_format AS exportFormat,
+               project_count AS projectCount, project_ids AS projectIds, export_status AS exportStatus,
+               export_user_id AS exportUserId, export_user_name AS exportUserName,
+               file_name AS fileName, file_content AS fileContent, error_msg AS errorMsg, export_date AS exportDate
+        FROM project_ledger_export WHERE export_id = #{exportId} AND is_del = 0
+    </select>
+
+    <!-- 历史列表不带 file_content（省流量） -->
+    <select id="selectExportHistory" resultType="java.util.LinkedHashMap">
+        SELECT export_id AS exportId, export_type AS exportType, export_format AS exportFormat,
+               project_count AS projectCount, export_status AS exportStatus,
+               export_user_id AS exportUserId, export_user_name AS exportUserName,
+               file_name AS fileName, error_msg AS errorMsg, export_date AS exportDate
+        FROM project_ledger_export
+        WHERE is_del = 0
+        <if test="exportUserId != null">
+            AND export_user_id = #{exportUserId}
+        </if>
+        ORDER BY export_date DESC
+        LIMIT 200
+    </select>
+
+</mapper>

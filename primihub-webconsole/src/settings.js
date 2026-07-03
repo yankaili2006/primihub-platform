@@ -1,4 +1,4 @@
-import brand from '@/brand.config'
+const brand = require('./brand.config')
 module.exports = {
   title: '隐私计算平台',
 

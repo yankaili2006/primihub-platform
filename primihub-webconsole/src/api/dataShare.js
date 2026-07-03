@@ -30,7 +30,7 @@ export function getSharedDatasetById(id) {
 export function addSharedDataset(data) {
   return request({
     url: '/sharedDataset/addSharedDataset',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -41,7 +41,7 @@ export function addSharedDataset(data) {
 export function updateSharedDataset(data) {
   return request({
     url: '/sharedDataset/updateSharedDataset',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -63,7 +63,7 @@ export function deleteSharedDataset(id) {
 export function batchDeleteSharedDataset(ids) {
   return request({
     url: '/sharedDataset/batchDeleteSharedDataset',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids
   })
 }

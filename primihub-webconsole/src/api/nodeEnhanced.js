@@ -30,7 +30,7 @@ export function getAccessPartyById(id) {
 export function addAccessParty(data) {
   return request({
     url: '/node/access/addAccessParty',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -41,7 +41,7 @@ export function addAccessParty(data) {
 export function updateAccessParty(data) {
   return request({
     url: '/node/access/updateAccessParty',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -63,7 +63,7 @@ export function deleteAccessParty(id) {
 export function batchDeleteAccessParty(ids) {
   return request({
     url: '/node/access/batchDeleteAccessParty',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids
   })
 }
@@ -96,7 +96,7 @@ export function rejectAccessParty(id, approveUserId, approveUserName, approveCom
 export function batchApproveAccessParty(ids, approveUserId, approveUserName, approveComment) {
   return request({
     url: '/node/access/batchApprove',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids,
     params: { approveUserId, approveUserName, approveComment }
   })
@@ -174,7 +174,7 @@ export function getCooperationPartyById(id) {
 export function establishCooperation(data) {
   return request({
     url: '/node/cooperation/establish',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -185,7 +185,7 @@ export function establishCooperation(data) {
 export function updateCooperationParty(data) {
   return request({
     url: '/node/cooperation/update',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -283,7 +283,7 @@ export function getUnhealthyCooperationParties(threshold) {
 export function batchDeleteCooperationParty(ids) {
   return request({
     url: '/node/cooperation/batchDelete',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids
   })
 }
@@ -329,7 +329,7 @@ export function getWorkflowById(id) {
 export function createWorkflow(data) {
   return request({
     url: '/node/approval/createWorkflow',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -426,7 +426,7 @@ export function getConfigByType(workflowType) {
 export function updateApprovalConfig(data) {
   return request({
     url: '/node/approval/updateConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -526,7 +526,7 @@ export function getFailedExchangeLogs() {
 export function batchDeleteDataExchangeLog(ids) {
   return request({
     url: '/node/exchange/batchDeleteDataExchangeLog',
-    method: 'post',
+    method: 'post', type: 'json',
     data: ids
   })
 }
