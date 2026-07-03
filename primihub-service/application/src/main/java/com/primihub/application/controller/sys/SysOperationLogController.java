@@ -13,8 +13,11 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * 系统操作日志控制器
  */
+// 前端调 /prod-api/sys/operationLog/*，nginx location ^~ /prod-api/sys/ 会 rewrite 掉 /prod-api/sys/
+// → 应用侧实际收到的是 /operationLog/*（同 UserController 映射 "user" 而非 "sys/user"）。
+// 原类前缀写成 "sys/operationLog" → 剥掉 /sys 后不匹配 → operationLog.js 整页 5 个接口全 404。
 @Api(value = "操作日志接口", tags = "操作日志管理")
-@RequestMapping("sys/operationLog")
+@RequestMapping("operationLog")
 @RestController
 public class SysOperationLogController {
 
