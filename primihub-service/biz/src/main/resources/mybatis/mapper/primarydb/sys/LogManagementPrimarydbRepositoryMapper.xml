@@ -150,21 +150,17 @@
         WHERE log_code = #{logCode} AND is_del = 0
     </select>
 
+    <!-- 对齐真实表 sys_schedule_log_definition：无 schedule_type/module_name 列 → NULL 别名，
+         去掉这两个不存在列的过滤分支（本表 log_code/log_name/is_enabled 齐全，keyword 搜索可用）。 -->
     <select id="selectScheduleLogDefinitionList" resultType="com.primihub.biz.entity.sys.po.ScheduleLogDefinition">
-        SELECT id, log_code as logCode, log_name as logName, schedule_type as scheduleType,
-               module_name as moduleName, description, is_enabled as isEnabled,
+        SELECT id, log_code as logCode, log_name as logName, NULL as scheduleType,
+               NULL as moduleName, description, is_enabled as isEnabled,
                retention_days as retentionDays, is_del as isDel,
                create_date as createDate, update_date as updateDate
         FROM sys_schedule_log_definition
         WHERE is_del = 0
         <if test="keyword != null and keyword != ''">
             AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
-        </if>
-        <if test="scheduleType != null and scheduleType != ''">
-            AND schedule_type = #{scheduleType}
-        </if>
-        <if test="moduleName != null and moduleName != ''">
-            AND module_name = #{moduleName}
         </if>
         <if test="isEnabled != null">
             AND is_enabled = #{isEnabled}
@@ -180,12 +176,6 @@
         WHERE is_del = 0
         <if test="keyword != null and keyword != ''">
             AND (log_code LIKE CONCAT('%', #{keyword}, '%') OR log_name LIKE CONCAT('%', #{keyword}, '%'))
-        </if>
-        <if test="scheduleType != null and scheduleType != ''">
-            AND schedule_type = #{scheduleType}
-        </if>
-        <if test="moduleName != null and moduleName != ''">
-            AND module_name = #{moduleName}
         </if>
         <if test="isEnabled != null">
             AND is_enabled = #{isEnabled}
@@ -426,23 +416,23 @@
         WHERE id = #{id} AND is_del = 0
     </select>
 
+    <!-- 列对齐真实部署表 sys_schedule_log(schema-mysql.sql 设计)：job_name/trigger_type/
+         duration_ms/error_message；无 log_code/schedule_name/schedule_type/schedule_cron/
+         execute_server/execution_time/retry_count → 别名回 PO 字段、缺列取 NULL。 -->
     <select id="selectScheduleLogList" resultType="com.primihub.biz.entity.sys.po.ScheduleLog">
-        SELECT id, log_code as logCode, schedule_name as scheduleName,
-               schedule_type as scheduleType, schedule_cron as scheduleCron,
-               execute_server as executeServer, start_time as startTime,
-               end_time as endTime, execution_time as executionTime,
-               status, result_message as resultMessage, error_msg as errorMsg,
-               retry_count as retryCount, create_date as createDate
+        SELECT id, NULL as logCode, job_name as scheduleName,
+               trigger_type as scheduleType, NULL as scheduleCron,
+               NULL as executeServer, start_time as startTime,
+               end_time as endTime, duration_ms as executionTime,
+               status, result_message as resultMessage, error_message as errorMsg,
+               NULL as retryCount, create_date as createDate
         FROM sys_schedule_log
         WHERE is_del = 0
-        <if test="logCode != null and logCode != ''">
-            AND log_code = #{logCode}
-        </if>
         <if test="scheduleName != null and scheduleName != ''">
-            AND schedule_name LIKE CONCAT('%', #{scheduleName}, '%')
+            AND job_name LIKE CONCAT('%', #{scheduleName}, '%')
         </if>
         <if test="scheduleType != null and scheduleType != ''">
-            AND schedule_type = #{scheduleType}
+            AND trigger_type = #{scheduleType}
         </if>
         <if test="status != null">
             AND status = #{status}
@@ -462,14 +452,11 @@
     <select id="selectScheduleLogCount" resultType="int">
         SELECT COUNT(*) FROM sys_schedule_log
         WHERE is_del = 0
-        <if test="logCode != null and logCode != ''">
-            AND log_code = #{logCode}
-        </if>
         <if test="scheduleName != null and scheduleName != ''">
-            AND schedule_name LIKE CONCAT('%', #{scheduleName}, '%')
+            AND job_name LIKE CONCAT('%', #{scheduleName}, '%')
         </if>
         <if test="scheduleType != null and scheduleType != ''">
-            AND schedule_type = #{scheduleType}
+            AND trigger_type = #{scheduleType}
         </if>
         <if test="status != null">
             AND status = #{status}
