@@ -210,6 +210,7 @@ export function createParamTuning(data) {
   return request({
     url: '/federatedLearning/paramTuning/create',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -232,6 +233,7 @@ export function applyBestParams(data) {
   return request({
     url: '/federatedLearning/paramTuning/apply',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -306,6 +308,7 @@ export function generateTrainingReport(data) {
   return request({
     url: '/federatedLearning/report/generate',
     method: 'post',
+    type: 'json',
     data
   })
 }
