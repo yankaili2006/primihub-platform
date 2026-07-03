@@ -273,7 +273,7 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
                 vo.setId(ds.getId());
                 vo.setSourceName(ds.getSourceName());
                 vo.setSourceType(ds.getSourceType());
-                vo.setIsConnected(ds.getIsConnected() == 1);
+                vo.setIsConnected(ds.getIsConnected() != null && ds.getIsConnected() == 1);
                 vo.setLastTestTime(ds.getLastTestTime() != null ? ds.getLastTestTime().toString() : null);
                 return vo;
             }).collect(Collectors.toList());
