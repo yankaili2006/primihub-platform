@@ -20,6 +20,7 @@ export function saveProjectResult(data) {
   return request({
     url: '/project/result/save',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -31,6 +32,7 @@ export function batchSaveProjectResult(ids) {
   return request({
     url: '/project/result/batchSave',
     method: 'post',
+    type: 'json',
     data: ids
   })
 }
@@ -53,6 +55,7 @@ export function batchDeleteProjectResult(ids) {
   return request({
     url: '/project/result/batchDelete',
     method: 'post',
+    type: 'json',
     data: ids
   })
 }
@@ -86,6 +89,7 @@ export function updateResultConfig(data) {
   return request({
     url: '/project/result/updateConfig',
     method: 'post',
+    type: 'json',
     data
   })
 }
