@@ -428,6 +428,7 @@ export function runFLPreprocess(data) {
   return request({
     url: '/federatedLearning/preprocess/run',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -439,6 +440,7 @@ export function deleteFLPreprocess(data) {
   return request({
     url: '/federatedLearning/preprocess/delete',
     method: 'post',
+    type: 'json',
     data
   })
 }

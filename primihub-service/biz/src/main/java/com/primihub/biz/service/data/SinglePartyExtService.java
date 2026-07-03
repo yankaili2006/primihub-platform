@@ -53,6 +53,22 @@ public class SinglePartyExtService {
     public BaseResultEntity deleteScript(Map<String, Object> data) { return deleteTask(taskId(data)); }
     public void downloadScript(String taskId, HttpServletResponse resp) { download(taskId, resp); }
 
+    // ===== 联邦学习 预处理（/federatedLearning/preprocess/*，各算法视图按 preprocessType 区分；复用同一 sp_ext 存储，category=FLPRE）=====
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity createFlPre(Map<String, Object> data, Long userId, String userName) {
+        return createInternal("FLPRE", data, userId, userName);
+    }
+    public BaseResultEntity listFlPre(Map<String, Object> query) {
+        Map<String, Object> q = new HashMap<>(query == null ? Collections.emptyMap() : query);
+        if (q.get("subType") == null && q.get("preprocessType") != null) q.put("subType", q.get("preprocessType"));
+        return pageTasks("FLPRE", q);
+    }
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity runFlPre(Map<String, Object> data) { return runTask(taskId(data)); }
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity deleteFlPre(Map<String, Object> data) { return deleteTask(taskId(data)); }
+    public void downloadFlPre(String taskId, HttpServletResponse resp) { download(taskId, resp); }
+
     // ===== 学习日志 =====
     public BaseResultEntity getLogs(Map<String, Object> query) {
         try {
