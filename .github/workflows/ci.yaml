@@ -46,7 +46,7 @@ jobs:
       - name: Install & Build
         run: |
           cd primihub-webconsole
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build:prod
       - name: Upload dist
         uses: actions/upload-artifact@v4
