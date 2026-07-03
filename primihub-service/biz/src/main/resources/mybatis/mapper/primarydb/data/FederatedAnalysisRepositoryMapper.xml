@@ -64,8 +64,13 @@
         VALUES (#{taskId}, #{resultType}, #{resultData}, #{resultFile}, #{columnMetadata}, #{rowCount})
     </insert>
 
+    <!-- 显式别名 snake_case→camelCase：未开启 mapUnderscoreToCamelCase，SELECT * 只会填上 id，
+         其余(taskId/resultData/columnMetadata/rowCount/createdAt…)全 null → 结果读取/导出拿不到数据。 -->
     <select id="selectResultsByTaskId" resultType="com.primihub.biz.entity.data.po.FederatedAnalysisResult">
-        SELECT * FROM federated_analysis_result WHERE task_id = #{taskId} ORDER BY created_at
+        SELECT id, task_id AS taskId, result_type AS resultType, result_data AS resultData,
+               result_file AS resultFile, column_metadata AS columnMetadata,
+               row_count AS rowCount, created_at AS createdAt
+        FROM federated_analysis_result WHERE task_id = #{taskId} ORDER BY created_at
     </select>
 
     <insert id="insertDatasource" useGeneratedKeys="true" keyProperty="id">
