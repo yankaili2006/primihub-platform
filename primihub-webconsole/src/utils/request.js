@@ -119,6 +119,21 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     endLoading()
+    // 文件下载(responseType:'blob')：直接返回二进制，跳过 JSON code 处理，
+    // 否则会把 Blob 当 JSON 解构(code=undefined→误报"请求异常")导致下载失败/乱码。
+    // 若后端对该请求返回的是 JSON 错误(常见于无数据可导出)，读取并提示，不下载空/坏文件。
+    if (response.config && response.config.responseType === 'blob') {
+      const blob = response.data
+      if (blob && blob.type && blob.type.indexOf('application/json') !== -1) {
+        return blob.text().then(text => {
+          let m = '导出失败'
+          try { const j = JSON.parse(text); m = j.msg || m } catch (e) {}
+          message({ message: m, type: 'warning' })
+          return Promise.reject(new Error(m))
+        })
+      }
+      return blob
+    }
     const { data } = response
     const { code, msg, result } = data
     if (code !== 0) {
