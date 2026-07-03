@@ -13,6 +13,7 @@ export function addWhitelist(data) {
   return request({
     url: '/whitelist/addWhitelist',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -21,6 +22,7 @@ export function updateWhitelist(data) {
   return request({
     url: '/whitelist/updateWhitelist',
     method: 'post',
+    type: 'json',
     data
   })
 }
