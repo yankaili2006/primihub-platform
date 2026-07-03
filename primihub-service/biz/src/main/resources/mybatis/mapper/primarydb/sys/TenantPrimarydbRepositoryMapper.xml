@@ -206,4 +206,10 @@
         WHERE is_del = 0
     </select>
 
+    <!-- 可分配资源：真实 data_resource（{id,name,type} 供前端 v-for 下拉） -->
+    <select id="selectAvailableResources" resultType="map">
+        SELECT resource_id AS id, resource_name AS name, '数据集' AS type
+        FROM data_resource WHERE is_del = 0 ORDER BY resource_id DESC LIMIT 200
+    </select>
+
 </mapper>

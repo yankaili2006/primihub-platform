@@ -107,4 +107,9 @@ public interface TenantPrimarydbRepository {
      * 查询租户统计信息
      */
     Map<String, Object> selectTenantStatistics();
+
+    /**
+     * 可分配资源列表（真实 data_resource），供租户资源分配下拉
+     */
+    java.util.List<Map<String, Object>> selectAvailableResources();
 }

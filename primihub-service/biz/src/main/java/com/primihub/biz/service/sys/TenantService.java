@@ -361,14 +361,9 @@ public class TenantService {
      */
     public BaseResultEntity getAvailableResources(Long tenantId) {
         try {
-            // TODO: 实现可用资源查询逻辑，需要根据实际业务系统的资源管理模块集成
-            // 这里返回示例数据
-            Map<String, Object> resources = new HashMap<>();
-            resources.put("datasets", new HashMap<>());
-            resources.put("computeResources", new HashMap<>());
-            resources.put("models", new HashMap<>());
-
-            return BaseResultEntity.success(resources);
+            // 返回真实可分配资源（data_resource），前端 v-for 用 {id,name,type} 渲染下拉。
+            // 原实现返回空 {datasets,computeResources,models} 对象，与前端 v-for(list) 不符、渲染不出。
+            return BaseResultEntity.success(tenantPrimarydbRepository.selectAvailableResources());
         } catch (Exception e) {
             log.error("查询可分配资源失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
