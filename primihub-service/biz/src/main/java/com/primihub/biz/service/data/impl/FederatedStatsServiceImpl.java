@@ -518,8 +518,10 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     public void exportResult(Long taskId, String format, HttpServletResponse response) {
         try {
             List<FederatedStatsResult> results = federatedStatsRepository.selectResultsByTaskId(taskId);
+            if (results == null || results.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
             String content = results.stream()
                 .map(r -> r.getResultData())
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.joining("\n---\n"));
             response.setContentType("text/plain;charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment;filename=" +
@@ -529,6 +531,7 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             os.flush();
         } catch (Exception e) {
             log.error("导出统计结果失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
         }
     }
 
@@ -737,6 +740,7 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
         try {
             List<Map<String, Object>> logs = federatedStatsRepository.selectLogList(
                 new LogQueryReq(req.getTaskId(), req.getStartDate(), req.getEndDate()));
+            if (logs == null || logs.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
             StringBuilder sb = new StringBuilder();
             if (logs != null) {
                 for (Map<String, Object> logEntry : logs) {
@@ -751,6 +755,7 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             os.flush();
         } catch (Exception e) {
             log.error("导出统计日志失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
         }
     }
 
@@ -774,5 +779,14 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
         vo.setResultSummary(task.getResultSummary());
         vo.setCreatedAt(task.getCreatedAt());
         return vo;
+    }
+
+    private void writeExportError(HttpServletResponse response, String msg) {
+        try {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
+            response.getWriter().flush();
+        } catch (Exception ignore) {}
     }
 }
