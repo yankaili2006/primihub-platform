@@ -4,6 +4,7 @@ export function createTask(data) {
   return request({
     url: '/singleParty/createTask',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -62,11 +63,11 @@ export function createPreprocessTask(data) {
 }
 
 export function runPreprocessTask(data) {
-  return request({ url: '/singleParty/preprocess/run', method: 'post', data })
+  return request({ url: '/singleParty/preprocess/run', method: 'post', type: 'json', data })
 }
 
 export function deletePreprocessTask(data) {
-  return request({ url: '/singleParty/preprocess/delete', method: 'post', data })
+  return request({ url: '/singleParty/preprocess/delete', method: 'post', type: 'json', data })
 }
 
 export function downloadPreprocessResult(params) {
@@ -84,11 +85,11 @@ export function createScriptTask(data) {
 }
 
 export function runScriptTask(data) {
-  return request({ url: '/singleParty/script/run', method: 'post', data })
+  return request({ url: '/singleParty/script/run', method: 'post', type: 'json', data })
 }
 
 export function deleteScriptTask(data) {
-  return request({ url: '/singleParty/script/delete', method: 'post', data })
+  return request({ url: '/singleParty/script/delete', method: 'post', type: 'json', data })
 }
 
 export function downloadScriptResult(params) {
