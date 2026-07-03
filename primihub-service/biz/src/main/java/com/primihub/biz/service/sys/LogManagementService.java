@@ -538,6 +538,7 @@ public class LogManagementService {
             params.put("endTime", endTime);
 
             List<OperationLog> list = logManagementRepository.selectOperationLogList(params);
+            if (list == null || list.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("操作日志");
@@ -580,6 +581,7 @@ public class LogManagementService {
             workbook.close();
         } catch (Exception e) {
             log.error("导出操作日志失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
         }
     }
 
@@ -598,6 +600,7 @@ public class LogManagementService {
             params.put("endTime", endTime);
 
             List<ScheduleLog> list = logManagementRepository.selectScheduleLogList(params);
+            if (list == null || list.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("调度日志");
@@ -623,7 +626,7 @@ public class LogManagementService {
                 row.createCell(6).setCellValue(log.getStartTime() != null ? sdf.format(log.getStartTime()) : "");
                 row.createCell(7).setCellValue(log.getEndTime() != null ? sdf.format(log.getEndTime()) : "");
                 row.createCell(8).setCellValue(log.getExecutionTime() != null ? log.getExecutionTime() : 0);
-                String statusText = log.getStatus() == 0 ? "运行中" : log.getStatus() == 1 ? "成功" : "失败";
+                String statusText = log.getStatus() == null ? "" : (log.getStatus() == 0 ? "运行中" : log.getStatus() == 1 ? "成功" : "失败");
                 row.createCell(9).setCellValue(statusText);
                 row.createCell(10).setCellValue(log.getRetryCount());
                 row.createCell(11).setCellValue(log.getCreateDate() != null ? sdf.format(log.getCreateDate()) : "");
@@ -639,6 +642,7 @@ public class LogManagementService {
             workbook.close();
         } catch (Exception e) {
             log.error("导出调度日志失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
         }
     }
 
@@ -661,6 +665,7 @@ public class LogManagementService {
             params.put("endTime", endTime);
 
             List<ComputeLog> list = logManagementRepository.selectComputeLogList(params);
+            if (list == null || list.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
 
             Workbook workbook = new XSSFWorkbook();
             Sheet sheet = workbook.createSheet("计算日志");
@@ -688,8 +693,8 @@ public class LogManagementService {
                 row.createCell(8).setCellValue(log.getStartTime() != null ? sdf.format(log.getStartTime()) : "");
                 row.createCell(9).setCellValue(log.getEndTime() != null ? sdf.format(log.getEndTime()) : "");
                 row.createCell(10).setCellValue(log.getExecutionTime() != null ? log.getExecutionTime() : 0);
-                String statusText = log.getStatus() == 0 ? "运行中" : log.getStatus() == 1 ? "成功" :
-                                   log.getStatus() == 2 ? "失败" : "取消";
+                String statusText = log.getStatus() == null ? "" : (log.getStatus() == 0 ? "运行中" : log.getStatus() == 1 ? "成功" :
+                                   log.getStatus() == 2 ? "失败" : "取消");
                 row.createCell(11).setCellValue(statusText);
                 row.createCell(12).setCellValue(log.getCreateDate() != null ? sdf.format(log.getCreateDate()) : "");
             }
@@ -704,6 +709,16 @@ public class LogManagementService {
             workbook.close();
         } catch (Exception e) {
             log.error("导出计算日志失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
         }
+    }
+
+    private void writeExportError(HttpServletResponse response, String msg) {
+        try {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
+            response.getWriter().flush();
+        } catch (Exception ignore) {}
     }
 }
