@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.SinglePartyExtRepository">
+
+    <sql id="cols">
+        id, task_id AS taskId, task_name AS taskName, task_category AS taskCategory,
+        algorithm_type AS algorithmType, sub_type AS subType, resource_id AS resourceId,
+        resource_name AS resourceName, params, task_state AS taskState, progress,
+        result_path AS resultPath, error_msg AS errorMsg, remark, user_id AS userId,
+        user_name AS userName, create_date AS createDate, start_time AS startTime, end_time AS endTime
+    </sql>
+
+    <sql id="taskWhere">
+        <where>
+            is_del = 0
+            <if test="taskCategory != null and taskCategory != ''">AND task_category = #{taskCategory}</if>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="algorithmType != null">AND algorithm_type = #{algorithmType}</if>
+            <if test="subType != null and subType != ''">AND sub_type = #{subType}</if>
+            <if test="taskState != null">AND task_state = #{taskState}</if>
+        </where>
+    </sql>
+
+    <select id="selectTaskPage" parameterType="map" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/> FROM sp_ext_task
+        <include refid="taskWhere"/>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectTaskCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM sp_ext_task <include refid="taskWhere"/>
+    </select>
+
+    <select id="selectTaskByTaskId" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/>, result_content AS resultContent
+        FROM sp_ext_task WHERE task_id = #{taskId} AND is_del = 0 LIMIT 1
+    </select>
+
+    <insert id="insertTask" parameterType="map">
+        INSERT INTO sp_ext_task
+            (task_id, task_name, task_category, algorithm_type, sub_type, resource_id, resource_name,
+             params, task_state, progress, result_content, result_path, error_msg, remark,
+             user_id, user_name, organ_id, create_date, start_time, end_time)
+        VALUES
+            (#{taskId}, #{taskName}, #{taskCategory}, #{algorithmType}, #{subType}, #{resourceId}, #{resourceName},
+             #{params}, #{taskState}, #{progress}, #{resultContent}, #{resultPath}, #{errorMsg}, #{remark},
+             #{userId}, #{userName}, #{organId}, NOW(), #{startTime}, #{endTime})
+    </insert>
+
+    <update id="updateTaskState" parameterType="map">
+        UPDATE sp_ext_task
+        <set>
+            <if test="taskState != null">task_state = #{taskState},</if>
+            <if test="progress != null">progress = #{progress},</if>
+            <if test="resultContent != null">result_content = #{resultContent},</if>
+            <if test="resultPath != null">result_path = #{resultPath},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            id = id
+        </set>
+        WHERE task_id = #{taskId} AND is_del = 0
+    </update>
+
+    <update id="deleteTask">
+        UPDATE sp_ext_task SET is_del = 1 WHERE task_id = #{taskId} AND is_del = 0
+    </update>
+
+    <insert id="insertLog" parameterType="map">
+        INSERT INTO sp_ext_log (task_id, task_name, task_category, log_level, log_content, create_date)
+        VALUES (#{taskId}, #{taskName}, #{taskCategory}, #{logLevel}, #{logContent}, NOW())
+    </insert>
+
+    <select id="selectLogPage" parameterType="map" resultType="java.util.LinkedHashMap">
+        SELECT id, task_id AS taskId, task_name AS taskName, task_category AS taskCategory,
+               log_level AS logLevel, log_content AS logContent, create_date AS createDate
+        FROM sp_ext_log
+        <where>
+            is_del = 0
+            <if test="taskId != null and taskId != ''">AND task_id = #{taskId}</if>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="logLevel != null and logLevel != ''">AND log_level = #{logLevel}</if>
+        </where>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">LIMIT #{offset}, #{pageSize}</if>
+    </select>
+
+    <select id="selectLogCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM sp_ext_log
+        <where>
+            is_del = 0
+            <if test="taskId != null and taskId != ''">AND task_id = #{taskId}</if>
+            <if test="taskName != null and taskName != ''">AND task_name LIKE CONCAT('%', #{taskName}, '%')</if>
+            <if test="logLevel != null and logLevel != ''">AND log_level = #{logLevel}</if>
+        </where>
+    </select>
+
+</mapper>
