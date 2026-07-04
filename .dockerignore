@@ -1,0 +1,23 @@
+# 构建上下文瘦身：主 Dockerfile 是 `ADD . /opt/` + mvn 构建 java jar，
+# 不需要前端 node_modules(578M)/.git/文档/已构建产物。排除它们 =
+# 更小 context、更快传输、不再因无关文件变动炸掉 docker 层缓存。
+**/node_modules
+.git
+.github
+.gitignore
+.gitmodules
+*.md
+**/*.md
+docker-compose*.yml
+docker-compose*.yaml
+**/target
+**/dist
+**/build
+*.log
+**/*.log
+.evolution
+.claude
+*.bak
+*.bak-*
+**/.env
+**/.env.*
