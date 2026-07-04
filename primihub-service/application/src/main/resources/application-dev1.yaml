@@ -44,3 +44,6 @@ logging:
 mybatis:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 全局 snake_case→camelCase 自动映射: 根除 bare SELECT*+resultType 的空字段/NPE 类 bug
+    # (显式别名/resultMap 仍优先生效, 此项为兜底)
+    map-underscore-to-camel-case: true

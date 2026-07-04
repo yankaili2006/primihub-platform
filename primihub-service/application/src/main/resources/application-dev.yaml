@@ -79,3 +79,8 @@ base:
 logging:
   level:
     root: info
+
+mybatis:
+  configuration:
+    # 全局 snake_case→camelCase: 根除 bare SELECT*+resultType 空字段/NPE bug
+    map-underscore-to-camel-case: true
