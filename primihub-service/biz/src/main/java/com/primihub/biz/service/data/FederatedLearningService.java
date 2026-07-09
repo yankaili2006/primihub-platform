@@ -9,6 +9,8 @@ import com.primihub.biz.entity.data.req.FederatedLearningReq;
 import com.primihub.biz.entity.data.req.DataModelAndComponentReq;
 import com.primihub.biz.entity.data.req.DataComponentReq;
 import com.primihub.biz.entity.data.req.DataComponentValue;
+import com.primihub.biz.entity.data.po.DataResource;
+import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
 import com.primihub.biz.entity.sys.po.ComputeLog;
 import com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository;
 import com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository;
@@ -40,10 +42,52 @@ public class FederatedLearningService {
     private FederatedLearningPrRepository federatedLearningPrRepository;
     @Autowired
     private DataModelService dataModelService;
+    @Autowired
+    private DataResourceRepository dataResourceRepository;
 
     // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
     private static final Long DEFAULT_PROJECT_ID = 2L;
+
+    /** 解析 resourceId(数值主键 或 fusionId) -> DataResource */
+    private DataResource resolveResource(String idOrFusion) {
+        if (idOrFusion == null || idOrFusion.isEmpty()) return null;
+        try {
+            if (idOrFusion.matches("\\d+")) return dataResourceRepository.queryDataResourceById(Long.valueOf(idOrFusion));
+            return dataResourceRepository.queryDataResourceByResourceFusionId(idOrFusion);
+        } catch (Exception e) { log.warn("解析资源失败 {}: {}", idOrFusion, e.getMessage()); return null; }
+    }
+
+    /** 按 FederatedLearningReq 的 own/participant 资源动态构造 dataSet.selectData; 信息不足返回 null(回退模板) */
+    private String buildSelectData(FederatedLearningReq req) {
+        String ownRes = req.getOwnResourceId();
+        String partRes = req.getParticipantResourceIds();
+        if (ownRes == null || partRes == null || partRes.isEmpty()) return null;
+        String firstPart = partRes.split(",")[0].trim();
+        DataResource own = resolveResource(ownRes);
+        DataResource part = resolveResource(firstPart);
+        if (own == null || part == null) return null;
+        List<Map<String, Object>> arr = new ArrayList<>();
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("organId", req.getOwnOrganId());
+        a.put("resourceId", own.getResourceFusionId());
+        a.put("resourceName", own.getResourceName());
+        a.put("auditStatus", 1);
+        a.put("participationIdentity", 1);            // 发起方/标签方
+        a.put("derivation", 0);
+        a.put("resourceContainsY", (req.getIsLabelOwner() != null ? req.getIsLabelOwner() : (own.getFileContainsY() != null ? own.getFileContainsY() : 1)));
+        arr.add(a);
+        Map<String, Object> b = new LinkedHashMap<>();
+        b.put("organId", req.getParticipantOrganIds() != null ? req.getParticipantOrganIds().split(",")[0].trim() : null);
+        b.put("resourceId", part.getResourceFusionId());
+        b.put("resourceName", part.getResourceName());
+        b.put("auditStatus", 1);
+        b.put("participationIdentity", 2);            // 参与方
+        b.put("derivation", 0);
+        b.put("resourceContainsY", 0);
+        arr.add(b);
+        return JSON.toJSONString(arr);
+    }
 
     /**
      * 创建并运行联邦学习任务 —— 真实实现: 桥接到平台真实 FL(model-DAG -> node gRPC MPC)。
@@ -95,11 +139,15 @@ public class FederatedLearningService {
             mr.setProjectId(projectId);
             mr.setIsDraft(1);
             String flName = (req.getTaskName() != null && !req.getTaskName().isEmpty()) ? req.getTaskName() : ("fl-" + taskId.substring(0, 8));
+            String selectData = buildSelectData(req);   // 按 req 动态构造; 信息不足=null 则回退模板数据集
+            boolean transmittedResources = selectData != null;
             for (DataComponentReq c : mr.getModelComponents()) {
                 if (c.getComponentValues() == null) continue;
                 if ("model".equals(c.getComponentCode())) setCompVal(c, "modelName", flName);
                 if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
+                if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
             }
+            log.info("FL DAG 构造: {}(resourceTransmitted={})", flName, transmittedResources);
             BaseResultEntity saveRes = dataModelService.saveModelAndComponent(userId, mr);
             if (saveRes.getCode() != 0 || !(saveRes.getResult() instanceof Map)) {
                 task.setTaskState(3);
@@ -127,6 +175,7 @@ public class FederatedLearningService {
             result.put("taskId", taskId);
             result.put("engine", "model-DAG(node gRPC FL)");
             result.put("modelId", newModelId);
+            result.put("resourceTransmitted", transmittedResources);
             result.put("message", runRes.getCode() == 0 ? "真实联邦学习已提交到节点" : ("提交失败: " + runRes.getMsg()));
             return BaseResultEntity.success(result);
         } catch (Exception e) {
