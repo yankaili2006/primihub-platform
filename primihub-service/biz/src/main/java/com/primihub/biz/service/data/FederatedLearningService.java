@@ -143,7 +143,7 @@ public class FederatedLearningService {
             boolean transmittedResources = selectData != null;
             for (DataComponentReq c : mr.getModelComponents()) {
                 if (c.getComponentValues() == null) continue;
-                if ("model".equals(c.getComponentCode())) setCompVal(c, "modelName", flName);
+                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setHyperParams(c, req); }
                 if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
                 if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
             }
@@ -182,6 +182,16 @@ public class FederatedLearningService {
             log.error("创建联邦学习任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建任务失败: " + e.getMessage());
         }
+    }
+
+    /** 把 FederatedLearningReq 的超参透传进 model 组件 componentValues(平台读 valueMap: learningRate/alpha/epoch/maxIter/batchSize) */
+    private void setHyperParams(DataComponentReq c, FederatedLearningReq req) {
+        FederatedLearningReq.TrainingParams tp = req.getTrainingParams();
+        if (tp == null) return;
+        if (tp.getLearningRate() != null) setCompVal(c, "learningRate", String.valueOf(tp.getLearningRate()));
+        if (tp.getRegularization() != null) setCompVal(c, "alpha", String.valueOf(tp.getRegularization()));
+        if (tp.getEpochs() != null) { setCompVal(c, "epoch", String.valueOf(tp.getEpochs())); setCompVal(c, "maxIter", String.valueOf(tp.getEpochs())); }
+        if (tp.getBatchSize() != null) setCompVal(c, "batchSize", String.valueOf(tp.getBatchSize()));
     }
 
     private static void setCompVal(DataComponentReq c, String key, String val) {
