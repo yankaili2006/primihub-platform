@@ -7,7 +7,10 @@ import com.primihub.biz.entity.base.PageParam;
 import com.primihub.biz.entity.data.po.SceneApiConfig;
 import com.primihub.biz.entity.data.po.SceneKeyConfig;
 import com.primihub.biz.entity.data.po.SceneTask;
+import com.primihub.biz.entity.data.po.DataPsiTask;
+import com.primihub.biz.entity.data.req.DataPsiReq;
 import com.primihub.biz.repository.primarydb.data.ScenePrimarydbRepository;
+import com.primihub.biz.service.data.DataPsiService;
 import com.primihub.biz.service.data.SceneService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +37,21 @@ public class SceneServiceImpl implements SceneService {
 
     @Autowired
     private ScenePrimarydbRepository sceneRepository;
+    @Autowired
+    private DataPsiService dataPsiService;
+
+    private static String reqStr(Map<String, Object> req, String k) {
+        Object v = req.get(k);
+        return v == null ? null : v.toString();
+    }
+    private static String reqStr(Map<String, Object> req, String k, String def) {
+        String v = reqStr(req, k);
+        return (v == null || v.isEmpty()) ? def : v;
+    }
+    private static Integer reqInt(Map<String, Object> req, String k, int def) {
+        Object v = req.get(k);
+        try { return v == null ? def : Integer.valueOf(v.toString()); } catch (Exception e) { return def; }
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -52,11 +70,62 @@ public class SceneServiceImpl implements SceneService {
             task.setCreatedBy(userId);
             sceneRepository.insertSceneTask(task);
 
+            // ===== 真实实现: 警务数据融合(交集) / 电子证件比对(隐私特征匹配) 桥接到真实 PSI (node MPC) =====
+            boolean policeIntersection = "police_fusion".equals(sceneType)
+                    && (taskType == null || taskType.isEmpty()
+                        || taskType.contains("intersection") || taskType.contains("交集"));
+            boolean certCompare = "electronic_cert".equals(sceneType)
+                    && (taskType == null || taskType.isEmpty()
+                        || taskType.contains("compare") || taskType.contains("比对") || taskType.contains("privacyCompare"));
+            boolean isPsiScene = (policeIntersection || certCompare)
+                    && req.get("ownResourceId") != null && req.get("otherResourceId") != null;
+            if (isPsiScene) {
+                try {
+                    DataPsiReq psiReq = new DataPsiReq();
+                    psiReq.setOwnOrganId(reqStr(req, "ownOrganId"));
+                    psiReq.setOwnResourceId(reqStr(req, "ownResourceId"));
+                    psiReq.setOwnKeyword(reqStr(req, "ownKeyword", "id"));
+                    psiReq.setOtherOrganId(reqStr(req, "otherOrganId"));
+                    psiReq.setOtherResourceId(reqStr(req, "otherResourceId"));
+                    psiReq.setOtherKeyword(reqStr(req, "otherKeyword", "id"));
+                    psiReq.setPsiTag(reqInt(req, "psiTag", 1));            // 1=KKRT
+                    psiReq.setOutputContent(0);                            // 0=交集
+                    psiReq.setOutputFormat("csv");
+                    psiReq.setOutputFilePathType(0);
+                    psiReq.setOutputNoRepeat(0);
+                    psiReq.setResultName(taskName);
+                    psiReq.setResultOrganIds(reqStr(req, "resultOrganIds", reqStr(req, "ownOrganId")));
+                    psiReq.setTaskName(taskName);
+                    BaseResultEntity psiRes = dataPsiService.saveDataPsi(psiReq, userId);
+                    if (psiRes.getCode() == 0 && psiRes.getResult() instanceof Map) {
+                        Map<String, Object> pm = (Map<String, Object>) psiRes.getResult();
+                        Map<String, Object> voMap = (Map<String, Object>) JSON.parseObject(
+                                JSON.toJSONString(pm.get("dataPsiTask")), Map.class);
+                        Map<String, Object> ref = new HashMap<>();
+                        ref.put("engine", "PSI");
+                        ref.put("refPsiTaskPk", voMap.get("taskId"));          // 数值主键
+                        ref.put("refPsiTaskIdName", voMap.get("taskIdName"));  // snowflake
+                        task.setResultData(JSON.toJSONString(ref));
+                        task.setTaskState(2);   // 运行中(真实 MPC 已提交)
+                    } else {
+                        task.setErrorMessage("PSI 提交失败: " + psiRes.getMsg());
+                        task.setTaskState(3);
+                    }
+                    sceneRepository.updateSceneTask(task);
+                } catch (Exception ex) {
+                    log.error("police_fusion 桥接真实 PSI 失败", ex);
+                    task.setErrorMessage("PSI 桥接异常: " + ex.getMessage());
+                    task.setTaskState(3);
+                    sceneRepository.updateSceneTask(task);
+                }
+            }
+
             Map<String, Object> result = new HashMap<>();
             result.put("taskId", task.getId());
             result.put("sceneType", sceneType);
             result.put("taskType", taskType);
-            result.put("status", 0);
+            result.put("status", task.getTaskState());
+            result.put("engine", isPsiScene ? "PSI(node MPC)" : "record");
             result.put("createdAt", task.getCreatedAt());
             return BaseResultEntity.success(result);
         } catch (Exception e) {
@@ -97,6 +166,33 @@ public class SceneServiceImpl implements SceneService {
             SceneTask task = sceneRepository.selectSceneTaskById(taskId);
             if (task == null) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
+            }
+            // 若关联了真实 PSI 任务, 回读真实状态 + 交集结果
+            if (task.getResultData() != null && task.getResultData().contains("refPsiTaskPk")) {
+                try {
+                    Map<String, Object> ref = JSON.parseObject(task.getResultData(), Map.class);
+                    Object pk = ref.get("refPsiTaskPk");
+                    if (pk != null) {
+                        DataPsiTask psi = dataPsiService.selectPsiTaskById(Long.valueOf(pk.toString()));
+                        if (psi != null) {
+                            Integer st = psi.getTaskState();
+                            boolean success = st != null && st == 2 && psi.getFilePath() != null && !psi.getFilePath().isEmpty();
+                            boolean failed = st != null && st == 3;
+                            int realState = failed ? 3 : (success ? 1 : 2);   // 1成功 2运行 3失败
+                            Map<String, Object> detail = new LinkedHashMap<>();
+                            detail.put("scene", task);
+                            detail.put("engine", "PSI(node MPC)");
+                            detail.put("psiTaskIdName", ref.get("refPsiTaskIdName"));
+                            detail.put("psiTaskState", st);
+                            detail.put("taskState", realState);
+                            detail.put("intersectionRows", psi.getFileRows());
+                            detail.put("intersectionResult", psi.getFileContent());
+                            return BaseResultEntity.success(detail);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn("回读真实 PSI 状态失败: {}", ex.getMessage());
+                }
             }
             return BaseResultEntity.success(task);
         } catch (Exception e) {

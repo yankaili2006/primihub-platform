@@ -6,6 +6,9 @@ import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.po.FederatedLearning;
 import com.primihub.biz.entity.data.po.FederatedLearningTask;
 import com.primihub.biz.entity.data.req.FederatedLearningReq;
+import com.primihub.biz.entity.data.req.DataModelAndComponentReq;
+import com.primihub.biz.entity.data.req.DataComponentReq;
+import com.primihub.biz.entity.data.req.DataComponentValue;
 import com.primihub.biz.entity.sys.po.ComputeLog;
 import com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository;
 import com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository;
@@ -35,59 +38,110 @@ public class FederatedLearningService {
 
     @Autowired
     private FederatedLearningPrRepository federatedLearningPrRepository;
+    @Autowired
+    private DataModelService dataModelService;
+
+    // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
+    private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
+    private static final Long DEFAULT_PROJECT_ID = 2L;
 
     /**
-     * 创建并运行联邦学习任务
+     * 创建并运行联邦学习任务 —— 真实实现: 桥接到平台真实 FL(model-DAG -> node gRPC MPC)。
+     * 克隆已验证可跑的模型 DAG(getModelComponentReq)-> 另存为新模型 -> runTaskModel 触发真节点联邦学习。
      */
     public BaseResultEntity createTask(FederatedLearningReq req, Long userId) {
         try {
             String taskId = UUID.randomUUID().toString();
 
-            // 保存联邦学习记录
-            FederatedLearning fl = new FederatedLearning();
-            BeanUtils.copyProperties(req, fl);
-            fl.setUserId(userId);
-            fl.setCreateDate(new Date());
-            fl.setUpdateDate(new Date());
-            fl.setIsDel(0);
-            federatedLearningPrRepository.saveFederatedLearning(fl);
-
-            // 创建任务记录
+            // 保存联邦学习记录 + 任务记录(审计, best-effort: 表结构漂移不应阻断真实 FL)
             FederatedLearningTask task = new FederatedLearningTask();
-            task.setFlId(fl.getId());
             task.setTaskId(taskId);
-            task.setTaskState(2); // 运行中
+            task.setTaskState(2);
             task.setCurrentRound(0);
-            task.setTotalRounds(req.getTrainingParams() != null ?
-                req.getTrainingParams().getEpochs() : 10);
+            task.setTotalRounds(req.getTrainingParams() != null ? req.getTrainingParams().getEpochs() : 10);
             task.setIsDel(0);
             task.setCreateDate(new Date());
             task.setUpdateDate(new Date());
-            federatedLearningPrRepository.saveFederatedLearningTask(task);
+            boolean auditSaved = false;
+            try {
+                FederatedLearning fl = new FederatedLearning();
+                BeanUtils.copyProperties(req, fl);
+                fl.setUserId(userId);
+                fl.setCreateDate(new Date());
+                fl.setUpdateDate(new Date());
+                fl.setIsDel(0);
+                federatedLearningPrRepository.saveFederatedLearning(fl);
+                task.setFlId(fl.getId());
+                federatedLearningPrRepository.saveFederatedLearningTask(task);
+                auditSaved = true;
+            } catch (Exception auditEx) {
+                log.warn("联邦学习审计记录保存失败(表结构漂移?), 不阻断真实 FL: {}", auditEx.getMessage());
+            }
 
-            // 构建Python算法参数
-            Map<String, Object> algorithmParams = buildAlgorithmParams(req, taskId);
+            // ===== 桥接真实 FL =====
+            Long templateModelId = DEFAULT_TEMPLATE_MODEL_ID;
+            try { if (req.getModelId() != null && req.getModelId().matches("\\d+")) templateModelId = Long.valueOf(req.getModelId()); } catch (Exception ignore) {}
+            Long projectId = (req.getProjectId() != null && req.getProjectId() != 0L) ? req.getProjectId() : DEFAULT_PROJECT_ID;
 
-            // 调用Python联邦学习算法
-            String algorithmPath = getAlgorithmPath(req);
-            executePythonAlgorithm(algorithmPath, algorithmParams, taskId);
+            DataModelAndComponentReq mr = dataModelService.getModelComponentReq(templateModelId, userId, projectId);
+            if (mr == null || mr.getModelComponents() == null || mr.getModelComponents().isEmpty()) {
+                task.setTaskState(3);
+                task.setExecutionLog("无可用模板模型 DAG(templateModelId=" + templateModelId + "), 无法启动真实联邦学习");
+                if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "缺少模板模型 DAG(templateModelId=" + templateModelId + ")");
+            }
+            // 另存为新模型 + 改名(保证唯一)
+            mr.setModelId(null);
+            mr.setProjectId(projectId);
+            mr.setIsDraft(1);
+            String flName = (req.getTaskName() != null && !req.getTaskName().isEmpty()) ? req.getTaskName() : ("fl-" + taskId.substring(0, 8));
+            for (DataComponentReq c : mr.getModelComponents()) {
+                if (c.getComponentValues() == null) continue;
+                if ("model".equals(c.getComponentCode())) setCompVal(c, "modelName", flName);
+                if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
+            }
+            BaseResultEntity saveRes = dataModelService.saveModelAndComponent(userId, mr);
+            if (saveRes.getCode() != 0 || !(saveRes.getResult() instanceof Map)) {
+                task.setTaskState(3);
+                task.setExecutionLog("saveModelAndComponent 失败: " + saveRes.getMsg());
+                if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建模型失败: " + saveRes.getMsg());
+            }
+            Object newModelIdObj = ((Map<String, Object>) saveRes.getResult()).get("modelId");
+            Long newModelId = Long.valueOf(newModelIdObj.toString());
+            BaseResultEntity runRes = dataModelService.runTaskModel(newModelId, userId);
+            // 关联真实模型/任务, 供进度回读
+            Map<String, Object> ref = new HashMap<>();
+            ref.put("engine", "model-DAG(node gRPC FL)");
+            ref.put("modelId", newModelId);
+            ref.put("runResult", runRes.getMsg());
+            task.setExecutionLog(JSON.toJSONString(ref));
+            task.setTaskState(runRes.getCode() == 0 ? 2 : 3);
+            if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
 
-            // 记录计算日志
             String computeType = getComputeType(req);
             recordComputeLog(taskId, req.getTaskName(), computeType, userId, req.getProjectId(), 0);
-
-            log.info("联邦学习任务创建成功, taskId: {}, taskType: {}, algorithmType: {}",
-                    taskId, req.getTaskType(), req.getAlgorithmType());
+            log.info("联邦学习任务(真实 FL)创建, taskId:{}, modelId:{}, runCode:{}", taskId, newModelId, runRes.getCode());
 
             Map<String, Object> result = new HashMap<>();
             result.put("taskId", taskId);
-            result.put("message", "任务已创建，正在执行中...");
-
+            result.put("engine", "model-DAG(node gRPC FL)");
+            result.put("modelId", newModelId);
+            result.put("message", runRes.getCode() == 0 ? "真实联邦学习已提交到节点" : ("提交失败: " + runRes.getMsg()));
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("创建联邦学习任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建任务失败: " + e.getMessage());
         }
+    }
+
+    private static void setCompVal(DataComponentReq c, String key, String val) {
+        for (DataComponentValue v : c.getComponentValues()) {
+            if (key.equals(v.getKey())) { v.setVal(val); return; }
+        }
+        DataComponentValue nv = new DataComponentValue();
+        nv.setKey(key); nv.setVal(val);
+        c.getComponentValues().add(nv);
     }
 
     /**
