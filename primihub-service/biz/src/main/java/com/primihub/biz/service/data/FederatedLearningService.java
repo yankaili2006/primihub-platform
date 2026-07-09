@@ -48,6 +48,8 @@ public class FederatedLearningService {
     // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
     private static final Long DEFAULT_PROJECT_ID = 2L;
+    // 横向 FL 的可信第三方(arbiter)= 机构C(org2),已 onboard
+    private static final String DEFAULT_ARBITER_ORGAN = "e8a592ce-b572-4191-b510-f634760dc376";
 
     /** 解析 resourceId(数值主键 或 fusionId) -> DataResource */
     private DataResource resolveResource(String idOrFusion) {
@@ -84,7 +86,9 @@ public class FederatedLearningService {
         b.put("auditStatus", 1);
         b.put("participationIdentity", 2);            // 参与方
         b.put("derivation", 0);
-        b.put("resourceContainsY", 0);
+        // 横向:两方都有标签(各自样本带 y);纵向:仅发起方有标签
+        boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;
+        b.put("resourceContainsY", horizontal ? 1 : 0);
         arr.add(b);
         return JSON.toJSONString(arr);
     }
@@ -141,10 +145,11 @@ public class FederatedLearningService {
             String flName = (req.getTaskName() != null && !req.getTaskName().isEmpty()) ? req.getTaskName() : ("fl-" + taskId.substring(0, 8));
             String selectData = buildSelectData(req);   // 按 req 动态构造; 信息不足=null 则回退模板数据集
             boolean transmittedResources = selectData != null;
-            int modelType = mapModelType(req.getAlgorithmType());  // 仅纵向: 5=LR 2=XGB 9=LinearReg(同 DAG)
+            boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;  // 1=横向
+            int modelType = horizontal ? 3 : mapModelType(req.getAlgorithmType());  // 横向=3 homo_lr(需 arbiter); 纵向 5/2/9
             for (DataComponentReq c : mr.getModelComponents()) {
                 if (c.getComponentValues() == null) continue;
-                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setCompVal(c, "modelType", String.valueOf(modelType)); setHyperParams(c, req); }
+                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setCompVal(c, "modelType", String.valueOf(modelType)); if (horizontal) setCompVal(c, "arbiterOrgan", DEFAULT_ARBITER_ORGAN); setHyperParams(c, req); }
                 if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
                 if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
             }
