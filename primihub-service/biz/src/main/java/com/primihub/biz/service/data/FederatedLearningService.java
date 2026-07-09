@@ -141,9 +141,10 @@ public class FederatedLearningService {
             String flName = (req.getTaskName() != null && !req.getTaskName().isEmpty()) ? req.getTaskName() : ("fl-" + taskId.substring(0, 8));
             String selectData = buildSelectData(req);   // 按 req 动态构造; 信息不足=null 则回退模板数据集
             boolean transmittedResources = selectData != null;
+            int modelType = mapModelType(req.getAlgorithmType());  // 仅纵向: 5=LR 2=XGB 9=LinearReg(同 DAG)
             for (DataComponentReq c : mr.getModelComponents()) {
                 if (c.getComponentValues() == null) continue;
-                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setHyperParams(c, req); }
+                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setCompVal(c, "modelType", String.valueOf(modelType)); setHyperParams(c, req); }
                 if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
                 if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
             }
@@ -175,6 +176,7 @@ public class FederatedLearningService {
             result.put("taskId", taskId);
             result.put("engine", "model-DAG(node gRPC FL)");
             result.put("modelId", newModelId);
+            result.put("modelType", modelType);
             result.put("resourceTransmitted", transmittedResources);
             result.put("message", runRes.getCode() == 0 ? "真实联邦学习已提交到节点" : ("提交失败: " + runRes.getMsg()));
             return BaseResultEntity.success(result);
@@ -185,6 +187,16 @@ public class FederatedLearningService {
     }
 
     /** 把 FederatedLearningReq 的超参透传进 model 组件 componentValues(平台读 valueMap: learningRate/alpha/epoch/maxIter/batchSize) */
+    /** 仅映射纵向模型(federatedType=0, 共用 dataAlign PSI 的 DAG): 5=纵向LR 2=纵向XGB 9=纵向线性回归 */
+    private static int mapModelType(Integer algorithmType) {
+        if (algorithmType == null) return 5;
+        switch (algorithmType) {
+            case 2: return 2;   // V_XGBOOST
+            case 9: return 9;   // VFL_LINEAR_REGRESSION
+            case 5: default: return 5;   // HETERO_LR
+        }
+    }
+
     private void setHyperParams(DataComponentReq c, FederatedLearningReq req) {
         FederatedLearningReq.TrainingParams tp = req.getTrainingParams();
         if (tp == null) return;
@@ -192,6 +204,8 @@ public class FederatedLearningService {
         if (tp.getRegularization() != null) setCompVal(c, "alpha", String.valueOf(tp.getRegularization()));
         if (tp.getEpochs() != null) { setCompVal(c, "epoch", String.valueOf(tp.getEpochs())); setCompVal(c, "maxIter", String.valueOf(tp.getEpochs())); }
         if (tp.getBatchSize() != null) setCompVal(c, "batchSize", String.valueOf(tp.getBatchSize()));
+        if (tp.getNumTrees() != null) setCompVal(c, "numTree", String.valueOf(tp.getNumTrees()));   // XGB
+        if (tp.getMaxDepth() != null) setCompVal(c, "maxDepth", String.valueOf(tp.getMaxDepth()));   // XGB
     }
 
     private static void setCompVal(DataComponentReq c, String key, String val) {
