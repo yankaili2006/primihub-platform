@@ -9,6 +9,7 @@ import com.primihub.biz.entity.data.req.FederatedLearningReq;
 import com.primihub.biz.entity.data.req.DataModelAndComponentReq;
 import com.primihub.biz.entity.data.req.DataComponentReq;
 import com.primihub.biz.entity.data.req.DataComponentValue;
+import com.primihub.biz.entity.data.req.DataComponentRelationReq;
 import com.primihub.biz.entity.data.po.DataResource;
 import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
 import com.primihub.biz.entity.sys.po.ComputeLog;
@@ -153,7 +154,26 @@ public class FederatedLearningService {
                 if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
                 if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
             }
-            log.info("FL DAG 构造: {}(resourceTransmitted={})", flName, transmittedResources);
+            if (horizontal) {
+                // 横向 FL: 样本不重叠, 去掉 PSI dataAlign 组件, dataSet -> model 直连
+                java.util.List<DataComponentReq> comps = mr.getModelComponents();
+                comps.removeIf(c -> "dataAlign".equals(c.getComponentCode()));
+                DataComponentReq dsC = null, mdC = null;
+                for (DataComponentReq c : comps) {
+                    if ("dataSet".equals(c.getComponentCode())) dsC = c;
+                    if ("model".equals(c.getComponentCode())) mdC = c;
+                }
+                if (dsC != null && mdC != null) {
+                    DataComponentRelationReq toModel = new DataComponentRelationReq();
+                    toModel.setComponentCode("model"); toModel.setComponentId(mdC.getComponentId());
+                    dsC.setOutput(new java.util.ArrayList<>(java.util.Collections.singletonList(toModel)));
+                    DataComponentRelationReq fromDs = new DataComponentRelationReq();
+                    fromDs.setComponentCode("dataSet"); fromDs.setComponentId(dsC.getComponentId());
+                    mdC.setInput(new java.util.ArrayList<>(java.util.Collections.singletonList(fromDs)));
+                }
+                log.info("横向 FL: 去 dataAlign, dataSet->model 直连");
+            }
+            log.info("FL DAG 构造: {}(resourceTransmitted={}, horizontal={})", flName, transmittedResources, horizontal);
             BaseResultEntity saveRes = dataModelService.saveModelAndComponent(userId, mr);
             if (saveRes.getCode() != 0 || !(saveRes.getResult() instanceof Map)) {
                 task.setTaskState(3);
