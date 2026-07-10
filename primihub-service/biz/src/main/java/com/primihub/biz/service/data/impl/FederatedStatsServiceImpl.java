@@ -15,8 +15,10 @@ import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.entity.data.vo.StatsTaskDetailVO;
 import com.primihub.biz.entity.data.vo.StatsTaskListVO;
 import com.primihub.biz.entity.data.vo.StatsTypeVO;
+import com.primihub.biz.entity.data.po.DataTask;
 import com.primihub.biz.repository.primarydb.data.FederatedStatsRepository;
 import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
+import com.primihub.biz.repository.secondarydb.data.DataTaskRepository;
 import com.primihub.biz.service.data.DataModelService;
 import com.primihub.biz.service.data.FederatedStatsService;
 import lombok.extern.slf4j.Slf4j;
@@ -44,8 +46,12 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     private DataModelService dataModelService;
     @Autowired
     private DataResourceRepository dataResourceRepository;
+    @Autowired
+    private DataTaskRepository dataTaskRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+    // node 联合统计结果 CSV 落盘目录前缀(与 node runModel 输出一致)
+    private static final String RUN_MODEL_RESULT_DIR = "/data/result/runModel/";
 
     // 复用横向 FL 已建好的 3 方基建: 模板模型(start->dataSet->dataAlign->model)与 3 方项目
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
@@ -164,6 +170,21 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
             }
             List<FederatedStatsResult> results = federatedStatsRepository.selectResultsByTaskId(taskId);
+            // 真实路径: node 异步跑完后, 读回真实安全聚合结果(懒回填, 类似 PSI read-time backfill)
+            if (task.getTaskState() != null && task.getTaskState() == 1) {
+                try {
+                    FederatedStatsResult finalized = tryReadNodeResult(task, results);
+                    if (finalized != null) {
+                        task.setTaskState(2);
+                        task.setResultSummary(finalized.getResultData());
+                        federatedStatsRepository.updateTaskState(taskId, 2, finalized.getResultData(), null);
+                        federatedStatsRepository.insertResult(finalized);
+                        results = federatedStatsRepository.selectResultsByTaskId(taskId);
+                    }
+                } catch (Exception fe) {
+                    log.warn("联合统计结果回填失败(不阻断详情): {}", fe.getMessage());
+                }
+            }
 
             StatsTaskDetailVO vo = new StatsTaskDetailVO();
             vo.setId(task.getId());
@@ -217,6 +238,8 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     /** taskParam(JSON) 桥接契约 */
     private static class StatsBridgeParam {
         String ownOrganId, ownResourceId, otherOrganId, otherResourceId, arbiterOrgan;
+        // 第 3 方(ABY3 需正好 3 方): 直接给 fusionId/organ/name(不经 resolveResource)
+        String thirdOrganId, thirdResourceId, thirdResourceName;
         List<String> operations = new ArrayList<>();  // node 运算类型码: 1=avg 2=sum 3=max 4=min
         List<String> features = new ArrayList<>();     // 参与聚合的数值列名
         Long projectId;
@@ -242,6 +265,9 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
                 bp.otherOrganId = p.getString("otherOrganId");
                 bp.otherResourceId = p.getString("otherResourceId");
                 bp.arbiterOrgan = p.getString("arbiterOrgan");
+                bp.thirdOrganId = p.getString("thirdOrganId");
+                bp.thirdResourceId = p.getString("thirdResourceId");
+                bp.thirdResourceName = p.getString("thirdResourceName");
                 if (p.getLong("projectId") != null && p.getLong("projectId") != 0L) bp.projectId = p.getLong("projectId");
                 JSONArray ops = p.getJSONArray("operations");
                 if (ops != null) for (int i = 0; i < ops.size(); i++) bp.operations.add(String.valueOf(ops.get(i)));
@@ -317,13 +343,14 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE, "模板 DAG 不完整");
             }
 
-            // dataSet.selectData: 两方数据(可扩 arbiter 3 方)
+            // dataSet.selectData: 两方数据(thirdResourceId 非空时补第 3 方 -> ABY3 3 方)
             String selectData = buildStatsSelectData(bp, own, other);
             setCompVal(startC, "taskName", name);
             setCompVal(dsC, "selectData", selectData);
 
             // jointStatistical 组件值: [{type, features:[{resourceId, checked:[cols]}]}]
             String jointStatisticalVal = buildJointStatisticalValue(bp, own, other);
+            boolean threeParty = bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty();
 
             DataComponentReq js = new DataComponentReq();
             js.setComponentCode("jointStatistical");
@@ -367,7 +394,10 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             ref.put("dataTaskId", dataTaskId);
             ref.put("operations", bp.operations.stream().map(o -> o + ":" + NODE_OP_NAMES.get(o)).collect(Collectors.toList()));
             ref.put("features", bp.features);
-            ref.put("parties", Arrays.asList(own.getResourceFusionId(), other.getResourceFusionId()));
+            List<String> partyList = new ArrayList<>(Arrays.asList(own.getResourceFusionId(), other.getResourceFusionId()));
+            if (threeParty) partyList.add(bp.thirdResourceId);
+            ref.put("parties", partyList);
+            ref.put("partyCount", partyList.size());
             ref.put("message", ok ? "真实联合统计已提交到节点(安全聚合 avg/sum/max/min)" : ("提交失败: " + runRes.getMsg()));
             String summary = "node-MPC 联合统计 modelId=" + newModelId + " dataTaskId=" + dataTaskId
                     + " ops=" + bp.operations + " features=" + bp.features;
@@ -398,6 +428,58 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
         }
     }
 
+    /**
+     * node 异步跑完后读回真实聚合结果: 依据 dispatch 记录的 dataTaskId -> taskIdName -> 结果 CSV 目录,
+     * 解析 average/sum/max/min 四个 CSV(各方结果一致=联合聚合值)。未产出返回 null(仍执行中)。
+     */
+    private FederatedStatsResult tryReadNodeResult(FederatedStatsTask task, List<FederatedStatsResult> existing) throws Exception {
+        String dataTaskId = null, modelId = null;
+        for (FederatedStatsResult r : existing) {
+            if (!"dispatch".equals(r.getResultType()) || r.getResultData() == null) continue;
+            JSONObject rd = JSON.parseObject(r.getResultData());
+            if (rd.get("dataTaskId") != null) dataTaskId = String.valueOf(rd.get("dataTaskId"));
+            if (rd.get("modelId") != null) modelId = String.valueOf(rd.get("modelId"));
+        }
+        if (dataTaskId == null || !dataTaskId.matches("\\d+")) return null;
+        DataTask dt = dataTaskRepository.selectDataTaskByTaskId(Long.valueOf(dataTaskId));
+        if (dt == null || dt.getTaskIdName() == null) return null;
+        java.nio.file.Path dir = java.nio.file.Paths.get(RUN_MODEL_RESULT_DIR, dt.getTaskIdName(), "mpc");
+        if (!java.nio.file.Files.isDirectory(dir)) return null;
+        // 仅当组件产出 mpc.zip(所有运算类型 CSV 全部落盘后才打包)才回填, 避免读到半成品
+        if (!java.nio.file.Files.exists(java.nio.file.Paths.get(RUN_MODEL_RESULT_DIR, dt.getTaskIdName(), "mpc.zip"))) return null;
+
+        Map<String, Map<String, String>> stats = new LinkedHashMap<>();
+        for (String opName : NODE_OP_NAMES.values()) {   // average/sum/max/min
+            java.util.Optional<java.nio.file.Path> f;
+            try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.list(dir)) {
+                final String suffix = "-" + opName + ".csv";
+                f = s.filter(p -> p.getFileName().toString().endsWith(suffix)).findFirst();
+            }
+            if (!f.isPresent()) continue;
+            List<String> lines = java.nio.file.Files.readAllLines(f.get(), StandardCharsets.UTF_8);
+            if (lines.size() < 2) continue;
+            String[] cols = lines.get(0).replace("﻿", "").trim().split(",");
+            String[] vals = lines.get(1).trim().split(",");
+            Map<String, String> colVal = new LinkedHashMap<>();
+            for (int i = 0; i < cols.length && i < vals.length; i++) colVal.put(cols[i].trim(), vals[i].trim());
+            stats.put(opName, colVal);
+        }
+        if (stats.isEmpty()) return null;   // 还没产出 -> 仍执行中
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("engine", "node-MPC(JointStatistical/ABY3)");
+        data.put("modelId", modelId);
+        data.put("dataTaskId", dataTaskId);
+        data.put("statistics", stats);   // {average:{x0,x1}, sum:.., max:.., min:..}
+        data.put("note", "真实 3 方安全聚合结果(node ABY3 MPC), 非本地近似");
+        FederatedStatsResult res = new FederatedStatsResult();
+        res.setTaskId(task.getId());
+        res.setResultType("final");
+        res.setResultData(JSON.toJSONString(data));
+        res.setRowCount(stats.size());
+        return res;
+    }
+
     /** dataSet.selectData JSON(两方; arbiterOrgan 非空时不在此加, node 侧 3 方由调度补) */
     private String buildStatsSelectData(StatsBridgeParam bp, DataResource own, DataResource other) {
         List<Map<String, Object>> arr = new ArrayList<>();
@@ -419,6 +501,17 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
         b.put("derivation", 0);
         b.put("resourceContainsY", 0);
         arr.add(b);
+        if (bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty()) {
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("organId", bp.thirdOrganId);
+            c.put("resourceId", bp.thirdResourceId);
+            c.put("resourceName", bp.thirdResourceName != null ? bp.thirdResourceName : "party3");
+            c.put("auditStatus", 1);
+            c.put("participationIdentity", 3);
+            c.put("derivation", 0);
+            c.put("resourceContainsY", 0);
+            arr.add(c);
+        }
         return JSON.toJSONString(arr);
     }
 
@@ -435,6 +528,9 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             JSONArray feats = new JSONArray();
             feats.add(featureEntry(own.getResourceFusionId(), bp.features));
             feats.add(featureEntry(other.getResourceFusionId(), bp.features));
+            if (bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty()) {
+                feats.add(featureEntry(bp.thirdResourceId, bp.features));
+            }
             obj.put("features", feats);
             root.add(obj);
         }
