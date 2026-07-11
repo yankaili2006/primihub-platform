@@ -96,7 +96,7 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             task.setSourceSql(req.getSourceSql());
             task.setRewrittenSql(rewritten);
             task.setTaskState(0);
-            task.setTaskParam(req.getParams() != null ? req.getParams().toString() : null);
+            task.setTaskParam(req.getParams() != null ? objectMapper.writeValueAsString(req.getParams()) : null);
             task.setCreatedBy(userId);
             analysisRepository.insertTask(task);
 
@@ -167,6 +167,11 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             vo.setResultRowCount(task.getResultRowCount());
             vo.setErrorMessage(task.getErrorMessage());
             vo.setCreatedAt(task.getCreatedAt());
+            if (results != null && !results.isEmpty()) {
+                if (results.get(0).getRowCount() != null) {
+                    vo.setResultRowCount(results.get(0).getRowCount());
+                }
+            }
             return BaseResultEntity.success(vo);
         } catch (Exception e) {
             log.error("查询分析任务详情失败", e);
