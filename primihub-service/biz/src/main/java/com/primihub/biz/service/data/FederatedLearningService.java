@@ -6,6 +6,12 @@ import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.po.FederatedLearning;
 import com.primihub.biz.entity.data.po.FederatedLearningTask;
 import com.primihub.biz.entity.data.req.FederatedLearningReq;
+import com.primihub.biz.entity.data.req.DataModelAndComponentReq;
+import com.primihub.biz.entity.data.req.DataComponentReq;
+import com.primihub.biz.entity.data.req.DataComponentValue;
+import com.primihub.biz.entity.data.req.DataComponentRelationReq;
+import com.primihub.biz.entity.data.po.DataResource;
+import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
 import com.primihub.biz.entity.sys.po.ComputeLog;
 import com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository;
 import com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository;
@@ -35,59 +41,205 @@ public class FederatedLearningService {
 
     @Autowired
     private FederatedLearningPrRepository federatedLearningPrRepository;
+    @Autowired
+    private DataModelService dataModelService;
+    @Autowired
+    private DataResourceRepository dataResourceRepository;
+
+    // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
+    private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
+    private static final Long DEFAULT_PROJECT_ID = 2L;
+    // 横向 FL 的可信第三方(arbiter)= 机构C(org2),已 onboard
+    private static final String DEFAULT_ARBITER_ORGAN = "e8a592ce-b572-4191-b510-f634760dc376";
+
+    /** 解析 resourceId(数值主键 或 fusionId) -> DataResource */
+    private DataResource resolveResource(String idOrFusion) {
+        if (idOrFusion == null || idOrFusion.isEmpty()) return null;
+        try {
+            if (idOrFusion.matches("\\d+")) return dataResourceRepository.queryDataResourceById(Long.valueOf(idOrFusion));
+            return dataResourceRepository.queryDataResourceByResourceFusionId(idOrFusion);
+        } catch (Exception e) { log.warn("解析资源失败 {}: {}", idOrFusion, e.getMessage()); return null; }
+    }
+
+    /** 按 FederatedLearningReq 的 own/participant 资源动态构造 dataSet.selectData; 信息不足返回 null(回退模板) */
+    private String buildSelectData(FederatedLearningReq req) {
+        String ownRes = req.getOwnResourceId();
+        String partRes = req.getParticipantResourceIds();
+        if (ownRes == null || partRes == null || partRes.isEmpty()) return null;
+        String firstPart = partRes.split(",")[0].trim();
+        DataResource own = resolveResource(ownRes);
+        DataResource part = resolveResource(firstPart);
+        if (own == null || part == null) return null;
+        List<Map<String, Object>> arr = new ArrayList<>();
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("organId", req.getOwnOrganId());
+        a.put("resourceId", own.getResourceFusionId());
+        a.put("resourceName", own.getResourceName());
+        a.put("auditStatus", 1);
+        a.put("participationIdentity", 1);            // 发起方/标签方
+        a.put("derivation", 0);
+        a.put("resourceContainsY", (req.getIsLabelOwner() != null ? req.getIsLabelOwner() : (own.getFileContainsY() != null ? own.getFileContainsY() : 1)));
+        arr.add(a);
+        Map<String, Object> b = new LinkedHashMap<>();
+        b.put("organId", req.getParticipantOrganIds() != null ? req.getParticipantOrganIds().split(",")[0].trim() : null);
+        b.put("resourceId", part.getResourceFusionId());
+        b.put("resourceName", part.getResourceName());
+        b.put("auditStatus", 1);
+        b.put("participationIdentity", 2);            // 参与方
+        b.put("derivation", 0);
+        // 横向:两方都有标签(各自样本带 y);纵向:仅发起方有标签
+        boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;
+        b.put("resourceContainsY", horizontal ? 1 : 0);
+        arr.add(b);
+        return JSON.toJSONString(arr);
+    }
 
     /**
-     * 创建并运行联邦学习任务
+     * 创建并运行联邦学习任务 —— 真实实现: 桥接到平台真实 FL(model-DAG -> node gRPC MPC)。
+     * 克隆已验证可跑的模型 DAG(getModelComponentReq)-> 另存为新模型 -> runTaskModel 触发真节点联邦学习。
      */
     public BaseResultEntity createTask(FederatedLearningReq req, Long userId) {
         try {
             String taskId = UUID.randomUUID().toString();
 
-            // 保存联邦学习记录
-            FederatedLearning fl = new FederatedLearning();
-            BeanUtils.copyProperties(req, fl);
-            fl.setUserId(userId);
-            fl.setCreateDate(new Date());
-            fl.setUpdateDate(new Date());
-            fl.setIsDel(0);
-            federatedLearningPrRepository.saveFederatedLearning(fl);
-
-            // 创建任务记录
+            // 保存联邦学习记录 + 任务记录(审计, best-effort: 表结构漂移不应阻断真实 FL)
             FederatedLearningTask task = new FederatedLearningTask();
-            task.setFlId(fl.getId());
             task.setTaskId(taskId);
-            task.setTaskState(2); // 运行中
+            task.setTaskState(2);
             task.setCurrentRound(0);
-            task.setTotalRounds(req.getTrainingParams() != null ?
-                req.getTrainingParams().getEpochs() : 10);
+            task.setTotalRounds(req.getTrainingParams() != null ? req.getTrainingParams().getEpochs() : 10);
             task.setIsDel(0);
             task.setCreateDate(new Date());
             task.setUpdateDate(new Date());
-            federatedLearningPrRepository.saveFederatedLearningTask(task);
+            boolean auditSaved = false;
+            try {
+                FederatedLearning fl = new FederatedLearning();
+                BeanUtils.copyProperties(req, fl);
+                fl.setUserId(userId);
+                fl.setCreateDate(new Date());
+                fl.setUpdateDate(new Date());
+                fl.setIsDel(0);
+                federatedLearningPrRepository.saveFederatedLearning(fl);
+                task.setFlId(fl.getId());
+                federatedLearningPrRepository.saveFederatedLearningTask(task);
+                auditSaved = true;
+            } catch (Exception auditEx) {
+                log.warn("联邦学习审计记录保存失败(表结构漂移?), 不阻断真实 FL: {}", auditEx.getMessage());
+            }
 
-            // 构建Python算法参数
-            Map<String, Object> algorithmParams = buildAlgorithmParams(req, taskId);
+            // ===== 桥接真实 FL =====
+            Long templateModelId = DEFAULT_TEMPLATE_MODEL_ID;
+            try { if (req.getModelId() != null && req.getModelId().matches("\\d+")) templateModelId = Long.valueOf(req.getModelId()); } catch (Exception ignore) {}
+            Long projectId = (req.getProjectId() != null && req.getProjectId() != 0L) ? req.getProjectId() : DEFAULT_PROJECT_ID;
 
-            // 调用Python联邦学习算法
-            String algorithmPath = getAlgorithmPath(req);
-            executePythonAlgorithm(algorithmPath, algorithmParams, taskId);
+            DataModelAndComponentReq mr = dataModelService.getModelComponentReq(templateModelId, userId, projectId);
+            if (mr == null || mr.getModelComponents() == null || mr.getModelComponents().isEmpty()) {
+                task.setTaskState(3);
+                task.setExecutionLog("无可用模板模型 DAG(templateModelId=" + templateModelId + "), 无法启动真实联邦学习");
+                if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "缺少模板模型 DAG(templateModelId=" + templateModelId + ")");
+            }
+            // 另存为新模型 + 改名(保证唯一)
+            mr.setModelId(null);
+            mr.setProjectId(projectId);
+            mr.setIsDraft(1);
+            String flName = (req.getTaskName() != null && !req.getTaskName().isEmpty()) ? req.getTaskName() : ("fl-" + taskId.substring(0, 8));
+            String selectData = buildSelectData(req);   // 按 req 动态构造; 信息不足=null 则回退模板数据集
+            boolean transmittedResources = selectData != null;
+            boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;  // 1=横向
+            int modelType = horizontal ? 3 : mapModelType(req.getAlgorithmType());  // 横向=3 homo_lr(需 arbiter); 纵向 5/2/9
+            for (DataComponentReq c : mr.getModelComponents()) {
+                if (c.getComponentValues() == null) continue;
+                if ("model".equals(c.getComponentCode())) { setCompVal(c, "modelName", flName); setCompVal(c, "modelType", String.valueOf(modelType)); if (horizontal) setCompVal(c, "arbiterOrgan", DEFAULT_ARBITER_ORGAN); setHyperParams(c, req); }
+                if ("start".equals(c.getComponentCode())) setCompVal(c, "taskName", flName);
+                if ("dataSet".equals(c.getComponentCode()) && selectData != null) setCompVal(c, "selectData", selectData);
+            }
+            if (horizontal) {
+                // 横向 FL: 样本不重叠, 去掉 PSI dataAlign 组件, dataSet -> model 直连
+                java.util.List<DataComponentReq> comps = mr.getModelComponents();
+                comps.removeIf(c -> "dataAlign".equals(c.getComponentCode()));
+                DataComponentReq dsC = null, mdC = null;
+                for (DataComponentReq c : comps) {
+                    if ("dataSet".equals(c.getComponentCode())) dsC = c;
+                    if ("model".equals(c.getComponentCode())) mdC = c;
+                }
+                if (dsC != null && mdC != null) {
+                    DataComponentRelationReq toModel = new DataComponentRelationReq();
+                    toModel.setComponentCode("model"); toModel.setComponentId(mdC.getComponentId());
+                    dsC.setOutput(new java.util.ArrayList<>(java.util.Collections.singletonList(toModel)));
+                    DataComponentRelationReq fromDs = new DataComponentRelationReq();
+                    fromDs.setComponentCode("dataSet"); fromDs.setComponentId(dsC.getComponentId());
+                    mdC.setInput(new java.util.ArrayList<>(java.util.Collections.singletonList(fromDs)));
+                }
+                log.info("横向 FL: 去 dataAlign, dataSet->model 直连");
+            }
+            log.info("FL DAG 构造: {}(resourceTransmitted={}, horizontal={})", flName, transmittedResources, horizontal);
+            BaseResultEntity saveRes = dataModelService.saveModelAndComponent(userId, mr);
+            if (saveRes.getCode() != 0 || !(saveRes.getResult() instanceof Map)) {
+                task.setTaskState(3);
+                task.setExecutionLog("saveModelAndComponent 失败: " + saveRes.getMsg());
+                if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建模型失败: " + saveRes.getMsg());
+            }
+            Object newModelIdObj = ((Map<String, Object>) saveRes.getResult()).get("modelId");
+            Long newModelId = Long.valueOf(newModelIdObj.toString());
+            BaseResultEntity runRes = dataModelService.runTaskModel(newModelId, userId);
+            // 关联真实模型/任务, 供进度回读
+            Map<String, Object> ref = new HashMap<>();
+            ref.put("engine", "model-DAG(node gRPC FL)");
+            ref.put("modelId", newModelId);
+            ref.put("runResult", runRes.getMsg());
+            task.setExecutionLog(JSON.toJSONString(ref));
+            task.setTaskState(runRes.getCode() == 0 ? 2 : 3);
+            if (auditSaved) federatedLearningPrRepository.updateFederatedLearningTask(task);
 
-            // 记录计算日志
             String computeType = getComputeType(req);
             recordComputeLog(taskId, req.getTaskName(), computeType, userId, req.getProjectId(), 0);
-
-            log.info("联邦学习任务创建成功, taskId: {}, taskType: {}, algorithmType: {}",
-                    taskId, req.getTaskType(), req.getAlgorithmType());
+            log.info("联邦学习任务(真实 FL)创建, taskId:{}, modelId:{}, runCode:{}", taskId, newModelId, runRes.getCode());
 
             Map<String, Object> result = new HashMap<>();
             result.put("taskId", taskId);
-            result.put("message", "任务已创建，正在执行中...");
-
+            result.put("engine", "model-DAG(node gRPC FL)");
+            result.put("modelId", newModelId);
+            result.put("modelType", modelType);
+            result.put("resourceTransmitted", transmittedResources);
+            result.put("message", runRes.getCode() == 0 ? "真实联邦学习已提交到节点" : ("提交失败: " + runRes.getMsg()));
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("创建联邦学习任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建任务失败: " + e.getMessage());
         }
+    }
+
+    /** 把 FederatedLearningReq 的超参透传进 model 组件 componentValues(平台读 valueMap: learningRate/alpha/epoch/maxIter/batchSize) */
+    /** 仅映射纵向模型(federatedType=0, 共用 dataAlign PSI 的 DAG): 5=纵向LR 2=纵向XGB 9=纵向线性回归 */
+    private static int mapModelType(Integer algorithmType) {
+        if (algorithmType == null) return 5;
+        switch (algorithmType) {
+            case 2: return 2;   // V_XGBOOST
+            case 9: return 9;   // VFL_LINEAR_REGRESSION
+            case 5: default: return 5;   // HETERO_LR
+        }
+    }
+
+    private void setHyperParams(DataComponentReq c, FederatedLearningReq req) {
+        FederatedLearningReq.TrainingParams tp = req.getTrainingParams();
+        if (tp == null) return;
+        if (tp.getLearningRate() != null) setCompVal(c, "learningRate", String.valueOf(tp.getLearningRate()));
+        if (tp.getRegularization() != null) setCompVal(c, "alpha", String.valueOf(tp.getRegularization()));
+        if (tp.getEpochs() != null) { setCompVal(c, "epoch", String.valueOf(tp.getEpochs())); setCompVal(c, "maxIter", String.valueOf(tp.getEpochs())); }
+        if (tp.getBatchSize() != null) setCompVal(c, "batchSize", String.valueOf(tp.getBatchSize()));
+        if (tp.getNumTrees() != null) setCompVal(c, "numTree", String.valueOf(tp.getNumTrees()));   // XGB
+        if (tp.getMaxDepth() != null) setCompVal(c, "maxDepth", String.valueOf(tp.getMaxDepth()));   // XGB
+    }
+
+    private static void setCompVal(DataComponentReq c, String key, String val) {
+        for (DataComponentValue v : c.getComponentValues()) {
+            if (key.equals(v.getKey())) { v.setVal(val); return; }
+        }
+        DataComponentValue nv = new DataComponentValue();
+        nv.setKey(key); nv.setVal(val);
+        c.getComponentValues().add(nv);
     }
 
     /**

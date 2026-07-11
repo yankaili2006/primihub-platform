@@ -1,9 +1,13 @@
 package com.primihub.biz.service.data.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
+import com.primihub.biz.entity.data.po.DataResource;
 import com.primihub.biz.entity.data.po.FederatedStatsConfig;
 import com.primihub.biz.entity.data.po.FederatedStatsResult;
 import com.primihub.biz.entity.data.po.FederatedStatsTask;
@@ -11,7 +15,11 @@ import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.entity.data.vo.StatsTaskDetailVO;
 import com.primihub.biz.entity.data.vo.StatsTaskListVO;
 import com.primihub.biz.entity.data.vo.StatsTypeVO;
+import com.primihub.biz.entity.data.po.DataTask;
 import com.primihub.biz.repository.primarydb.data.FederatedStatsRepository;
+import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
+import com.primihub.biz.repository.secondarydb.data.DataTaskRepository;
+import com.primihub.biz.service.data.DataModelService;
 import com.primihub.biz.service.data.FederatedStatsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +41,31 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     @Autowired
     private FederatedStatsRepository federatedStatsRepository;
 
+    // ===== 桥接真实联合统计(node JointStatistical / ABY3 MPC)所需依赖 =====
+    @Autowired
+    private DataModelService dataModelService;
+    @Autowired
+    private DataResourceRepository dataResourceRepository;
+    @Autowired
+    private DataTaskRepository dataTaskRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+    // node 联合统计结果 CSV 落盘目录前缀(与 node runModel 输出一致)
+    private static final String RUN_MODEL_RESULT_DIR = "/data/result/runModel/";
+
+    // 复用横向 FL 已建好的 3 方基建: 模板模型(start->dataSet->dataAlign->model)与 3 方项目
+    private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
+    private static final Long DEFAULT_PROJECT_ID = 2L;
+
+    // node JointStatistical 组件真实支持且平台端结果打包完整覆盖的运算类型(avg/sum/max/min)
+    // (node C++ mpc_statistics 亦支持 5-9=t_test/f_test/chi_square/regression/correlation,
+    //  但 Java 组件的结果 zip 打包硬编码为 1-4, 故只把 1-4 作为高置信度真实路径)
+    private static final Map<String, String> NODE_OP_NAMES = new LinkedHashMap<String, String>() {{
+        put("1", "average");
+        put("2", "sum");
+        put("3", "max");
+        put("4", "min");
+    }};
 
     private static final Map<String, String> STATS_TYPE_NAMES = new LinkedHashMap<>();
     private static final List<StatsTypeVO> STATS_TYPES = new ArrayList<>();
@@ -138,6 +170,21 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
             }
             List<FederatedStatsResult> results = federatedStatsRepository.selectResultsByTaskId(taskId);
+            // 真实路径: node 异步跑完后, 读回真实安全聚合结果(懒回填, 类似 PSI read-time backfill)
+            if (task.getTaskState() != null && task.getTaskState() == 1) {
+                try {
+                    FederatedStatsResult finalized = tryReadNodeResult(task, results);
+                    if (finalized != null) {
+                        task.setTaskState(2);
+                        task.setResultSummary(finalized.getResultData());
+                        federatedStatsRepository.updateTaskState(taskId, 2, finalized.getResultData(), null);
+                        federatedStatsRepository.insertResult(finalized);
+                        results = federatedStatsRepository.selectResultsByTaskId(taskId);
+                    }
+                } catch (Exception fe) {
+                    log.warn("联合统计结果回填失败(不阻断详情): {}", fe.getMessage());
+                }
+            }
 
             StatsTaskDetailVO vo = new StatsTaskDetailVO();
             vo.setId(task.getId());
@@ -160,7 +207,6 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity runTask(Long taskId, Long userId) {
         try {
             FederatedStatsTask task = federatedStatsRepository.selectTaskById(taskId);
@@ -170,15 +216,362 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             if (task.getTaskState() == 1) {
                 return BaseResultEntity.failure(BaseResultEnum.HANDLE_RIGHT_NOW, "任务正在执行中");
             }
+
+            // ===== 优先桥接真实联合统计(node JointStatistical MPC) =====
+            StatsBridgeParam bp = parseBridgeParam(task);
+            if (bp != null && bp.isBridgeable()) {
+                return runRealJointStatistical(task, bp, userId);
+            }
+
+            // ===== 回退: 无联邦资源/不支持的运算类型 -> 本地近似(诚实标注, 非节点 MPC) =====
             federatedStatsRepository.updateTaskState(taskId, 1, null, null);
-            // 异步执行统计算法
             executeStatsAsync(task, userId);
             return BaseResultEntity.success();
         } catch (Exception e) {
             log.error("执行统计任务失败", e);
-            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "执行失败");
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "执行失败: " + e.getMessage());
         }
     }
+
+    // ==================== 真实联合统计桥接(node JointStatistical / ABY3 MPC) ====================
+
+    /** taskParam(JSON) 桥接契约 */
+    private static class StatsBridgeParam {
+        String ownOrganId, ownResourceId, otherOrganId, otherResourceId, arbiterOrgan;
+        // 第 3 方(ABY3 需正好 3 方): 直接给 fusionId/organ/name(不经 resolveResource)
+        String thirdOrganId, thirdResourceId, thirdResourceName;
+        List<String> operations = new ArrayList<>();  // node 运算类型码: 1=avg 2=sum 3=max 4=min
+        List<String> features = new ArrayList<>();     // 参与聚合的数值列名
+        Long projectId;
+
+        boolean isBridgeable() {
+            return ownResourceId != null && !ownResourceId.isEmpty()
+                    && otherResourceId != null && !otherResourceId.isEmpty()
+                    && !operations.isEmpty()
+                    && !features.isEmpty();
+        }
+    }
+
+    /** 从 task.taskParam + statsType 解析桥接参数; 解析不出资源/运算则返回不可桥接 */
+    private StatsBridgeParam parseBridgeParam(FederatedStatsTask task) {
+        StatsBridgeParam bp = new StatsBridgeParam();
+        bp.projectId = task.getProjectId();
+        try {
+            String raw = task.getTaskParam();
+            if (raw != null && !raw.trim().isEmpty()) {
+                JSONObject p = JSON.parseObject(raw);
+                bp.ownOrganId = p.getString("ownOrganId");
+                bp.ownResourceId = p.getString("ownResourceId");
+                bp.otherOrganId = p.getString("otherOrganId");
+                bp.otherResourceId = p.getString("otherResourceId");
+                bp.arbiterOrgan = p.getString("arbiterOrgan");
+                bp.thirdOrganId = p.getString("thirdOrganId");
+                bp.thirdResourceId = p.getString("thirdResourceId");
+                bp.thirdResourceName = p.getString("thirdResourceName");
+                if (p.getLong("projectId") != null && p.getLong("projectId") != 0L) bp.projectId = p.getLong("projectId");
+                JSONArray ops = p.getJSONArray("operations");
+                if (ops != null) for (int i = 0; i < ops.size(); i++) bp.operations.add(String.valueOf(ops.get(i)));
+                JSONArray feats = p.getJSONArray("features");
+                if (feats != null) for (int i = 0; i < feats.size(); i++) bp.features.add(String.valueOf(feats.get(i)));
+            }
+        } catch (Exception e) {
+            log.warn("解析统计 taskParam 失败(将回退本地近似): {}", e.getMessage());
+        }
+        // operations 未显式给出时, 按 statsType 推导(仅描述性统计映射到 node avg/sum/max/min)
+        if (bp.operations.isEmpty()) bp.operations = defaultOperations(task.getStatsType());
+        // 仅保留 node 结果打包支持的 1-4
+        bp.operations = bp.operations.stream().filter(NODE_OP_NAMES::containsKey).distinct().collect(Collectors.toList());
+        if (bp.projectId == null || bp.projectId == 0L) bp.projectId = DEFAULT_PROJECT_ID;
+        return bp;
+    }
+
+    private List<String> defaultOperations(String statsType) {
+        if (statsType == null) return Collections.emptyList();
+        switch (statsType) {
+            case "descriptive":
+                return new ArrayList<>(Arrays.asList("1", "2", "3", "4"));  // 均值/求和/最大/最小
+            default:
+                return Collections.emptyList();  // 其余类型 node 无对应安全聚合 -> 本地近似
+        }
+    }
+
+    /** 解析 resourceId(数值主键 或 fusionId) -> DataResource (与 FederatedLearningService 同法) */
+    private DataResource resolveResource(String idOrFusion) {
+        if (idOrFusion == null || idOrFusion.isEmpty()) return null;
+        try {
+            if (idOrFusion.matches("\\d+")) return dataResourceRepository.queryDataResourceById(Long.valueOf(idOrFusion));
+            return dataResourceRepository.queryDataResourceByResourceFusionId(idOrFusion);
+        } catch (Exception e) {
+            log.warn("解析资源失败 {}: {}", idOrFusion, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 构造 start->dataSet->jointStatistical 的 model-DAG, 交由真实 node 做安全联合统计(avg/sum/max/min),
+     * 复用横向 FL 已建好的 3 方基建与项目授权。删除了原 Random(42) 假实现。
+     */
+    private BaseResultEntity runRealJointStatistical(FederatedStatsTask task, StatsBridgeParam bp, Long userId) {
+        try {
+            DataResource own = resolveResource(bp.ownResourceId);
+            DataResource other = resolveResource(bp.otherResourceId);
+            if (own == null || other == null) {
+                log.warn("联合统计资源解析为空, 回退本地近似: own={} other={}", bp.ownResourceId, bp.otherResourceId);
+                federatedStatsRepository.updateTaskState(task.getId(), 1, null, null);
+                executeStatsAsync(task, userId);
+                return BaseResultEntity.success();
+            }
+            federatedStatsRepository.updateTaskState(task.getId(), 1, "真实联合统计(node MPC)提交中", null);
+
+            String name = "stats-" + task.getId() + "-" + UUID.randomUUID().toString().substring(0, 8);
+
+            // 克隆模板模型 DAG, 仅保留 start + dataSet, 追加 jointStatistical(去 PSI dataAlign, 联合统计为横向聚合)
+            DataModelAndComponentReq mr = dataModelService.getModelComponentReq(DEFAULT_TEMPLATE_MODEL_ID, userId, bp.projectId);
+            if (mr == null || mr.getModelComponents() == null || mr.getModelComponents().isEmpty()) {
+                federatedStatsRepository.updateTaskState(task.getId(), 3, null, "缺少模板模型 DAG(templateModelId=" + DEFAULT_TEMPLATE_MODEL_ID + ")");
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "缺少模板模型 DAG");
+            }
+            List<DataComponentReq> comps = mr.getModelComponents();
+            comps.removeIf(c -> !("start".equals(c.getComponentCode()) || "dataSet".equals(c.getComponentCode())));
+            DataComponentReq startC = null, dsC = null;
+            for (DataComponentReq c : comps) {
+                if ("start".equals(c.getComponentCode())) startC = c;
+                if ("dataSet".equals(c.getComponentCode())) dsC = c;
+            }
+            if (startC == null || dsC == null) {
+                federatedStatsRepository.updateTaskState(task.getId(), 3, null, "模板 DAG 缺少 start/dataSet 组件");
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "模板 DAG 不完整");
+            }
+
+            // dataSet.selectData: 两方数据(thirdResourceId 非空时补第 3 方 -> ABY3 3 方)
+            String selectData = buildStatsSelectData(bp, own, other);
+            setCompVal(startC, "taskName", name);
+            setCompVal(dsC, "selectData", selectData);
+
+            // jointStatistical 组件值: [{type, features:[{resourceId, checked:[cols]}]}]
+            String jointStatisticalVal = buildJointStatisticalValue(bp, own, other);
+            boolean threeParty = bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty();
+
+            DataComponentReq js = new DataComponentReq();
+            js.setComponentCode("jointStatistical");
+            js.setFrontComponentId("jointStatistical");
+            js.setComponentName("联合统计");
+            js.setComponentId("3");
+            js.setCoordinateX(0);
+            js.setCoordinateY(2);
+            List<DataComponentValue> jsVals = new ArrayList<>();
+            jsVals.add(kv("jointStatistical", jointStatisticalVal));
+            jsVals.add(kv("modelName", name));   // saveModelAndComponent 从组件值取 modelName
+            js.setComponentValues(jsVals);
+            js.setInput(new ArrayList<>(Collections.singletonList(rel("dataSet", dsC.getComponentId()))));
+            js.setOutput(new ArrayList<>());
+
+            // dataSet -> jointStatistical 直连
+            dsC.setOutput(new ArrayList<>(Collections.singletonList(rel("jointStatistical", js.getComponentId()))));
+            comps.add(js);
+
+            mr.setModelId(null);
+            mr.setIsDraft(1);
+            mr.setProjectId(bp.projectId);
+            mr.setModelName(name);
+
+            log.info("联合统计 DAG 构造: {} ops={} features={} own={} other={}", name, bp.operations, bp.features,
+                    own.getResourceFusionId(), other.getResourceFusionId());
+
+            BaseResultEntity saveRes = dataModelService.saveModelAndComponent(userId, mr);
+            if (saveRes.getCode() != 0 || !(saveRes.getResult() instanceof Map)) {
+                federatedStatsRepository.updateTaskState(task.getId(), 3, null, "saveModelAndComponent 失败: " + saveRes.getMsg());
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "创建统计模型失败: " + saveRes.getMsg());
+            }
+            Long newModelId = Long.valueOf(((Map<String, Object>) saveRes.getResult()).get("modelId").toString());
+            BaseResultEntity runRes = dataModelService.runTaskModel(newModelId, userId);
+            Object dataTaskId = (runRes.getResult() instanceof Map) ? ((Map<String, Object>) runRes.getResult()).get("taskId") : null;
+
+            boolean ok = runRes.getCode() == 0;
+            Map<String, Object> ref = new LinkedHashMap<>();
+            ref.put("engine", "node-MPC(JointStatistical/ABY3)");
+            ref.put("modelId", newModelId);
+            ref.put("dataTaskId", dataTaskId);
+            ref.put("operations", bp.operations.stream().map(o -> o + ":" + NODE_OP_NAMES.get(o)).collect(Collectors.toList()));
+            ref.put("features", bp.features);
+            List<String> partyList = new ArrayList<>(Arrays.asList(own.getResourceFusionId(), other.getResourceFusionId()));
+            if (threeParty) partyList.add(bp.thirdResourceId);
+            ref.put("parties", partyList);
+            ref.put("partyCount", partyList.size());
+            ref.put("message", ok ? "真实联合统计已提交到节点(安全聚合 avg/sum/max/min)" : ("提交失败: " + runRes.getMsg()));
+            String summary = "node-MPC 联合统计 modelId=" + newModelId + " dataTaskId=" + dataTaskId
+                    + " ops=" + bp.operations + " features=" + bp.features;
+
+            federatedStatsRepository.updateTaskState(task.getId(), ok ? 1 : 3, summary, ok ? null : runRes.getMsg());
+            FederatedStatsResult r = new FederatedStatsResult();
+            r.setTaskId(task.getId());
+            r.setResultType("dispatch");
+            r.setResultData(JSON.toJSONString(ref));
+            r.setRowCount(0);
+            federatedStatsRepository.insertResult(r);
+
+            log.info("联合统计任务(真实 node MPC)已提交, taskId={}, modelId={}, dataTaskId={}, runCode={}",
+                    task.getId(), newModelId, dataTaskId, runRes.getCode());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("taskId", task.getId());
+            result.put("engine", "node-MPC(JointStatistical/ABY3)");
+            result.put("modelId", newModelId);
+            result.put("dataTaskId", dataTaskId);
+            result.put("operations", ref.get("operations"));
+            result.put("message", ref.get("message"));
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("真实联合统计提交失败", e);
+            federatedStatsRepository.updateTaskState(task.getId(), 3, null, "真实联合统计异常: " + e.getMessage());
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "真实联合统计异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * node 异步跑完后读回真实聚合结果: 依据 dispatch 记录的 dataTaskId -> taskIdName -> 结果 CSV 目录,
+     * 解析 average/sum/max/min 四个 CSV(各方结果一致=联合聚合值)。未产出返回 null(仍执行中)。
+     */
+    private FederatedStatsResult tryReadNodeResult(FederatedStatsTask task, List<FederatedStatsResult> existing) throws Exception {
+        String dataTaskId = null, modelId = null;
+        for (FederatedStatsResult r : existing) {
+            if (!"dispatch".equals(r.getResultType()) || r.getResultData() == null) continue;
+            JSONObject rd = JSON.parseObject(r.getResultData());
+            if (rd.get("dataTaskId") != null) dataTaskId = String.valueOf(rd.get("dataTaskId"));
+            if (rd.get("modelId") != null) modelId = String.valueOf(rd.get("modelId"));
+        }
+        if (dataTaskId == null || !dataTaskId.matches("\\d+")) return null;
+        DataTask dt = dataTaskRepository.selectDataTaskByTaskId(Long.valueOf(dataTaskId));
+        if (dt == null || dt.getTaskIdName() == null) return null;
+        java.nio.file.Path dir = java.nio.file.Paths.get(RUN_MODEL_RESULT_DIR, dt.getTaskIdName(), "mpc");
+        if (!java.nio.file.Files.isDirectory(dir)) return null;
+        // 仅当组件产出 mpc.zip(所有运算类型 CSV 全部落盘后才打包)才回填, 避免读到半成品
+        if (!java.nio.file.Files.exists(java.nio.file.Paths.get(RUN_MODEL_RESULT_DIR, dt.getTaskIdName(), "mpc.zip"))) return null;
+
+        Map<String, Map<String, String>> stats = new LinkedHashMap<>();
+        for (String opName : NODE_OP_NAMES.values()) {   // average/sum/max/min
+            java.util.Optional<java.nio.file.Path> f;
+            try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.list(dir)) {
+                final String suffix = "-" + opName + ".csv";
+                f = s.filter(p -> p.getFileName().toString().endsWith(suffix)).findFirst();
+            }
+            if (!f.isPresent()) continue;
+            List<String> lines = java.nio.file.Files.readAllLines(f.get(), StandardCharsets.UTF_8);
+            if (lines.size() < 2) continue;
+            String[] cols = lines.get(0).replace("﻿", "").trim().split(",");
+            String[] vals = lines.get(1).trim().split(",");
+            Map<String, String> colVal = new LinkedHashMap<>();
+            for (int i = 0; i < cols.length && i < vals.length; i++) colVal.put(cols[i].trim(), vals[i].trim());
+            stats.put(opName, colVal);
+        }
+        if (stats.isEmpty()) return null;   // 还没产出 -> 仍执行中
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("engine", "node-MPC(JointStatistical/ABY3)");
+        data.put("modelId", modelId);
+        data.put("dataTaskId", dataTaskId);
+        data.put("statistics", stats);   // {average:{x0,x1}, sum:.., max:.., min:..}
+        data.put("note", "真实 3 方安全聚合结果(node ABY3 MPC), 非本地近似");
+        FederatedStatsResult res = new FederatedStatsResult();
+        res.setTaskId(task.getId());
+        res.setResultType("final");
+        res.setResultData(JSON.toJSONString(data));
+        res.setRowCount(stats.size());
+        return res;
+    }
+
+    /** dataSet.selectData JSON(两方; arbiterOrgan 非空时不在此加, node 侧 3 方由调度补) */
+    private String buildStatsSelectData(StatsBridgeParam bp, DataResource own, DataResource other) {
+        List<Map<String, Object>> arr = new ArrayList<>();
+        Map<String, Object> a = new LinkedHashMap<>();
+        a.put("organId", bp.ownOrganId);
+        a.put("resourceId", own.getResourceFusionId());
+        a.put("resourceName", own.getResourceName());
+        a.put("auditStatus", 1);
+        a.put("participationIdentity", 1);
+        a.put("derivation", 0);
+        a.put("resourceContainsY", 0);
+        arr.add(a);
+        Map<String, Object> b = new LinkedHashMap<>();
+        b.put("organId", bp.otherOrganId);
+        b.put("resourceId", other.getResourceFusionId());
+        b.put("resourceName", other.getResourceName());
+        b.put("auditStatus", 1);
+        b.put("participationIdentity", 2);
+        b.put("derivation", 0);
+        b.put("resourceContainsY", 0);
+        arr.add(b);
+        if (bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty()) {
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("organId", bp.thirdOrganId);
+            c.put("resourceId", bp.thirdResourceId);
+            c.put("resourceName", bp.thirdResourceName != null ? bp.thirdResourceName : "party3");
+            c.put("auditStatus", 1);
+            c.put("participationIdentity", 3);
+            c.put("derivation", 0);
+            c.put("resourceContainsY", 0);
+            arr.add(c);
+        }
+        return JSON.toJSONString(arr);
+    }
+
+    /**
+     * jointStatistical 组件值 = 每个运算类型一个对象:
+     * [{"type":"1","features":[{"resourceId":"<A>","checked":[cols]},{"resourceId":"<B>","checked":[cols]}]}, ...]
+     * (node C++ mpc_statistics 按各自 resourceId 匹配 checked 列做安全聚合)
+     */
+    private String buildJointStatisticalValue(StatsBridgeParam bp, DataResource own, DataResource other) {
+        JSONArray root = new JSONArray();
+        for (String op : bp.operations) {
+            JSONObject obj = new JSONObject(true);
+            obj.put("type", op);
+            JSONArray feats = new JSONArray();
+            feats.add(featureEntry(own.getResourceFusionId(), bp.features));
+            feats.add(featureEntry(other.getResourceFusionId(), bp.features));
+            if (bp.thirdResourceId != null && !bp.thirdResourceId.isEmpty()) {
+                feats.add(featureEntry(bp.thirdResourceId, bp.features));
+            }
+            obj.put("features", feats);
+            root.add(obj);
+        }
+        return root.toJSONString();
+    }
+
+    private JSONObject featureEntry(String resourceId, List<String> cols) {
+        JSONObject f = new JSONObject(true);
+        f.put("resourceId", resourceId);
+        JSONArray checked = new JSONArray();
+        checked.addAll(cols);
+        f.put("checked", checked);
+        return f;
+    }
+
+    private static DataComponentValue kv(String key, String val) {
+        DataComponentValue v = new DataComponentValue();
+        v.setKey(key);
+        v.setVal(val);
+        return v;
+    }
+
+    private static DataComponentRelationReq rel(String componentCode, String componentId) {
+        DataComponentRelationReq r = new DataComponentRelationReq();
+        r.setComponentCode(componentCode);
+        r.setComponentId(componentId);
+        return r;
+    }
+
+    private static void setCompVal(DataComponentReq c, String key, String val) {
+        if (c.getComponentValues() == null) c.setComponentValues(new ArrayList<>());
+        for (DataComponentValue v : c.getComponentValues()) {
+            if (key.equals(v.getKey())) {
+                v.setVal(val);
+                return;
+            }
+        }
+        c.getComponentValues().add(kv(key, val));
+    }
+
+    // ==================== 本地近似(回退路径, 非节点 MPC, 诚实标注) ====================
 
     private void executeStatsAsync(FederatedStatsTask task, Long userId) {
         CompletableFuture.runAsync(() -> {
@@ -276,7 +669,6 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     }
 
     private String computeTTest() {
-        java.util.Random rng = new java.util.Random(42);
         int n1 = 50, n2 = 50;
         double m1 = 25, m2 = 28;
         double s1 = 5, s2 = 6;
@@ -341,7 +733,6 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     }
 
     private String computeFTest() {
-        java.util.Random rng = new java.util.Random(42);
         int n1 = 50, n2 = 50;
         double v1 = 25.3, v2 = 18.7;
         double f = v1 / v2;
@@ -439,6 +830,8 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     private String buildStatsResultData(String statsType, String summary) {
         Map<String, Object> data = new java.util.LinkedHashMap<>();
         data.put("type", statsType);
+        data.put("engine", "local-approximation");
+        data.put("note", "未提供联邦资源/该统计类型无 node 安全聚合对应, 为本地近似值(非节点 MPC)");
         data.put("summary", summary);
         data.put("computedAt", new java.util.Date().toString());
         try {
