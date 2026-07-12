@@ -1,0 +1,690 @@
+{
+ "联邦学习": [
+  "ProjectFederatedLearning",
+  "/project/federatedLearning"
+ ],
+ "联邦建模工作台": [
+  "FederatedLearningIndex",
+  "/federatedLearning/index"
+ ],
+ "联邦建模参数调优": [
+  "FederatedLearningParamTuning",
+  "/federatedLearning/paramTuning"
+ ],
+ "联邦建模训练迭代": [
+  "FederatedLearningTrainingIteration",
+  "/federatedLearning/trainingIteration"
+ ],
+ "联邦建模训练报告": [
+  "FederatedLearningTrainingReport",
+  "/federatedLearning/trainingReport"
+ ],
+ "联邦学习日志记录": [
+  "FederatedLearningLogRecord",
+  "/federatedLearning/logRecord"
+ ],
+ "联邦学习日志导出": [
+  "FederatedLearningLogExport",
+  "/federatedLearning/logExport"
+ ],
+ "单方数据合并模块": [
+  "FederatedLearningSinglePartyDataMerge",
+  "/federatedLearning/dataMerge"
+ ],
+ "联邦分析": [
+  "ProjectFederatedAnalysis",
+  "/project/federatedAnalysis"
+ ],
+ "联邦分析对接主流关系型数据库": [
+  "FederatedAnalysisRelationalDB",
+  "/federatedAnalysis/relationalDB"
+ ],
+ "联邦分析对接主流大数据平台": [
+  "FederatedAnalysisBigData",
+  "/federatedAnalysis/bigData"
+ ],
+ "联邦分析对接主流公有云平台": [
+  "FederatedAnalysisPublicCloud",
+  "/federatedAnalysis/publicCloud"
+ ],
+ "联邦分析日志记录": [
+  "FederatedAnalysisLogRecord",
+  "/federatedAnalysis/logRecord"
+ ],
+ "联邦分析日志导出": [
+  "FederatedAnalysisLogExport",
+  "/federatedAnalysis/logExport"
+ ],
+ "联邦统计": [
+  "ProjectFederatedStatistics",
+  "/project/federatedStatistics"
+ ],
+ "联邦统计结果存储": [
+  "FederatedStatisticsResultStorage",
+  "/federatedStatistics/resultStorage"
+ ],
+ "联邦统计结果导出": [
+  "FederatedStatisticsResultExport",
+  "/federatedStatistics/resultExport"
+ ],
+ "联邦统计日志记录": [
+  "FederatedStatisticsLogRecord",
+  "/federatedStatistics/logRecord"
+ ],
+ "联邦统计日志导出": [
+  "FederatedStatisticsLogExport",
+  "/federatedStatistics/logExport"
+ ],
+ "警务数据融合": [
+  "PoliceDataFusion",
+  ""
+ ],
+ "警务数据交集数据融合": [
+  "PoliceDataIntersection",
+  "/policeDataFusion/intersection"
+ ],
+ "保险机构接口对接": [
+  "InsuranceApiConnect",
+  "/policeDataFusion/insuranceApi"
+ ],
+ "保险机构同态密钥创建": [
+  "InsuranceHomomorphicKey",
+  "/policeDataFusion/homomorphicKey"
+ ],
+ "保险机构模型同态加密": [
+  "InsuranceModelEncrypt",
+  "/policeDataFusion/modelEncrypt"
+ ],
+ "加密模型联合运算": [
+  "EncryptedModelCompute",
+  "/policeDataFusion/encryptedCompute"
+ ],
+ "保险机构数据解密": [
+  "InsuranceDataDecrypt",
+  "/policeDataFusion/dataDecrypt"
+ ],
+ "警务数据对接": [
+  "ElectronicCertPoliceConnect",
+  "/electronicCert/policeConnect"
+ ],
+ "模型密文数据安全交换（批量）": [
+  "ModelCipherBatchExchange",
+  "/policeDataFusion/batchExchange"
+ ],
+ "流程执行日志记录": [
+  "ElectronicCertLogRecord",
+  "/electronicCert/logRecord"
+ ],
+ "流程执行日志导出": [
+  "ElectronicCertLogExport",
+  "/electronicCert/logExport"
+ ],
+ "电子证件比对": [
+  "ElectronicCertCompare",
+  ""
+ ],
+ "电子证件特征转换": [
+  "ElectronicCertFeatureConvert",
+  "/electronicCert/featureConvert"
+ ],
+ "现场证件特征转换": [
+  "OnSiteCertFeatureConvert",
+  "/electronicCert/onSiteConvert"
+ ],
+ "特征数据隐私比对": [
+  "FeaturePrivacyCompare",
+  "/electronicCert/privacyCompare"
+ ],
+ "使用机构数据接入": [
+  "OrgDataImport",
+  "/electronicCert/orgDataImport"
+ ],
+ "使用机构数据导出": [
+  "OrgDataExport",
+  "/electronicCert/orgDataExport"
+ ],
+ "特征密文数据安全交换（批量）": [
+  "FeatureCipherBatchExchange",
+  "/electronicCert/batchExchange"
+ ],
+ "特征密文数据安全交换（实时）": [
+  "FeatureCipherRealTimeExchange",
+  "/electronicCert/realTimeExchange"
+ ],
+ "联邦分析首页": [
+  "FederatedAnalysisIndex",
+  "/federatedAnalysis/index"
+ ],
+ "联邦统计首页": [
+  "FederatedStatisticsIndex",
+  "/federatedStatistics/index"
+ ],
+ "节点建立合作": [
+  "NodeCooperationEstablish",
+  ""
+ ],
+ "节点取消合作": [
+  "NodeCooperationCancel",
+  ""
+ ],
+ "节点列表": [
+  "NodeListEnhanced",
+  ""
+ ],
+ "节点属性编辑": [
+  "NodePropertyEdit",
+  ""
+ ],
+ "节点属性展示": [
+  "NodePropertyDisplay",
+  ""
+ ],
+ "接入方管理": [
+  "AccessManagement",
+  ""
+ ],
+ "合作方管理": [
+  "CooperationManagement",
+  ""
+ ],
+ "节点审批工作流": [
+  "NodeApprovalWorkflow",
+  ""
+ ],
+ "节点数据交换": [
+  "NodeDataExchange",
+  ""
+ ],
+ "发起合作": [
+  "NodeCooperationEstablishAdd",
+  "/node/cooperation/establish"
+ ],
+ "搜索节点": [
+  "CooperationSearch",
+  "/node/cooperation/search"
+ ],
+ "批量发起": [
+  "NodeCooperationEstablishBatch",
+  "/node/cooperation/batchEstablish"
+ ],
+ "取消合作": [
+  "CooperationCancel",
+  "/node/cooperation/cancel"
+ ],
+ "查看详情": [
+  "ExchangeView",
+  "/node/exchange/getDataExchangeLogById"
+ ],
+ "导出记录": [
+  "NodeCooperationCancelExport",
+  "/node/cooperation/export"
+ ],
+ "导出节点": [
+  "NodeListEnhancedExport",
+  "/node/list/export"
+ ],
+ "批量启用": [
+  "NodeListEnhancedBatchEnable",
+  "/node/list/batchEnable"
+ ],
+ "批量删除": [
+  "CooperationBatchDelete",
+  "/node/cooperation/batchDelete"
+ ],
+ "保存属性": [
+  "NodePropertyEditSave",
+  "/node/property/update"
+ ],
+ "上传证书": [
+  "NodePropertyEditUpload",
+  "/node/property/uploadCert"
+ ],
+ "查看历史": [
+  "NodePropertyEditHistory",
+  "/node/property/history"
+ ],
+ "下载PDF": [
+  "NodePropertyDisplayDownload",
+  "/node/property/downloadPdf"
+ ],
+ "刷新状态": [
+  "NodePropertyDisplayRefresh",
+  "/node/property/refreshStatus"
+ ],
+ "批准接入": [
+  "AccessManagementApprove",
+  "/node/access/approve"
+ ],
+ "拒绝接入": [
+  "AccessManagementReject",
+  "/node/access/reject"
+ ],
+ "编辑权限": [
+  "NodeAccessManagementEdit",
+  "/node/access/updatePermission"
+ ],
+ "新增合作方": [
+  "NodeCooperationManagementAdd",
+  "/node/cooperation/add"
+ ],
+ "编辑合作方": [
+  "NodeCooperationManagementEdit",
+  "/node/cooperation/update"
+ ],
+ "终止合作": [
+  "CooperationTerminate",
+  "/node/cooperation/terminate"
+ ],
+ "审批通过": [
+  "ApprovalApprove",
+  "/node/approval/approve"
+ ],
+ "审批拒绝": [
+  "ApprovalReject",
+  "/node/approval/reject"
+ ],
+ "配置工作流": [
+  "NodeApprovalWorkflowConfig",
+  "/node/approval/config"
+ ],
+ "触发同步": [
+  "ExchangeTrigger",
+  "/node/exchange/trigger"
+ ],
+ "查看日志": [
+  "NodeDataExchangeLog",
+  "/node/exchange/log"
+ ],
+ "导出日志": [
+  "WhitelistLogExport",
+  "/whitelist/exportWhitelistAccessLog"
+ ],
+ "审批工作流": [
+  "ApprovalWorkflow",
+  ""
+ ],
+ "数据交换日志": [
+  "DataExchangeLog",
+  ""
+ ],
+ "新增接入方": [
+  "AccessManagementAdd",
+  "/node/access/addAccessParty"
+ ],
+ "编辑接入方": [
+  "AccessManagementEdit",
+  "/node/access/updateAccessParty"
+ ],
+ "删除接入方": [
+  "AccessManagementDelete",
+  "/node/access/deleteAccessParty"
+ ],
+ "批量批准": [
+  "AccessManagementBatchApprove",
+  "/node/access/batchApprove"
+ ],
+ "更新状态": [
+  "CooperationUpdateStatus",
+  "/node/cooperation/updateCooperationStatus"
+ ],
+ "建立合作": [
+  "CooperationEstablish",
+  "/node/cooperation/establish"
+ ],
+ "编辑合作": [
+  "CooperationEdit",
+  "/node/cooperation/update"
+ ],
+ "续约合作": [
+  "CooperationRenew",
+  "/node/cooperation/renew"
+ ],
+ "创建工作流": [
+  "ApprovalCreate",
+  "/node/approval/createWorkflow"
+ ],
+ "取消工作流": [
+  "ApprovalCancel",
+  "/node/approval/cancel"
+ ],
+ "配置审批": [
+  "ApprovalConfig",
+  "/node/approval/updateConfig"
+ ],
+ "更新配置状态": [
+  "ApprovalConfigStatus",
+  "/node/approval/updateConfigEnabled"
+ ],
+ "删除日志": [
+  "ExchangeDelete",
+  "/node/exchange/batchDeleteDataExchangeLog"
+ ],
+ "查看统计": [
+  "ExchangeStatistics",
+  "/node/exchange/getExchangeStatistics"
+ ],
+ "查看失败": [
+  "ExchangeFailed",
+  "/node/exchange/getFailedExchangeLogs"
+ ],
+ "最近记录": [
+  "ExchangeRecent",
+  "/node/exchange/getRecentExchangeLogs"
+ ],
+ "添加白名单": [
+  "WhitelistAdd",
+  "/whitelist/addWhitelist"
+ ],
+ "编辑白名单": [
+  "WhitelistEdit",
+  "/whitelist/updateWhitelist"
+ ],
+ "删除白名单": [
+  "WhitelistDelete",
+  "/whitelist/deleteWhitelist"
+ ],
+ "添加配置": [
+  "DataRequirementConfigAdd",
+  "/dataRequirement/addConfig"
+ ],
+ "编辑配置": [
+  "DataRequirementConfigEdit",
+  "/dataRequirement/updateConfig"
+ ],
+ "删除配置": [
+  "DataRequirementConfigDelete",
+  "/dataRequirement/deleteConfig"
+ ],
+ "清理日志": [
+  "WhitelistLogClean",
+  "/whitelist/cleanWhitelistAccessLog"
+ ],
+ "共享数据集列表": [
+  "SharedDatasetList",
+  "/sharedDataset/findSharedDatasetPage"
+ ],
+ "新增共享数据集": [
+  "SharedDatasetAdd",
+  "/sharedDataset/addSharedDataset"
+ ],
+ "编辑共享数据集": [
+  "SharedDatasetEdit",
+  "/sharedDataset/updateSharedDataset"
+ ],
+ "删除共享数据集": [
+  "SharedDatasetDelete",
+  "/sharedDataset/deleteSharedDataset"
+ ],
+ "共享数据集详情": [
+  "SharedDatasetDetail",
+  "/sharedDataset/getSharedDatasetById"
+ ],
+ "更新共享数据集状态": [
+  "SharedDatasetStatus",
+  "/sharedDataset/updateSharedDatasetStatus"
+ ],
+ "获取可共享资源": [
+  "SharedDatasetResources",
+  "/sharedDataset/getShareableResources"
+ ],
+ "数据需求列表": [
+  "DataRequirementList",
+  "/dataRequirement/findDataRequirementPage"
+ ],
+ "新增数据需求": [
+  "DataRequirementAdd",
+  "/dataRequirement/addDataRequirement"
+ ],
+ "编辑数据需求": [
+  "DataRequirementEdit",
+  "/dataRequirement/updateDataRequirement"
+ ],
+ "删除数据需求": [
+  "DataRequirementDelete",
+  "/dataRequirement/deleteDataRequirement"
+ ],
+ "数据需求详情": [
+  "DataRequirementDetail",
+  "/dataRequirement/getDataRequirementById"
+ ],
+ "数据需求配置": [
+  "DataRequirementConfig",
+  "/dataRequirement/findConfigPage"
+ ],
+ "匹配数据需求所需数据": [
+  "DataRequirementMatch",
+  "/dataRequirement/matchDataRequirements"
+ ],
+ "查询匹配结果": [
+  "DataRequirementMatchQuery",
+  "/dataRequirement/findMatchedResources"
+ ],
+ "确认匹配": [
+  "DataRequirementMatchConfirm",
+  "/dataRequirement/confirmMatch"
+ ],
+ "拒绝匹配": [
+  "DataRequirementMatchReject",
+  "/dataRequirement/rejectMatch"
+ ],
+ "存证查询": [
+  "EvidenceQuery",
+  "/evidence/findEvidencePage"
+ ],
+ "创建存证": [
+  "EvidenceCreate",
+  "/evidence/createEvidence"
+ ],
+ "验证存证": [
+  "EvidenceVerify",
+  "/evidence/verifyEvidence"
+ ],
+ "时间戳管理": [
+  "EvidenceTimestamp",
+  "/evidence/findTimestampPage"
+ ],
+ "存证配置": [
+  "EvidenceConfig",
+  "/evidence/getEvidenceConfig"
+ ],
+ "存证导出": [
+  "EvidenceExport",
+  "/evidence/exportEvidence"
+ ],
+ "API密钥管理": [
+  "EvidenceApiKey",
+  "/evidence/getApiKey"
+ ],
+ "监控查看": [
+  "MonitorView",
+  "/monitor/getSystemMonitor"
+ ],
+ "告警配置": [
+  "MonitorAlertConfig",
+  "/monitor/getAlertConfig"
+ ],
+ "告警历史": [
+  "MonitorAlertHistory",
+  "/monitor/getAlertHistory"
+ ],
+ "接口列表": [
+  "ApiManageList",
+  "/apiManage/findApiPage"
+ ],
+ "新增接口": [
+  "ApiManageAdd",
+  "/apiManage/addApi"
+ ],
+ "编辑接口": [
+  "ApiManageEdit",
+  "/apiManage/updateApi"
+ ],
+ "删除接口": [
+  "ApiManageDelete",
+  "/apiManage/deleteApi"
+ ],
+ "接口授权": [
+  "ApiManageAuth",
+  "/apiManage/findApiAuthPage"
+ ],
+ "接口日志": [
+  "ApiManageLog",
+  "/apiManage/findApiLogPage"
+ ],
+ "创建联邦查询": [
+  "FederatedQueryCreate",
+  "/federatedQuery/create"
+ ],
+ "查询任务列表": [
+  "FederatedQueryList",
+  "/federatedQuery/list"
+ ],
+ "执行查询": [
+  "FederatedQueryRun",
+  "/federatedQuery/run"
+ ],
+ "查看结果": [
+  "FederatedQueryResult",
+  "/federatedQuery/result"
+ ],
+ "查询日志": [
+  "FederatedQueryLog",
+  "/federatedQuery/logs"
+ ],
+ "查询工具": [
+  "FederatedQueryTools",
+  "/federatedQuery/tools/save"
+ ],
+ "创建统计任务": [
+  "FederatedStatsCreate",
+  "/federatedStatistics/task/create"
+ ],
+ "统计任务列表": [
+  "FederatedStatsList",
+  "/federatedStatistics/task/list"
+ ],
+ "执行统计": [
+  "FederatedStatsRun",
+  "/federatedStatistics/task/run"
+ ],
+ "统计结果": [
+  "FederatedStatsResult",
+  "/federatedStatistics/result/list"
+ ],
+ "存储配置": [
+  "FederatedStatsStorage",
+  "/federatedStatistics/storage/list"
+ ],
+ "统计日志": [
+  "FederatedStatsLog",
+  "/federatedStatistics/log/list"
+ ],
+ "创建分析任务": [
+  "FederatedAnalysisCreate",
+  "/federatedAnalysis/task/create"
+ ],
+ "分析任务列表": [
+  "FederatedAnalysisList",
+  "/federatedAnalysis/task/list"
+ ],
+ "SQL安全校验": [
+  "FederatedAnalysisSql",
+  "/federatedAnalysis/sql/validate"
+ ],
+ "数据源管理": [
+  "FederatedAnalysisDatasource",
+  "/federatedAnalysis/datasource/list"
+ ],
+ "分析日志": [
+  "FederatedAnalysisLog",
+  "/federatedAnalysis/log/list"
+ ],
+ "警务融合任务": [
+  "PoliceFusionTask",
+  "/policeFusion/task/list"
+ ],
+ "警务API配置": [
+  "PoliceFusionApi",
+  "/policeFusion/api/list"
+ ],
+ "警务密钥管理": [
+  "PoliceFusionKey",
+  "/policeFusion/key/list"
+ ],
+ "警务加密服务": [
+  "PoliceFusionEncrypt",
+  "/policeFusion/key/encrypt"
+ ],
+ "电子证件任务": [
+  "ElectronicCertTask",
+  "/electronicCert/task/list"
+ ],
+ "特征转换": [
+  "ElectronicCertFeature",
+  "/electronicCert/feature/convert"
+ ],
+ "隐私比对": [
+  "ElectronicCertCompare",
+  "/electronicCert/compare"
+ ],
+ "电子证件API": [
+  "ElectronicCertApi",
+  "/electronicCert/api/list"
+ ],
+ "电子证件密钥": [
+  "ElectronicCertKey",
+  "/electronicCert/key/list"
+ ],
+ "网络配置": [
+  "SystemConfigNetwork",
+  "/systemConfig/getNetworkConfig"
+ ],
+ "时间配置": [
+  "SystemConfigTime",
+  "/systemConfig/getTimeConfig"
+ ],
+ "登录限制": [
+  "SystemConfigLogin",
+  "/systemConfig/getLoginRestriction"
+ ],
+ "个性化设置": [
+  "SystemConfigPersonal",
+  "/systemConfig/getPersonalizationConfig"
+ ],
+ "FTP设置": [
+  "SystemConfigFtp",
+  "/systemConfig/getFtpConfig"
+ ],
+ "日志管理": [
+  "Log",
+  ""
+ ],
+ "任务日志": [
+  "LogList",
+  "/data/task/getTaskList"
+ ],
+ "操作日志定义": [
+  "OperationLogDefinition",
+  "/log/findOperationLogDefinitionPage"
+ ],
+ "调度日志定义": [
+  "ScheduleLogDefinition",
+  "/log/findScheduleLogDefinitionPage"
+ ],
+ "计算日志定义": [
+  "ComputeLogDefinition",
+  "/log/findComputeLogDefinitionPage"
+ ],
+ "操作日志记录": [
+  "OperationLog",
+  "/log/findOperationLogPage"
+ ],
+ "调度日志记录": [
+  "ScheduleLog",
+  "/log/findScheduleLogPage"
+ ],
+ "计算日志记录": [
+  "ComputeLog",
+  "/log/findComputeLogPage"
+ ]
+}

@@ -121,3 +121,4 @@ export default {
     handleDownload(row) { this.$message.success(`开始下载: ${row.taskId}`) }
   }
 }
+</script>

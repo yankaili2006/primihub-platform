@@ -27,6 +27,8 @@ export default {
     ADPrediction: () => import('./components/ADPrediction.vue'),
     UserPortrait: () => import('./components/UserPortrait.vue'),
     CredentialsPIR: () => import('./components/CredentialsPIR.vue'),
+    PoliceDataFusion: () => import('./components/PoliceDataFusion.vue'),
+    ElectronicCert: () => import('./components/ElectronicCert.vue'),
     TopBanner
   },
   data() {

@@ -207,7 +207,7 @@ async def main():
             
             aj = json.dumps([{"authId": i, "authCode": c, "authName": c, "authType": 2, "isShow": 1}
                              for i, c in enumerate(set(AUTH), 3000)])
-            await page.evaluate(f"const p=JSON.parse(localStorage.getItem('DataItemPer')||'[]');const s=new Set(p.map(x=>x.authCode));for(const e of {aj}){{if(!s.has(e.authCode)){{p.push(e);s.add(e.authCode);}}}}localStorage.setItem('DataItemPer',JSON.stringify(p));")
+            await page.evaluate(f"const p=JSON.parse(localStorage.getItem('PrimiHubPer')||'[]');const s=new Set(p.map(x=>x.authCode));for(const e of {aj}){{if(!s.has(e.authCode)){{p.push(e);s.add(e.authCode);}}}}localStorage.setItem('PrimiHubPer',JSON.stringify(p));")
             
             print(f"\n批 {batch_num}/{total_batches} ({batch_start+1}-{batch_start+len(batch)}):")
             

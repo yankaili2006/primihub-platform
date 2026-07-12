@@ -5,6 +5,12 @@ spring:
   application:
     name: platform
   datasource:
+    initialization-mode: always
+    continue-on-error: true
+    schema:
+      - classpath:schema-complete-h2.sql
+    data:
+      - classpath:data-complete-h2.sql
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:primihub_fresh;MODE=MySQL;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=TRUE
     username: sa
@@ -47,13 +53,6 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-  datasource:
-    initialization-mode: always
-    continue-on-error: true
-    schema:
-      - classpath:schema-complete-h2.sql
-    data:
-      - classpath:data-complete-h2.sql
   h2:
     console:
       enabled: true

@@ -80,7 +80,7 @@ class SystemConfigTest:
         ok = r.get('code') == 0
         self.report.add_test_result("系统配置", "个性化设置查询", "passed" if ok else "failed", time.time()-s)
         s2 = time.time()
-        r2 = self.client.save_personalization_config({"platformName": "DataItem", "logoUrl": "/logo.png", "footer": "DataItem v2.0"})
+        r2 = self.client.save_personalization_config({"platformName": "PrimiHub", "logoUrl": "/logo.png", "footer": "PrimiHub v2.0"})
         ok2 = r2.get('code') == 0
         self.report.add_test_result("系统配置", "个性化设置保存", "passed" if ok2 else "failed", time.time()-s2)
         print(f"{'✅' if ok else '❌'} 个性化设置")

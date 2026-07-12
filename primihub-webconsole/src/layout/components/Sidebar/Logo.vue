@@ -24,7 +24,7 @@ export default {
   },
   data() {
     return {
-      title: '',
+      title: '原语隐私计算平台',
       logo: require('@/assets/logo-primihub.png')
     }
   }

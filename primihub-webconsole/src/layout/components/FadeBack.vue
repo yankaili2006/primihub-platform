@@ -1,8 +1,3 @@
-<script>
-import brand from "@/brand.config"
-export default { data() { return { brand } } }
-</script>
-
 <template>
   <div v-if="!isHideFadeBack" class="feedback">
     <el-popover
@@ -12,7 +7,7 @@ export default { data() { return { brand } } }
     >
       <div style="text-align: center;">
         <img src="../../assets/assitant.png" width="100%">
-        <p>{{brand.assistantText}}</p>
+        <p>原语科技小助手</p>
       </div>
       <div slot="reference" class="contact-icon"><svg-icon icon-class="contact" /></div>
     </el-popover>

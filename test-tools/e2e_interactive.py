@@ -102,12 +102,12 @@ async def main():
         auth_items = [{"authId": 3000+i, "authCode": c, "authName": c, "authType": 2, "isShow": 1}
                       for i, c in enumerate(set(AUTH_CODES))]
         await page.evaluate(f"""
-            const p = JSON.parse(localStorage.getItem('DataItemPer') || '[]');
+            const p = JSON.parse(localStorage.getItem('PrimiHubPer') || '[]');
             const seen = new Set(p.map(x => x.authCode));
             for (const e of {json.dumps(auth_items)}) {{
                 if (!seen.has(e.authCode)) {{ p.push(e); seen.add(e.authCode); }}
             }}
-            localStorage.setItem('DataItemPer', JSON.stringify(p));
+            localStorage.setItem('PrimiHubPer', JSON.stringify(p));
         """)
         print("✅ 登录完成\n")
 

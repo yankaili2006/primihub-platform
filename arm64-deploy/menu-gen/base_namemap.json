@@ -1,0 +1,262 @@
+{
+ "项目管理": [
+  "Project",
+  ""
+ ],
+ "项目列表": [
+  "ProjectList",
+  "/project/getProjectList"
+ ],
+ "项目详情": [
+  "ProjectDetail",
+  "/project/getProjectDetails"
+ ],
+ "任务详情": [
+  "ModelTaskDetail",
+  "/project/getProjectDetails"
+ ],
+ "新建项目": [
+  "ProjectCreate",
+  "/project/saveOrUpdateProject"
+ ],
+ "关闭项目": [
+  "ProjectDelete",
+  "/project/closeProject"
+ ],
+ "模型管理": [
+  "Model",
+  "/model/getmodellist"
+ ],
+ "模型列表": [
+  "ModelList",
+  "/model/getmodellist"
+ ],
+ "模型详情": [
+  "ModelDetail",
+  "/model/getdatamodel"
+ ],
+ "模型查看": [
+  "ModelView",
+  "/model/getdatamodel"
+ ],
+ "添加模型": [
+  "ModelCreate",
+  "/model/saveModelAndComponent"
+ ],
+ "模型编辑": [
+  "ModelEdit",
+  "/model/saveModelAndComponent"
+ ],
+ "执行记录列表": [
+  "ModelTaskHistory",
+  "/task/saveModelAndComponent"
+ ],
+ "模型运行": [
+  "ModelRun",
+  "/model/runTaskModel"
+ ],
+ "下载结果": [
+  "ModelResultDownload",
+  "/task/downloadTaskFile"
+ ],
+ "匿踪查询": [
+  "PrivateSearch",
+  "/fusionResource/getResourceList"
+ ],
+ "匿踪查询按钮": [
+  "PrivateSearchButton",
+  "/pir/pirSubmitTask"
+ ],
+ "匿踪查询列表": [
+  "PrivateSearchList",
+  "/pir/downloadPirTask"
+ ],
+ "隐私求交": [
+  "PSI",
+  ""
+ ],
+ "求交任务": [
+  "PSITask",
+  "/psi/getPsiResourceAllocationList"
+ ],
+ "求交结果": [
+  "PSIList",
+  "/psi/getPsiTaskList"
+ ],
+ "资源管理": [
+  "ResourceMenu",
+  ""
+ ],
+ "资源概览": [
+  "ResourceList",
+  "/resource/getdataresourcelist"
+ ],
+ "资源详情": [
+  "ResourceDetail",
+  "/resource/getdataresource"
+ ],
+ "上传资源": [
+  "ResourceUpload",
+  "/resource/saveorupdateresource"
+ ],
+ "编辑资源": [
+  "ResourceEdit",
+  "/resource/saveorupdateresource"
+ ],
+ "联邦资源": [
+  "UnionList",
+  "/fusionResource/getResourceList"
+ ],
+ "联邦资源详情": [
+  "UnionResourceDetail",
+  "/fusionResource/getDataResource"
+ ],
+ "系统设置": [
+  "Setting",
+  ""
+ ],
+ "用户管理": [
+  "UserManage",
+  "/user/findUserPage"
+ ],
+ "用户新增": [
+  "UserAdd",
+  "/user/saveOrUpdateUser"
+ ],
+ "用户编辑": [
+  "UserEdit",
+  "/user/saveOrUpdateUser"
+ ],
+ "用户删除": [
+  "UserDelete",
+  "/user/deleteSysUser"
+ ],
+ "密码重置": [
+  "UserPasswordReset",
+  "/user/initPassword"
+ ],
+ "角色管理": [
+  "RoleManage",
+  "/role/findRolePage"
+ ],
+ "角色新增": [
+  "RoleAdd",
+  "/role/saveOrUpdateRole"
+ ],
+ "角色编辑": [
+  "RoleEdit",
+  "/role/saveOrUpdateRole"
+ ],
+ "角色删除": [
+  "RoleDelete",
+  "/role/deleteSysRole"
+ ],
+ "菜单管理": [
+  "MenuManage",
+  "/auth/getAuthTree"
+ ],
+ "菜单新增": [
+  "MenuAdd",
+  "/auth/createAuthNode"
+ ],
+ "菜单编辑": [
+  "MenuDelete",
+  "/auth/deleteAuthNode"
+ ],
+ "中心管理": [
+  "CenterManage",
+  ""
+ ],
+ "编辑机构信息": [
+  "OrganChange",
+  "/organ/changeLocalOrganInfo"
+ ],
+ "添加中心节点": [
+  "FusionAdd",
+  "/fusion/registerConnection"
+ ],
+ "删除中心节点": [
+  "FusionDelete",
+  "/fusion/deleteConnection"
+ ],
+ "创建群组": [
+  "GroupCreate",
+  "/fusion/createGroup"
+ ],
+ "加入群组": [
+  "GroupJoin",
+  "/fusion/joinGroup"
+ ],
+ "退出群组": [
+  "GroupExit",
+  "/fusion/exitGroup"
+ ],
+ "项目禁用": [
+  "closeProject",
+  "/project/closeProject"
+ ],
+ "项目启动": [
+  "openProject",
+  "/project/openProject"
+ ],
+ "模型任务删除": [
+  "deleteModelTask",
+  "/task/deleteTask"
+ ],
+ "模型复制": [
+  "copyModelTask",
+  ""
+ ],
+ "模型推理": [
+  "ModelReasoning",
+  ""
+ ],
+ "模型推理列表": [
+  "ModelReasoningList",
+  ""
+ ],
+ "模型推理任务": [
+  "ModelReasoningTask",
+  ""
+ ],
+ "模型推理详情": [
+  "ModelReasoningDetail",
+  ""
+ ],
+ "日志": [
+  "Log",
+  ""
+ ],
+ "匿踪查询任务": [
+  "PIRTask",
+  ""
+ ],
+ "衍生数据资源": [
+  "DerivedDataList",
+  ""
+ ],
+ "衍生数据资源详情": [
+  "DerivedDataResourceDetail",
+  ""
+ ],
+ "日志列表": [
+  "LogList",
+  ""
+ ],
+ "界面设置": [
+  "UISetting",
+  ""
+ ],
+ "隐私求交任务详情": [
+  "PSIDetail",
+  ""
+ ],
+ "隐匿查询任务详情": [
+  "PIRDetail",
+  ""
+ ],
+ "可申请的资源": [
+  "AvailableResources",
+  ""
+ ]
+}

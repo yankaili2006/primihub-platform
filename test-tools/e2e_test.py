@@ -78,10 +78,10 @@ async def main():
         
         # Inject permissions
         await page.evaluate(f"""
-            const p = JSON.parse(localStorage.getItem('DataItemPer') || '[]');
+            const p = JSON.parse(localStorage.getItem('PrimiHubPer') || '[]');
             const c = new Set(p.map(x => x.authCode));
             for (const e of {json.dumps(ALL_AUTH)}) {{ if (!c.has(e.authCode)) {{ p.push(e); c.add(e.authCode); }} }}
-            localStorage.setItem('DataItemPer', JSON.stringify(p));
+            localStorage.setItem('PrimiHubPer', JSON.stringify(p));
         """)
         print("  登录成功，权限注入完成")
         
