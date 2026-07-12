@@ -227,10 +227,13 @@ public class FederatedAnalysisController {
         return runTask(req);
     }
 
-    @ApiOperation("导出分析结果(兼容)")
-    @GetMapping("/data/federatedAnalysis/exportResult")
-    public void exportResultCompat(@RequestParam Long taskId, HttpServletResponse response) {
-        // TODO: 实现结果导出
+    // 前端 exportFederatedAnalysisResult 调 /data/federatedAnalysis/result/export（blob），
+    // 网关 StripPrefix 掉 /data → 应用侧须映射 /federatedAnalysis/result/export（与其它已生效路由同规则）。
+    // 原 /data/federatedAnalysis/exportResult 空桩既路径不符、又带被剥的 /data 前缀，双重不可达。
+    @ApiOperation("导出分析结果")
+    @GetMapping("/federatedAnalysis/result/export")
+    public void exportResult(@RequestParam Long taskId, HttpServletResponse response) {
+        federatedAnalysisService.exportResult(taskId, response);
     }
 
     @ApiOperation("获取数据源列表(兼容)")

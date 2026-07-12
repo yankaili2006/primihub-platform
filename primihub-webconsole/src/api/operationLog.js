@@ -3,7 +3,7 @@ import request from '@/utils/request'
 export function getOperationLogPage(data) {
   return request({
     url: '/sys/operationLog/getOperationLogPage',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -27,7 +27,7 @@ export function deleteOperationLog(logId) {
 export function exportOperationLog(data) {
   return request({
     url: '/sys/operationLog/exportOperationLog',
-    method: 'post',
+    method: 'post', type: 'json',
     data,
     responseType: 'blob'
   })
@@ -36,7 +36,7 @@ export function exportOperationLog(data) {
 export function getOperationLogStatistics(data) {
   return request({
     url: '/sys/operationLog/getOperationLogStatistics',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

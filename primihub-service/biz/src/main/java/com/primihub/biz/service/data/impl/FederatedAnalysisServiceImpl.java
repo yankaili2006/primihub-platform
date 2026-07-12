@@ -96,7 +96,7 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             task.setSourceSql(req.getSourceSql());
             task.setRewrittenSql(rewritten);
             task.setTaskState(0);
-            task.setTaskParam(req.getParams() != null ? req.getParams().toString() : null);
+            task.setTaskParam(req.getParams() != null ? objectMapper.writeValueAsString(req.getParams()) : null);
             task.setCreatedBy(userId);
             analysisRepository.insertTask(task);
 
@@ -167,6 +167,11 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             vo.setResultRowCount(task.getResultRowCount());
             vo.setErrorMessage(task.getErrorMessage());
             vo.setCreatedAt(task.getCreatedAt());
+            if (results != null && !results.isEmpty()) {
+                if (results.get(0).getRowCount() != null) {
+                    vo.setResultRowCount(results.get(0).getRowCount());
+                }
+            }
             return BaseResultEntity.success(vo);
         } catch (Exception e) {
             log.error("查询分析任务详情失败", e);
@@ -273,7 +278,7 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
                 vo.setId(ds.getId());
                 vo.setSourceName(ds.getSourceName());
                 vo.setSourceType(ds.getSourceType());
-                vo.setIsConnected(ds.getIsConnected() == 1);
+                vo.setIsConnected(ds.getIsConnected() != null && ds.getIsConnected() == 1);
                 vo.setLastTestTime(ds.getLastTestTime() != null ? ds.getLastTestTime().toString() : null);
                 return vo;
             }).collect(Collectors.toList());
@@ -456,6 +461,95 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             response.getOutputStream().write("批量分析日志".getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.error("批量导出分析日志失败", e);
+        }
+    }
+
+    /**
+     * 导出分析结果为 CSV（真实读取 task + 其结果行）。
+     * 原 controller exportResultCompat 是空桩(// TODO)，返回 200 空体 → 前端"导出成功"却下空文件(假成功)。
+     * 无任务/无结果时返回 JSON 错误(前端 request.js blob 拦截器会提示)，不再静默下空文件。
+     */
+    @Override
+    public void exportResult(Long taskId, HttpServletResponse response) {
+        try {
+            FederatedAnalysisTask task = taskId == null ? null : analysisRepository.selectTaskById(taskId);
+            if (task == null) {
+                writeResultExportError(response, "任务不存在，无法导出结果");
+                return;
+            }
+            List<FederatedAnalysisResult> results = analysisRepository.selectResultsByTaskId(taskId);
+            if (results == null || results.isEmpty()) {
+                writeResultExportError(response, "该任务暂无结果可导出");
+                return;
+            }
+
+            response.setContentType("text/csv;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" +
+                URLEncoder.encode("analysis_result_" + taskId + ".csv", StandardCharsets.UTF_8.name()));
+            OutputStream os = response.getOutputStream();
+            os.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF}); // UTF-8 BOM，Excel 正确识别中文
+
+            StringBuilder sb = new StringBuilder();
+            // 优先按表格展开：columnMetadata=列名 JSON 数组、resultData=行 JSON 数组
+            boolean tabular = false;
+            FederatedAnalysisResult first = results.get(0);
+            try {
+                List<String> headers = null;
+                if (first.getColumnMetadata() != null && !first.getColumnMetadata().trim().isEmpty()) {
+                    headers = objectMapper.readValue(first.getColumnMetadata(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                }
+                List<List<Object>> rows = objectMapper.readValue(first.getResultData(),
+                    new com.fasterxml.jackson.core.type.TypeReference<List<List<Object>>>() {});
+                if (headers != null && !headers.isEmpty()) sb.append(toCsvRow(headers)).append("\r\n");
+                for (List<Object> r : rows) sb.append(toCsvRow(r)).append("\r\n");
+                tabular = true;
+            } catch (Exception ignore) {
+                // resultData 非"行数组"结构，退回如实导出结果记录
+            }
+
+            if (!tabular) {
+                sb.append("id,taskId,resultType,rowCount,createdAt,resultData\r\n");
+                for (FederatedAnalysisResult r : results) {
+                    List<Object> cells = new ArrayList<>();
+                    cells.add(r.getId());
+                    cells.add(r.getTaskId());
+                    cells.add(r.getResultType());
+                    cells.add(r.getRowCount());
+                    cells.add(r.getCreatedAt());
+                    cells.add(r.getResultData());
+                    sb.append(toCsvRow(cells)).append("\r\n");
+                }
+            }
+            os.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            os.flush();
+        } catch (Exception e) {
+            log.error("导出分析结果失败, taskId={}", taskId, e);
+            writeResultExportError(response, "导出失败");
+        }
+    }
+
+    private String toCsvRow(List<?> cells) {
+        StringBuilder r = new StringBuilder();
+        for (int i = 0; i < cells.size(); i++) {
+            if (i > 0) r.append(',');
+            Object v = cells.get(i);
+            String s = v == null ? "" : String.valueOf(v);
+            if (s.contains("\"") || s.contains(",") || s.contains("\n") || s.contains("\r")) {
+                s = "\"" + s.replace("\"", "\"\"") + "\"";
+            }
+            r.append(s);
+        }
+        return r.toString();
+    }
+
+    private void writeResultExportError(HttpServletResponse response, String msg) {
+        try {
+            response.setContentType("application/json;charset=UTF-8");
+            response.getOutputStream().write(
+                ("{\"code\":-1,\"msg\":\"" + msg + "\"}").getBytes(StandardCharsets.UTF_8));
+        } catch (Exception ex) {
+            log.error("写导出错误响应失败", ex);
         }
     }
 }

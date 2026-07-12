@@ -2,13 +2,14 @@ name: Build and push Docker images
 on:
   push:
     tags: [ '*.*.*' ]
+  workflow_dispatch:
   # pull_request:
   #   branches:
   #     - main
   #     - develop # for test
 
 env:
-  REGISTRY: docker.io
+  REGISTRY: registry.cn-beijing.aliyuncs.com
   PLATFORM_IMAGE: primihub/primihub-platform
   WEB_IMAGE: primihub/primihub-web
 
@@ -30,11 +31,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
     
-    - name: Login to Docker Hub
+    - name: Login to Aliyun ACR
       uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
     
     - name: Extract Docker metadata
       id: metaplatform
@@ -56,6 +58,19 @@ jobs:
         platforms: linux/amd64,linux/arm64
         tags: ${{ steps.metaplatform.outputs.tags }}
         labels: ${{ steps.metaplatform.outputs.labels }}
+
+    - name: Use Node.js 20 (build web dist)
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
+        cache-dependency-path: primihub-webconsole/package-lock.json
+
+    - name: Build web dist
+      run: |
+        cd primihub-webconsole
+        npm ci --legacy-peer-deps
+        npm run build:prod
 
     - name: Build and push web images
       uses: docker/build-push-action@v2

@@ -31,4 +31,6 @@ public interface FederatedAnalysisService {
     BaseResultEntity getLogs(LogQueryReq req);
     void exportLogs(LogExportReq req, HttpServletResponse response);
     void batchExportLogs(BatchExportReq req, HttpServletResponse response);
+
+    void exportResult(Long taskId, HttpServletResponse response);
 }

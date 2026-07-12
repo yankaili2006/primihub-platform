@@ -280,7 +280,7 @@ export default {
       this.loading = true
       findProjectResultPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -426,7 +426,7 @@ export default {
       this.$refs.saveForm.validate((valid) => {
         if (valid) {
           saveProjectResult(this.saveFormData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('保存成功')
               this.saveDialogVisible = false
               this.fetchData()
@@ -456,7 +456,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchSaveProjectResult(ids).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量保存成功')
             this.fetchData()
           } else {
@@ -502,7 +502,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deleteProjectResult(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -522,7 +522,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchDeleteProjectResult(ids).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {
@@ -537,7 +537,7 @@ export default {
     },
     handleConfigSavePath() {
       getResultConfig().then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.configFormData = res.result || this.configFormData
         }
       }).catch(() => {})
@@ -545,7 +545,7 @@ export default {
     },
     handleConfigSubmit() {
       updateResultConfig(this.configFormData).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('配置保存成功')
           this.configDialogVisible = false
         } else {

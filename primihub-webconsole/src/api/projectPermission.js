@@ -20,6 +20,7 @@ export function addProjectPermission(data) {
   return request({
     url: '/project/permission/add',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -31,6 +32,7 @@ export function updateProjectPermission(data) {
   return request({
     url: '/project/permission/update',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -53,6 +55,7 @@ export function batchRevokeProjectPermission(ids, userId, userName) {
   return request({
     url: '/project/permission/batchRevoke',
     method: 'post',
+    type: 'json',
     data: ids,
     params: { userId, userName }
   })
@@ -86,6 +89,7 @@ export function addPermissionTemplate(data) {
   return request({
     url: '/project/permission/addTemplate',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -97,6 +101,7 @@ export function updatePermissionTemplate(data) {
   return request({
     url: '/project/permission/updateTemplate',
     method: 'post',
+    type: 'json',
     data
   })
 }

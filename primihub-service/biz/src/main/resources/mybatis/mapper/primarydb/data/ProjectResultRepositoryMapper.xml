@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.ProjectResultRepository">
+
+    <sql id="cols">
+        id, project_id AS projectId, project_name AS projectName, task_id AS taskId,
+        task_name AS taskName, result_type AS resultType, result_name AS resultName,
+        result_desc AS resultDesc, save_status AS saveStatus, file_size AS fileSize,
+        file_md5 AS fileMd5, save_path AS savePath, save_directory AS saveDirectory,
+        file_name AS fileName, save_format AS saveFormat, remark,
+        create_date AS createDate, save_date AS saveDate
+    </sql>
+
+    <sql id="whereClause">
+        <where>
+            is_del = 0
+            <if test="projectName != null and projectName != ''">
+                AND project_name LIKE CONCAT('%', #{projectName}, '%')
+            </if>
+            <if test="taskName != null and taskName != ''">
+                AND task_name LIKE CONCAT('%', #{taskName}, '%')
+            </if>
+            <if test="resultType != null and resultType != ''">
+                AND result_type = #{resultType}
+            </if>
+            <if test="saveStatus != null">
+                AND save_status = #{saveStatus}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectResultPage" parameterType="map" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/> FROM project_result
+        <include refid="whereClause"/>
+        ORDER BY create_date DESC
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectResultCount" parameterType="map" resultType="int">
+        SELECT COUNT(*) FROM project_result
+        <include refid="whereClause"/>
+    </select>
+
+    <select id="selectResultById" resultType="java.util.LinkedHashMap">
+        SELECT <include refid="cols"/>, file_content AS fileContent
+        FROM project_result WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <insert id="insertResult" parameterType="map" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO project_result
+            (project_id, project_name, task_id, task_name, result_type, result_name, result_desc,
+             save_status, file_size, file_md5, save_path, save_directory, file_name, save_format,
+             file_content, remark, user_id, organ_id, create_date, save_date)
+        VALUES
+            (#{projectId}, #{projectName}, #{taskId}, #{taskName}, #{resultType}, #{resultName}, #{resultDesc},
+             #{saveStatus}, #{fileSize}, #{fileMd5}, #{savePath}, #{saveDirectory}, #{fileName}, #{saveFormat},
+             #{fileContent}, #{remark}, #{userId}, #{organId}, NOW(), #{saveDate})
+    </insert>
+
+    <update id="updateResult" parameterType="map">
+        UPDATE project_result
+        <set>
+            <if test="resultName != null">result_name = #{resultName},</if>
+            <if test="resultDesc != null">result_desc = #{resultDesc},</if>
+            <if test="saveStatus != null">save_status = #{saveStatus},</if>
+            <if test="savePath != null">save_path = #{savePath},</if>
+            <if test="saveDirectory != null">save_directory = #{saveDirectory},</if>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="saveFormat != null">save_format = #{saveFormat},</if>
+            <if test="fileContent != null">file_content = #{fileContent},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="saveDate != null">save_date = #{saveDate},</if>
+            id = id
+        </set>
+        WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <!-- 标记为已保存（批量保存 / 单个保存复用），置 save_status=1 + save_date=now -->
+    <update id="markSaved" parameterType="map">
+        UPDATE project_result
+        SET save_status = 1, save_date = NOW(),
+            save_path = COALESCE(save_path, CONCAT(COALESCE(save_directory, '/data/results'), '/', COALESCE(file_name, result_name, id)))
+        WHERE is_del = 0 AND id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="deleteResult">
+        UPDATE project_result SET is_del = 1 WHERE id = #{id} AND is_del = 0
+    </update>
+
+    <update id="batchDeleteResult">
+        UPDATE project_result SET is_del = 1
+        WHERE is_del = 0 AND id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="selectConfig" resultType="java.util.LinkedHashMap">
+        SELECT id, default_path AS defaultPath, auto_save AS autoSave,
+               retention_days AS retentionDays, max_storage_gb AS maxStorageGB, update_date AS updateDate
+        FROM project_result_config WHERE id = 1
+    </select>
+
+    <insert id="insertConfig" parameterType="map">
+        INSERT INTO project_result_config (id, default_path, auto_save, retention_days, max_storage_gb, update_date)
+        VALUES (1, #{defaultPath}, #{autoSave}, #{retentionDays}, #{maxStorageGB}, NOW())
+    </insert>
+
+    <update id="updateConfig" parameterType="map">
+        UPDATE project_result_config
+        <set>
+            <if test="defaultPath != null">default_path = #{defaultPath},</if>
+            <if test="autoSave != null">auto_save = #{autoSave},</if>
+            <if test="retentionDays != null">retention_days = #{retentionDays},</if>
+            <if test="maxStorageGB != null">max_storage_gb = #{maxStorageGB},</if>
+            update_date = NOW()
+        </set>
+        WHERE id = 1
+    </update>
+
+</mapper>
