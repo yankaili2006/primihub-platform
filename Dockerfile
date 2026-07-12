@@ -2,16 +2,18 @@ FROM maven:3.8.6-openjdk-8 as build
 
 WORKDIR /opt
 
+ARG TARGETARCH
+
 # Aliyun Maven mirror
 COPY settings.xml /tmp/settings.xml
 
 ADD . /opt/
 
-RUN --mount=type=cache,target=/root/.m2/repository \
+RUN --mount=type=cache,target=/root/.m2/repository,id=m2-${TARGETARCH},sharing=locked \
   ARCH=`arch | sed s/arm64/aarch_64/ | sed s/aarch64/aarch_64/ | sed s/amd64/x86_64/` \
   && cd primihub-sdk \
   && mvn -s /tmp/settings.xml -T 1C clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true -Dos.detected.classifier=linux-${ARCH}
-RUN --mount=type=cache,target=/root/.m2/repository \
+RUN --mount=type=cache,target=/root/.m2/repository,id=m2-${TARGETARCH},sharing=locked \
   cd primihub-service \
   && mvn -s /tmp/settings.xml -T 1C clean install -Dmaven.test.skip=true -Dasciidoctor.skip=true \
   && rm -f /tmp/settings.xml
