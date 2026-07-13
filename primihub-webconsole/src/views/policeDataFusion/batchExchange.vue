@@ -74,7 +74,7 @@
 </template>
 
 <script>
-import { policeBatchExchange } from '@/api/scene'
+import { policeBatchExchange, getPoliceTaskList } from '@/api/scene'
 
 export default {
   name: 'ModelCipherBatchExchange',
@@ -89,15 +89,37 @@ export default {
         enableTLS: true,
         enableCompression: true
       },
-      exchangeTaskList: [
-        { taskId: 'EX-001', dataType: '加密模型参数', sourceOrg: '省公安厅', targetOrg: '平安保险', fileCount: 5, totalSize: '2.5 GB', progress: 100, status: 'completed', statusText: '已完成', createTime: '2024-01-15 10:00:00' },
-        { taskId: 'EX-002', dataType: '加密预测结果', sourceOrg: '市公安局', targetOrg: '中国人寿', fileCount: 3, totalSize: '1.2 GB', progress: 65, status: 'running', statusText: '传输中', createTime: '2024-01-15 14:30:00' },
-        { taskId: 'EX-003', dataType: '加密统计数据', sourceOrg: '省公安厅', targetOrg: '太平洋保险', fileCount: 8, totalSize: '850 MB', progress: 100, status: 'completed', statusText: '已完成', createTime: '2024-01-14 16:20:00' }
-      ]
+      exchangeTaskList: []
     }
+  },
+  created() {
+    this.fetchTaskList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    normalizeSceneTask(row) {
+      let p = {}
+      try { p = row.params ? JSON.parse(row.params) : {} } catch (e) { p = {} }
+      const st = row.taskState
+      const statusText = st === 2 ? '已完成' : st === 3 ? '失败' : st === 1 ? '运行中' : '等待执行'
+      const status = st === 2 ? 'completed' : st === 3 ? 'failed' : 'running'
+      return Object.assign({}, p, {
+        taskId: row.id,
+        taskName: row.taskName,
+        taskType: row.taskType,
+        status,
+        statusText,
+        progress: st === 2 ? 100 : st === 3 ? 0 : 50,
+        createTime: row.createdAt
+      })
+    },
+    fetchTaskList() {
+      getPoliceTaskList({ taskType: 'exchange_batch', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.exchangeTaskList = (res.result.list || []).map(this.normalizeSceneTask)
+        }
+      }).catch(() => {})
+    },
     getStatusType(status) {
       return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
     },
@@ -127,30 +149,9 @@ export default {
           this.$message.error((res && (res.msg || res.message)) || '批量交换失败')
           return
         }
-        const newTask = {
-          taskId: (res.result && (res.result.taskId || res.result.id)) || `EX-${Date.now()}`,
-          dataType: { model_params: '加密模型参数', prediction: '加密预测结果', statistics: '加密统计数据' }[this.exchangeForm.dataType] || this.exchangeForm.dataType,
-          sourceOrg: this.exchangeForm.sourceOrg,
-          targetOrg: this.exchangeForm.targetOrg,
-          fileCount: this.fileList.length || 1,
-          totalSize: '-',
-          progress: 0,
-          status: 'running',
-          statusText: '传输中',
-          createTime: new Date().toLocaleString()
-        }
-        this.exchangeTaskList.unshift(newTask)
-        const timer = setInterval(() => {
-          if (newTask.progress < 100) {
-            newTask.progress += 10
-          } else {
-            clearInterval(timer)
-            newTask.status = 'completed'
-            newTask.statusText = '已完成'
-            this.exchanging = false
-            this.$message.success('批量交换完成')
-          }
-        }, 500)
+        this.exchanging = false
+        this.$message.success('批量交换任务已提交')
+        this.fetchTaskList()
       }).catch(() => {
         this.exchanging = false
         this.$message.error('请求异常')

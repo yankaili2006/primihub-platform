@@ -78,6 +78,8 @@
 </template>
 
 <script>
+import { getParamTuningList, createParamTuning, getParamTuningResult, applyBestParams } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedLearningParamTuning',
   data() {
@@ -89,38 +91,58 @@ export default {
         iterationsRange: [50, 200],
         batchSizes: [32, 64]
       },
-      taskList: [
-        { taskId: 'FL-001', taskName: '联合风控模型训练' },
-        { taskId: 'FL-002', taskName: '用户画像特征学习' },
-        { taskId: 'FL-003', taskName: '信用评分模型' }
-      ],
-      tuningResults: [
-        { rank: 1, learningRate: 0.005, iterations: 150, batchSize: 64, accuracy: '0.92', auc: '0.95' },
-        { rank: 2, learningRate: 0.01, iterations: 100, batchSize: 32, accuracy: '0.90', auc: '0.93' },
-        { rank: 3, learningRate: 0.001, iterations: 200, batchSize: 64, accuracy: '0.88', auc: '0.91' }
-      ],
-      tuningHistory: [
-        { id: 'TH001', taskName: '联合风控模型训练', searchMethod: '网格搜索', bestAccuracy: '0.92', createTime: '2024-01-15 11:00:00' },
-        { id: 'TH002', taskName: '信用评分模型', searchMethod: '贝叶斯优化', bestAccuracy: '0.89', createTime: '2024-01-14 16:00:00' }
-      ]
+      // 缺陷整改：全部改从真实接口加载（原写死 mock）
+      taskList: [],
+      tuningResults: [],
+      tuningHistory: []
     }
+  },
+  created() {
+    this.loadTuningList()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
+    },
+    loadTuningList() {
+      getParamTuningList({ pageNo: 1, pageSize: 100 }).then(res => {
+        const list = (res && res.result && (res.result.list || res.result)) || []
+        this.tuningHistory = Array.isArray(list) ? list : []
+        // 关联任务下拉：从调优历史里去重任务，避免造假任务
+        const seen = {}
+        this.taskList = this.tuningHistory
+          .filter(t => t.taskId && !seen[t.taskId] && (seen[t.taskId] = true))
+          .map(t => ({ taskId: t.taskId, taskName: t.taskName }))
+      }).catch(() => { this.tuningHistory = []; this.taskList = [] })
     },
     handleStartTuning() {
       if (!this.tuningFormData.taskId) {
         this.$message.warning('请选择关联任务')
         return
       }
-      this.$message.success('参数调优任务已启动')
+      createParamTuning(this.tuningFormData).then(res => {
+        if (!res || res.code !== 0) {
+          this.$message.error((res && (res.message || res.msg)) || '启动失败')
+          return
+        }
+        this.$message.success('参数调优任务已启动')
+        this.loadTuningList()
+      }).catch(() => this.$message.error('请求异常'))
     },
     handleApplyParams(row) {
-      this.$message.success(`最优参数已应用: 学习率=${row.learningRate}, 迭代次数=${row.iterations}`)
+      applyBestParams({ ...row, taskId: this.tuningFormData.taskId }).then(res => {
+        if (!res || res.code !== 0) {
+          this.$message.error((res && (res.message || res.msg)) || '应用失败')
+          return
+        }
+        this.$message.success('最优参数已应用')
+      }).catch(() => this.$message.error('请求异常'))
     },
     handleViewHistory(row) {
-      this.$message.info(`查看调优历史: ${row.id}`)
+      getParamTuningResult({ tuningId: row.id || row.tuningId, taskId: row.taskId }).then(res => {
+        const list = (res && res.result && (res.result.list || res.result)) || []
+        this.tuningResults = Array.isArray(list) ? list : []
+      }).catch(() => { this.tuningResults = [] })
     }
   }
 }

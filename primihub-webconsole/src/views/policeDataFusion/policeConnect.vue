@@ -97,6 +97,7 @@
 </template>
 
 <script>
+import { getPoliceDataSourceList, savePoliceDataSource, syncPoliceDataSource, testPoliceDataSource } from '@/api/scene'
 export default {
   name: 'PoliceDataConnect',
   data() {
@@ -104,20 +105,24 @@ export default {
       dialogVisible: false,
       dialogTitle: '新增数据源',
       sourceForm: { sourceName: '', sourceType: '', department: '', host: '', port: '', database: '', username: '', password: '' },
-      dataSourceList: [
-        { sourceId: 'PDS001', sourceName: '交通事故数据库', sourceType: 'MySQL', department: '交警大队', connectionInfo: '10.0.1.100:3306/traffic_db', dataCount: '1,250,000', lastSyncTime: '2024-01-15 08:00:00', status: 'connected' },
-        { sourceId: 'PDS002', sourceName: '驾驶员信息库', sourceType: 'Oracle', department: '交警大队', connectionInfo: '10.0.1.101:1521/driver_db', dataCount: '850,000', lastSyncTime: '2024-01-15 08:00:00', status: 'connected' },
-        { sourceId: 'PDS003', sourceName: '刑侦案件库', sourceType: 'PostgreSQL', department: '刑侦支队', connectionInfo: '10.0.1.102:5432/case_db', dataCount: '320,000', lastSyncTime: '2024-01-14 20:00:00', status: 'disconnected' }
-      ],
-      syncRecords: [
-        { syncId: 'SYNC001', sourceName: '交通事故数据库', syncType: '增量', recordCount: 1580, duration: '2min 35s', status: 'success', syncTime: '2024-01-15 08:00:00' },
-        { syncId: 'SYNC002', sourceName: '驾驶员信息库', syncType: '增量', recordCount: 320, duration: '1min 12s', status: 'success', syncTime: '2024-01-15 08:00:00' },
-        { syncId: 'SYNC003', sourceName: '刑侦案件库', syncType: '全量', recordCount: 0, duration: '-', status: 'failed', syncTime: '2024-01-14 20:00:00' }
-      ]
+      dataSourceList: [],
+      syncRecords: []
     }
+  },
+  created() {
+    this.fetchDataSourceList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    fetchDataSourceList() {
+      getPoliceDataSourceList().then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.dataSourceList = res.result.list || []
+          // 同步记录随数据源列表返回（如后端下发），否则保持为空
+          this.syncRecords = res.result.syncRecords || []
+        }
+      }).catch(() => {})
+    },
     handleAddSource() {
       this.dialogTitle = '新增数据源'
       this.sourceForm = { sourceName: '', sourceType: '', department: '', host: '', port: '', database: '', username: '', password: '' }
@@ -125,22 +130,24 @@ export default {
     },
     handleSync(row) {
       this.$message.info(`正在同步数据源: ${row.sourceName}`)
-      setTimeout(() => {
-        this.syncRecords.unshift({
-          syncId: `SYNC${Date.now()}`,
-          sourceName: row.sourceName,
-          syncType: '增量',
-          recordCount: Math.floor(Math.random() * 2000) + 100,
-          duration: `${Math.floor(Math.random() * 5) + 1}min ${Math.floor(Math.random() * 60)}s`,
-          status: 'success',
-          syncTime: new Date().toLocaleString()
-        })
-        this.$message.success('同步完成')
-      }, 2000)
+      syncPoliceDataSource({ sourceId: row.sourceId }).then(res => {
+        if (res && res.code === 0) {
+          this.$message.success('同步完成')
+          this.fetchDataSourceList()
+        } else {
+          this.$message.error((res && (res.msg || res.message)) || '同步失败')
+        }
+      }).catch(() => { this.$message.error('同步请求异常') })
     },
     handleTest(row) {
       this.$message.info(`正在测试连接: ${row.sourceName}`)
-      setTimeout(() => { this.$message.success(`数据源 ${row.sourceName} 连接正常`) }, 1500)
+      testPoliceDataSource({ sourceId: row.sourceId }).then(res => {
+        if (res && res.code === 0) {
+          this.$message.success(`数据源 ${row.sourceName} 连接正常`)
+        } else {
+          this.$message.error((res && (res.msg || res.message)) || `数据源 ${row.sourceName} 连接失败`)
+        }
+      }).catch(() => { this.$message.error('测试请求异常') })
     },
     handleEdit(row) {
       this.dialogTitle = '编辑数据源'
@@ -148,18 +155,18 @@ export default {
       this.dialogVisible = true
     },
     handleSave() {
-      if (this.dialogTitle === '新增数据源') {
-        this.dataSourceList.unshift({
-          sourceId: `PDS${Date.now()}`,
-          ...this.sourceForm,
-          connectionInfo: `${this.sourceForm.host}:${this.sourceForm.port}/${this.sourceForm.database}`,
-          dataCount: '0',
-          lastSyncTime: '-',
-          status: 'connected'
-        })
-      }
-      this.dialogVisible = false
-      this.$message.success('保存成功')
+      const payload = Object.assign({}, this.sourceForm, {
+        connectionInfo: `${this.sourceForm.host}:${this.sourceForm.port}/${this.sourceForm.database}`
+      })
+      savePoliceDataSource(payload).then(res => {
+        if (res && res.code === 0) {
+          this.dialogVisible = false
+          this.$message.success('保存成功')
+          this.fetchDataSourceList()
+        } else {
+          this.$message.error((res && (res.msg || res.message)) || '保存失败')
+        }
+      }).catch(() => { this.$message.error('保存请求异常') })
     }
   }
 }

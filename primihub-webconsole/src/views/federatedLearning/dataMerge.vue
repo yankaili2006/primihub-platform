@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import { createFLPreprocess } from '@/api/federatedLearning'
+import { createFLPreprocess, getFLPreprocessList } from '@/api/federatedLearning'
 
 export default {
   name: 'SinglePartyDataMerge',
@@ -112,16 +112,22 @@ export default {
       keyFieldList: ['user_id', 'id_card', 'phone', 'email'],
       previewData: [],
       previewColumns: [],
-      mergeHistory: [
-        { id: 'MG001', name: '用户全量数据合并', mergeType: 'JOIN', sourceCount: 3, recordCount: 85000, createTime: '2024-01-15 14:00:00', status: 'completed' },
-        { id: 'MG002', name: '历史交易数据合并', mergeType: 'UNION', sourceCount: 2, recordCount: 250000, createTime: '2024-01-14 10:30:00', status: 'completed' },
-        { id: 'MG003', name: '风控特征合并', mergeType: 'JOIN', sourceCount: 4, recordCount: 0, createTime: '2024-01-15 16:00:00', status: 'running' }
-      ]
+      mergeHistory: []
     }
+  },
+  created() {
+    this.loadMergeHistory()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
+    },
+    // 缺陷整改：合并历史改从真实预处理任务列表加载（原写死 3 行 mock）
+    loadMergeHistory() {
+      getFLPreprocessList({ preprocessType: 'DATA_MERGE', pageNo: 1, pageSize: 100 }).then(res => {
+        const list = (res && res.result && (res.result.list || res.result)) || []
+        this.mergeHistory = Array.isArray(list) ? list : []
+      }).catch(() => { this.mergeHistory = [] })
     },
     handlePreview() {
       if (this.mergeFormData.dataSources.length === 0) {
@@ -156,15 +162,7 @@ export default {
             return
           }
           this.$message.success('数据合并任务已创建')
-          this.mergeHistory.unshift({
-            id: (res.result && (res.result.taskId || res.result.id)) || `MG${Date.now()}`,
-            name: this.mergeFormData.mergeName,
-            mergeType: this.mergeFormData.mergeType,
-            sourceCount: this.mergeFormData.dataSources.length,
-            recordCount: 0,
-            createTime: new Date().toLocaleString(),
-            status: 'running'
-          })
+          this.loadMergeHistory()
         }).catch(() => this.$message.error('请求异常'))
       })
     },

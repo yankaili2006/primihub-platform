@@ -85,10 +85,8 @@ export default {
         fileNamePrefix: 'federated_learning_log'
       },
       taskList: [],
-      exportHistory: [
-        { id: 'EXP001', fileName: 'federated_learning_log_20240115.xlsx', format: 'EXCEL', recordCount: 1250, fileSize: '256 KB', createTime: '2024-01-15 16:00:00', status: 'completed' },
-        { id: 'EXP002', fileName: 'fl_error_log_20240114.csv', format: 'CSV', recordCount: 85, fileSize: '32 KB', createTime: '2024-01-14 18:30:00', status: 'completed' }
-      ]
+      // 缺陷整改：后端无“导出历史”接口，导出为即时下载 blob，不留服务端记录；置空不再造假数据
+      exportHistory: []
     }
   },
   mounted() {

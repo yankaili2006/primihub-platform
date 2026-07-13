@@ -44,22 +44,31 @@
 </template>
 
 <script>
+import { getModelList } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedModelPreview',
   data() {
     return {
       dialogVisible: false,
       currentModel: null,
-      modelList: [
-        { modelId: 'FL-M-001', modelName: '逻辑回归模型', modelType: 'LR', accuracy: 92.5, participants: 3, rounds: 100, status: 'trained', statusText: '已训练', createTime: '2024-01-15 10:30:00' },
-        { modelId: 'FL-M-002', modelName: '神经网络模型', modelType: 'NN', accuracy: 95.8, participants: 5, rounds: 200, status: 'trained', statusText: '已训练', createTime: '2024-01-14 14:20:00' },
-        { modelId: 'FL-M-003', modelName: 'XGBoost模型', modelType: 'XGB', accuracy: 94.2, participants: 4, rounds: 150, status: 'training', statusText: '训练中', createTime: '2024-01-16 09:15:00' }
-      ]
+      modelList: []
     }
+  },
+  created() {
+    this.loadModels()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
+    },
+    // 缺陷整改：模型列表改从真实接口加载（原写死 3 行 mock）
+    loadModels() {
+      getModelList({ pageNo: 1, pageSize: 100 }).then(res => {
+        const r = (res && res.result) || {}
+        const list = r.list || r.data || (Array.isArray(r) ? r : [])
+        this.modelList = Array.isArray(list) ? list : []
+      }).catch(() => { this.modelList = [] })
     },
     getStatusType(status) {
       const types = { trained: 'success', training: 'warning', failed: 'danger' }

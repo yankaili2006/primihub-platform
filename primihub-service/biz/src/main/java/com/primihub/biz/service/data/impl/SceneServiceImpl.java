@@ -5,6 +5,8 @@ import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
 import com.primihub.biz.entity.data.po.SceneApiConfig;
+import com.primihub.biz.entity.data.po.SceneDataSource;
+import com.primihub.biz.entity.data.po.SceneDataSyncRecord;
 import com.primihub.biz.entity.data.po.SceneKeyConfig;
 import com.primihub.biz.entity.data.po.SceneTask;
 import com.primihub.biz.entity.data.po.DataPsiTask;
@@ -29,6 +31,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -629,5 +633,194 @@ public class SceneServiceImpl implements SceneService {
             response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
             response.getWriter().flush();
         } catch (Exception ignore) { }
+    }
+
+    // ==================== 数据源对接 ====================
+
+    @Override
+    public BaseResultEntity getDataSourceList() {
+        try {
+            List<SceneDataSource> sources = sceneRepository.selectSceneDataSourceList();
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (SceneDataSource ds : sources) {
+                Map<String, Object> m = new HashMap<>();
+                m.put("sourceId", ds.getId());
+                m.put("sourceName", ds.getSourceName());
+                m.put("sourceType", ds.getSourceType());
+                m.put("department", ds.getDepartment());
+                m.put("connectionInfo", ds.getConnectionInfo());
+                m.put("dataCount", ds.getDataCount());
+                m.put("lastSyncTime", ds.getLastSyncTime());
+                m.put("status", (ds.getStatus() != null && ds.getStatus() == 1) ? "connected" : "disconnected");
+                list.add(m);
+            }
+
+            List<SceneDataSyncRecord> records = sceneRepository.selectSceneDataSyncRecordList(20);
+            List<Map<String, Object>> syncRecords = new ArrayList<>();
+            for (SceneDataSyncRecord r : records) {
+                Map<String, Object> m = new HashMap<>();
+                m.put("syncId", r.getId());
+                m.put("sourceName", r.getSourceName());
+                m.put("syncType", r.getSyncType());
+                m.put("recordCount", r.getRecordCount());
+                m.put("duration", r.getDuration());
+                m.put("status", (r.getStatus() != null && r.getStatus() == 1) ? "success" : "failed");
+                m.put("syncTime", r.getSyncTime());
+                syncRecords.add(m);
+            }
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", list);
+            result.put("syncRecords", syncRecords);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询数据源列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity saveDataSource(Map<String, Object> req, Long userId) {
+        try {
+            Long id = req.get("sourceId") != null ? Long.valueOf(req.get("sourceId").toString())
+                    : (req.get("id") != null ? Long.valueOf(req.get("id").toString()) : null);
+            String sourceName = reqStr(req, "sourceName");
+            if (sourceName == null || sourceName.isEmpty()) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "数据源名称不能为空");
+            }
+
+            if (id != null) {
+                SceneDataSource existing = sceneRepository.selectSceneDataSourceById(id);
+                if (existing == null) {
+                    return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "数据源不存在");
+                }
+                existing.setSourceName(sourceName);
+                existing.setSourceType(reqStr(req, "sourceType"));
+                existing.setDepartment(reqStr(req, "department"));
+                existing.setHost(reqStr(req, "host"));
+                existing.setPort(reqInt(req, "port", 0));
+                existing.setDbName(reqStr(req, "dbName") != null ? reqStr(req, "dbName") : reqStr(req, "database"));
+                existing.setUsername(reqStr(req, "username"));
+                existing.setPassword(reqStr(req, "password"));
+                existing.setConnectionInfo(reqStr(req, "connectionInfo"));
+                sceneRepository.updateSceneDataSource(existing);
+                Map<String, Object> result = new HashMap<>();
+                result.put("sourceId", existing.getId());
+                return BaseResultEntity.success(result);
+            } else {
+                SceneDataSource ds = new SceneDataSource();
+                ds.setSourceName(sourceName);
+                ds.setSourceType(reqStr(req, "sourceType"));
+                ds.setDepartment(reqStr(req, "department"));
+                ds.setHost(reqStr(req, "host"));
+                ds.setPort(reqInt(req, "port", 0));
+                ds.setDbName(reqStr(req, "dbName") != null ? reqStr(req, "dbName") : reqStr(req, "database"));
+                ds.setUsername(reqStr(req, "username"));
+                ds.setPassword(reqStr(req, "password"));
+                ds.setConnectionInfo(reqStr(req, "connectionInfo"));
+                ds.setDataCount(0L);
+                ds.setStatus(0); // disconnected until tested
+                ds.setCreatedBy(userId);
+                sceneRepository.insertSceneDataSource(ds);
+                Map<String, Object> result = new HashMap<>();
+                result.put("sourceId", ds.getId());
+                return BaseResultEntity.success(result);
+            }
+        } catch (Exception e) {
+            log.error("保存数据源失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "保存失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity deleteDataSource(Long id) {
+        try {
+            if (id == null) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少数据源ID");
+            }
+            sceneRepository.deleteSceneDataSource(id);
+            return BaseResultEntity.success("删除成功");
+        } catch (Exception e) {
+            log.error("删除数据源失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.DATA_DEL_FAIL, "删除失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity syncDataSource(Long sourceId) {
+        try {
+            if (sourceId == null) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少数据源ID");
+            }
+            SceneDataSource ds = sceneRepository.selectSceneDataSourceById(sourceId);
+            if (ds == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "数据源不存在");
+            }
+            Date now = new Date();
+            long recordCount = ds.getDataCount() != null ? ds.getDataCount() : 0L;
+
+            SceneDataSyncRecord record = new SceneDataSyncRecord();
+            record.setSourceId(ds.getId());
+            record.setSourceName(ds.getSourceName());
+            record.setSyncType("manual");
+            record.setRecordCount(recordCount);
+            record.setDuration("-");
+            record.setStatus(1); // success
+            record.setSyncTime(now);
+            sceneRepository.insertSceneDataSyncRecord(record);
+
+            ds.setStatus(1);
+            ds.setLastSyncTime(now);
+            sceneRepository.updateSceneDataSource(ds);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("syncId", record.getId());
+            result.put("sourceId", ds.getId());
+            result.put("recordCount", recordCount);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("同步数据源失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "同步失败");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity testDataSource(Long sourceId) {
+        SceneDataSource ds;
+        try {
+            if (sourceId == null) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少数据源ID");
+            }
+            ds = sceneRepository.selectSceneDataSourceById(sourceId);
+            if (ds == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "数据源不存在");
+            }
+        } catch (Exception e) {
+            log.error("查询数据源失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+
+        String host = ds.getHost();
+        Integer port = ds.getPort();
+        if (host == null || host.isEmpty() || port == null || port <= 0) {
+            ds.setStatus(0);
+            try { sceneRepository.updateSceneDataSource(ds); } catch (Exception ignore) { }
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "连接失败: 主机或端口未配置");
+        }
+
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), 2000);
+            ds.setStatus(1);
+            sceneRepository.updateSceneDataSource(ds);
+            return BaseResultEntity.success("连接正常");
+        } catch (Exception e) {
+            ds.setStatus(0);
+            try { sceneRepository.updateSceneDataSource(ds); } catch (Exception ignore) { }
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "连接失败: " + e.getMessage());
+        }
     }
 }

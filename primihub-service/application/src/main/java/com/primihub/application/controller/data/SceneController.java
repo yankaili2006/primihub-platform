@@ -114,6 +114,44 @@ public class SceneController {
         return sceneService.createTask("police_fusion", req, getCurrentUserId());
     }
 
+    // ==================== 警务数据融合-数据源对接 ====================
+
+    @ApiOperation("警务数据融合-数据源列表")
+    @GetMapping("/policeFusion/datasource/list")
+    public BaseResultEntity getDataSourceList() {
+        return sceneService.getDataSourceList();
+    }
+
+    @ApiOperation("警务数据融合-保存数据源")
+    @PostMapping("/policeFusion/datasource/save")
+    public BaseResultEntity saveDataSource(@RequestBody Map<String, Object> req) {
+        return sceneService.saveDataSource(req, getCurrentUserId());
+    }
+
+    @ApiOperation("警务数据融合-删除数据源")
+    @PostMapping("/policeFusion/datasource/delete")
+    public BaseResultEntity deleteDataSource(@RequestBody Map<String, Object> req) {
+        Long id = req.get("id") != null ? Long.valueOf(req.get("id").toString())
+                : (req.get("sourceId") != null ? Long.valueOf(req.get("sourceId").toString()) : null);
+        if (id == null) return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
+        return sceneService.deleteDataSource(id);
+    }
+
+    @ApiOperation("警务数据融合-同步数据源")
+    @PostMapping("/policeFusion/datasource/sync")
+    public BaseResultEntity syncDataSource(@RequestBody Map<String, Object> req) {
+        Long sourceId = req.get("sourceId") != null ? Long.valueOf(req.get("sourceId").toString())
+                : (req.get("id") != null ? Long.valueOf(req.get("id").toString()) : null);
+        if (sourceId == null) return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
+        return sceneService.syncDataSource(sourceId);
+    }
+
+    @ApiOperation("警务数据融合-测试数据源连接")
+    @GetMapping("/policeFusion/datasource/test")
+    public BaseResultEntity testDataSource(@RequestParam Long sourceId) {
+        return sceneService.testDataSource(sourceId);
+    }
+
     // ==================== 场景日志（任务即日志记录） ====================
     @ApiOperation("警务数据融合-日志列表")
     @GetMapping("/policeFusion/log/list")

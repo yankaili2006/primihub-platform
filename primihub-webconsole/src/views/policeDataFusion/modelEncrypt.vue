@@ -55,30 +55,59 @@
 </template>
 
 <script>
-import { encryptPoliceData } from "@/api/scene"
+import { encryptPoliceData, getPoliceTaskList, getPoliceKeyList } from '@/api/scene'
 export default {
   name: 'ModelHomomorphicEncrypt',
   data() {
     return {
       encrypting: false,
       encryptForm: { modelId: '', keyId: '', precision: 'double', batchSize: 1000 },
-      modelList: [
-        { id: 'M001', name: '车险欺诈检测模型' },
-        { id: 'M002', name: '理赔风险评估模型' },
-        { id: 'M003', name: '客户信用评分模型' }
-      ],
-      keyList: [
-        { id: 'HK-001', org: '平安保险', scheme: 'CKKS' },
-        { id: 'HK-002', org: '中国人寿', scheme: 'BFV' }
-      ],
-      encryptTaskList: [
-        { taskId: 'ME-001', modelName: '车险欺诈检测模型', keyOrg: '平安保险', paramCount: 125000, encryptedSize: '2.3 GB', progress: 100, createTime: '2024-01-15 10:00:00' },
-        { taskId: 'ME-002', modelName: '理赔风险评估模型', keyOrg: '中国人寿', paramCount: 85000, encryptedSize: '1.5 GB', progress: 75, createTime: '2024-01-15 14:30:00' }
-      ]
+      // 真实模型目录不在本模块，保持真实但为空，不伪造
+      modelList: [],
+      keyList: [],
+      encryptTaskList: []
     }
+  },
+  created() {
+    this.fetchTaskList()
+    this.fetchKeyList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    normalizeSceneTask(row) {
+      let p = {}
+      try { p = row.params ? JSON.parse(row.params) : {} } catch (e) { p = {} }
+      const st = row.taskState
+      const statusText = st === 2 ? '已完成' : st === 3 ? '失败' : st === 1 ? '运行中' : '等待执行'
+      const status = st === 2 ? 'completed' : st === 3 ? 'failed' : 'running'
+      return Object.assign({}, p, {
+        taskId: row.id,
+        taskName: row.taskName,
+        taskType: row.taskType,
+        status,
+        statusText,
+        progress: st === 2 ? 100 : st === 3 ? 0 : 50,
+        createTime: row.createdAt
+      })
+    },
+    fetchTaskList() {
+      getPoliceTaskList({ taskType: 'modelEncrypt', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.encryptTaskList = (res.result.list || []).map(this.normalizeSceneTask)
+        }
+      }).catch(() => {})
+    },
+    fetchKeyList() {
+      getPoliceKeyList().then(res => {
+        if (res && res.code === 0) {
+          this.keyList = (res.result || []).map(k => ({
+            id: k.id || k.keyId,
+            org: k.org || k.orgName || k.keyName || '',
+            scheme: k.scheme || k.keyType || k.algorithm || ''
+          }))
+        }
+      }).catch(() => {})
+    },
     async handleEncrypt() {
       if (!this.encryptForm.modelId || !this.encryptForm.keyId) {
         this.$message.warning('请选择模型和密钥')
@@ -87,16 +116,9 @@ export default {
       this.encrypting = true
       try {
         const res = await encryptPoliceData({ keyId: this.encryptForm.keyId, data: 'model_' + this.encryptForm.modelId })
-        if (res.code === 0) {
-          this.$message.success('模型加密完成')
-          this.encryptTaskList.unshift({
-            taskId: `ME-${Date.now()}`,
-            modelName: (this.modelList.find(m => m.id === this.encryptForm.modelId) || {}).name,
-            keyOrg: (this.keyList.find(k => k.id === this.encryptForm.keyId) || {}).org,
-            encryptedSize: '计算完成',
-            progress: 100,
-            createTime: new Date().toLocaleString()
-          })
+        if (res && res.code === 0) {
+          this.$message.success('模型加密任务已提交')
+          this.fetchTaskList()
         }
       } catch (e) {
         this.$message.error('加密失败')
