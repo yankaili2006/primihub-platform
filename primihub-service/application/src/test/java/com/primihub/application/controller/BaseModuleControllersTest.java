@@ -691,8 +691,8 @@ public class BaseModuleControllersTest {
 
     @Test
     public void monitorController_getAlertConfig_success() {
-        when(monitorService.getAlertConfig()).thenReturn(successResult);
-        BaseResultEntity result = monitorController.getAlertConfig();
+        when(monitorService.getAlertConfig(null)).thenReturn(successResult);
+        BaseResultEntity result = monitorController.getAlertConfig(null);
         assertSame(successResult, result);
     }
 

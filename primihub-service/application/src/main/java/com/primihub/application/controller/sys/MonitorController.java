@@ -70,8 +70,8 @@ public class MonitorController {
 
     @ApiOperation(value = "获取告警配置")
     @GetMapping("getAlertConfig")
-    public BaseResultEntity getAlertConfig() {
-        return monitorService.getAlertConfig();
+    public BaseResultEntity getAlertConfig(@RequestParam(required = false) String type) {
+        return monitorService.getAlertConfig(type);
     }
 
     @ApiOperation(value = "保存告警配置")
