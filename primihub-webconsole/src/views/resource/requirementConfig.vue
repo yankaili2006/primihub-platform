@@ -157,7 +157,7 @@ export default {
       this.loading = true
       findConfigPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -291,7 +291,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deleteConfig(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -306,7 +306,7 @@ export default {
     },
     handleStatusChange(row) {
       updateConfigStatus(row.id, row.isEnabled).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('状态更新成功')
         } else {
           this.$message.error(res.msg || '状态更新失败')
@@ -323,7 +323,7 @@ export default {
         if (valid) {
           const apiFunc = this.isEdit ? updateConfig : addConfig
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功')
               this.dialogVisible = false
               this.fetchData()

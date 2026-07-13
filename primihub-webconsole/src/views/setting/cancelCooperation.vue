@@ -318,7 +318,7 @@ export default {
       }
       findCooperationPartyPage(params).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -396,7 +396,7 @@ export default {
       this.historyLoading = true
       findCancelCooperationHistory(this.historyQueryForm).then(res => {
         this.historyLoading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.historyTableData = res.result.list || []
           this.historyTotal = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -512,7 +512,7 @@ export default {
       this.$refs.cancelForm.validate((valid) => {
         if (valid) {
           cancelCooperation(this.cancelForm.id, this.cancelForm.cancelReason).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('取消合作成功')
               this.cancelDialogVisible = false
               this.fetchData()
@@ -540,7 +540,7 @@ export default {
         if (valid) {
           const ids = this.selectedRows.map(row => row.id)
           batchCancelCooperation(ids, this.batchCancelForm.cancelReason).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('批量取消合作成功')
               this.batchCancelDialogVisible = false
               this.selectedRows = []
@@ -570,7 +570,7 @@ export default {
           cooperationType: row.cooperationType
         }
         establishCooperation(data).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('重新建立合作成功')
             this.fetchHistoryData()
           } else {

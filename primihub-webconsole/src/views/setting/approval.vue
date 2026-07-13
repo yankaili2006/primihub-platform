@@ -404,7 +404,7 @@ export default {
       this.workflowLoading = true
       findWorkflowPage(this.workflowQueryForm).then(res => {
         this.workflowLoading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.workflowTableData = res.result.list || []
           this.workflowTotal = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -420,7 +420,7 @@ export default {
       this.configLoading = true
       getAllConfigs().then(res => {
         this.configLoading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.configTableData = res.result || []
         } else {
           this.$message.error(res.msg || '查询失败')
@@ -465,7 +465,7 @@ export default {
           this.workflowFormData.requesterId = this.userId
           this.workflowFormData.requesterName = this.userName
           createWorkflow(this.workflowFormData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('创建成功')
               this.createWorkflowDialogVisible = false
               this.fetchWorkflowData()
@@ -505,7 +505,7 @@ export default {
       const { action, row, comment } = this.approvalForm
       const apiFunc = action === 'approve' ? approveWorkflow : rejectWorkflow
       apiFunc(row.id, this.userId, this.userName, comment).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success(action === 'approve' ? '批准成功' : '拒绝成功')
           this.approvalDialogVisible = false
           this.fetchWorkflowData()
@@ -530,7 +530,7 @@ export default {
         return
       }
       cancelWorkflow(this.cancelForm.row.id, this.cancelForm.reason).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('取消成功')
           this.cancelDialogVisible = false
           this.fetchWorkflowData()
@@ -544,7 +544,7 @@ export default {
     },
     handleViewWorkflow(row) {
       getWorkflowById(row.id).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           const workflow = res.result
           this.$alert(
             `<div>
@@ -571,7 +571,7 @@ export default {
     },
     handleShowMyPending() {
       getMyPendingWorkflows(this.userId).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.workflowTableData = res.result || []
           this.workflowTotal = this.workflowTableData.length
           this.$message.success(`找到${this.workflowTableData.length}条待审批工作流`)
@@ -589,7 +589,7 @@ export default {
     },
     handleEditConfigSubmit() {
       updateApprovalConfig(this.configFormData).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('更新成功')
           this.editConfigDialogVisible = false
           this.fetchConfigData()
@@ -606,7 +606,7 @@ export default {
     },
     handleConfigEnabledChange(row) {
       updateConfigEnabled(row.id, row.isEnabled).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('状态更新成功')
         } else {
           this.$message.error(res.msg || '状态更新失败')

@@ -222,7 +222,7 @@ export default {
       this.loading = true
       findAccessPartyPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -285,7 +285,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deleteAccessParty(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -305,7 +305,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchDeleteAccessParty(ids).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {
@@ -348,7 +348,7 @@ export default {
       }).then(() => {
         const ids = pendingRows.map(row => row.id)
         batchApproveAccessParty(ids, this.userId, this.userName, '批量批准').then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量批准成功')
             this.fetchData()
           } else {
@@ -364,7 +364,7 @@ export default {
       const { action, row, comment } = this.approvalForm
       const apiFunc = action === 'approve' ? approveAccessParty : rejectAccessParty
       apiFunc(row.id, this.userId, this.userName, comment).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success(action === 'approve' ? '批准成功' : '拒绝成功')
           this.approvalDialogVisible = false
           this.fetchData()
@@ -378,7 +378,7 @@ export default {
     },
     handleActiveStatusChange(row) {
       updateActiveStatus(row.id, row.isActive).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('状态更新成功')
         } else {
           this.$message.error(res.msg || '状态更新失败')
@@ -401,7 +401,7 @@ export default {
 
           const apiFunc = this.isEdit ? updateAccessParty : addAccessParty
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功')
               this.dialogVisible = false
               this.fetchData()
