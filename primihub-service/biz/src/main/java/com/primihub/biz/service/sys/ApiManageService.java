@@ -8,10 +8,16 @@ import com.primihub.biz.entity.sys.po.ApiCallLog;
 import com.primihub.biz.entity.sys.po.ApiDefinition;
 import com.primihub.biz.repository.primarydb.sys.ApiManagePrimarydbRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Slf4j
@@ -354,13 +360,73 @@ public class ApiManageService {
         }
     }
 
-    public BaseResultEntity exportApiLog(String startTime, String endTime) {
+    /**
+     * 缺陷整改 T10：接口日志导出原为占位（无论有无数据都返回"导出成功"、且不产生文件）。
+     * 改为真实导出：查 api_call_log；无数据写 JSON 错误(前端 blob 拦截器识别并提示"暂无数据可导出")；
+     * 有数据写 xlsx 流下载。参数与前端 exportLog 一致（keyword→请求路径 LIKE，status→是否成功）。
+     */
+    public void exportApiLog(HttpServletResponse response, String keyword, String method, String status,
+                             String ip, String startTime, String endTime) {
         try {
-            return BaseResultEntity.success("导出成功");
+            Map<String, Object> params = new HashMap<>();
+            if (keyword != null && !keyword.isEmpty()) params.put("apiPath", keyword);
+            if (status != null && !status.isEmpty()) {
+                try { params.put("isSuccess", Integer.parseInt(status)); } catch (NumberFormatException ignore) { }
+            }
+            params.put("startTime", startTime);
+            params.put("endTime", endTime);
+
+            List<ApiCallLog> list = apiManageRepository.selectApiCallLogList(params);
+            if (list == null || list.isEmpty()) {
+                writeExportError(response, "暂无数据可导出");
+                return;
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("接口日志");
+            String[] headers = {"ID", "接口ID", "请求路径", "请求方法", "响应码", "客户端IP",
+                    "执行时长(ms)", "是否成功", "错误信息", "请求时间"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            int rowNum = 1;
+            for (ApiCallLog l : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(l.getId() != null ? l.getId() : 0L);
+                row.createCell(1).setCellValue(l.getApiId() != null ? l.getApiId() : 0L);
+                row.createCell(2).setCellValue(l.getRequestPath() != null ? l.getRequestPath() : "");
+                row.createCell(3).setCellValue(l.getRequestMethod() != null ? l.getRequestMethod() : "");
+                row.createCell(4).setCellValue(l.getResponseCode() != null ? l.getResponseCode() : 0);
+                row.createCell(5).setCellValue(l.getClientIp() != null ? l.getClientIp() : "");
+                row.createCell(6).setCellValue(l.getExecutionTime() != null ? l.getExecutionTime() : 0);
+                row.createCell(7).setCellValue(l.getIsSuccess() != null && l.getIsSuccess() == 1 ? "成功" : "失败");
+                row.createCell(8).setCellValue(l.getErrorMessage() != null ? l.getErrorMessage() : "");
+                row.createCell(9).setCellValue(l.getCreatedAt() != null ? sdf.format(l.getCreatedAt()) : "");
+            }
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode("接口日志.xlsx", "UTF-8"));
+            OutputStream out = response.getOutputStream();
+            workbook.write(out);
+            out.flush();
+            out.close();
+            workbook.close();
         } catch (Exception e) {
             log.error("导出接口日志失败", e);
-            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "导出失败");
+            writeExportError(response, "导出失败");
         }
+    }
+
+    private void writeExportError(HttpServletResponse response, String msg) {
+        try {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
+            response.getWriter().flush();
+        } catch (Exception ignore) { }
     }
 
     @Transactional(rollbackFor = Exception.class)
