@@ -16,7 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -494,5 +500,134 @@ public class SceneServiceImpl implements SceneService {
             log.error("解密数据失败", e);
             return BaseResultEntity.failure(BaseResultEnum.DECRYPTION_FAILED, "解密失败");
         }
+    }
+
+    // ==================== 场景日志（任务即日志记录）====================
+
+    private static String stateToLevel(Integer st) {
+        if (st == null) return "INFO";
+        switch (st) {
+            case 2: return "WARN";   // 运行中
+            case 3: return "ERROR";  // 失败
+            default: return "INFO";  // 0 待执行 / 1 成功
+        }
+    }
+
+    private static String stateToText(Integer st) {
+        if (st == null) return "";
+        switch (st) {
+            case 0: return "待执行";
+            case 1: return "成功";
+            case 2: return "运行中";
+            case 3: return "失败";
+            default: return String.valueOf(st);
+        }
+    }
+
+    @Override
+    public BaseResultEntity getLogList(String sceneType, String taskType, String keyword,
+                                       Integer pageNo, Integer pageSize) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("sceneType", sceneType);
+            params.put("taskType", taskType);
+            params.put("keyword", keyword);
+            if (pageNo == null) pageNo = 1;
+            if (pageSize == null) pageSize = 10;
+
+            int total = sceneRepository.selectSceneTaskCount(params);
+            PageParam pageParam = new PageParam(pageNo, pageSize);
+            pageParam.initItemTotalCount((long) total);
+            params.put("offset", pageParam.getPageIndex());
+            params.put("pageSize", pageParam.getPageSize());
+
+            List<SceneTask> tasks = sceneRepository.selectSceneTaskList(params);
+            List<Map<String, Object>> list = new ArrayList<>();
+            if (tasks != null) {
+                for (SceneTask t : tasks) {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("logId", t.getId());
+                    row.put("taskId", t.getId());
+                    row.put("sceneType", t.getSceneType());
+                    row.put("processType", t.getTaskType());
+                    row.put("level", stateToLevel(t.getTaskState()));
+                    row.put("state", t.getTaskState());
+                    row.put("stateText", stateToText(t.getTaskState()));
+                    row.put("message", t.getErrorMessage() != null && !t.getErrorMessage().isEmpty()
+                            ? t.getErrorMessage()
+                            : (t.getTaskName() + " [" + stateToText(t.getTaskState()) + "]"));
+                    row.put("operator", t.getCreatedBy());
+                    row.put("createTime", t.getCreatedAt());
+                    row.put("detail", "params=" + (t.getParams() == null ? "" : t.getParams())
+                            + "\nresult=" + (t.getResultData() == null ? "" : t.getResultData()));
+                    list.add(row);
+                }
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", list);
+            result.put("total", total);
+            result.put("pageParam", pageParam);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询场景日志列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    @Override
+    public void exportLog(HttpServletResponse response, String sceneType, String taskType, String keyword) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("sceneType", sceneType);
+            params.put("taskType", taskType);
+            params.put("keyword", keyword);
+            List<SceneTask> list = sceneRepository.selectSceneTaskList(params); // 无 offset/pageSize → 导出全部
+            if (list == null || list.isEmpty()) { writeExportError(response, "暂无数据可导出"); return; }
+
+            boolean police = "police_fusion".equals(sceneType);
+            String sheetName = police ? "警务数据融合日志" : "电子证件日志";
+            String fileName = sheetName + ".xlsx";
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet(sheetName);
+            String[] headers = {"日志ID", "场景类型", "流程类型", "任务名称", "级别", "状态", "日志内容", "操作人", "创建时间"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) headerRow.createCell(i).setCellValue(headers[i]);
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            int rowNum = 1;
+            for (SceneTask t : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(t.getId() != null ? t.getId() : 0L);
+                row.createCell(1).setCellValue(t.getSceneType() != null ? t.getSceneType() : "");
+                row.createCell(2).setCellValue(t.getTaskType() != null ? t.getTaskType() : "");
+                row.createCell(3).setCellValue(t.getTaskName() != null ? t.getTaskName() : "");
+                row.createCell(4).setCellValue(stateToLevel(t.getTaskState()));
+                row.createCell(5).setCellValue(stateToText(t.getTaskState()));
+                row.createCell(6).setCellValue(t.getErrorMessage() != null ? t.getErrorMessage() : "");
+                row.createCell(7).setCellValue(t.getCreatedBy() != null ? t.getCreatedBy() : 0L);
+                row.createCell(8).setCellValue(t.getCreatedAt() != null ? sdf.format(t.getCreatedAt()) : "");
+            }
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(fileName, "UTF-8"));
+            OutputStream out = response.getOutputStream();
+            workbook.write(out);
+            out.flush();
+            out.close();
+            workbook.close();
+        } catch (Exception e) {
+            log.error("导出场景日志失败", e);
+            writeExportError(response, "导出失败");
+        }
+    }
+
+    private void writeExportError(HttpServletResponse response, String msg) {
+        try {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
+            response.getWriter().flush();
+        } catch (Exception ignore) { }
     }
 }

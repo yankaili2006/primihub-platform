@@ -84,6 +84,8 @@
 </template>
 
 <script>
+import { createFLPreprocess } from '@/api/federatedLearning'
+
 export default {
   name: 'SinglePartyDataMerge',
   data() {
@@ -134,12 +136,28 @@ export default {
       ]
       this.$message.success('数据预览已生成')
     },
+    // 缺陷整改：改为真实提交合并任务（复用 FL 预处理 preprocess，subType=DATA_MERGE）
     handleMerge() {
       this.$refs.mergeForm.validate((valid) => {
-        if (valid) {
+        if (!valid) return
+        const payload = {
+          taskName: this.mergeFormData.mergeName,
+          preprocessType: 'DATA_MERGE',
+          mergeType: this.mergeFormData.mergeType,
+          dataSources: this.mergeFormData.dataSources,
+          resourceId: this.mergeFormData.dataSources.join(','),
+          joinKey: this.mergeFormData.joinKey,
+          deduplication: this.mergeFormData.deduplication,
+          outputFormat: this.mergeFormData.outputFormat
+        }
+        createFLPreprocess(payload).then(res => {
+          if (!res || res.code !== 0) {
+            this.$message.error((res && (res.message || res.msg)) || '创建失败')
+            return
+          }
           this.$message.success('数据合并任务已创建')
           this.mergeHistory.unshift({
-            id: `MG${Date.now()}`,
+            id: (res.result && (res.result.taskId || res.result.id)) || `MG${Date.now()}`,
             name: this.mergeFormData.mergeName,
             mergeType: this.mergeFormData.mergeType,
             sourceCount: this.mergeFormData.dataSources.length,
@@ -147,7 +165,7 @@ export default {
             createTime: new Date().toLocaleString(),
             status: 'running'
           })
-        }
+        }).catch(() => this.$message.error('请求异常'))
       })
     },
     handleViewResult(row) {

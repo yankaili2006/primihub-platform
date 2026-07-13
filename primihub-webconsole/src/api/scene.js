@@ -75,3 +75,29 @@ export function batchExchange(data) {
 export function realtimeExchange(data) {
   return request({ url: '/electronicCert/exchange/realtime', method: 'post', data })
 }
+
+// ==================== 警务数据融合-密文交换 ====================
+export function policeBatchExchange(data) {
+  return request({ url: '/policeFusion/exchange/batch', method: 'post', data })
+}
+
+export function policeRealtimeExchange(data) {
+  return request({ url: '/policeFusion/exchange/realtime', method: 'post', data })
+}
+
+// ==================== 场景日志（任务即日志记录） ====================
+export function getPoliceLogList(params) {
+  return request({ url: '/policeFusion/log/list', method: 'get', params })
+}
+
+export function exportPoliceLog(params) {
+  return request({ url: '/policeFusion/log/export', method: 'get', params, responseType: 'blob' })
+}
+
+export function getCertLogList(params) {
+  return request({ url: '/electronicCert/log/list', method: 'get', params })
+}
+
+export function exportCertLog(params) {
+  return request({ url: '/electronicCert/log/export', method: 'get', params, responseType: 'blob' })
+}

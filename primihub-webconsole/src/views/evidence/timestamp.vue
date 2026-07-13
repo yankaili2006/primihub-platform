@@ -462,35 +462,42 @@ export default {
       this.applyForm.file = file.raw
       this.applyFileList = [file]
     },
-    async submitApply() {
+    // 浏览器端计算文件 SHA-256（避免把 100MB 文件塞进请求）
+    async sha256File(file) {
+      const buf = await file.arrayBuffer()
+      const digest = await crypto.subtle.digest('SHA-256', buf)
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
+    },
+    // 缺陷整改：申请时间戳 = 新建存证并打时间戳；改为 JSON 契约（文件传内容哈希，数据传文本），与后端对齐
+    submitApply() {
       this.$refs.applyForm.validate(async(valid) => {
-        if (valid) {
-          if (this.applyType === 'FILE' && !this.applyForm.file) {
-            this.$message.warning('请选择文件')
-            return
+        if (!valid) return
+        if (this.applyType === 'FILE' && !this.applyForm.file) {
+          this.$message.warning('请选择文件')
+          return
+        }
+        if (this.applyType === 'DATA' && !this.applyForm.data) {
+          this.$message.warning('请输入数据内容')
+          return
+        }
+        this.applying = true
+        try {
+          const payload = {
+            applyType: this.applyType,
+            timestampType: this.applyForm.timestampType,
+            tsaServer: this.applyForm.tsaServer === 'CUSTOM' ? this.applyForm.customTsaUrl : this.applyForm.tsaServer,
+            remark: this.applyForm.remark
           }
-          if (this.applyType === 'DATA' && !this.applyForm.data) {
-            this.$message.warning('请输入数据内容')
-            return
-          }
-
-          this.applying = true
-          const formData = new FormData()
           if (this.applyType === 'FILE') {
-            formData.append('file', this.applyForm.file)
+            const f = this.applyForm.file
+            payload.fileName = f.name
+            payload.fileSize = f.size
+            payload.fileType = f.type
+            payload.fileHash = await this.sha256File(f)
           } else {
-            formData.append('data', this.applyForm.data)
+            payload.data = this.applyForm.data
           }
-          formData.append('timestampType', this.applyForm.timestampType)
-          formData.append('tsaServer', this.applyForm.tsaServer)
-          if (this.applyForm.customTsaUrl) {
-            formData.append('customTsaUrl', this.applyForm.customTsaUrl)
-          }
-          formData.append('remark', this.applyForm.remark)
-
-          const res = await applyTimestamp(formData)
-          this.applying = false
-
+          const res = await applyTimestamp(payload)
           if (res.code === 0) {
             this.$message.success('时间戳申请成功')
             this.applyDialogVisible = false
@@ -499,6 +506,10 @@ export default {
           } else {
             this.$message.error(res.msg || '时间戳申请失败')
           }
+        } catch (e) {
+          this.$message.error('时间戳申请失败')
+        } finally {
+          this.applying = false
         }
       })
     },

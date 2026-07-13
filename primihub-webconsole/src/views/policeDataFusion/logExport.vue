@@ -74,6 +74,8 @@
 </template>
 
 <script>
+import { exportPoliceLog } from '@/api/scene'
+
 export default {
   name: 'SceneLogExport',
   data() {
@@ -92,25 +94,30 @@ export default {
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    // 缺陷整改：改为真实导出场景日志 xlsx（原指向错误 URL/假成功）
     handleExport() {
       this.exporting = true
-      const link = document.createElement('a')
-      link.href = '/log/exportComputeLog'
-      link.download = `${this.exportForm.fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.${this.exportForm.exportFormat.toLowerCase()}`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      setTimeout(() => {
-        this.exporting = false
+      const taskType = (this.exportForm.processTypes && this.exportForm.processTypes.length === 1)
+        ? this.exportForm.processTypes[0] : undefined
+      exportPoliceLog({ taskType }).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${this.exportForm.fileNamePrefix}_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
         this.$message.success('日志导出成功')
         this.exportHistory.unshift({
           exportId: `EXP${Date.now()}`,
           fileName: link.download,
-          format: this.exportForm.exportFormat,
+          format: 'EXCEL',
           createTime: new Date().toLocaleString(),
           status: 'completed'
         })
-      }, 1000)
+      }).catch(() => {
+        this.$message.error('导出失败或无数据')
+      }).finally(() => { this.exporting = false })
     },
     handleReset() {
       this.exportForm = {
