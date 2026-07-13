@@ -59,6 +59,8 @@
 </template>
 
 <script>
+import { importModel } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedModelImport',
   data() {
@@ -94,8 +96,19 @@ export default {
         return
       }
       this.importing = true
-      setTimeout(() => {
+      const raw = this.fileList[0].raw || this.fileList[0]
+      const fd = new FormData()
+      fd.append('file', raw)
+      fd.append('modelName', this.importForm.modelName)
+      fd.append('modelType', this.importForm.modelType)
+      fd.append('description', this.importForm.description || '')
+      // 缺陷整改：改为真实 multipart 上传导入（原 setTimeout 假成功、不落盘）
+      importModel(fd).then(res => {
         this.importing = false
+        if (!res || res.code !== 0) {
+          this.$message.error((res && (res.message || res.msg)) || '导入失败')
+          return
+        }
         this.$message.success('模型导入成功')
         this.importHistory.unshift({
           modelName: this.importForm.modelName,
@@ -107,7 +120,10 @@ export default {
           statusText: '成功'
         })
         this.handleReset()
-      }, 2000)
+      }).catch(() => {
+        this.importing = false
+        this.$message.error('请求异常')
+      })
     },
     handleReset() {
       this.importForm = { modelName: '', modelType: '', description: '' }

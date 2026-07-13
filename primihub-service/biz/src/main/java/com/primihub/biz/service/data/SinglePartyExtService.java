@@ -69,6 +69,13 @@ public class SinglePartyExtService {
     public BaseResultEntity deleteFlPre(Map<String, Object> data) { return deleteTask(taskId(data)); }
     public void downloadFlPre(String taskId, HttpServletResponse resp) { download(taskId, resp); }
 
+    // ===== 联邦学习 模型导入（独立登记，不碰真实 FL model 表；category=FLMODEL）=====
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity importModel(Map<String, Object> data, Long userId, String userName) {
+        return createInternal("FLMODEL", data, userId, userName);
+    }
+    public BaseResultEntity listModel(Map<String, Object> query) { return pageTasks("FLMODEL", query); }
+
     // ===== 学习日志 =====
     public BaseResultEntity getLogs(Map<String, Object> query) {
         try {

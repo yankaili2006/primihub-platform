@@ -10,8 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.primihub.biz.service.sys.SysFileService;
+import com.primihub.biz.service.data.SinglePartyExtService;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 联邦学习接口
@@ -24,6 +29,37 @@ public class FederatedLearningController {
 
     @Autowired
     private FederatedLearningService federatedLearningService;
+    @Autowired
+    private SysFileService sysFileService;
+    @Autowired
+    private SinglePartyExtService singlePartyExtService;
+
+    @ApiOperation("联邦学习-模型导入(multipart)")
+    @PostMapping("importModel")
+    public BaseResultEntity importModel(@RequestParam("file") MultipartFile file,
+                                        @RequestParam("modelName") String modelName,
+                                        @RequestParam(value = "modelType", required = false) String modelType,
+                                        @RequestParam(value = "description", required = false) String description,
+                                        @RequestHeader(value = "userId", required = false) Long userId) {
+        if (StringUtils.isBlank(modelName)) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "modelName");
+        }
+        if (file == null || file.getSize() == 0) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "file");
+        }
+        BaseResultEntity up = sysFileService.upload(file, 1);
+        if (up.getCode() != 0) {
+            return up;
+        }
+        Map<String, Object> reg = new HashMap<>();
+        reg.put("taskName", modelName);
+        reg.put("subType", modelType);
+        reg.put("fileName", file.getOriginalFilename());
+        reg.put("fileSize", file.getSize());
+        reg.put("fileInfo", up.getResult());
+        reg.put("remark", description);
+        return singlePartyExtService.importModel(reg, userId, null);
+    }
 
     /**
      * 创建并运行联邦学习任务

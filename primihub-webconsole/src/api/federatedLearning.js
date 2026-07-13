@@ -50,6 +50,19 @@ export function getModelList(params) {
 }
 
 /**
+ * 联邦学习模型导入（multipart 上传）
+ * @param {FormData} formData 含 file/modelName/modelType/description
+ */
+export function importModel(formData) {
+  return request({
+    url: '/federatedLearning/importModel',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+/**
  * 下载模型文件
  */
 export function downloadModel(params) {
@@ -468,7 +481,7 @@ export function flWorkflowList(params) {
   return request({ url: '/federatedLearning/workflow/list', method: 'get', params })
 }
 export function flWorkflowGet(workflowId) {
-  return request({ url: '/federatedLearning/workflow/get', method: 'get', params: { workflowId } })
+  return request({ url: '/federatedLearning/workflow/get', method: 'get', params: { workflowId }})
 }
 export function flWorkflowSave(data) {
   return request({ url: '/federatedLearning/workflow/save', method: 'post', type: 'json', data })
@@ -477,8 +490,8 @@ export function flWorkflowRun(data) {
   return request({ url: '/federatedLearning/workflow/run', method: 'post', type: 'json', data })
 }
 export function flWorkflowLogs(workflowId) {
-  return request({ url: '/federatedLearning/workflow/logs', method: 'get', params: { workflowId } })
+  return request({ url: '/federatedLearning/workflow/logs', method: 'get', params: { workflowId }})
 }
 export function flWorkflowDelete(workflowId) {
-  return request({ url: '/federatedLearning/workflow/delete', method: 'post', params: { workflowId } })
+  return request({ url: '/federatedLearning/workflow/delete', method: 'post', params: { workflowId }})
 }

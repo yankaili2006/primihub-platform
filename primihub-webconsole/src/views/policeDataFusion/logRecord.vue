@@ -80,33 +80,42 @@
 </template>
 
 <script>
+import { getPoliceLogList } from '@/api/scene'
+
 export default {
   name: 'PoliceDataFusionLogRecord',
   data() {
     return {
       detailDialogVisible: false,
       currentLog: {},
+      loading: false,
       queryForm: { processType: '', logLevel: '', dateRange: [] },
-      logList: [
-        { logId: 'LOG001', processType: '数据融合', taskId: 'PDI-001', level: 'INFO', message: '数据融合任务开始执行，警务数据量: 15000, 保险数据量: 28000', operator: 'admin', createTime: '2024-01-15 10:30:00', detail: '任务配置:\n- 交集字段: 身份证号\n- 加密算法: 同态加密\n- 并行度: 8' },
-        { logId: 'LOG002', processType: '数据融合', taskId: 'PDI-001', level: 'INFO', message: '数据预处理完成，开始执行隐私求交', operator: 'admin', createTime: '2024-01-15 10:31:15', detail: '预处理耗时: 75s\n数据清洗: 移除无效记录 23 条' },
-        { logId: 'LOG003', processType: '密钥生成', taskId: 'HK-001', level: 'INFO', message: '同态加密密钥对生成成功', operator: 'admin', createTime: '2024-01-15 09:00:00', detail: '加密方案: CKKS\n多项式模数度: 8192\n安全级别: 128-bit' },
-        { logId: 'LOG004', processType: '模型加密', taskId: 'ME-001', level: 'WARN', message: '模型参数量较大，加密过程可能耗时较长', operator: 'admin', createTime: '2024-01-15 10:05:00', detail: '模型参数量: 125000\n预计加密时间: 15-20分钟' },
-        { logId: 'LOG005', processType: '联合运算', taskId: 'EC-001', level: 'INFO', message: '联合运算完成，输出密文结果', operator: 'admin', createTime: '2024-01-15 11:12:00', detail: '运算类型: 模型预测\n输入数据量: 15000\n输出数据量: 15000\n运算耗时: 12min' },
-        { logId: 'LOG006', processType: '数据交换', taskId: 'EX-001', level: 'ERROR', message: '数据传输中断，尝试重连', operator: 'system', createTime: '2024-01-15 10:25:30', detail: '错误代码: CONNECTION_TIMEOUT\n目标机构: 平安保险\n已传输: 1.2GB / 2.5GB\n重试次数: 3' }
-      ]
+      logList: []
     }
+  },
+  created() {
+    this.fetchData()
   },
   methods: {
     goBack() { this.$router.go(-1) },
     getLevelType(level) {
       return { INFO: 'success', WARN: 'warning', ERROR: 'danger', DEBUG: 'info' }[level] || 'info'
     },
-    handleQuery() {
-      this.$message.success('查询完成')
+    // 缺陷整改：改调真实场景日志接口（原纯 mock）
+    fetchData() {
+      this.loading = true
+      getPoliceLogList({
+        taskType: this.queryForm.processType || undefined,
+        pageNo: 1,
+        pageSize: 200
+      }).then(res => {
+        this.logList = (res && res.code === 0 && res.result) ? (res.result.list || []) : []
+      }).catch(() => { this.logList = [] }).finally(() => { this.loading = false })
     },
+    handleQuery() { this.fetchData() },
     handleReset() {
       this.queryForm = { processType: '', logLevel: '', dateRange: [] }
+      this.fetchData()
     },
     handleViewDetail(row) {
       this.currentLog = row

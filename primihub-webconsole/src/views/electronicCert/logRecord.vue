@@ -79,31 +79,42 @@
 </template>
 
 <script>
+import { getCertLogList } from '@/api/scene'
+
 export default {
   name: 'ElectronicCertLogRecord',
   data() {
     return {
       detailDialogVisible: false,
       currentLog: {},
+      loading: false,
       queryForm: { processType: '', logLevel: '', dateRange: [] },
-      logList: [
-        { logId: 'LOG001', processType: '特征转换', taskId: 'FC-001', level: 'INFO', message: '身份证人脸特征提取完成，成功处理 998/1000 条记录', operator: 'admin', createTime: '2024-01-15 10:30:00', detail: '算法: ArcFace\n特征维度: 512\n失败原因: 图像质量不足 2条' },
-        { logId: 'LOG002', processType: '隐私比对', taskId: 'CMP001', level: 'INFO', message: '1:1身份验证完成，匹配率 98.5%', operator: 'admin', createTime: '2024-01-15 11:00:00', detail: '总比对数: 1000\n成功匹配: 985\n隐私协议: MPC' },
-        { logId: 'LOG003', processType: '数据交换', taskId: 'BEX001', level: 'WARN', message: '网络传输速度低于预期，自动降低并发数', operator: 'system', createTime: '2024-01-15 10:15:00', detail: '原并发数: 50\n调整后: 30\n网络带宽: 85 Mbps' },
-        { logId: 'LOG004', processType: '现场采集', taskId: 'CAP003', level: 'ERROR', message: '活体检测未通过，可能为照片攻击', operator: 'admin', createTime: '2024-01-15 10:25:00', detail: '设备: 人脸采集仪-B区\n活体评分: 0.32\n阈值: 0.7' }
-      ]
+      logList: []
     }
+  },
+  created() {
+    this.fetchData()
   },
   methods: {
     goBack() { this.$router.go(-1) },
     getLevelType(level) {
       return { INFO: 'success', WARN: 'warning', ERROR: 'danger' }[level] || 'info'
     },
-    handleQuery() {
-      this.$message.success('查询完成')
+    // 缺陷整改：改调真实场景日志接口（原纯 mock）
+    fetchData() {
+      this.loading = true
+      getCertLogList({
+        taskType: this.queryForm.processType || undefined,
+        pageNo: 1,
+        pageSize: 200
+      }).then(res => {
+        this.logList = (res && res.code === 0 && res.result) ? (res.result.list || []) : []
+      }).catch(() => { this.logList = [] }).finally(() => { this.loading = false })
     },
+    handleQuery() { this.fetchData() },
     handleReset() {
       this.queryForm = { processType: '', logLevel: '', dateRange: [] }
+      this.fetchData()
     },
     handleViewDetail(row) {
       this.currentLog = row

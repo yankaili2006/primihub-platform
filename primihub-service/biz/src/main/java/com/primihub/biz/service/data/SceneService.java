@@ -2,11 +2,15 @@ package com.primihub.biz.service.data;
 
 import com.primihub.biz.entity.base.BaseResultEntity;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 public interface SceneService {
 
     BaseResultEntity createTask(String sceneType, Map<String, Object> req, Long userId);
+    // 场景日志（任务即日志记录）
+    BaseResultEntity getLogList(String sceneType, String taskType, String keyword, Integer pageNo, Integer pageSize);
+    void exportLog(HttpServletResponse response, String sceneType, String taskType, String keyword);
     BaseResultEntity getTaskList(String sceneType, String taskType, Integer pageNo, Integer pageSize);
     BaseResultEntity getTaskDetail(Long taskId);
     BaseResultEntity executeTask(Long taskId);

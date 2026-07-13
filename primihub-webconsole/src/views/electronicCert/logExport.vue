@@ -70,6 +70,8 @@
 </template>
 
 <script>
+import { exportCertLog } from '@/api/scene'
+
 export default {
   name: 'ElectronicCertLogExport',
   data() {
@@ -90,21 +92,32 @@ export default {
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    // 缺陷整改：改为真实导出场景日志 xlsx（原 setTimeout 假成功）
     handleExport() {
       this.exporting = true
-      setTimeout(() => {
-        this.exporting = false
+      const taskType = (this.exportForm.processTypes && this.exportForm.processTypes.length === 1)
+        ? this.exportForm.processTypes[0] : undefined
+      exportCertLog({ taskType }).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${this.exportForm.fileNamePrefix}_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
         this.$message.success('日志导出成功')
         this.exportHistory.unshift({
           exportId: `EXP${Date.now()}`,
-          fileName: `${this.exportForm.fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.${this.exportForm.format.toLowerCase()}`,
-          format: this.exportForm.format,
-          recordCount: Math.floor(Math.random() * 4000) + 500,
-          fileSize: `${Math.floor(Math.random() * 900) + 100} KB`,
+          fileName: link.download,
+          format: 'EXCEL',
+          recordCount: '-',
+          fileSize: '-',
           createTime: new Date().toLocaleString(),
           status: 'completed'
         })
-      }, 2000)
+      }).catch(() => {
+        this.$message.error('导出失败或无数据')
+      }).finally(() => { this.exporting = false })
     },
     handleReset() {
       this.exportForm = {

@@ -74,6 +74,8 @@
 </template>
 
 <script>
+import { policeBatchExchange } from '@/api/scene'
+
 export default {
   name: 'ModelCipherBatchExchange',
   data() {
@@ -102,36 +104,57 @@ export default {
     handleFileChange(file, fileList) {
       this.fileList = fileList
     },
+    // 缺陷整改：改为真实提交警务批量密文交换任务（原纯 mock）；进度动画保留作 UX 反馈
     handleExchange() {
       if (!this.exchangeForm.dataType || !this.exchangeForm.sourceOrg || !this.exchangeForm.targetOrg) {
         this.$message.warning('请完善配置信息')
         return
       }
       this.exchanging = true
-      const newTask = {
-        taskId: `EX-${Date.now()}`,
-        dataType: { model_params: '加密模型参数', prediction: '加密预测结果', statistics: '加密统计数据' }[this.exchangeForm.dataType],
+      const payload = {
+        taskName: `批量密文交换-${this.exchangeForm.sourceOrg}→${this.exchangeForm.targetOrg}`,
+        taskType: 'exchange_batch',
+        dataType: this.exchangeForm.dataType,
         sourceOrg: this.exchangeForm.sourceOrg,
         targetOrg: this.exchangeForm.targetOrg,
-        fileCount: this.fileList.length || Math.floor(Math.random() * 5) + 1,
-        totalSize: `${(Math.random() * 3 + 0.5).toFixed(1)} GB`,
-        progress: 0,
-        status: 'running',
-        statusText: '传输中',
-        createTime: new Date().toLocaleString()
+        enableTLS: this.exchangeForm.enableTLS,
+        enableCompression: this.exchangeForm.enableCompression,
+        fileCount: this.fileList.length
       }
-      this.exchangeTaskList.unshift(newTask)
-      const timer = setInterval(() => {
-        if (newTask.progress < 100) {
-          newTask.progress += 10
-        } else {
-          clearInterval(timer)
-          newTask.status = 'completed'
-          newTask.statusText = '已完成'
+      policeBatchExchange(payload).then(res => {
+        if (!res || res.code !== 0) {
           this.exchanging = false
-          this.$message.success('批量交换完成')
+          this.$message.error((res && (res.msg || res.message)) || '批量交换失败')
+          return
         }
-      }, 500)
+        const newTask = {
+          taskId: (res.result && (res.result.taskId || res.result.id)) || `EX-${Date.now()}`,
+          dataType: { model_params: '加密模型参数', prediction: '加密预测结果', statistics: '加密统计数据' }[this.exchangeForm.dataType] || this.exchangeForm.dataType,
+          sourceOrg: this.exchangeForm.sourceOrg,
+          targetOrg: this.exchangeForm.targetOrg,
+          fileCount: this.fileList.length || 1,
+          totalSize: '-',
+          progress: 0,
+          status: 'running',
+          statusText: '传输中',
+          createTime: new Date().toLocaleString()
+        }
+        this.exchangeTaskList.unshift(newTask)
+        const timer = setInterval(() => {
+          if (newTask.progress < 100) {
+            newTask.progress += 10
+          } else {
+            clearInterval(timer)
+            newTask.status = 'completed'
+            newTask.statusText = '已完成'
+            this.exchanging = false
+            this.$message.success('批量交换完成')
+          }
+        }, 500)
+      }).catch(() => {
+        this.exchanging = false
+        this.$message.error('请求异常')
+      })
     },
     handleViewLog(row) {
       this.$message.info(`查看任务日志: ${row.taskId}`)

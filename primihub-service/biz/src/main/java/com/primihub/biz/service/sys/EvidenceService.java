@@ -180,20 +180,54 @@ public class EvidenceService {
     public BaseResultEntity applyTimestamp(Map<String, Object> data) {
         try {
             Long evidenceId = data.get("evidenceId") != null ? Long.valueOf(data.get("evidenceId").toString()) : null;
-            if (evidenceId == null) {
-                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "存证ID不能为空");
+
+            EvidenceRecord record;
+            if (evidenceId != null) {
+                // 既有语义：对已存在存证补时间戳
+                record = evidenceRepository.selectEvidenceRecordById(evidenceId);
+                if (record == null) {
+                    return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "存证不存在");
+                }
+            } else {
+                // 缺陷整改：申请时间戳 = 新建存证记录并对其打时间戳（file 传内容哈希 / data 传文本）
+                String applyType = data.get("applyType") != null ? data.get("applyType").toString() : "DATA";
+                String evidenceData = data.get("data") != null ? data.get("data").toString() : "";
+                String fileName = data.get("fileName") != null ? data.get("fileName").toString() : null;
+                String fileHash = data.get("fileHash") != null ? data.get("fileHash").toString() : null;
+                Long fileSize = data.get("fileSize") != null ? Long.valueOf(data.get("fileSize").toString()) : null;
+                String fileType = data.get("fileType") != null ? data.get("fileType").toString() : null;
+                String remark = data.get("remark") != null ? data.get("remark").toString() : "";
+                Long createdBy = data.get("createdBy") != null ? Long.valueOf(data.get("createdBy").toString()) : null;
+
+                boolean isFile = "FILE".equalsIgnoreCase(applyType);
+                if (isFile && (fileHash == null || fileHash.isEmpty())) {
+                    return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "文件哈希不能为空");
+                }
+                if (!isFile && evidenceData.isEmpty()) {
+                    return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "数据内容不能为空");
+                }
+                String hash = sha256Hex((isFile ? fileHash : evidenceData) + System.currentTimeMillis());
+
+                record = new EvidenceRecord();
+                record.setEvidenceHash(hash);
+                record.setEvidenceData(isFile ? fileHash : evidenceData);
+                record.setEvidenceType(isFile ? "file" : "text");
+                record.setFileName(fileName);
+                record.setFileSize(fileSize);
+                record.setFileType(fileType);
+                record.setChainType("LOCAL");
+                record.setDescription(remark);
+                record.setStatus(0);
+                record.setCreatedBy(createdBy);
+                evidenceRepository.insertEvidenceRecord(record);
             }
 
-            EvidenceRecord record = evidenceRepository.selectEvidenceRecordById(evidenceId);
-            if (record == null) {
-                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "存证不存在");
-            }
-
+            String tsaServer = data.get("tsaServer") != null ? data.get("tsaServer").toString() : "LOCAL";
             EvidenceTimestamp timestamp = new EvidenceTimestamp();
-            timestamp.setEvidenceId(evidenceId);
+            timestamp.setEvidenceId(record.getId());
             timestamp.setTimestampValue(new Date());
             timestamp.setTimestampHash(sha256Hex(record.getEvidenceHash() + new Date().getTime()));
-            timestamp.setTimestampSource("LOCAL");
+            timestamp.setTimestampSource(tsaServer);
             timestamp.setNonce(UUID.randomUUID().toString().replace("-", ""));
             timestamp.setStatus(1);
             evidenceRepository.insertEvidenceTimestamp(timestamp);
@@ -202,6 +236,7 @@ public class EvidenceService {
             evidenceRepository.updateEvidenceRecord(record);
 
             Map<String, Object> result = new HashMap<>();
+            result.put("evidenceId", record.getId());
             result.put("timestampId", timestamp.getId());
             result.put("status", "SUCCESS");
             result.put("timestamp", timestamp.getTimestampValue());

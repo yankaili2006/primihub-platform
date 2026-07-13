@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 @Api(value = "场景定制化接口", tags = "场景定制化接口")
@@ -98,6 +99,54 @@ public class SceneController {
         Long keyId = req.get("keyId") != null ? Long.valueOf(req.get("keyId").toString()) : null;
         String encryptedData = (String) req.get("encryptedData");
         return sceneService.decryptData(keyId, encryptedData);
+    }
+
+    // ==================== 警务数据融合-密文交换（镜像电子证件 exchange） ====================
+    @ApiOperation("警务数据融合-密文交换(批量)")
+    @PostMapping("/policeFusion/exchange/batch")
+    public BaseResultEntity policeBatchExchange(@RequestBody Map<String, Object> req) {
+        return sceneService.createTask("police_fusion", req, getCurrentUserId());
+    }
+
+    @ApiOperation("警务数据融合-密文交换(实时)")
+    @PostMapping("/policeFusion/exchange/realtime")
+    public BaseResultEntity policeRealtimeExchange(@RequestBody Map<String, Object> req) {
+        return sceneService.createTask("police_fusion", req, getCurrentUserId());
+    }
+
+    // ==================== 场景日志（任务即日志记录） ====================
+    @ApiOperation("警务数据融合-日志列表")
+    @GetMapping("/policeFusion/log/list")
+    public BaseResultEntity getPoliceLogList(@RequestParam(required = false) String taskType,
+                                             @RequestParam(required = false) String keyword,
+                                             @RequestParam(defaultValue = "1") Integer pageNo,
+                                             @RequestParam(defaultValue = "10") Integer pageSize) {
+        return sceneService.getLogList("police_fusion", taskType, keyword, pageNo, pageSize);
+    }
+
+    @ApiOperation("警务数据融合-日志导出")
+    @GetMapping("/policeFusion/log/export")
+    public void exportPoliceLog(HttpServletResponse response,
+                                @RequestParam(required = false) String taskType,
+                                @RequestParam(required = false) String keyword) {
+        sceneService.exportLog(response, "police_fusion", taskType, keyword);
+    }
+
+    @ApiOperation("电子证件-日志列表")
+    @GetMapping("/electronicCert/log/list")
+    public BaseResultEntity getCertLogList(@RequestParam(required = false) String taskType,
+                                           @RequestParam(required = false) String keyword,
+                                           @RequestParam(defaultValue = "1") Integer pageNo,
+                                           @RequestParam(defaultValue = "10") Integer pageSize) {
+        return sceneService.getLogList("electronic_cert", taskType, keyword, pageNo, pageSize);
+    }
+
+    @ApiOperation("电子证件-日志导出")
+    @GetMapping("/electronicCert/log/export")
+    public void exportCertLog(HttpServletResponse response,
+                              @RequestParam(required = false) String taskType,
+                              @RequestParam(required = false) String keyword) {
+        sceneService.exportLog(response, "electronic_cert", taskType, keyword);
     }
 
     // ==================== 电子证件 ====================
