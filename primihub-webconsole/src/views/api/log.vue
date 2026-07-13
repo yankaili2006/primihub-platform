@@ -371,8 +371,7 @@ export default {
       }
       this.detailVisible = true
     },
-    async exportLog() {
-      // TODO: 调用实际接口导出日志
+    exportLog() {
       const params = {
         keyword: this.searchForm.keyword,
         method: this.searchForm.method,
@@ -381,11 +380,19 @@ export default {
         startTime: this.dateRange && this.dateRange.length > 0 ? this.dateRange[0] : '',
         endTime: this.dateRange && this.dateRange.length > 1 ? this.dateRange[1] : ''
       }
-      const res = await exportApiLog(params)
-      if (res) {
-        // TODO: 处理文件下载
-        this.$message.success('日志导出成功')
-      }
+      exportApiLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `接口日志_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('导出成功')
+      }).catch(() => {
+        // 无数据时后端返回 JSON 错误体，被 request.js blob 拦截器识别并提示（如"暂无数据可导出"）
+        this.$message.error('导出失败')
+      })
     },
     clearLog() {
       this.$confirm('确定要清空所有接口日志吗？此操作不可恢复！', '警告', {

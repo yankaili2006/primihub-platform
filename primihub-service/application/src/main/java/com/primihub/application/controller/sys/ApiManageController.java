@@ -8,6 +8,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 @Api(value = "接口管理", tags = "接口管理")
@@ -173,10 +174,15 @@ public class ApiManageController {
 
     @ApiOperation(value = "导出接口日志")
     @GetMapping("exportApiLog")
-    public BaseResultEntity exportApiLog(
+    public void exportApiLog(
+            HttpServletResponse response,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String method,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String ip,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        return apiManageService.exportApiLog(startTime, endTime);
+        apiManageService.exportApiLog(response, keyword, method, status, ip, startTime, endTime);
     }
 
     @ApiOperation(value = "清空接口日志")
