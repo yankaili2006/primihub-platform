@@ -212,10 +212,17 @@ CREATE TABLE IF NOT EXISTS `shared_dataset` (
 -- 前端 store/permission.js 用「路由 name == auth_code」过滤菜单、用 authType==3 生成按钮列表。
 -- 全部授予超级管理员角色 role_id=1。
 
--- ---- 4.1 白名单：修正错误 auth_code + 补 WhitelistEdit ----
--- 前端要 WhitelistAdd，历史种子却写成 WhitelistCreate → 改名（保留原 auth_id 及其已有授权）
+-- ---- 4.1 白名单：修正错误 auth_code + 补 WhitelistAdd/WhitelistEdit ----
+-- 情况一：历史种子把「新增」写成 WhitelistCreate → 改名为 WhitelistAdd（保留原 auth_id 及其已有授权）
 UPDATE sys_auth SET auth_code='WhitelistAdd', auth_name='新增白名单'
   WHERE auth_code='WhitelistCreate' AND is_del=0;
+
+-- 情况二：库中本就没有 WhitelistCreate（如线上部署）→ 上面的改名不命中，这里直接新建 WhitelistAdd
+-- 二者互斥且都带 NOT EXISTS 守卫，幂等安全；确保任何库都最终拥有 WhitelistAdd
+INSERT INTO sys_auth (auth_name, auth_code, auth_type, p_auth_id, r_auth_id, full_path, auth_url, data_auth_code, auth_index, auth_depth, is_show, is_editable, is_del)
+SELECT '新增白名单','WhitelistAdd',3, w.auth_id, w.r_auth_id, CONCAT(w.full_path,',WhitelistAdd'), '/whitelist/saveOrUpdateWhitelist','own',2,2,1,1,0
+FROM (SELECT auth_id, r_auth_id, full_path FROM sys_auth WHERE auth_code='WhitelistList' AND is_del=0 LIMIT 1) w
+WHERE NOT EXISTS (SELECT 1 FROM sys_auth s WHERE s.auth_code='WhitelistAdd' AND s.is_del=0);
 
 -- 补「编辑白名单」按钮（挂在 WhitelistList 下）
 INSERT INTO sys_auth (auth_name, auth_code, auth_type, p_auth_id, r_auth_id, full_path, auth_url, data_auth_code, auth_index, auth_depth, is_show, is_editable, is_del)
