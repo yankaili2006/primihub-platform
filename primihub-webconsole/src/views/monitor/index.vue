@@ -805,6 +805,8 @@ export default {
       if (res && res.code === 0) {
         this.$message.success('告警配置保存成功')
         this.alertConfigVisible = false
+      } else {
+        this.$message.error((res && res.msg) || '告警配置保存失败')
       }
     },
     handleAlertItem(row) {

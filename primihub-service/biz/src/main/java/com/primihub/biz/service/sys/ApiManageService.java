@@ -60,7 +60,9 @@ public class ApiManageService {
             ApiDefinition definition = new ApiDefinition();
             definition.setApiName(apiName);
             definition.setApiPath(apiPath);
-            definition.setApiMethod(data.get("apiMethod") != null ? data.get("apiMethod").toString() : "POST");
+            // 缺陷整改 T6：前端表单字段名为 method，兼容读取（原只读 apiMethod，导致所选请求方法被忽略、恒为 POST）
+            definition.setApiMethod(data.get("apiMethod") != null ? data.get("apiMethod").toString()
+                    : (data.get("method") != null ? data.get("method").toString() : "POST"));
             definition.setProtocol(data.get("protocol") != null ? data.get("protocol").toString() : "REST");
             definition.setContentType(data.get("contentType") != null ? data.get("contentType").toString() : "application/json");
             definition.setDescription(data.get("description") != null ? data.get("description").toString() : "");
@@ -93,6 +95,7 @@ public class ApiManageService {
             if (data.containsKey("apiName")) existing.setApiName(data.get("apiName").toString());
             if (data.containsKey("apiPath")) existing.setApiPath(data.get("apiPath").toString());
             if (data.containsKey("apiMethod")) existing.setApiMethod(data.get("apiMethod").toString());
+            else if (data.containsKey("method") && data.get("method") != null) existing.setApiMethod(data.get("method").toString());
             if (data.containsKey("description")) existing.setDescription(data.get("description").toString());
             if (data.containsKey("isRequireAuth")) existing.setIsRequireAuth(Integer.valueOf(data.get("isRequireAuth").toString()));
             if (data.containsKey("rateLimit")) existing.setRateLimit(Integer.valueOf(data.get("rateLimit").toString()));
