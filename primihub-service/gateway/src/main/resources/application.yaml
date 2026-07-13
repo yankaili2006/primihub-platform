@@ -203,6 +203,23 @@ spring:
             - BaseParam
             - SysAuth
             - SysLog
+        # 缺陷整改 T3：补联邦学习/单方数据网关路由（后端 Controller 已实现，此前因网关缺路由整块 404）
+        - id: federated-learning-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/federatedLearning/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
+        - id: single-party-url-proxy
+          uri: lb://platform
+          predicates:
+            - Path=/singleParty/**
+          filters:
+            - BaseParam
+            - SysAuth
+            - SysLog
 
 logging:
   level:
