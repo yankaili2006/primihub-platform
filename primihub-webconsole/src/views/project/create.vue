@@ -178,16 +178,19 @@ export default {
         if (valid) {
           this.loading = true
           saveProject(params).then(res => {
+            this.loading = false
             if (res.code === 0) {
-              this.loading = false
               const id = res.result.id
               this.$router.push({
                 name: 'ProjectDetail',
                 params: { id }
               })
+            } else {
+              this.$message.error(res.msg || '项目创建失败')
             }
           }).catch(() => {
             this.loading = false
+            this.$message.error('项目创建失败')
           })
         } else {
           console.log('error submit!!')

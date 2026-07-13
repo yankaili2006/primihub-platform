@@ -496,6 +496,8 @@ export default {
             this.applyDialogVisible = false
             this.fetchData()
             this.fetchStatistics()
+          } else {
+            this.$message.error(res.msg || '时间戳申请失败')
           }
         }
       })
