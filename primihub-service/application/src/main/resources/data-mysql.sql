@@ -43,8 +43,22 @@ INSERT INTO sys_auth (auth_id, auth_name, auth_code, auth_type, p_auth_id, r_aut
 (1036, '节点管理', 'CenterManage', 2, 1029, 1029, '1029,1036', '/setting/center', 'own', 3, 1, 1, 1, 0),
 (1030, '白名单管理', 'WhitelistManage', 1, 0, 1030, '1030', '', 'own', 8, 0, 1, 1, 0),
 (1031, '白名单列表', 'WhitelistList', 2, 1030, 1030, '1030,1031', '/whitelist/findWhitelistPage', 'own', 1, 1, 1, 1, 0),
-(1032, '新增白名单', 'WhitelistCreate', 3, 1030, 1030, '1030,1031,1032', '/whitelist/saveOrUpdateWhitelist', 'own', 2, 2, 1, 1, 0),
-(1033, '删除白名单', 'WhitelistDelete', 3, 1030, 1030, '1030,1031,1033', '/whitelist/deleteWhitelist', 'own', 3, 2, 1, 1, 0);
+(1032, '新增白名单', 'WhitelistAdd', 3, 1030, 1030, '1030,1031,1032', '/whitelist/saveOrUpdateWhitelist', 'own', 2, 2, 1, 1, 0),
+(1033, '删除白名单', 'WhitelistDelete', 3, 1030, 1030, '1030,1031,1033', '/whitelist/deleteWhitelist', 'own', 3, 2, 1, 1, 0),
+-- 缺陷整改 T4：补白名单编辑按钮（前端要 WhitelistEdit；上方 1032 由 WhitelistCreate 改名为 WhitelistAdd）
+(1037, '编辑白名单', 'WhitelistEdit', 3, 1030, 1030, '1030,1031,1037', '/whitelist/updateWhitelist', 'own', 4, 2, 1, 1, 0),
+-- 缺陷整改 T4：租户管理菜单 + 列表 + 新增/编辑/删除/冻结按钮
+(1040, '租户管理', 'Tenant', 1, 0, 1040, '1040', '', 'own', 9, 0, 1, 1, 0),
+(1041, '租户列表', 'TenantList', 2, 1040, 1040, '1040,1041', '/tenant/findTenantPage', 'own', 1, 1, 1, 1, 0),
+(1042, '新增租户', 'TenantAdd', 3, 1041, 1040, '1040,1041,1042', '/tenant/addTenant', 'own', 1, 2, 1, 1, 0),
+(1043, '编辑租户', 'TenantEdit', 3, 1041, 1040, '1040,1041,1043', '/tenant/updateTenant', 'own', 2, 2, 1, 1, 0),
+(1044, '删除租户', 'TenantDelete', 3, 1041, 1040, '1040,1041,1044', '/tenant/deleteTenant', 'own', 3, 2, 1, 1, 0),
+(1045, '冻结租户', 'TenantFreeze', 3, 1041, 1040, '1040,1041,1045', '/tenant/freezeTenant', 'own', 4, 2, 1, 1, 0),
+-- 缺陷整改 T4：联邦求差菜单 + 列表/任务/详情（后端已实现，仅缺权限入口）
+(1050, '联邦求差', 'Difference', 1, 0, 1050, '1050', '', 'own', 10, 0, 1, 1, 0),
+(1051, '联邦求差列表', 'DifferenceList', 2, 1050, 1050, '1050,1051', '/data/difference/list', 'own', 1, 1, 1, 1, 0),
+(1052, '联邦求差任务', 'DifferenceTask', 2, 1050, 1050, '1050,1052', '/data/difference/task', 'own', 2, 1, 1, 1, 0),
+(1053, '联邦求差详情', 'DifferenceDetail', 2, 1050, 1050, '1050,1053', '/data/difference/detail', 'own', 3, 1, 1, 1, 0);
 
 -- 插入角色权限关联 (为超级管理员添加所有权限)
 INSERT INTO sys_ra (id, role_id, auth_id, is_del) VALUES
@@ -81,7 +95,19 @@ INSERT INTO sys_ra (id, role_id, auth_id, is_del) VALUES
 (31, 1, 1030, 0),
 (32, 1, 1031, 0),
 (33, 1, 1032, 0),
-(34, 1, 1033, 0);
+(34, 1, 1033, 0),
+-- 缺陷整改 T4：授予新增/修正的权限给超级管理员
+(35, 1, 1037, 0),
+(36, 1, 1040, 0),
+(37, 1, 1041, 0),
+(38, 1, 1042, 0),
+(39, 1, 1043, 0),
+(40, 1, 1044, 0),
+(41, 1, 1045, 0),
+(42, 1, 1050, 0),
+(43, 1, 1051, 0),
+(44, 1, 1052, 0),
+(45, 1, 1053, 0);
 
 -- 插入用户角色关联
 INSERT INTO sys_ur (id, user_id, role_id, is_del) VALUES
