@@ -176,6 +176,19 @@ export function exportStatisticsResult(data) {
 }
 
 /**
+ * 批量导出统计结果（缺陷整改 T2：后端已实现 /result/batchExport，此前前端缺封装）
+ * @param {{taskIds: number[], format: string}} data
+ */
+export function batchExportStatisticsResult(data) {
+  return request({
+    url: '/federatedStatistics/result/batchExport',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}
+
+/**
  * 获取导出历史
  */
 export function getResultExportHistory(params) {

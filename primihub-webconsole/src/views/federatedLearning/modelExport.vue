@@ -64,6 +64,8 @@
 </template>
 
 <script>
+import { getModelList, downloadModel } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedModelExport',
   data() {
@@ -77,24 +79,31 @@ export default {
         password: ''
       },
       selectedModel: null,
-      modelList: [
-        { modelId: 'FL-M-001', modelName: '逻辑回归模型', modelType: 'LR', accuracy: 92.5, participants: 3, createTime: '2024-01-15 10:30:00' },
-        { modelId: 'FL-M-002', modelName: '神经网络模型', modelType: 'NN', accuracy: 95.8, participants: 5, createTime: '2024-01-14 14:20:00' },
-        { modelId: 'FL-M-003', modelName: 'XGBoost模型', modelType: 'XGB', accuracy: 94.2, participants: 4, createTime: '2024-01-16 09:15:00' }
-      ],
+      modelList: [],
       exportHistory: [
         { modelName: '逻辑回归模型', format: 'pkl', fileSize: '2.5MB', exportTime: '2024-01-15 15:30:00' },
         { modelName: '神经网络模型', format: 'h5', fileSize: '15.8MB', exportTime: '2024-01-14 16:20:00' }
       ]
     }
   },
+  mounted() {
+    this.fetchModels()
+  },
   methods: {
     goBack() {
       this.$router.go(-1)
     },
+    // 缺陷整改 T2：模型下拉改真实模型列表
+    fetchModels() {
+      getModelList({ pageNo: 1, pageSize: 200 }).then(res => {
+        const r = res && res.result ? res.result : {}
+        this.modelList = r.data || r.list || []
+      }).catch(() => { this.modelList = [] })
+    },
     handleModelChange(modelId) {
       this.selectedModel = this.modelList.find(m => m.modelId === modelId)
     },
+    // 缺陷整改 T2：改为真实下载模型文件（原 setTimeout 假成功、不产文件）；加密/格式选项后端暂不支持
     handleExport() {
       if (!this.exportForm.modelId) {
         this.$message.warning('请选择要导出的模型')
@@ -105,16 +114,21 @@ export default {
         return
       }
       this.exporting = true
-      setTimeout(() => {
-        this.exporting = false
+      downloadModel({ modelId: this.exportForm.modelId }).then(response => {
+        const blob = new Blob([response], { type: 'application/octet-stream' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        const name = this.selectedModel ? this.selectedModel.modelName : 'model'
+        link.download = `${name}_${new Date().getTime()}.${this.exportForm.format}`
+        link.click()
+        window.URL.revokeObjectURL(url)
         this.$message.success('模型导出成功')
-        this.exportHistory.unshift({
-          modelName: this.selectedModel.modelName,
-          format: this.exportForm.format,
-          fileSize: Math.floor(Math.random() * 20 + 1) + 'MB',
-          exportTime: new Date().toLocaleString()
-        })
-      }, 2000)
+      }).catch(() => {
+        this.$message.error('模型导出失败')
+      }).finally(() => {
+        this.exporting = false
+      })
     },
     handleReset() {
       this.exportForm = { modelId: '', format: 'pkl', includeMetadata: true, encrypt: false, password: '' }

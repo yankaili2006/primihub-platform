@@ -83,6 +83,8 @@
 </template>
 
 <script>
+import { importSceneData } from '@/api/scene'
+
 export default {
   name: 'OrgDataImport',
   data() {
@@ -125,17 +127,35 @@ export default {
     handleViewLog(row) {
       this.$message.info(`查看日志: ${row.recordId}`)
     },
+    // 缺陷整改 T2：新增机构改为真实提交后端（原仅本地 unshift、不落库）
     handleSave() {
-      if (this.dialogTitle === '新增机构') {
-        this.orgList.unshift({
-          orgId: `ORG${Date.now()}`,
-          ...this.orgForm,
-          apiKey: `ak_${Date.now()}_***`,
-          status: 'active'
-        })
+      if (!this.orgForm.orgName) {
+        this.$message.warning('请输入机构名称')
+        return
       }
-      this.dialogVisible = false
-      this.$message.success('保存成功')
+      const data = {
+        taskName: `机构数据接入-${this.orgForm.orgName}`,
+        action: 'orgImport',
+        ...this.orgForm
+      }
+      importSceneData(data).then(res => {
+        if (res && res.code === 0) {
+          if (this.dialogTitle === '新增机构') {
+            this.orgList.unshift({
+              orgId: (res.result && (res.result.taskId || res.result.id)) || `ORG${Date.now()}`,
+              ...this.orgForm,
+              apiKey: `ak_${Date.now()}_***`,
+              status: 'active'
+            })
+          }
+          this.dialogVisible = false
+          this.$message.success('保存成功')
+        } else {
+          this.$message.error((res && res.msg) || '保存失败')
+        }
+      }).catch(() => {
+        this.$message.error('保存失败')
+      })
     }
   }
 }

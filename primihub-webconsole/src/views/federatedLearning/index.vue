@@ -493,10 +493,12 @@
 
 <script>
 import {
+  getTaskList,
+  cancelTask,
+  downloadModel,
   getFederatedLearningLogs,
   exportFederatedLearningLog,
   batchExportFederatedLearningLogs,
-  getParamTuningResult,
   createParamTuning,
   applyBestParams,
   getTrainingIterations,
@@ -599,21 +601,32 @@ export default {
     this.initMockData()
   },
   methods: {
+    // 缺陷整改 T2：改调真实任务列表（原 setTimeout 返回写死 mock）
+    // 后端返回字段为 taskState，模板用 taskStatus，做防御性映射；其余字段透传
     fetchData() {
       this.loading = true
-      setTimeout(() => {
+      const params = {
+        taskName: this.queryForm.taskName || undefined,
+        algorithmType: this.queryForm.algorithmType != null ? this.queryForm.algorithmType : undefined,
+        taskState: this.queryForm.taskStatus != null ? this.queryForm.taskStatus : undefined,
+        pageNo: this.queryForm.pageNum,
+        pageSize: this.queryForm.pageSize
+      }
+      getTaskList(params).then(res => {
+        const r = res && res.result ? res.result : {}
+        const rows = r.data || r.list || []
+        this.tableData = rows.map(t => ({
+          ...t,
+          taskId: t.taskId != null ? t.taskId : t.id,
+          taskStatus: t.taskStatus != null ? t.taskStatus : t.taskState
+        }))
+        this.total = r.total || 0
+      }).catch(() => {
+        this.tableData = []
+        this.total = 0
+      }).finally(() => {
         this.loading = false
-        this.tableData = this.getMockData()
-        this.total = this.tableData.length
-      }, 500)
-    },
-    getMockData() {
-      return [
-        { taskId: 'FL-001', taskName: '联合风控模型训练', algorithmType: 'XGBOOST', learningType: 'VERTICAL', participantCount: 3, taskStatus: 2, progress: 100, createDate: '2024-01-15 10:00:00', completeDate: '2024-01-15 12:30:00' },
-        { taskId: 'FL-002', taskName: '用户画像特征学习', algorithmType: 'NEURAL_NETWORK', learningType: 'HORIZONTAL', participantCount: 2, taskStatus: 1, progress: 65, createDate: '2024-01-15 14:00:00' },
-        { taskId: 'FL-003', taskName: '信用评分模型', algorithmType: 'LOGISTIC_REGRESSION', learningType: 'VERTICAL', participantCount: 4, taskStatus: 0, progress: 0, createDate: '2024-01-15 16:00:00' },
-        { taskId: 'FL-004', taskName: '反欺诈检测模型', algorithmType: 'XGBOOST', learningType: 'VERTICAL', participantCount: 3, taskStatus: 3, progress: 45, createDate: '2024-01-14 09:00:00' }
-      ]
+      })
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -656,6 +669,7 @@ export default {
         }
       })
     },
+    // 注：后端无“启动任务”端点（任务在 createTask 时自动运行），此处保持本地态更新
     handleStart(row) {
       this.$confirm('确认启动该联邦学习任务吗?', '提示', { type: 'info' }).then(() => {
         row.taskStatus = 1
@@ -663,14 +677,37 @@ export default {
         this.$message.success('任务已启动')
       }).catch(() => {})
     },
+    // 缺陷整改 T2：停止改调真实 cancelTask
     handleStop(row) {
       this.$confirm('确认停止该联邦学习任务吗?', '提示', { type: 'warning' }).then(() => {
-        row.taskStatus = 0
-        this.$message.success('任务已停止')
+        cancelTask({ taskId: row.taskId }).then(res => {
+          if (res && res.code === 0) {
+            row.taskStatus = 4
+            this.$message.success('任务已停止')
+          } else {
+            this.$message.error((res && res.msg) || '停止失败')
+          }
+        }).catch(() => { this.$message.error('停止失败') })
       }).catch(() => {})
     },
+    // 缺陷整改 T2：改为真实下载模型文件（原仅弹提示）
     handleDownloadModel(row) {
-      this.$message.success('开始下载模型: ' + row.taskName)
+      if (!row.modelId) {
+        this.$message.warning('该任务暂无可下载的模型')
+        return
+      }
+      downloadModel({ modelId: row.modelId }).then(response => {
+        const blob = new Blob([response], { type: 'application/octet-stream' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${row.taskName || 'model'}_${new Date().getTime()}.model`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        this.$message.success('开始下载模型')
+      }).catch(() => {
+        this.$message.error('模型下载失败')
+      })
     },
     getAlgorithmLabel(type) {
       const map = { 'LINEAR_REGRESSION': '线性回归', 'LOGISTIC_REGRESSION': '逻辑回归', 'XGBOOST': 'XGBoost', 'NEURAL_NETWORK': '神经网络' }
