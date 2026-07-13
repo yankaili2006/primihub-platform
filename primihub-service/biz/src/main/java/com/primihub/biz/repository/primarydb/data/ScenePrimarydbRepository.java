@@ -1,6 +1,8 @@
 package com.primihub.biz.repository.primarydb.data;
 
 import com.primihub.biz.entity.data.po.SceneApiConfig;
+import com.primihub.biz.entity.data.po.SceneDataSource;
+import com.primihub.biz.entity.data.po.SceneDataSyncRecord;
 import com.primihub.biz.entity.data.po.SceneKeyConfig;
 import com.primihub.biz.entity.data.po.SceneTask;
 import org.apache.ibatis.annotations.Param;
@@ -47,4 +49,22 @@ public interface ScenePrimarydbRepository {
     SceneKeyConfig selectSceneKeyConfigById(@Param("id") Long id);
 
     List<SceneKeyConfig> selectSceneKeyConfigList(@Param("sceneType") String sceneType);
+
+    // ========== 场景数据源 ==========
+
+    int insertSceneDataSource(SceneDataSource ds);
+
+    int updateSceneDataSource(SceneDataSource ds);
+
+    List<SceneDataSource> selectSceneDataSourceList();
+
+    SceneDataSource selectSceneDataSourceById(@Param("id") Long id);
+
+    int deleteSceneDataSource(@Param("id") Long id);
+
+    // ========== 场景数据同步记录 ==========
+
+    int insertSceneDataSyncRecord(SceneDataSyncRecord record);
+
+    List<SceneDataSyncRecord> selectSceneDataSyncRecordList(@Param("limit") int limit);
 }

@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { createPoliceTask } from "@/api/scene"
+import { createPoliceTask, getPoliceTaskList } from '@/api/scene'
 export default {
   name: 'EncryptedModelCompute',
   data() {
@@ -83,26 +83,53 @@ export default {
       computing: false,
       resultDialogVisible: false,
       computeForm: { encryptedModelId: '', policeDatasetId: '', operations: ['predict'], parallelism: 8 },
-      encryptedModels: [
-        { id: 'EM001', name: '车险欺诈检测模型(加密)' },
-        { id: 'EM002', name: '理赔风险评估模型(加密)' }
-      ],
-      policeDatasets: [
-        { id: 'PD001', name: '交通事故记录数据集' },
-        { id: 'PD002', name: '驾驶员信息数据集' },
-        { id: 'PD003', name: '车辆登记信息数据集' }
-      ],
-      computeTaskList: [
-        { taskId: 'EC-001', modelName: '车险欺诈检测模型', datasetName: '交通事故记录', operations: '模型预测', recordCount: 15000, computeTime: '12min', status: 'completed', statusText: '已完成', createTime: '2024-01-15 11:00:00', outputCount: 15000, resultSize: '850 MB' },
-        { taskId: 'EC-002', modelName: '理赔风险评估模型', datasetName: '驾驶员信息', operations: '聚合统计', recordCount: 8000, computeTime: '计算中', status: 'running', statusText: '运行中', createTime: '2024-01-15 14:30:00', outputCount: '-', resultSize: '-' }
-      ],
+      encryptedModels: [],
+      // 真实警务数据集目录由数据资源模块提供，本模块不伪造，保持真实但为空
+      policeDatasets: [],
+      computeTaskList: [],
       currentResult: {}
     }
+  },
+  created() {
+    this.fetchTaskList()
+    this.fetchEncryptedModels()
   },
   methods: {
     goBack() { this.$router.go(-1) },
     getStatusType(status) {
       return { completed: 'success', running: 'warning', failed: 'danger' }[status] || 'info'
+    },
+    normalizeSceneTask(row) {
+      let p = {}
+      try { p = row.params ? JSON.parse(row.params) : {} } catch (e) { p = {} }
+      const st = row.taskState
+      const statusText = st === 2 ? '已完成' : st === 3 ? '失败' : st === 1 ? '运行中' : '等待执行'
+      const status = st === 2 ? 'completed' : st === 3 ? 'failed' : 'running'
+      return Object.assign({}, p, {
+        taskId: row.id,
+        taskName: row.taskName,
+        taskType: row.taskType,
+        status,
+        statusText,
+        progress: st === 2 ? 100 : st === 3 ? 0 : 50,
+        createTime: row.createdAt
+      })
+    },
+    fetchTaskList() {
+      getPoliceTaskList({ taskType: 'encryptedCompute', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.computeTaskList = (res.result.list || []).map(this.normalizeSceneTask)
+        }
+      }).catch(() => {})
+    },
+    fetchEncryptedModels() {
+      getPoliceTaskList({ taskType: 'modelEncrypt', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.encryptedModels = (res.result.list || [])
+            .filter(row => row.taskState === 2)
+            .map(row => ({ id: row.id, name: row.taskName }))
+        }
+      }).catch(() => {})
     },
     async handleCompute() {
       if (!this.computeForm.encryptedModelId || !this.computeForm.policeDatasetId) {
@@ -112,16 +139,9 @@ export default {
       this.computing = true
       try {
         const res = await createPoliceTask({ taskType: 'encryptedCompute', params: this.computeForm })
-        if (res.code === 0) {
+        if (res && res.code === 0) {
           this.$message.success('联合运算任务已提交')
-          this.computeTaskList.unshift({
-            taskId: `EC-${Date.now()}`,
-            modelName: '加密模型',
-            datasetName: '警务数据集',
-            status: 'running',
-            statusText: '运行中',
-            createTime: new Date().toLocaleString()
-          })
+          this.fetchTaskList()
         }
       } catch (e) {
         this.$message.error('提交失败')

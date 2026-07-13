@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import { decryptPoliceData } from "@/api/scene"
+import { decryptPoliceData, getPoliceTaskList } from '@/api/scene'
 export default {
   name: 'InsuranceDataDecrypt',
   data() {
@@ -76,24 +76,50 @@ export default {
       decrypting: false,
       previewDialogVisible: false,
       decryptForm: { ciphertextId: '', privateKeyFile: null, outputFormat: 'CSV' },
-      ciphertextList: [
-        { id: 'CT001', name: '车险欺诈检测结果-20240115' },
-        { id: 'CT002', name: '理赔风险评估结果-20240114' },
-        { id: 'CT003', name: '客户信用评分结果-20240113' }
-      ],
-      decryptTaskList: [
-        { taskId: 'DT-001', ciphertextName: '车险欺诈检测结果', recordCount: 15000, decryptedSize: '12.5 MB', outputFormat: 'CSV', progress: 100, createTime: '2024-01-15 15:00:00' },
-        { taskId: 'DT-002', ciphertextName: '理赔风险评估结果', recordCount: 8000, decryptedSize: '6.8 MB', outputFormat: 'JSON', progress: 65, createTime: '2024-01-15 16:30:00' }
-      ],
-      previewData: [
-        { id: 1, idCard: '310***********1234', riskScore: 85, fraudProbability: '0.12', recommendation: '需人工复核' },
-        { id: 2, idCard: '320***********5678', riskScore: 32, fraudProbability: '0.02', recommendation: '正常通过' },
-        { id: 3, idCard: '330***********9012', riskScore: 95, fraudProbability: '0.89', recommendation: '高度可疑' }
-      ]
+      ciphertextList: [],
+      decryptTaskList: [],
+      // 预览绑定真实解密输出（当解密任务完成后），暂无真实明文时保持为空，不伪造数据
+      previewData: []
     }
+  },
+  created() {
+    this.fetchTaskList()
+    this.fetchCiphertextList()
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    normalizeSceneTask(row) {
+      let p = {}
+      try { p = row.params ? JSON.parse(row.params) : {} } catch (e) { p = {} }
+      const st = row.taskState
+      const statusText = st === 2 ? '已完成' : st === 3 ? '失败' : st === 1 ? '运行中' : '等待执行'
+      const status = st === 2 ? 'completed' : st === 3 ? 'failed' : 'running'
+      return Object.assign({}, p, {
+        taskId: row.id,
+        taskName: row.taskName,
+        taskType: row.taskType,
+        status,
+        statusText,
+        progress: st === 2 ? 100 : st === 3 ? 0 : 50,
+        createTime: row.createdAt
+      })
+    },
+    fetchTaskList() {
+      getPoliceTaskList({ taskType: 'decrypt', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.decryptTaskList = (res.result.list || []).map(this.normalizeSceneTask)
+        }
+      }).catch(() => {})
+    },
+    fetchCiphertextList() {
+      getPoliceTaskList({ taskType: 'encryptedCompute', pageNo: 1, pageSize: 100 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.ciphertextList = (res.result.list || [])
+            .filter(row => row.taskState === 2)
+            .map(row => ({ id: row.id, name: row.taskName }))
+        }
+      }).catch(() => {})
+    },
     handleFileChange(file) {
       this.decryptForm.privateKeyFile = file.raw
     },
@@ -105,17 +131,9 @@ export default {
       this.decrypting = true
       try {
         const res = await decryptPoliceData({ keyId: 1, encryptedData: this.decryptForm.ciphertextId })
-        if (res.code === 0) {
-          this.decryptTaskList.unshift({
-            taskId: `DT-${Date.now()}`,
-            ciphertextName: (this.ciphertextList.find(c => c.id === this.decryptForm.ciphertextId) || {}).name,
-            recordCount: 0,
-            decryptedSize: '解密完成',
-            outputFormat: this.decryptForm.outputFormat,
-            progress: 100,
-            createTime: new Date().toLocaleString()
-          })
-          this.$message.success('解密完成')
+        if (res && res.code === 0) {
+          this.$message.success('解密任务已提交')
+          this.fetchTaskList()
         }
       } catch (e) {
         this.$message.error('解密失败')

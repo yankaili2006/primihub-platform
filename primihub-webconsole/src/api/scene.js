@@ -85,6 +85,27 @@ export function policeRealtimeExchange(data) {
   return request({ url: '/policeFusion/exchange/realtime', method: 'post', data })
 }
 
+// ==================== 警务数据融合-数据源对接 ====================
+export function getPoliceDataSourceList(params) {
+  return request({ url: '/policeFusion/datasource/list', method: 'get', params })
+}
+
+export function savePoliceDataSource(data) {
+  return request({ url: '/policeFusion/datasource/save', method: 'post', data })
+}
+
+export function deletePoliceDataSource(data) {
+  return request({ url: '/policeFusion/datasource/delete', method: 'post', data })
+}
+
+export function syncPoliceDataSource(data) {
+  return request({ url: '/policeFusion/datasource/sync', method: 'post', data })
+}
+
+export function testPoliceDataSource(params) {
+  return request({ url: '/policeFusion/datasource/test', method: 'get', params })
+}
+
 // ==================== 场景日志（任务即日志记录） ====================
 export function getPoliceLogList(params) {
   return request({ url: '/policeFusion/log/list', method: 'get', params })

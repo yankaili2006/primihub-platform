@@ -80,10 +80,8 @@ export default {
       },
       selectedModel: null,
       modelList: [],
-      exportHistory: [
-        { modelName: '逻辑回归模型', format: 'pkl', fileSize: '2.5MB', exportTime: '2024-01-15 15:30:00' },
-        { modelName: '神经网络模型', format: 'h5', fileSize: '15.8MB', exportTime: '2024-01-14 16:20:00' }
-      ]
+      // 缺陷整改：后端无“模型导出历史”接口，导出为即时下载 blob，不留服务端记录；置空不再造假数据
+      exportHistory: []
     }
   },
   mounted() {

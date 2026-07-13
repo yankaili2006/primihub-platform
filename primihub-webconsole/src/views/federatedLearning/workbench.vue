@@ -1,3 +1,4 @@
+<!-- 已被 modelingWorkbench.vue(真实后端) 取代, 保留占位 -->
 <template>
   <div class="app-container">
     <el-page-header content="联邦建模工作台" style="margin-bottom: 20px;" @back="goBack" />
@@ -90,28 +91,11 @@ export default {
         learningType: 'VERTICAL',
         targetField: ''
       },
-      datasetList: [
-        { id: '1', name: '用户行为数据集' },
-        { id: '2', name: '交易记录数据集' },
-        { id: '3', name: '风控特征数据集' }
-      ],
-      participantList: [
-        { id: 'p1', name: '机构A' },
-        { id: 'p2', name: '机构B' },
-        { id: 'p3', name: '机构C' }
-      ],
-      featureList: [
-        { key: 'f1', label: '年龄' },
-        { key: 'f2', label: '收入' },
-        { key: 'f3', label: '信用评分' },
-        { key: 'f4', label: '交易次数' },
-        { key: 'f5', label: '账户余额' },
-        { key: 'f6', label: '逾期次数' }
-      ],
-      historyConfigs: [
-        { id: 'CFG001', name: '风控模型配置V1', algorithmType: 'XGBoost', createTime: '2024-01-15 10:00:00' },
-        { id: 'CFG002', name: '信用评分配置', algorithmType: '逻辑回归', createTime: '2024-01-14 15:30:00' }
-      ]
+      // 已被 modelingWorkbench.vue(真实后端) 取代, 本页未路由, 置空占位不再造假数据
+      datasetList: [],
+      participantList: [],
+      featureList: [],
+      historyConfigs: []
     }
   },
   methods: {

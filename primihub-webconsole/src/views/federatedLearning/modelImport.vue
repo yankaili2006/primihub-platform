@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import { importModel } from '@/api/federatedLearning'
+import { importModel, getModelList } from '@/api/federatedLearning'
 
 export default {
   name: 'FederatedModelImport',
@@ -72,16 +72,31 @@ export default {
         description: ''
       },
       fileList: [],
-      importHistory: [
-        { modelName: '信用评分模型', modelType: 'LR', fileName: 'credit_model.pkl', fileSize: '2.5MB', importTime: '2024-01-15 10:30:00', status: 'success', statusText: '成功' },
-        { modelName: '风险预测模型', modelType: 'NN', fileName: 'risk_model.h5', fileSize: '15.8MB', importTime: '2024-01-14 14:20:00', status: 'success', statusText: '成功' },
-        { modelName: '欺诈检测模型', modelType: 'XGB', fileName: 'fraud_model.pkl', fileSize: '8.2MB', importTime: '2024-01-13 09:15:00', status: 'failed', statusText: '失败' }
-      ]
+      importHistory: []
     }
+  },
+  created() {
+    this.loadImportHistory()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
+    },
+    // 缺陷整改：导入历史改从真实模型列表加载（原写死 3 行 mock）
+    loadImportHistory() {
+      getModelList({ modelType: 'imported', pageNo: 1, pageSize: 100 }).then(res => {
+        const r = (res && res.result) || {}
+        const list = r.list || r.data || (Array.isArray(r) ? r : [])
+        this.importHistory = (list || []).map(m => ({
+          modelName: m.modelName,
+          modelType: m.modelType,
+          fileName: m.fileName || m.fileUrl || '',
+          fileSize: m.fileSize || '',
+          importTime: m.createTime || m.importTime || '',
+          status: m.status || 'success',
+          statusText: m.statusText || '成功'
+        }))
+      }).catch(() => { this.importHistory = [] })
     },
     getStatusType(status) {
       const types = { success: 'success', failed: 'danger', importing: 'warning' }
@@ -110,16 +125,8 @@ export default {
           return
         }
         this.$message.success('模型导入成功')
-        this.importHistory.unshift({
-          modelName: this.importForm.modelName,
-          modelType: this.importForm.modelType,
-          fileName: this.fileList[0].name,
-          fileSize: (this.fileList[0].size / 1024 / 1024).toFixed(1) + 'MB',
-          importTime: new Date().toLocaleString(),
-          status: 'success',
-          statusText: '成功'
-        })
         this.handleReset()
+        this.loadImportHistory()
       }).catch(() => {
         this.importing = false
         this.$message.error('请求异常')

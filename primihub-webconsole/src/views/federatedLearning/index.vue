@@ -598,7 +598,6 @@ export default {
   },
   mounted() {
     this.fetchData()
-    this.initMockData()
   },
   methods: {
     // 缺陷整改 T2：改调真实任务列表（原 setTimeout 返回写死 mock）
@@ -728,32 +727,6 @@ export default {
         this.fetchLogs()
       }
     },
-    // Init mock data
-    initMockData() {
-      this.datasetList = [
-        { id: '1', name: '用户行为数据集' },
-        { id: '2', name: '交易记录数据集' },
-        { id: '3', name: '风控特征数据集' }
-      ]
-      this.participantList = [
-        { id: 'p1', name: '机构A' },
-        { id: 'p2', name: '机构B' },
-        { id: 'p3', name: '机构C' }
-      ]
-      this.featureList = [
-        { key: 'f1', label: '年龄' },
-        { key: 'f2', label: '收入' },
-        { key: 'f3', label: '信用评分' },
-        { key: 'f4', label: '交易次数' },
-        { key: 'f5', label: '账户余额' },
-        { key: 'f6', label: '逾期次数' }
-      ]
-      this.tuningResults = [
-        { rank: 1, learningRate: 0.005, iterations: 150, batchSize: 64, accuracy: '0.92', auc: '0.95' },
-        { rank: 2, learningRate: 0.01, iterations: 100, batchSize: 32, accuracy: '0.90', auc: '0.93' },
-        { rank: 3, learningRate: 0.001, iterations: 200, batchSize: 64, accuracy: '0.88', auc: '0.91' }
-      ]
-    },
     getFeatureName(key) {
       const f = this.featureList.find(item => item.key === key)
       return f ? f.label : key
@@ -799,55 +772,19 @@ export default {
       if (!this.iterationTaskId) return
       try {
         const res = await getTrainingIterations({ taskId: this.iterationTaskId })
-        if (res && res.code === 0) {
-          this.iterationData = res.result || []
-        } else {
-          this.iterationData = this.getMockIterationData()
-        }
+        this.iterationData = (res && res.code === 0 && res.result) ? res.result : []
       } catch (e) {
-        this.iterationData = this.getMockIterationData()
+        this.iterationData = []
       }
-    },
-    getMockIterationData() {
-      return Array.from({ length: 10 }, (_, i) => ({
-        epoch: i + 1,
-        loss: (0.5 - i * 0.04).toFixed(4),
-        accuracy: (0.6 + i * 0.03).toFixed(4),
-        learningRate: '0.01',
-        duration: (2.5 + Math.random()).toFixed(2),
-        timestamp: new Date(Date.now() - (10 - i) * 60000).toLocaleString()
-      }))
     },
     // Report methods
     async handleReportTaskChange() {
       if (!this.reportTaskId) return
       try {
         const res = await getTrainingReport({ taskId: this.reportTaskId })
-        if (res && res.code === 0) {
-          this.reportData = res.result || {}
-        } else {
-          this.reportData = this.getMockReportData()
-        }
+        this.reportData = (res && res.code === 0 && res.result) ? res.result : {}
       } catch (e) {
-        this.reportData = this.getMockReportData()
-      }
-    },
-    getMockReportData() {
-      const task = this.completedTasks.find(t => t.taskId === this.reportTaskId)
-      return {
-        taskId: this.reportTaskId,
-        taskName: task?.taskName || '',
-        algorithmType: task?.algorithmType || '',
-        learningType: task?.learningType || '',
-        accuracy: '0.89',
-        auc: '0.94',
-        precision: '0.87',
-        recall: '0.91',
-        f1Score: '0.89',
-        ks: '0.42',
-        totalIterations: 100,
-        trainingTime: '2小时15分钟',
-        modelSize: '12.5 MB'
+        this.reportData = {}
       }
     },
     async handleGenerateReport() {
@@ -860,8 +797,7 @@ export default {
         this.$message.success('训练报告已生成')
         this.handleReportTaskChange()
       } catch (e) {
-        this.$message.success('训练报告已生成')
-        this.reportData = this.getMockReportData()
+        this.$message.error('训练报告生成失败')
       }
     },
     async handleExportReport() {
@@ -885,26 +821,17 @@ export default {
           endTime: this.logQueryForm.dateRange?.[1] || ''
         }
         const res = await getFederatedLearningLogs(params)
-        if (res && res.code === 0) {
+        if (res && res.code === 0 && res.result) {
           this.logData = res.result.list || []
           this.logTotal = res.result.total || 0
         } else {
-          this.logData = this.getMockLogs()
-          this.logTotal = this.logData.length
+          this.logData = []
+          this.logTotal = 0
         }
       } catch (e) {
-        this.logData = this.getMockLogs()
-        this.logTotal = this.logData.length
+        this.logData = []
+        this.logTotal = 0
       }
-    },
-    getMockLogs() {
-      return [
-        { logId: 'L001', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '任务开始执行，初始化联邦学习环境', createTime: '2024-01-15 10:00:00' },
-        { logId: 'L002', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '数据加载完成，开始模型训练', createTime: '2024-01-15 10:01:00' },
-        { logId: 'L003', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '训练完成，模型精度: 0.89', createTime: '2024-01-15 12:30:00' },
-        { logId: 'L004', taskId: 'FL-002', taskName: '用户画像特征学习', logType: 'WARN', content: '参与方响应延迟，正在重试', createTime: '2024-01-15 14:05:00' },
-        { logId: 'L005', taskId: 'FL-004', taskName: '反欺诈检测模型', logType: 'ERROR', content: '训练失败：数据格式不兼容', createTime: '2024-01-14 09:30:00', stackTrace: 'java.lang.IllegalArgumentException: Data format mismatch' }
-      ]
     },
     handleLogQuery() {
       this.logQueryForm.pageNum = 1

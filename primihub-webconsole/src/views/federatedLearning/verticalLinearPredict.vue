@@ -95,8 +95,10 @@ import {
   createFLPreprocess,
   runFLPreprocess,
   deleteFLPreprocess,
-  downloadFLPreprocessResult
+  downloadFLPreprocessResult,
+  getModelList
 } from '@/api/federatedLearning'
+import { getResourceList } from '@/api/resource'
 
 const PREPROCESS_TYPE = 'VFL_LINEAR_PREDICT'
 
@@ -121,15 +123,9 @@ export default {
         predictDataset: [{ required: true, message: '请选择预测数据集', trigger: 'change' }],
         outputColumn: [{ required: true, message: '请输入输出预测列名', trigger: 'blur' }]
       },
-      dataResourceList: [
-        { label: '销售数据集', value: 'sales_dataset' },
-        { label: '用户特征集', value: 'user_feature_dataset' },
-        { label: '测试数据集', value: 'test_dataset' }
-      ],
-      modelList: [
-        { modelId: 'linear_model_001', modelName: '线性回归模型_v1（2024-01-15）' },
-        { modelId: 'linear_model_002', modelName: '线性回归模型_v2（2024-03-20）' }
-      ],
+      // 缺陷整改：数据资源/模型下拉改从真实接口加载（原写死 mock）
+      dataResourceList: [],
+      modelList: [],
       taskList: [],
       listLoading: false,
       submitting: false,
@@ -139,8 +135,28 @@ export default {
   },
   created() {
     this.loadList()
+    this.loadDataResources()
+    this.loadModels()
   },
   methods: {
+    // 缺陷整改：数据资源下拉改真实接口
+    loadDataResources() {
+      getResourceList({ pageNo: 1, pageSize: 100 }).then(res => {
+        const list = (res && res.result && (res.result.list || res.result.data || res.result)) || []
+        this.dataResourceList = (Array.isArray(list) ? list : []).map(r => ({
+          value: r.resourceId || r.id || r.value,
+          label: r.resourceName || r.name || r.label
+        }))
+      }).catch(() => { this.dataResourceList = [] })
+    },
+    // 缺陷整改：模型下拉改真实接口
+    loadModels() {
+      getModelList({ pageNo: 1, pageSize: 100 }).then(res => {
+        const r = (res && res.result) || {}
+        const list = r.list || r.data || (Array.isArray(r) ? r : [])
+        this.modelList = Array.isArray(list) ? list : []
+      }).catch(() => { this.modelList = [] })
+    },
     async loadList() {
       this.listLoading = true
       try {

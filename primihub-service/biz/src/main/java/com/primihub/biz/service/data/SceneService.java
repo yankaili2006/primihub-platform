@@ -26,4 +26,11 @@ public interface SceneService {
     BaseResultEntity deleteKey(Long id);
     BaseResultEntity encryptData(Long keyId, String data);
     BaseResultEntity decryptData(Long keyId, String encryptedData);
+
+    // 数据源对接
+    BaseResultEntity getDataSourceList();
+    BaseResultEntity saveDataSource(Map<String, Object> req, Long userId);
+    BaseResultEntity deleteDataSource(Long id);
+    BaseResultEntity syncDataSource(Long sourceId);
+    BaseResultEntity testDataSource(Long sourceId);
 }

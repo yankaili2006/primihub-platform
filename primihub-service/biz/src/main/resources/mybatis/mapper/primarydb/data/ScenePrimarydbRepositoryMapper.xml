@@ -142,4 +142,81 @@
         SELECT * FROM scene_key_config WHERE scene_type = #{sceneType} ORDER BY created_at DESC
     </select>
 
+    <!-- Scene Data Source -->
+    <resultMap id="SceneDataSourceMap" type="com.primihub.biz.entity.data.po.SceneDataSource">
+        <id column="id" property="id"/>
+        <result column="source_name" property="sourceName"/>
+        <result column="source_type" property="sourceType"/>
+        <result column="department" property="department"/>
+        <result column="host" property="host"/>
+        <result column="port" property="port"/>
+        <result column="db_name" property="dbName"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="connection_info" property="connectionInfo"/>
+        <result column="data_count" property="dataCount"/>
+        <result column="status" property="status"/>
+        <result column="last_sync_time" property="lastSyncTime"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insertSceneDataSource" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO scene_data_source (source_name, source_type, department, host, port, db_name, username, password, connection_info, data_count, status, last_sync_time, created_by)
+        VALUES (#{sourceName}, #{sourceType}, #{department}, #{host}, #{port}, #{dbName}, #{username}, #{password}, #{connectionInfo}, #{dataCount}, #{status}, #{lastSyncTime}, #{createdBy})
+    </insert>
+
+    <update id="updateSceneDataSource">
+        UPDATE scene_data_source
+        <set>
+            <if test="sourceName != null">source_name = #{sourceName},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="department != null">department = #{department},</if>
+            <if test="host != null">host = #{host},</if>
+            <if test="port != null">port = #{port},</if>
+            <if test="dbName != null">db_name = #{dbName},</if>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="connectionInfo != null">connection_info = #{connectionInfo},</if>
+            <if test="dataCount != null">data_count = #{dataCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="lastSyncTime != null">last_sync_time = #{lastSyncTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectSceneDataSourceList" resultMap="SceneDataSourceMap">
+        SELECT * FROM scene_data_source ORDER BY created_at DESC
+    </select>
+
+    <select id="selectSceneDataSourceById" resultMap="SceneDataSourceMap">
+        SELECT * FROM scene_data_source WHERE id = #{id}
+    </select>
+
+    <delete id="deleteSceneDataSource">
+        DELETE FROM scene_data_source WHERE id = #{id}
+    </delete>
+
+    <!-- Scene Data Sync Record -->
+    <resultMap id="SceneDataSyncRecordMap" type="com.primihub.biz.entity.data.po.SceneDataSyncRecord">
+        <id column="id" property="id"/>
+        <result column="source_id" property="sourceId"/>
+        <result column="source_name" property="sourceName"/>
+        <result column="sync_type" property="syncType"/>
+        <result column="record_count" property="recordCount"/>
+        <result column="duration" property="duration"/>
+        <result column="status" property="status"/>
+        <result column="sync_time" property="syncTime"/>
+    </resultMap>
+
+    <insert id="insertSceneDataSyncRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO scene_data_sync_record (source_id, source_name, sync_type, record_count, duration, status, sync_time)
+        VALUES (#{sourceId}, #{sourceName}, #{syncType}, #{recordCount}, #{duration}, #{status}, #{syncTime})
+    </insert>
+
+    <select id="selectSceneDataSyncRecordList" resultMap="SceneDataSyncRecordMap">
+        SELECT * FROM scene_data_sync_record ORDER BY sync_time DESC LIMIT #{limit}
+    </select>
+
 </mapper>
