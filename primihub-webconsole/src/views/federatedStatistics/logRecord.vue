@@ -82,6 +82,8 @@
 </template>
 
 <script>
+import { getStatisticsLogs, getStatisticsLogDetail } from '@/api/federatedStatisticsApi'
+
 export default {
   name: 'FederatedStatisticsLogRecord',
   data() {
@@ -110,17 +112,29 @@ export default {
     },
     fetchData() {
       this.loading = true
-      setTimeout(() => {
-        this.logData = [
-          { logId: 'FSL001', taskId: 'FS-001', taskName: '用户分布统计', statisticsType: 'COUNT', logType: 'INFO', content: '开始执行联邦统计任务，参与方数量: 3', createTime: '2024-01-15 10:00:00' },
-          { logId: 'FSL002', taskId: 'FS-001', taskName: '用户分布统计', statisticsType: 'COUNT', logType: 'INFO', content: '统计完成，总用户数: 150,000，各区域分布已计算', createTime: '2024-01-15 10:05:00' },
-          { logId: 'FSL003', taskId: 'FS-002', taskName: '交易金额统计', statisticsType: 'SUM', logType: 'INFO', content: '求和统计完成，总交易金额: ¥125,680,000', createTime: '2024-01-15 14:00:00' },
-          { logId: 'FSL004', taskId: 'FS-003', taskName: '风险评分分布', statisticsType: 'AVG', logType: 'WARN', content: '部分参与方数据缺失，已使用可用数据进行计算', createTime: '2024-01-15 15:30:00' },
-          { logId: 'FSL005', taskId: 'FS-004', taskName: '地区数据统计', statisticsType: 'COUNT', logType: 'ERROR', content: '统计失败：参与方2连接超时', createTime: '2024-01-14 09:30:00' }
-        ]
-        this.total = 5
+      // 缺陷整改 T2：改调真实接口，taskId 等查询条件真正下发后端过滤（原 mock 忽略搜索条件返回全量）
+      const params = {
+        taskId: this.queryForm.taskId ? this.queryForm.taskId : undefined,
+        logLevel: this.queryForm.logType || undefined,
+        startDate: this.queryForm.dateRange && this.queryForm.dateRange[0] ? this.queryForm.dateRange[0] : undefined,
+        endDate: this.queryForm.dateRange && this.queryForm.dateRange[1] ? this.queryForm.dateRange[1] : undefined,
+        pageNo: this.queryForm.pageNum,
+        pageSize: this.queryForm.pageSize
+      }
+      getStatisticsLogs(params).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.logData = res.result.list || []
+          this.total = res.result.total || 0
+        } else {
+          this.logData = []
+          this.total = 0
+        }
+      }).catch(() => {
+        this.logData = []
+        this.total = 0
+      }).finally(() => {
         this.loading = false
-      }, 500)
+      })
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -139,8 +153,14 @@ export default {
       this.fetchData()
     },
     handleViewDetail(row) {
-      this.detailData = { ...row }
-      this.detailDialogVisible = true
+      const logId = row.logId || row.id
+      getStatisticsLogDetail({ logId }).then(res => {
+        this.detailData = (res && res.code === 0 && res.result) ? res.result : { ...row }
+        this.detailDialogVisible = true
+      }).catch(() => {
+        this.detailData = { ...row }
+        this.detailDialogVisible = true
+      })
     },
     getLogTypeTag(type) {
       const map = { 'INFO': 'info', 'WARN': 'warning', 'ERROR': 'danger', 'DEBUG': '' }

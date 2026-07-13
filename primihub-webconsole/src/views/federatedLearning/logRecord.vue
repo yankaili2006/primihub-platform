@@ -69,6 +69,8 @@
 </template>
 
 <script>
+import { getFederatedLearningLogs } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedLearningLogRecord',
   data() {
@@ -96,17 +98,29 @@ export default {
     },
     fetchData() {
       this.loading = true
-      setTimeout(() => {
-        this.logData = [
-          { logId: 'L001', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '任务开始执行，初始化联邦学习环境', createTime: '2024-01-15 10:00:00' },
-          { logId: 'L002', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '数据加载完成，样本数量: 50000，特征数量: 25', createTime: '2024-01-15 10:01:00' },
-          { logId: 'L003', taskId: 'FL-001', taskName: '联合风控模型训练', logType: 'INFO', content: '训练完成，模型精度: 0.89', createTime: '2024-01-15 12:30:00' },
-          { logId: 'L004', taskId: 'FL-002', taskName: '用户画像特征学习', logType: 'WARN', content: '参与方响应延迟，正在重试连接', createTime: '2024-01-15 14:05:00' },
-          { logId: 'L005', taskId: 'FL-004', taskName: '反欺诈检测模型', logType: 'ERROR', content: '训练失败：数据格式不兼容，请检查数据预处理步骤', createTime: '2024-01-14 09:30:00', stackTrace: 'java.lang.IllegalArgumentException: Data format mismatch\n    at com.primihub.biz.service...' }
-        ]
-        this.total = 5
+      // 缺陷整改 T2：改调真实接口，taskId/logType/时间条件真正下发后端过滤（原 mock 忽略搜索返回全量）
+      const params = {
+        taskId: this.queryForm.taskId || '',
+        logType: this.queryForm.logType || '',
+        startTime: this.queryForm.dateRange && this.queryForm.dateRange[0] ? this.queryForm.dateRange[0] : '',
+        endTime: this.queryForm.dateRange && this.queryForm.dateRange[1] ? this.queryForm.dateRange[1] : '',
+        pageNum: this.queryForm.pageNum,
+        pageSize: this.queryForm.pageSize
+      }
+      getFederatedLearningLogs(params).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.logData = res.result.list || res.result.data || []
+          this.total = res.result.total || 0
+        } else {
+          this.logData = []
+          this.total = 0
+        }
+      }).catch(() => {
+        this.logData = []
+        this.total = 0
+      }).finally(() => {
         this.loading = false
-      }, 500)
+      })
     },
     handleQuery() {
       this.queryForm.pageNum = 1

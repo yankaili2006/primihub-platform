@@ -69,6 +69,8 @@
 </template>
 
 <script>
+import { getTaskList, exportFederatedLearningLog } from '@/api/federatedLearning'
+
 export default {
   name: 'FederatedLearningLogExport',
   data() {
@@ -82,41 +84,54 @@ export default {
         includeStackTrace: true,
         fileNamePrefix: 'federated_learning_log'
       },
-      taskList: [
-        { taskId: 'FL-001', taskName: '联合风控模型训练' },
-        { taskId: 'FL-002', taskName: '用户画像特征学习' },
-        { taskId: 'FL-003', taskName: '信用评分模型' },
-        { taskId: 'FL-004', taskName: '反欺诈检测模型' }
-      ],
+      taskList: [],
       exportHistory: [
         { id: 'EXP001', fileName: 'federated_learning_log_20240115.xlsx', format: 'EXCEL', recordCount: 1250, fileSize: '256 KB', createTime: '2024-01-15 16:00:00', status: 'completed' },
         { id: 'EXP002', fileName: 'fl_error_log_20240114.csv', format: 'CSV', recordCount: 85, fileSize: '32 KB', createTime: '2024-01-14 18:30:00', status: 'completed' }
       ]
     }
   },
+  mounted() {
+    this.fetchTaskList()
+  },
   methods: {
     goBack() {
       this.$router.go(-1)
     },
+    // 缺陷整改 T2：任务下拉改真实任务（导出需真实 taskId 才能查到数据）
+    fetchTaskList() {
+      getTaskList({ pageNo: 1, pageSize: 200 }).then(res => {
+        const data = (res && res.result && (res.result.data || res.result.list)) || []
+        this.taskList = data.map(t => ({ taskId: t.taskId, taskName: t.taskName }))
+      }).catch(() => { this.taskList = [] })
+    },
+    // 缺陷整改 T2：改为真实导出并触发文件下载（原 setTimeout 假成功、不产文件）
+    // 后端 /log/exportComputeLog 按单 taskId 过滤，多选时导出所选第一个任务
     handleExport() {
       if (this.exportFormData.taskIds.length === 0) {
         this.$message.warning('请选择至少一个任务')
         return
       }
       this.exporting = true
-      setTimeout(() => {
-        this.exporting = false
+      const params = {
+        taskId: this.exportFormData.taskIds[0],
+        startTime: this.exportFormData.dateRange && this.exportFormData.dateRange[0] ? this.exportFormData.dateRange[0] : '',
+        endTime: this.exportFormData.dateRange && this.exportFormData.dateRange[1] ? this.exportFormData.dateRange[1] : ''
+      }
+      exportFederatedLearningLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
         this.$message.success('日志导出成功')
-        this.exportHistory.unshift({
-          id: `EXP${Date.now()}`,
-          fileName: `${this.exportFormData.fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.${this.exportFormData.exportFormat.toLowerCase()}`,
-          format: this.exportFormData.exportFormat,
-          recordCount: Math.floor(Math.random() * 1000) + 100,
-          fileSize: `${Math.floor(Math.random() * 500) + 50} KB`,
-          createTime: new Date().toLocaleString(),
-          status: 'completed'
-        })
-      }, 2000)
+      }).catch(() => {
+        this.$message.error('导出失败')
+      }).finally(() => {
+        this.exporting = false
+      })
     },
     handleReset() {
       this.exportFormData = {

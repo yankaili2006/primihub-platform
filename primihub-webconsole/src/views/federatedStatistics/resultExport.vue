@@ -69,6 +69,8 @@
 </template>
 
 <script>
+import { getStatisticsTaskList, batchExportStatisticsResult } from '@/api/federatedStatisticsApi'
+
 export default {
   name: 'FederatedStatisticsResultExport',
   data() {
@@ -82,41 +84,53 @@ export default {
         includeCharts: true,
         fileNamePrefix: 'federated_statistics_result'
       },
-      taskList: [
-        { taskId: 'FS-001', taskName: '用户分布统计' },
-        { taskId: 'FS-002', taskName: '交易金额统计' },
-        { taskId: 'FS-003', taskName: '风险评分分布' },
-        { taskId: 'FS-004', taskName: '地区数据统计' }
-      ],
+      taskList: [],
       exportHistory: [
         { id: 'EXP001', fileName: 'federated_statistics_result_20240115.xlsx', format: 'EXCEL', taskCount: 3, fileSize: '1.2 MB', createTime: '2024-01-15 16:00:00', status: 'completed' },
         { id: 'EXP002', fileName: 'statistics_summary_20240114.pdf', format: 'PDF', taskCount: 2, fileSize: '856 KB', createTime: '2024-01-14 18:30:00', status: 'completed' }
       ]
     }
   },
+  mounted() {
+    this.fetchTaskList()
+  },
   methods: {
     goBack() {
       this.$router.go(-1)
     },
+    // 缺陷整改 T2：任务下拉改真实任务（批量导出后端按数值 taskId 查询）
+    fetchTaskList() {
+      getStatisticsTaskList({ pageNo: 1, pageSize: 200 }).then(res => {
+        if (res && res.code === 0 && res.result) {
+          this.taskList = (res.result.list || []).map(t => ({ taskId: t.id, taskName: t.taskName }))
+        }
+      }).catch(() => { this.taskList = [] })
+    },
+    // 缺陷整改 T2：改为真实批量导出并触发下载（原 setTimeout 假成功、不产文件）
     handleExport() {
       if (this.exportFormData.taskIds.length === 0) {
         this.$message.warning('请选择至少一个统计任务')
         return
       }
       this.exporting = true
-      setTimeout(() => {
-        this.exporting = false
+      const data = {
+        taskIds: this.exportFormData.taskIds,
+        format: this.exportFormData.exportFormat
+      }
+      batchExportStatisticsResult(data).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
         this.$message.success('结果导出成功')
-        this.exportHistory.unshift({
-          id: `EXP${Date.now()}`,
-          fileName: `${this.exportFormData.fileNamePrefix}_${new Date().toISOString().slice(0, 10)}.${this.exportFormData.exportFormat.toLowerCase()}`,
-          format: this.exportFormData.exportFormat,
-          taskCount: this.exportFormData.taskIds.length,
-          fileSize: `${Math.floor(Math.random() * 2000) + 500} KB`,
-          createTime: new Date().toLocaleString(),
-          status: 'completed'
-        })
-      }, 2000)
+      }).catch(() => {
+        this.$message.error('导出失败')
+      }).finally(() => {
+        this.exporting = false
+      })
     },
     handleReset() {
       this.exportFormData = {
