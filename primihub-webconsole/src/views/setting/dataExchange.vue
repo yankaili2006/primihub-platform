@@ -280,7 +280,7 @@ export default {
       this.loading = true
       findDataExchangeLogPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -331,7 +331,7 @@ export default {
         if (valid) {
           const { sourceOrganId, targetOrganId, exchangeType, dataType, dataId, dataName } = this.syncFormData
           triggerDataSync(sourceOrganId, targetOrganId, exchangeType, dataType, dataId, dataName).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('触发同步成功')
               this.triggerSyncDialogVisible = false
               this.fetchData()
@@ -360,7 +360,7 @@ export default {
         return
       }
       getExchangeStatistics(this.statisticsOrganId).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.statisticsData = res.result || {}
           this.$message.success('加载统计信息成功')
         } else {
@@ -375,7 +375,7 @@ export default {
       this.loading = true
       getFailedExchangeLogs().then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result || []
           this.total = this.tableData.length
           this.$message.success(`找到${this.tableData.length}条失败记录`)
@@ -399,7 +399,7 @@ export default {
         this.loading = true
         getRecentExchangeLogs(parseInt(value)).then(res => {
           this.loading = false
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.tableData = res.result || []
             this.total = this.tableData.length
             this.$message.success(`找到${this.tableData.length}条记录`)
@@ -415,7 +415,7 @@ export default {
     },
     handleViewDetail(row) {
       getDataExchangeLogById(row.id).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           const log = res.result
           this.$alert(
             `<div style="max-height: 400px; overflow-y: auto;">
@@ -462,7 +462,7 @@ export default {
           row.dataId,
           row.dataName
         ).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('重试成功')
             this.fetchData()
           } else {
@@ -481,7 +481,7 @@ export default {
         type: 'warning'
       }).then(() => {
         batchDeleteDataExchangeLog([row.id]).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -501,7 +501,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchDeleteDataExchangeLog(ids).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {

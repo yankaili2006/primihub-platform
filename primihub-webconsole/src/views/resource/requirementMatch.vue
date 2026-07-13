@@ -218,7 +218,7 @@ export default {
         pageSize: 100
       }
       findDataRequirementPage(params).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.requirementList = res.result.list || []
         } else {
           // 使用测试数据
@@ -323,7 +323,7 @@ export default {
       }
       findMatchedResources(params).then(res => {
         this.matchLoading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.matchedResources = res.result.list || []
           this.matchedResourcesTotal = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -435,7 +435,7 @@ export default {
         this.matchLoading = true
         matchDataRequirements(this.selectedRequirement.id).then(res => {
           this.matchLoading = false
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success(`匹配成功，找到${res.result.matchCount}个匹配资源`)
             this.fetchMatchedResources()
             this.fetchRequirements() // Refresh requirements to update status
@@ -458,7 +458,7 @@ export default {
         type: 'success'
       }).then(() => {
         confirmMatch(row.id, this.userId, this.userName).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('确认成功')
             this.fetchMatchedResources()
             this.fetchRequirements() // Refresh to update requirement status
@@ -480,7 +480,7 @@ export default {
         type: 'warning'
       }).then(() => {
         rejectMatch(row.id, this.userId, this.userName).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('已拒绝')
             this.fetchMatchedResources()
           } else {

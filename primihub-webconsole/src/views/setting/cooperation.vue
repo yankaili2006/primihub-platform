@@ -337,7 +337,7 @@ export default {
       this.loading = true
       findCooperationPartyPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -408,7 +408,7 @@ export default {
         return
       }
       terminateCooperation(this.terminateForm.row.id, this.terminateForm.reason).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('终止成功')
           this.terminateDialogVisible = false
           this.fetchData()
@@ -427,7 +427,7 @@ export default {
         type: 'warning'
       }).then(() => {
         updateCooperationStatus(row.id, 2).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('暂停成功')
             this.fetchData()
           } else {
@@ -446,7 +446,7 @@ export default {
         type: 'success'
       }).then(() => {
         updateCooperationStatus(row.id, 1).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('恢复成功')
             this.fetchData()
           } else {
@@ -472,7 +472,7 @@ export default {
       }
       const newEndDateTimestamp = new Date(this.renewForm.newEndDate).getTime()
       renewCooperation(this.renewForm.row.id, newEndDateTimestamp).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('续约成功')
           this.renewDialogVisible = false
           this.fetchData()
@@ -492,7 +492,7 @@ export default {
       }).then(() => {
         const ids = this.selectedRows.map(row => row.id)
         batchDeleteCooperationParty(ids).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {
@@ -513,7 +513,7 @@ export default {
         inputValue: '30'
       }).then(({ value }) => {
         getExpiringCooperationParties(parseInt(value)).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.tableData = res.result || []
             this.total = this.tableData.length
             this.$message.success(`找到${this.tableData.length}条即将过期的合作`)
@@ -540,7 +540,7 @@ export default {
           return
         }
         getUnhealthyCooperationParties(threshold).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.tableData = res.result || []
             this.total = this.tableData.length
             this.$message.success(`找到${this.tableData.length}条健康度低的合作`)
@@ -558,7 +558,7 @@ export default {
         this.nodeSearchLoading = true
         searchCooperationNodes(keyword).then(res => {
           this.nodeSearchLoading = false
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.nodeOptions = res.result || []
           } else {
             this.$message.error(res.msg || '搜索失败')
@@ -584,7 +584,7 @@ export default {
         if (valid) {
           const apiFunc = this.isEdit ? updateCooperationParty : establishCooperation
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '建立合作成功')
               this.dialogVisible = false
               this.fetchData()

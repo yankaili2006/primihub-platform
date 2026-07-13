@@ -273,7 +273,7 @@ export default {
       this.loading = true
       findDataRequirementPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -458,7 +458,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deleteDataRequirement(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -478,7 +478,7 @@ export default {
         type: 'warning'
       }).then(() => {
         batchDeleteDataRequirement(this.selectedIds).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {
@@ -499,7 +499,7 @@ export default {
         type: 'info'
       }).then(() => {
         matchDataRequirements(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success(`匹配成功，找到${res.result.matchCount}个匹配资源`)
             this.fetchData()
             // 跳转到匹配页面
@@ -533,7 +533,7 @@ export default {
 
           const apiFunc = this.isEdit ? updateDataRequirement : addDataRequirement
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功')
               this.dialogVisible = false
               this.fetchData()

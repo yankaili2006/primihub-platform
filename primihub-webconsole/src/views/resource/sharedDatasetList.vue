@@ -303,7 +303,7 @@ export default {
       this.loading = true
       findSharedDatasetPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
@@ -417,7 +417,7 @@ export default {
     },
     loadResourceList() {
       getShareableResources({}).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.resourceList = res.result || []
         } else {
           // 使用测试数据
@@ -495,7 +495,7 @@ export default {
         type: 'warning'
       }).then(() => {
         deleteSharedDataset(row.id).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
           } else {
@@ -515,7 +515,7 @@ export default {
         type: 'warning'
       }).then(() => {
         batchDeleteSharedDataset(this.selectedIds).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('批量删除成功')
             this.fetchData()
           } else {
@@ -536,7 +536,7 @@ export default {
         type: 'warning'
       }).then(() => {
         updateSharedDatasetStatus(row.id, 3).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('下架成功')
             this.fetchData()
           } else {
@@ -556,7 +556,7 @@ export default {
         type: 'info'
       }).then(() => {
         updateSharedDatasetStatus(row.id, 1).then(res => {
-          if (res.returnCode === '0') {
+          if (res.code === 0) {
             this.$message.success('上架成功')
             this.fetchData()
           } else {
@@ -584,7 +584,7 @@ export default {
 
           const apiFunc = this.isEdit ? updateSharedDataset : addSharedDataset
           apiFunc(this.formData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success(this.isEdit ? '更新成功' : '添加成功')
               this.dialogVisible = false
               this.fetchData()

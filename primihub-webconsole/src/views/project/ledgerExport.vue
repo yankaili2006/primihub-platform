@@ -363,7 +363,7 @@ export default {
       this.loading = true
       findProjectLedgerPage(this.queryForm).then(res => {
         this.loading = false
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
           this.summaryData = res.result.summary || this.summaryData
@@ -465,7 +465,7 @@ export default {
     },
     loadExportHistory() {
       getExportHistory().then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.exportHistoryData = res.result || []
         } else {
           this.exportHistoryData = this.getMockExportHistory()
@@ -535,7 +535,7 @@ export default {
     },
     handleViewDetail(row) {
       getProjectLedgerDetail(row.projectId).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.detailData = res.result
         } else {
           this.detailData = this.getMockDetailData(row)
@@ -611,7 +611,7 @@ export default {
           }
 
           exportFunc(this.exportFormData).then(res => {
-            if (res.returnCode === '0') {
+            if (res.code === 0) {
               this.$message.success('导出任务已提交')
               this.exportDialogVisible = false
               this.loadExportHistory()
@@ -654,7 +654,7 @@ export default {
     },
     handleRetryExport(row) {
       retryExport(row.exportId).then(res => {
-        if (res.returnCode === '0') {
+        if (res.code === 0) {
           this.$message.success('重试任务已提交')
           this.loadExportHistory()
         } else {
