@@ -64,6 +64,8 @@
 </template>
 
 <script>
+import { exportSceneData } from '@/api/scene'
+
 export default {
   name: 'OrgDataExport',
   data() {
@@ -89,27 +91,45 @@ export default {
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    // 缺陷整改 T2：改为真实提交数据导出任务（原 setTimeout 假成功、不调后端）
     handleExport() {
       if (!this.exportForm.orgId) {
         this.$message.warning('请选择机构')
         return
       }
       this.exporting = true
-      setTimeout(() => {
+      const org = this.orgList.find(o => o.id === this.exportForm.orgId)
+      const data = {
+        taskName: `机构数据导出-${org ? org.name : this.exportForm.orgId}`,
+        action: 'export',
+        orgId: this.exportForm.orgId,
+        dataTypes: this.exportForm.dataTypes,
+        startDate: this.exportForm.dateRange && this.exportForm.dateRange[0] ? this.exportForm.dateRange[0] : '',
+        endDate: this.exportForm.dateRange && this.exportForm.dateRange[1] ? this.exportForm.dateRange[1] : '',
+        format: this.exportForm.format,
+        desensitize: this.exportForm.desensitize
+      }
+      exportSceneData(data).then(res => {
+        if (res && res.code === 0) {
+          this.$message.success('导出任务已提交')
+          this.exportHistory.unshift({
+            exportId: (res.result && (res.result.taskId || res.result.id)) || `EXP${Date.now()}`,
+            orgName: org ? org.name : this.exportForm.orgId,
+            dataTypes: this.exportForm.dataTypes.map(t => ({ verifyResult: '验证结果', compareResult: '比对结果', statistics: '统计数据' }[t])).join(', '),
+            recordCount: '-',
+            fileSize: '-',
+            format: this.exportForm.format,
+            createTime: new Date().toLocaleString(),
+            status: 'processing'
+          })
+        } else {
+          this.$message.error((res && res.msg) || '导出失败')
+        }
+      }).catch(() => {
+        this.$message.error('导出失败')
+      }).finally(() => {
         this.exporting = false
-        const org = this.orgList.find(o => o.id === this.exportForm.orgId)
-        this.exportHistory.unshift({
-          exportId: `EXP${Date.now()}`,
-          orgName: org.name,
-          dataTypes: this.exportForm.dataTypes.map(t => ({ verifyResult: '验证结果', compareResult: '比对结果', statistics: '统计数据' }[t])).join(', '),
-          recordCount: Math.floor(Math.random() * 20000) + 5000,
-          fileSize: `${(Math.random() * 5 + 1).toFixed(1)} MB`,
-          format: this.exportForm.format,
-          createTime: new Date().toLocaleString(),
-          status: 'completed'
-        })
-        this.$message.success('导出完成')
-      }, 2000)
+      })
     },
     handleDownload(row) {
       this.$message.success(`开始下载: ${row.exportId}`)

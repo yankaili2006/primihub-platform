@@ -72,6 +72,8 @@
 </template>
 
 <script>
+import { realtimeExchange } from '@/api/scene'
+
 export default {
   name: 'FeatureCipherRealTimeExchange',
   data() {
@@ -100,12 +102,28 @@ export default {
   },
   methods: {
     goBack() { this.$router.go(-1) },
+    // 缺陷整改 T2：启停实时交换服务改为真实提交后端（原仅弹提示、不调后端）
     handleServiceToggle(enabled) {
-      if (enabled) {
-        this.$message.success('实时交换服务已启动')
-      } else {
-        this.$message.warning('实时交换服务已停止')
+      const data = {
+        taskName: '实时密文交换服务配置',
+        action: 'realtimeExchange',
+        serviceEnabled: enabled,
+        port: this.configForm.port,
+        maxConcurrency: this.configForm.maxConcurrency,
+        timeout: this.configForm.timeout,
+        enableTLS: this.configForm.enableTLS
       }
+      realtimeExchange(data).then(res => {
+        if (res && res.code === 0) {
+          this.$message.success(enabled ? '实时交换服务已启动' : '实时交换服务已停止')
+        } else {
+          this.configForm.serviceEnabled = !enabled // 失败回滚开关
+          this.$message.error((res && res.msg) || '操作失败')
+        }
+      }).catch(() => {
+        this.configForm.serviceEnabled = !enabled
+        this.$message.error('操作失败')
+      })
     },
     handleRefresh() {
       this.stats.todayRequests += Math.floor(Math.random() * 10)

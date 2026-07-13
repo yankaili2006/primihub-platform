@@ -64,6 +64,8 @@
 </template>
 
 <script>
+import { batchExchange } from '@/api/scene'
+
 export default {
   name: 'FeatureCipherBatchExchange',
   data() {
@@ -92,6 +94,7 @@ export default {
     handleFileChange(file, fileList) {
       this.fileList = fileList
     },
+    // 缺陷整改 T2：改为真实提交批量交换任务（原 setInterval 假进度、不调后端）
     handleExchange() {
       if (!this.exchangeForm.targetOrg) {
         this.$message.warning('请选择目标机构')
@@ -99,26 +102,36 @@ export default {
       }
       this.exchanging = true
       const org = this.orgList.find(o => o.id === this.exchangeForm.targetOrg)
-      const newTask = {
-        taskId: `BEX${Date.now()}`,
-        direction: this.exchangeForm.direction === 'send' ? '发送' : '接收',
-        targetOrg: org.name,
-        featureTypes: this.exchangeForm.featureTypes.map(t => ({ face: '人脸特征', fingerprint: '指纹特征', compare: '比对结果' }[t])).join(', '),
-        fileCount: this.fileList.length || Math.floor(Math.random() * 10) + 5,
-        totalSize: `${(Math.random() * 2 + 0.5).toFixed(1)} GB`,
-        progress: 0,
-        createTime: new Date().toLocaleString()
+      const data = {
+        taskName: `批量密文交换-${org ? org.name : this.exchangeForm.targetOrg}`,
+        action: 'batchExchange',
+        direction: this.exchangeForm.direction,
+        targetOrg: this.exchangeForm.targetOrg,
+        featureTypes: this.exchangeForm.featureTypes,
+        enableTLS: this.exchangeForm.enableTLS,
+        fileCount: this.fileList.length
       }
-      this.exchangeTaskList.unshift(newTask)
-      const timer = setInterval(() => {
-        if (newTask.progress < 100) {
-          newTask.progress += 10
+      batchExchange(data).then(res => {
+        if (res && res.code === 0) {
+          this.$message.success('批量交换任务已提交')
+          this.exchangeTaskList.unshift({
+            taskId: (res.result && (res.result.taskId || res.result.id)) || `BEX${Date.now()}`,
+            direction: this.exchangeForm.direction === 'send' ? '发送' : '接收',
+            targetOrg: org ? org.name : this.exchangeForm.targetOrg,
+            featureTypes: this.exchangeForm.featureTypes.map(t => ({ face: '人脸特征', fingerprint: '指纹特征', compare: '比对结果' }[t])).join(', '),
+            fileCount: this.fileList.length,
+            totalSize: '-',
+            progress: 100,
+            createTime: new Date().toLocaleString()
+          })
         } else {
-          clearInterval(timer)
-          this.exchanging = false
-          this.$message.success('批量交换完成')
+          this.$message.error((res && res.msg) || '提交失败')
         }
-      }, 500)
+      }).catch(() => {
+        this.$message.error('提交失败')
+      }).finally(() => {
+        this.exchanging = false
+      })
     },
     handleViewLog(row) {
       this.$message.info(`查看日志: ${row.taskId}`)
