@@ -445,6 +445,8 @@ export default {
             this.dialogVisible = false
             this.fetchData()
             this.fetchStatistics()
+          } else {
+            this.$message.error((res && res.msg) || (this.isEdit ? '接口更新失败' : '接口创建失败'))
           }
         }
       })

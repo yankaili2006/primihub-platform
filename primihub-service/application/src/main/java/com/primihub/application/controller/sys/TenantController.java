@@ -125,4 +125,42 @@ public class TenantController {
     public BaseResultEntity getTenantStatistics() {
         return tenantService.getTenantStatistics();
     }
+
+    // ===== 租户隔离配置（缺陷整改 T8：补齐前端隔离页面所调用、此前后端缺失的接口，消除进入页面 404） =====
+
+    @ApiOperation(value = "获取计算流程隔离配置")
+    @GetMapping("isolation/config")
+    public BaseResultEntity getComputeIsolationConfig() {
+        return tenantService.getComputeIsolationConfig();
+    }
+
+    @ApiOperation(value = "保存计算流程隔离配置")
+    @PostMapping("isolation/config")
+    public BaseResultEntity saveComputeIsolationConfig(@RequestBody(required = false) Map<String, Object> data) {
+        return tenantService.saveComputeIsolationConfig(data);
+    }
+
+    @ApiOperation(value = "查询各租户隔离状态列表")
+    @GetMapping("isolation/status/list")
+    public BaseResultEntity getIsolationStatusList() {
+        return tenantService.getIsolationStatusList();
+    }
+
+    @ApiOperation(value = "隔离配置校验")
+    @PostMapping("isolation/test")
+    public BaseResultEntity testIsolation(@RequestBody(required = false) Map<String, Object> data) {
+        return tenantService.testIsolation(data);
+    }
+
+    @ApiOperation(value = "获取数据隔离配置")
+    @GetMapping("dataIsolation/config")
+    public BaseResultEntity getDataIsolationConfig() {
+        return tenantService.getDataIsolationConfig();
+    }
+
+    @ApiOperation(value = "保存数据隔离配置")
+    @PostMapping("dataIsolation/config")
+    public BaseResultEntity saveDataIsolationConfig(@RequestBody(required = false) Map<String, Object> data) {
+        return tenantService.saveDataIsolationConfig(data);
+    }
 }

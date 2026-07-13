@@ -49,6 +49,7 @@
         <el-form-item label="用户角色" prop="roleIdList">
           <el-select
             v-model="userInfo.roleIdList"
+            multiple
             filterable
             placeholder="请选择用户角色"
             value-key="value"
@@ -58,7 +59,6 @@
               :key="index"
               :label="item.roleName"
               :value="item.roleId"
-              multiple
             />
           </el-select>
         </el-form-item>
@@ -311,6 +311,8 @@ export default {
             })
             this.closeDialog()
             this.fetchData()
+          } else {
+            this.$message.error(res.msg || '操作失败')
           }
         }
       })
