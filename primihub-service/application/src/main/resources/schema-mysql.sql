@@ -1068,3 +1068,173 @@ CREATE TABLE IF NOT EXISTS federated_query_log (
     INDEX idx_log_level (log_level),
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='联邦查询日志表';
+
+-- =====================================================================
+-- 缺陷整改 T5：补齐随功能上线却漏建的启动表（列名对齐 MyBatis mapper）
+-- 缺陷映射：操作/调度/计算 日志定义新增异常、计算日志记录、数据需求、共享数据集
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS `sys_operation_log_definition` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `log_code` VARCHAR(100) NOT NULL COMMENT '日志代码',
+  `log_name` VARCHAR(200) NOT NULL COMMENT '日志名称',
+  `log_type` VARCHAR(50) NOT NULL COMMENT '日志类型',
+  `module_name` VARCHAR(100) DEFAULT NULL COMMENT '模块名称',
+  `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
+  `is_enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+  `retention_days` INT(11) DEFAULT 30 COMMENT '保留天数',
+  `is_del` TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_log_code` (`log_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志定义表';
+
+CREATE TABLE IF NOT EXISTS `sys_schedule_log_definition` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `log_code` VARCHAR(100) NOT NULL COMMENT '日志代码',
+  `log_name` VARCHAR(200) NOT NULL COMMENT '日志名称',
+  `schedule_type` VARCHAR(50) NOT NULL COMMENT '调度类型',
+  `module_name` VARCHAR(100) DEFAULT NULL COMMENT '模块名称',
+  `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
+  `is_enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+  `retention_days` INT(11) DEFAULT 30 COMMENT '保留天数',
+  `is_del` TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_log_code` (`log_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='调度日志定义表';
+
+CREATE TABLE IF NOT EXISTS `sys_compute_log_definition` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `log_code` VARCHAR(100) NOT NULL COMMENT '日志代码',
+  `log_name` VARCHAR(200) NOT NULL COMMENT '日志名称',
+  `compute_type` VARCHAR(50) NOT NULL COMMENT '计算类型',
+  `module_name` VARCHAR(100) DEFAULT NULL COMMENT '模块名称',
+  `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
+  `is_enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+  `retention_days` INT(11) DEFAULT 30 COMMENT '保留天数',
+  `is_del` TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_log_code` (`log_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='计算日志定义表';
+
+CREATE TABLE IF NOT EXISTS `sys_compute_log` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `log_code` VARCHAR(100) NOT NULL COMMENT '日志代码',
+  `task_id` VARCHAR(100) DEFAULT NULL COMMENT '任务ID',
+  `task_name` VARCHAR(200) DEFAULT NULL COMMENT '任务名称',
+  `compute_type` VARCHAR(50) DEFAULT NULL COMMENT '计算类型',
+  `project_id` BIGINT DEFAULT NULL COMMENT '项目ID',
+  `project_name` VARCHAR(200) DEFAULT NULL COMMENT '项目名称',
+  `user_id` BIGINT DEFAULT NULL COMMENT '用户ID',
+  `user_name` VARCHAR(100) DEFAULT NULL COMMENT '用户名',
+  `organ_id` BIGINT DEFAULT NULL COMMENT '机构ID',
+  `organ_name` VARCHAR(200) DEFAULT NULL COMMENT '机构名称',
+  `start_time` DATETIME DEFAULT NULL COMMENT '开始时间',
+  `end_time` DATETIME DEFAULT NULL COMMENT '结束时间',
+  `execution_time` BIGINT DEFAULT NULL COMMENT '执行时长(ms)',
+  `status` TINYINT(1) DEFAULT 0 COMMENT '状态',
+  `result_data` TEXT COMMENT '计算结果',
+  `error_msg` TEXT COMMENT '错误信息',
+  `resource_usage` TEXT COMMENT '资源使用',
+  `is_del` TINYINT(1) DEFAULT 0 COMMENT '是否删除',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_log_code` (`log_code`),
+  KEY `idx_task_id` (`task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='计算日志记录表';
+
+CREATE TABLE IF NOT EXISTS `data_requirement` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `requirement_code` VARCHAR(64) NOT NULL COMMENT '需求编码',
+  `requirement_name` VARCHAR(128) NOT NULL COMMENT '需求名称',
+  `requirement_desc` TEXT COMMENT '需求描述',
+  `requirement_type` VARCHAR(32) COMMENT '需求类型',
+  `data_fields` TEXT COMMENT '所需数据字段(JSON)',
+  `data_volume` BIGINT COMMENT '所需数据量',
+  `data_format` VARCHAR(32) COMMENT '所需数据格式',
+  `priority` TINYINT DEFAULT 0 COMMENT '优先级',
+  `status` TINYINT DEFAULT 0 COMMENT '状态',
+  `user_id` BIGINT NOT NULL COMMENT '创建人ID',
+  `user_name` VARCHAR(64) COMMENT '创建人',
+  `organ_id` BIGINT COMMENT '机构ID',
+  `organ_name` VARCHAR(128) COMMENT '机构名称',
+  `start_date` DATETIME COMMENT '开始日期',
+  `end_date` DATETIME COMMENT '结束日期',
+  `remark` VARCHAR(500) COMMENT '备注',
+  `is_del` TINYINT DEFAULT 0 COMMENT '删除标记',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_requirement_code` (`requirement_code`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据需求表';
+
+CREATE TABLE IF NOT EXISTS `data_requirement_config` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `config_key` VARCHAR(64) NOT NULL COMMENT '配置键',
+  `config_value` TEXT NOT NULL COMMENT '配置值',
+  `config_desc` VARCHAR(255) COMMENT '配置描述',
+  `config_type` VARCHAR(32) COMMENT '配置类型',
+  `is_enabled` TINYINT DEFAULT 1 COMMENT '启用标记',
+  `is_del` TINYINT DEFAULT 0 COMMENT '删除标记',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_config_key` (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据需求配置表';
+
+CREATE TABLE IF NOT EXISTS `data_requirement_match` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `requirement_id` BIGINT NOT NULL COMMENT '需求ID',
+  `resource_id` BIGINT NOT NULL COMMENT '资源ID',
+  `match_score` DECIMAL(5,2) DEFAULT 0.00 COMMENT '匹配得分',
+  `match_status` TINYINT DEFAULT 0 COMMENT '匹配状态',
+  `match_type` VARCHAR(32) COMMENT '匹配类型',
+  `match_details` TEXT COMMENT '匹配详情(JSON)',
+  `confirm_user_id` BIGINT COMMENT '确认人ID',
+  `confirm_user_name` VARCHAR(64) COMMENT '确认人',
+  `confirm_date` DATETIME COMMENT '确认时间',
+  `remark` VARCHAR(500) COMMENT '备注',
+  `is_del` TINYINT DEFAULT 0 COMMENT '删除标记',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_requirement_id` (`requirement_id`),
+  KEY `idx_resource_id` (`resource_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据需求匹配表';
+
+CREATE TABLE IF NOT EXISTS `shared_dataset` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `dataset_code` VARCHAR(64) NOT NULL COMMENT '数据集编码',
+  `dataset_name` VARCHAR(255) NOT NULL COMMENT '数据集名称',
+  `dataset_desc` TEXT COMMENT '数据集描述',
+  `data_type` VARCHAR(32) COMMENT '数据类型',
+  `data_format` VARCHAR(32) COMMENT '数据格式',
+  `data_fields` TEXT COMMENT '数据字段(JSON)',
+  `data_volume` BIGINT COMMENT '数据量',
+  `share_status` INT DEFAULT 0 COMMENT '共享状态',
+  `share_scope` INT DEFAULT 0 COMMENT '共享范围',
+  `target_organ_ids` TEXT COMMENT '目标机构ID列表',
+  `resource_id` BIGINT COMMENT '关联资源ID',
+  `resource_name` VARCHAR(255) COMMENT '关联资源名称',
+  `usage_terms` VARCHAR(1000) COMMENT '使用条款',
+  `user_id` BIGINT COMMENT '创建人ID',
+  `user_name` VARCHAR(64) COMMENT '创建人',
+  `organ_id` BIGINT COMMENT '机构ID',
+  `organ_name` VARCHAR(128) COMMENT '机构名称',
+  `start_date` DATETIME COMMENT '共享开始日期',
+  `end_date` DATETIME COMMENT '共享结束日期',
+  `remark` VARCHAR(500) COMMENT '备注',
+  `is_del` TINYINT DEFAULT 0 COMMENT '删除标记',
+  `create_date` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_date` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_dataset_code` (`dataset_code`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_share_status` (`share_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='共享数据集表';

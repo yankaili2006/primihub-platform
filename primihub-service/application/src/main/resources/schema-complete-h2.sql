@@ -614,3 +614,158 @@ CREATE INDEX idx_task_execution_log_task_id ON data_task_execution_log(task_id);
 CREATE INDEX idx_task_execution_log_task_type ON data_task_execution_log(task_type);
 CREATE INDEX idx_task_execution_log_log_level ON data_task_execution_log(log_level);
 CREATE INDEX idx_task_execution_log_created_time ON data_task_execution_log(created_time);
+
+-- =====================================================================
+-- 缺陷整改 T5：补齐随功能上线却漏建的启动表（H2/MySQL 模式，列名对齐 mapper）
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS sys_operation_log_definition (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    log_code VARCHAR(100) NOT NULL UNIQUE,
+    log_name VARCHAR(200) NOT NULL,
+    log_type VARCHAR(50) NOT NULL,
+    module_name VARCHAR(100),
+    description VARCHAR(500),
+    is_enabled INT DEFAULT 1,
+    retention_days INT DEFAULT 30,
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_schedule_log_definition (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    log_code VARCHAR(100) NOT NULL UNIQUE,
+    log_name VARCHAR(200) NOT NULL,
+    schedule_type VARCHAR(50) NOT NULL,
+    module_name VARCHAR(100),
+    description VARCHAR(500),
+    is_enabled INT DEFAULT 1,
+    retention_days INT DEFAULT 30,
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_compute_log_definition (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    log_code VARCHAR(100) NOT NULL UNIQUE,
+    log_name VARCHAR(200) NOT NULL,
+    compute_type VARCHAR(50) NOT NULL,
+    module_name VARCHAR(100),
+    description VARCHAR(500),
+    is_enabled INT DEFAULT 1,
+    retention_days INT DEFAULT 30,
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sys_compute_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    log_code VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
+    task_name VARCHAR(200),
+    compute_type VARCHAR(50),
+    project_id BIGINT,
+    project_name VARCHAR(200),
+    user_id BIGINT,
+    user_name VARCHAR(100),
+    organ_id BIGINT,
+    organ_name VARCHAR(200),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    execution_time BIGINT,
+    status INT DEFAULT 0,
+    result_data TEXT,
+    error_msg TEXT,
+    resource_usage TEXT,
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_compute_log_log_code ON sys_compute_log(log_code);
+CREATE INDEX idx_compute_log_task_id ON sys_compute_log(task_id);
+
+CREATE TABLE IF NOT EXISTS data_requirement (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    requirement_code VARCHAR(64) NOT NULL UNIQUE,
+    requirement_name VARCHAR(128) NOT NULL,
+    requirement_desc TEXT,
+    requirement_type VARCHAR(32),
+    data_fields TEXT,
+    data_volume BIGINT,
+    data_format VARCHAR(32),
+    priority INT DEFAULT 0,
+    status INT DEFAULT 0,
+    user_id BIGINT NOT NULL,
+    user_name VARCHAR(64),
+    organ_id BIGINT,
+    organ_name VARCHAR(128),
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    remark VARCHAR(500),
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_data_requirement_user_id ON data_requirement(user_id);
+CREATE INDEX idx_data_requirement_status ON data_requirement(status);
+
+CREATE TABLE IF NOT EXISTS data_requirement_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(64) NOT NULL UNIQUE,
+    config_value TEXT NOT NULL,
+    config_desc VARCHAR(255),
+    config_type VARCHAR(32),
+    is_enabled INT DEFAULT 1,
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS data_requirement_match (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    requirement_id BIGINT NOT NULL,
+    resource_id BIGINT NOT NULL,
+    match_score DECIMAL(5,2) DEFAULT 0.00,
+    match_status INT DEFAULT 0,
+    match_type VARCHAR(32),
+    match_details TEXT,
+    confirm_user_id BIGINT,
+    confirm_user_name VARCHAR(64),
+    confirm_date TIMESTAMP,
+    remark VARCHAR(500),
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_data_requirement_match_req ON data_requirement_match(requirement_id);
+CREATE INDEX idx_data_requirement_match_res ON data_requirement_match(resource_id);
+
+CREATE TABLE IF NOT EXISTS shared_dataset (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    dataset_code VARCHAR(64) NOT NULL UNIQUE,
+    dataset_name VARCHAR(255) NOT NULL,
+    dataset_desc TEXT,
+    data_type VARCHAR(32),
+    data_format VARCHAR(32),
+    data_fields TEXT,
+    data_volume BIGINT,
+    share_status INT DEFAULT 0,
+    share_scope INT DEFAULT 0,
+    target_organ_ids TEXT,
+    resource_id BIGINT,
+    resource_name VARCHAR(255),
+    usage_terms VARCHAR(1000),
+    user_id BIGINT,
+    user_name VARCHAR(64),
+    organ_id BIGINT,
+    organ_name VARCHAR(128),
+    start_date TIMESTAMP,
+    end_date TIMESTAMP,
+    remark VARCHAR(500),
+    is_del INT DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_shared_dataset_user_id ON shared_dataset(user_id);
+CREATE INDEX idx_shared_dataset_share_status ON shared_dataset(share_status);
