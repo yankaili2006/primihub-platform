@@ -107,6 +107,14 @@ def main():
                  "" if not missing else "  缺: " + ",".join(missing))) and passed
     print("  admin 授权页面节点 = %d 个" % len(granted))
 
+    # ③ 租户管理按钮权限(前端 tenant/list.vue 据此渲染「新增/编辑/删除/冻结租户」按钮:
+    #    buttonPermissionList = 授权树里 authType===3 的 authCode)
+    TENANT_BTNS = ["TenantAdd", "TenantEdit", "TenantDelete", "TenantFreeze"]
+    miss_btn = [c for c in TENANT_BTNS if c not in granted]
+    passed = (ok if not miss_btn else fail)("租户按钮权限(新增/编辑/删除/冻结) %d/%d%s"
+              % (len(TENANT_BTNS) - len(miss_btn), len(TENANT_BTNS),
+                 "" if not miss_btn else "  缺: " + ",".join(miss_btn))) and passed
+
     print(("\033[32m✅ 功能菜单正常\033[0m" if passed else "\033[31m❌ 功能菜单异常\033[0m"))
     return 0 if passed else 1
 
