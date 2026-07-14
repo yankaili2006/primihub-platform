@@ -31,6 +31,7 @@ export function exportProjectLedger(data) {
   return request({
     url: '/project/ledger/export',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -42,6 +43,7 @@ export function batchExportProjectLedger(data) {
   return request({
     url: '/project/ledger/batchExport',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -53,6 +55,7 @@ export function exportAllProjectLedger(data) {
   return request({
     url: '/project/ledger/exportAll',
     method: 'post',
+    type: 'json',
     data
   })
 }

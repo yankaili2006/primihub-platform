@@ -789,25 +789,69 @@ export default {
       this.loadAlertConfig(type)
     },
     async loadAlertConfig(type) {
-      // TODO: 调用实际接口获取告警配置
       const res = await getAlertConfig({ type })
       if (res && res.code === 0) {
-        this.alertConfigForm = res.result || this.alertConfigForm
+        const configs = Array.isArray(res.result) ? res.result : []
+        const config = configs.find(item => item.monitorType === type || item.type === type) || res.result || {}
+        this.alertConfigForm = this.normalizeAlertConfig(config)
       }
     },
     async saveAlertConfiguration() {
-      // TODO: 调用实际接口保存告警配置
       const data = {
+        id: this.alertConfigForm.id,
         type: this.currentAlertType,
-        ...this.alertConfigForm
+        monitorType: this.currentAlertType,
+        threshold: this.alertConfigForm.threshold,
+        duration: this.alertConfigForm.duration,
+        alertLevel: this.alertLevelToValue(this.alertConfigForm.level),
+        notifyMethod: (this.alertConfigForm.notifyMethods || []).join(','),
+        notifyTarget: this.alertConfigForm.notifyTargets || '',
+        isEnabled: this.alertConfigForm.enabled ? 1 : 0
       }
-      const res = await saveAlertConfig(data)
-      if (res && res.code === 0) {
-        this.$message.success('告警配置保存成功')
-        this.alertConfigVisible = false
-      } else {
-        this.$message.error((res && res.msg) || '告警配置保存失败')
+      try {
+        const res = await saveAlertConfig(data)
+        if (res && res.code === 0) {
+          this.$message.success('告警配置保存成功')
+          this.alertConfigVisible = false
+        } else {
+          this.$message.error((res && res.msg) || '告警配置保存失败')
+        }
+      } catch (e) {
+        this.$message.error('告警配置保存失败，请稍后重试')
       }
+    },
+    normalizeAlertConfig(config) {
+      const defaults = {
+        enabled: true,
+        threshold: 80,
+        duration: 5,
+        level: 'WARNING',
+        notifyMethods: ['EMAIL'],
+        notifyTargets: '',
+        silencePeriod: 30
+      }
+      if (!config || !Object.keys(config).length) return defaults
+      return {
+        ...defaults,
+        id: config.id,
+        enabled: config.enabled !== undefined ? !!config.enabled : config.isEnabled !== 0,
+        threshold: config.threshold !== undefined ? Number(config.threshold) : defaults.threshold,
+        duration: config.duration !== undefined ? Number(config.duration) : defaults.duration,
+        level: config.level || this.alertLevelToName(config.alertLevel),
+        notifyMethods: Array.isArray(config.notifyMethods)
+          ? config.notifyMethods
+          : (config.notifyMethod ? config.notifyMethod.split(',').filter(Boolean) : defaults.notifyMethods),
+        notifyTargets: config.notifyTargets || config.notifyTarget || '',
+        silencePeriod: config.silencePeriod !== undefined ? Number(config.silencePeriod) : defaults.silencePeriod
+      }
+    },
+    alertLevelToValue(level) {
+      const levelMap = { INFO: 0, WARNING: 1, CRITICAL: 2 }
+      return levelMap[level] !== undefined ? levelMap[level] : 1
+    },
+    alertLevelToName(level) {
+      const levelMap = { 0: 'INFO', 1: 'WARNING', 2: 'CRITICAL' }
+      return levelMap[level] || 'WARNING'
     },
     handleAlertItem(row) {
       this.currentAlertItem = row
