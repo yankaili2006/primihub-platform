@@ -550,7 +550,6 @@
 
 <script>
 import {
-  getSystemMonitor,
   getCpuMonitor,
   getMemoryMonitor,
   getDiskMonitor,
