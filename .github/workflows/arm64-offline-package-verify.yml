@@ -120,6 +120,23 @@ jobs:
             [ "$got" = "$EXP" ] || { echo "::error::logo not replaced on $p"; exit 1; }
           done
 
+      - name: Idempotent re-deploy (cleanup-before-deploy then up again)
+        run: |
+          cd offline/arm64-deploy
+          [ -f cleanup-before-deploy.sh ] || { echo "::error::package missing cleanup-before-deploy.sh"; exit 1; }
+          # containers from the first deploy are still up → a naive `up` would hit
+          # 'container name /loki already in use'. cleanup --keep-data must clear that.
+          bash cleanup-before-deploy.sh --keep-data
+          docker compose --env-file .env up -d
+          for r in $(seq 1 20); do
+            sleep 15
+            running=$(docker compose --env-file .env ps --format '{{.Name}} {{.State}}' 2>/dev/null | grep -c running || true)
+            echo "[redeploy r$r] running=$running"
+            [ "$running" -ge 22 ] && break
+          done
+          [ "$running" -ge 22 ] || { echo "::error::re-deploy not 22/22 (got $running)"; docker compose --env-file .env ps -a; exit 1; }
+          echo "✅ idempotent re-deploy 22/22 — cleanup resolves the container-name conflict"
+
       - name: Upload artifacts
         if: always()
         run: |
