@@ -114,6 +114,20 @@ jobs:
           done
           echo "✅ v1.8.0 button perms seeded + granted on all 3 nodes"
 
+      - name: Verify v1.8.0 backend tables present (zz-v18-tables.sql)
+        run: |
+          # the 18 v1.8.0 tables (tenant/whitelist/log/node-approval) the backend
+          # mybatis mappers query — missing → those pages error at runtime.
+          TBLS="tenant tenant_resource_allocation tenant_isolation_config whitelist whitelist_config whitelist_access_log sys_operation_log sys_operation_log_definition sys_schedule_log sys_schedule_log_definition sys_compute_log sys_compute_log_definition node_access_party node_cooperation_party node_approval_workflow node_approval_config node_approval_step node_data_exchange_log"
+          for db in privacy1 privacy2 privacy3; do
+            IN=$(echo "$TBLS" | tr ' ' '\n' | sed "s/.*/'&'/" | paste -sd,)
+            n=$(docker exec mysql mysql -uroot -proot -N -e \
+              "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$db' AND table_name IN ($IN);" 2>/dev/null | tr -d '[:space:]')
+            echo "$db v1.8.0 tables = $n (expect 18)"
+            [ "$n" = "18" ] || { echo "::error::$db missing v1.8.0 tables ($n/18)"; exit 1; }
+          done
+          echo "✅ all 18 v1.8.0 backend tables present on all 3 nodes"
+
       - name: Verify function menus (18 modules / 224 points)
         run: |
           cd offline/arm64-deploy
