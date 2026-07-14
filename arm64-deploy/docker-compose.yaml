@@ -15,10 +15,16 @@ services:
     ports:
       - "3306:3306"
     healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      # -h 127.0.0.1 forces a TCP check: during mariadb's initdb phase the
+      # temp server is socket-only (--skip-networking), so a "localhost"
+      # (socket) ping reports healthy before TCP 3306 accepts, letting nacos
+      # start too early → "Connection refused". TCP ping only passes once the
+      # real networked server is up (initsql done).
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -P 3306 --silent || exit 1" ]
       interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 20
+      start_period: 60s
 
   redis:
     image: $REDIS_IMAGE
@@ -54,7 +60,8 @@ services:
       test: ["CMD-SHELL", "curl --fail -s http://localhost:8848/nacos"]
       interval: 10s
       timeout: 10s
-      retries: 3
+      retries: 6
+      start_period: 120s
 
   rabbitmq0:
     image: $RABBITMQ_IMAGE
