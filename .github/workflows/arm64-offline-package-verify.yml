@@ -1,0 +1,136 @@
+name: arm64-offline-package-verify
+
+# 在真 ARM host (GitHub ubuntu-24.04-arm) 上验证**离线包本身**(非 ACR 在线镜像):
+#   下载公网 OSS 离线包 → docker load images.tar → 校验 docker-bins 为 aarch64 →
+#   用包内 compose 起栈 → 断言 22/22 容器 + 3/3 API + 18模块/224功能点 + logo + 侧边栏。
+# 这覆盖了 arm64-deploy-verify.yml 未覆盖的"离线 LOAD + 包内二进制"环节。
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_url:
+        description: "public OSS package url"
+        default: "https://primihub.oss-cn-beijing.aliyuncs.com/primihub-offline/arm64/primihub-offline-arm64-20260715.tar.gz"
+  push:
+    branches: [ ci/arm-offline-verify ]
+    paths: [ '.github/workflows/arm64-offline-package-verify.yml' ]
+
+jobs:
+  offline-verify:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 70
+    steps:
+      - run: uname -m && free -h && docker --version && nproc
+
+      - name: Download offline package from OSS
+        run: |
+          URL="${{ github.event.inputs.pkg_url }}"
+          [ -z "$URL" ] && URL="https://primihub.oss-cn-beijing.aliyuncs.com/primihub-offline/arm64/primihub-offline-arm64-20260715.tar.gz"
+          echo "downloading $URL"
+          curl -fSL --retry 3 -o pkg.tar.gz "$URL"
+          curl -fSL -o pkg.sha256 "$URL.sha256" || true
+          ls -lh pkg.tar.gz
+          if [ -f pkg.sha256 ]; then
+            echo "$(awk '{print $1}' pkg.sha256)  pkg.tar.gz" | sha256sum -c -
+          fi
+
+      - name: Extract package
+        run: |
+          tar xzf pkg.tar.gz
+          mv primihub-offline-arm64-* offline
+          ls -1 offline
+
+      - name: Validate docker-bins are aarch64 + executable
+        run: |
+          cd offline && mkdir -p _bins && tar xf docker-bins.tar -C _bins
+          for b in docker dockerd containerd runc ctr docker-proxy docker-init docker-compose; do
+            f=$(file -b "_bins/$b" 2>/dev/null || echo missing)
+            echo "$b: $f"
+            echo "$f" | grep -q "ARM aarch64" || { echo "::error::$b not aarch64"; exit 1; }
+          done
+          echo "-- exec check (versions) --"
+          ./_bins/docker --version || true
+          ./_bins/dockerd --version
+          ./_bins/containerd --version
+          ./_bins/docker-compose version
+
+      - name: Load offline images (docker load, NOT pull)
+        run: |
+          cd offline
+          docker load -i images.tar
+          echo "-- loaded images --"
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'primihub/' | sort
+          n=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -c 'primihub/')
+          echo "primihub images loaded: $n (expect 9)"
+          [ "$n" -ge 9 ] || { echo "::error::expected >=9 images"; exit 1; }
+
+      - name: Deploy from package (offline compose up)
+        run: |
+          cd offline/arm64-deploy
+          mkdir -p data/mysql data/log primihub-node data/result
+          # images already loaded locally → up uses local, no pull
+          docker compose --env-file .env up -d
+          echo "-- container count --"
+          docker compose --env-file .env ps -a --format '{{.Name}} {{.State}}' | sort
+
+      - name: Assert 22/22 containers running
+        run: |
+          cd offline/arm64-deploy
+          for r in $(seq 1 20); do
+            sleep 15
+            total=$(docker compose --env-file .env ps -a --format '{{.Name}}' | wc -l | tr -d ' ')
+            running=$(docker compose --env-file .env ps --format '{{.Name}} {{.State}}' 2>/dev/null | grep -c running || true)
+            echo "[r$r] total=$total running=$running"
+            [ "$running" -ge 22 ] && break
+          done
+          [ "$running" -ge 22 ] || { echo "::error::not 22/22 running (got $running)"; docker compose --env-file .env ps -a; exit 1; }
+
+      - name: Wait for API ready (login) on 3 web ports
+        run: |
+          cd offline/arm64-deploy
+          PASS=0
+          for round in $(seq 1 80); do
+            sleep 30
+            ok=0
+            for p in 30811 30812 30813; do
+              c=$(curl -s -m8 "http://127.0.0.1:$p/prod-api/sys/common/getValidatePublicKey" 2>/dev/null | grep -c publicKey || true)
+              [ "$c" = "1" ] && ok=$((ok+1)) || true
+            done
+            echo "[round $round] api_ready=$ok/3"
+            if [ "$ok" = "3" ]; then PASS=1; break; fi
+          done
+          [ "$PASS" = "1" ] || { echo "::error::API not ready 3/3"; docker compose --env-file .env ps -a; exit 1; }
+
+      - name: Verify function menus (18 modules / 224 points)
+        run: |
+          cd offline/arm64-deploy
+          MPASS=1
+          for p in 30811 30812 30813; do
+            echo "---- :$p ----"
+            python3 scripts/verify_menus.py "http://127.0.0.1:$p" admin 123456 || MPASS=0
+          done
+          [ "$MPASS" = "1" ] || { echo "::error::menu verify failed"; exit 1; }
+
+      - name: Verify PrimiHub logo replaced
+        run: |
+          cd offline/arm64-deploy
+          EXP=$(wc -c < config/logo-primihub.png | tr -d ' ')
+          for p in 30811 30812 30813; do
+            got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
+            echo ":$p logo bytes=$got (expect $EXP)"
+            [ "$got" = "$EXP" ] || { echo "::error::logo not replaced on $p"; exit 1; }
+          done
+
+      - name: Upload artifacts
+        if: always()
+        run: |
+          cd offline/arm64-deploy
+          mkdir -p out
+          docker compose --env-file .env ps -a > out/ps.txt 2>&1 || true
+          for c in mysql nacos-server application0 gateway0 manage-web0 meta0 node0; do
+            docker logs --tail 150 "$c" > "out/$c.log" 2>&1 || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arm64-offline-package-verify
+          path: offline/arm64-deploy/out/*
