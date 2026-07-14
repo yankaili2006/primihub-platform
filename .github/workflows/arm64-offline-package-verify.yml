@@ -100,20 +100,19 @@ jobs:
           done
           [ "$PASS" = "1" ] || { echo "::error::API not ready 3/3"; docker compose --env-file .env ps -a; exit 1; }
 
-      - name: Verify tenant button perms seeded (zz-tenant-button-perms.sql)
+      - name: Verify v1.8.0 button perms seeded (zz-button-perms-comprehensive.sql)
         run: |
-          # the initsql zz-tenant-button-perms.sql must have created the 4 tenant
-          # button perms (authType=3) and granted them to super-admin (role 1),
-          # else the 新增租户 button won't render.
+          # the initsql must have created the 13 v1.8.0 button perms (authType=3)
+          # and granted them to super-admin (role 1), else those buttons won't render.
+          CODES="'TenantAdd','TenantEdit','TenantDelete','TenantFreeze','ResourceDelete','ResourceEdit','UnionResourceDetail','ModelCreate','ProjectDetail','UserFreeze','WhitelistAdd','WhitelistEdit','WhitelistConfigEdit'"
           for db in privacy1 privacy2 privacy3; do
             n=$(docker exec mysql mysql -uroot -proot -N -e \
-              "SELECT COUNT(*) FROM $db.sys_auth a JOIN $db.sys_ra r ON r.auth_id=a.auth_id \
-               WHERE a.auth_type=3 AND r.role_id=1 AND a.is_del=0 \
-               AND a.auth_code IN ('TenantAdd','TenantEdit','TenantDelete','TenantFreeze');" 2>/dev/null | tr -d '[:space:]')
-            echo "$db granted tenant buttons = $n (expect 4)"
-            [ "$n" = "4" ] || { echo "::error::$db missing tenant button perms ($n/4)"; exit 1; }
+              "SELECT COUNT(DISTINCT a.auth_code) FROM $db.sys_auth a JOIN $db.sys_ra r ON r.auth_id=a.auth_id \
+               WHERE a.auth_type=3 AND r.role_id=1 AND a.is_del=0 AND a.auth_code IN ($CODES);" 2>/dev/null | tr -d '[:space:]')
+            echo "$db granted v1.8.0 buttons = $n (expect 13)"
+            [ "$n" = "13" ] || { echo "::error::$db missing v1.8.0 button perms ($n/13)"; exit 1; }
           done
-          echo "✅ tenant button perms seeded + granted on all 3 nodes"
+          echo "✅ v1.8.0 button perms seeded + granted on all 3 nodes"
 
       - name: Verify function menus (18 modules / 224 points)
         run: |
