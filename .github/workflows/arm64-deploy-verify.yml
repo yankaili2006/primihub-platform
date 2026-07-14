@@ -43,14 +43,18 @@ jobs:
 
       - name: Wait for API ready (login) on 3 web ports
         run: |
+          # NOTE: GitHub runs this with `bash -eo pipefail`. `grep -c` exits 1
+          # when it finds 0 matches, which under set -e aborts the whole loop on
+          # the first not-ready poll (the reason this step never polled past
+          # round 1). Guard every substitution with `|| true`.
           PASS=0
           for round in $(seq 1 80); do
             sleep 30
-            up=$(docker ps --format '{{.Names}}' | wc -l | tr -d ' ')
+            up=$(docker ps --format '{{.Names}}' | wc -l | tr -d ' ' || true)
             ok=0
             for p in 30811 30812 30813; do
-              c=$(curl -s -m8 "http://127.0.0.1:$p/prod-api/sys/common/getValidatePublicKey" 2>/dev/null | grep -c publicKey)
-              [ "$c" = "1" ] && ok=$((ok+1))
+              c=$(curl -s -m8 "http://127.0.0.1:$p/prod-api/sys/common/getValidatePublicKey" 2>/dev/null | grep -c publicKey || true)
+              [ "$c" = "1" ] && ok=$((ok+1)) || true
             done
             echo "[round $round] containers_up=$up api_ready=$ok/3"
             if [ "$ok" = "3" ]; then PASS=1; break; fi
