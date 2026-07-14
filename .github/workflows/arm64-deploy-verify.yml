@@ -91,10 +91,13 @@ jobs:
       - name: Upload artifacts (screenshots + logs)
         if: always()
         run: |
+          mkdir -p out
           docker compose --env-file .env ps -a > out/ps.txt 2>&1 || true
-          for c in mysql nacos-server application0 gateway0 manage-web0; do
-            docker logs --tail 120 "$c" > "out/$c.log" 2>&1 || true
+          for c in mysql nacos-server application0 application1 application2 gateway0 manage-web0 meta0 node0; do
+            docker logs --tail 200 "$c" > "out/$c.log" 2>&1 || true
           done
+          # nacos writes detailed logs to a bind-mounted dir, not stdout
+          cp -r data/log "out/nacos-filelogs" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
