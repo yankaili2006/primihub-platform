@@ -1,0 +1,21 @@
+name: contract-check
+# 前端↔后端↔部署 seed 契约检查: 防「新功能加了表/按钮权限但部署 initsql 没同步」类 bug。
+on:
+  pull_request:
+    paths:
+      - 'primihub-webconsole/src/**'
+      - 'primihub-service/**'
+      - 'arm64-deploy/data/initsql/**'
+      - 'test-tools/contract-check.py'
+  push:
+    branches: [ develop, main ]
+  workflow_dispatch:
+jobs:
+  contract-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.x' }
+      - name: Run contract-check
+        run: python3 test-tools/contract-check.py .
