@@ -101,18 +101,25 @@ public class TenantService {
             // 3. 创建租户记录
             tenantPrimarydbRepository.insertTenant(tenant);
 
-            // 4. 初始化租户隔离配置
-            Map<String, Object> isolationConfig = new HashMap<>();
-            isolationConfig.put("tenantId", tenant.getId());
-            isolationConfig.put("cpuQuota", 0);
-            isolationConfig.put("memoryQuota", 0);
-            isolationConfig.put("storageQuota", 0);
-            isolationConfig.put("datasetLimit", 0);
-            isolationConfig.put("modelLimit", 0);
-            isolationConfig.put("concurrentTasks", 10);
-            isolationConfig.put("networkIsolation", 0);
-            isolationConfig.put("namespace", "tenant_" + tenant.getTenantCode());
-            tenantPrimarydbRepository.insertTenantIsolationConfig(isolationConfig);
+            // 4. 初始化租户隔离配置(best-effort): 隔离配置是辅助数据, 其插入失败
+            //    (如 tenant_isolation_config 表列漂移/缺失)不应回滚整个租户创建 —— 否则前端
+            //    "新增租户点击确定无响应"。配置缺失时 getTenantIsolationConfig 会在首次读取时惰性补建。
+            try {
+                Map<String, Object> isolationConfig = new HashMap<>();
+                isolationConfig.put("tenantId", tenant.getId());
+                isolationConfig.put("cpuQuota", 0);
+                isolationConfig.put("memoryQuota", 0);
+                isolationConfig.put("storageQuota", 0);
+                isolationConfig.put("datasetLimit", 0);
+                isolationConfig.put("modelLimit", 0);
+                isolationConfig.put("concurrentTasks", 10);
+                isolationConfig.put("networkIsolation", 0);
+                isolationConfig.put("namespace", "tenant_" + tenant.getTenantCode());
+                tenantPrimarydbRepository.insertTenantIsolationConfig(isolationConfig);
+            } catch (Exception isoEx) {
+                log.warn("初始化租户隔离配置失败(不阻断租户创建, 将在首次读取时惰性补建), tenantId={}: {}",
+                        tenant.getId(), isoEx.getMessage());
+            }
 
             return BaseResultEntity.success();
         } catch (Exception e) {

@@ -258,15 +258,21 @@ export default {
     closeDialog() { this.dialogVisible = false; this.$refs['tenantForm'].resetFields() },
     enterDialog() {
       this.$refs['tenantForm'].validate(async valid => {
-        if (valid) {
-          const apiMethod = this.dialogFlag === 'add' ? addTenant : updateTenant
+        if (!valid) return
+        const apiMethod = this.dialogFlag === 'add' ? addTenant : updateTenant
+        try {
           const res = await apiMethod(this.tenantInfo)
-          if (res.code === 0) {
+          if (res && res.code === 0) {
             this.$message({ type: 'success', message: this.dialogFlag === 'add' ? '添加成功' : '更新成功' })
             this.closeDialog()
             this.fetchData()
             this.fetchStatistics()
+          } else {
+            // 后端返回失败: 明确提示原因, 避免"点击确定无响应"
+            this.$message({ type: 'error', message: (res && res.msg) || (this.dialogFlag === 'add' ? '添加失败' : '更新失败') })
           }
+        } catch (e) {
+          this.$message({ type: 'error', message: '请求失败: ' + (e && e.message ? e.message : e) })
         }
       })
     }
