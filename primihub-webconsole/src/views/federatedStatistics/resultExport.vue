@@ -117,20 +117,38 @@ export default {
         taskIds: this.exportFormData.taskIds,
         format: this.exportFormData.exportFormat
       }
+      const fileName = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
       batchExportStatisticsResult(data).then(response => {
-        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
-        link.click()
-        window.URL.revokeObjectURL(url)
+        this.triggerBlobDownload(response, fileName)
+        // 记录真实导出历史(带 taskIds, 供"导出历史→下载"再次下载)
+        this.exportHistory.unshift({
+          id: 'EXP' + Date.now(),
+          fileName,
+          format: this.exportFormData.exportFormat,
+          taskIds: [...this.exportFormData.taskIds],
+          taskCount: this.exportFormData.taskIds.length,
+          fileSize: '-',
+          createTime: new Date().toLocaleString(),
+          status: 'completed'
+        })
         this.$message.success('结果导出成功')
       }).catch(() => {
         this.$message.error('导出失败')
       }).finally(() => {
         this.exporting = false
       })
+    },
+    // 把 blob 响应真正触发浏览器下载(通用)
+    triggerBlobDownload(response, filename) {
+      const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/octet-stream' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
     },
     handleReset() {
       this.exportFormData = {
@@ -142,8 +160,18 @@ export default {
         fileNamePrefix: 'federated_statistics_result'
       }
     },
+    // 缺陷整改: 原 handleDownload 只弹提示不下载 -> 真实按 taskIds 重新导出并触发下载
     handleDownload(row) {
-      this.$message.success(`开始下载: ${row.fileName}`)
+      if (!row.taskIds || row.taskIds.length === 0) {
+        this.$message.warning('该历史记录为演示数据(无关联任务)，请在上方选择任务重新导出')
+        return
+      }
+      batchExportStatisticsResult({ taskIds: row.taskIds, format: row.format }).then(response => {
+        this.triggerBlobDownload(response, row.fileName || `export_${row.id}.xlsx`)
+        this.$message.success('下载完成')
+      }).catch(() => {
+        this.$message.error('下载失败')
+      })
     }
   }
 }
