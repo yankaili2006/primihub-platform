@@ -116,7 +116,8 @@ export function exportAccessLog(params) {
   return request({
     url: '/whitelist/exportAccessLog',
     method: 'get',
-    params
+    params,
+    responseType: 'blob'
   })
 }
 
