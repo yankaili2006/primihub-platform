@@ -81,6 +81,34 @@ public class SysConfigServiceImpl implements SysConfigService {
     // ==================== 网络地址 ====================
 
     @Override
+    public BaseResultEntity getApprovalFlowConfig() {
+        String json = getConfigValue("projectApproval", "flowConfig", null);
+        if (json == null || json.isEmpty()) {
+            return BaseResultEntity.success(new HashMap<>());
+        }
+        try {
+            return BaseResultEntity.success(objectMapper.readValue(json, Map.class));
+        } catch (Exception e) {
+            return BaseResultEntity.success(new HashMap<>());
+        }
+    }
+
+    @Override
+    public BaseResultEntity saveApprovalFlowConfig(Map<String, Object> data) {
+        if (data == null) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "data");
+        }
+        try {
+            Map<String, String> map = new HashMap<>();
+            map.put("flowConfig", objectMapper.writeValueAsString(data));
+            saveConfigMap("projectApproval", map);
+            return BaseResultEntity.success(true);
+        } catch (Exception e) {
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "保存失败");
+        }
+    }
+
+    @Override
     public BaseResultEntity getNetworkConfig() {
         try {
             Map<String, String> map = getConfigMap("network");

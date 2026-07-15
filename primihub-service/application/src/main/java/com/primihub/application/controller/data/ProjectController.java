@@ -5,11 +5,14 @@ import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.service.data.DataProjectService;
+import com.primihub.biz.service.sys.SysConfigService;
 import com.primihub.biz.util.crypt.DateUtil;
 import io.swagger.annotations.Api;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @Api(value = "项目接口",tags = "项目接口")
@@ -19,6 +22,21 @@ public class ProjectController {
 
     @Autowired
     private DataProjectService dataProjectService;
+
+    @Autowired
+    private SysConfigService sysConfigService;
+
+    // 项目流程审核配置(读取审核流程节点+通知配置)
+    @GetMapping("approvalConfig/get")
+    public BaseResultEntity getApprovalConfig(){
+        return sysConfigService.getApprovalFlowConfig();
+    }
+
+    // 项目流程审核配置(保存)
+    @PostMapping("approvalConfig/save")
+    public BaseResultEntity saveApprovalConfig(@RequestBody Map<String, Object> data){
+        return sysConfigService.saveApprovalFlowConfig(data);
+    }
 
     @RequestMapping("getListStatistics")
     public BaseResultEntity getListStatistics(){

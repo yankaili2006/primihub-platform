@@ -26,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * 资源管理
@@ -256,6 +257,25 @@ public class ResourceController {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"resourceId");
         }
         return dataResourceService.noticeResource(resourceId);
+    }
+
+    @ApiOperation(value = "资源授权审核/记录列表")
+    @GetMapping("getauthorizationlist")
+    public BaseResultEntity getAuthorizationList(PageReq req,
+                                                 @RequestParam(value = "status", required = false) Integer status){
+        return dataResourceService.getAuthorizationList(req, status);
+    }
+
+    @ApiOperation(value = "资源授权审核(通过/驳回)")
+    @PostMapping("approval")
+    public BaseResultEntity resourceApproval(@RequestBody Map<String, Object> param,
+                                             @RequestHeader(value = "userId", required = false, defaultValue = "0") Long userId){
+        if (param == null || param.get("recordId") == null || param.get("status") == null){
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "recordId/status");
+        }
+        Long recordId = Long.valueOf(param.get("recordId").toString());
+        Integer status = Integer.valueOf(param.get("status").toString());
+        return dataResourceService.resourceApproval(recordId, status, userId, "");
     }
 
     @GetMapping("download")

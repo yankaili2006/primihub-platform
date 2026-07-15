@@ -83,11 +83,12 @@
     <update id="updateAuthRecordStatus">
         update data_resource_auth_record
         set
-            record_status = #{status},
-            user_id = #{userId},
-            user_name = #{userName},
+            auth_status = #{status},
+            approve_user_id = #{userId},
+            approve_user_name = #{userName},
+            approve_date = now(),
             update_date = now()
-        where record_id = #{recordId}
+        where id = #{recordId}
     </update>
     <update id="updateResourceFileField" parameterType="com.primihub.biz.entity.data.po.DataFileField">
         update data_file_field

@@ -113,6 +113,7 @@ export function resourceApproval(data) {
   return request({
     url: '/data/resource/approval',
     method: 'post',
+    type: 'json',
     data
   })
 }

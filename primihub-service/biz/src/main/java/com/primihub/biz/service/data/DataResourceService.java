@@ -121,6 +121,33 @@ public class DataResourceService {
         return BaseResultEntity.success(new PageDataEntity(count, req.getPageSize(), req.getPageNo(), voList));
     }
 
+    /**
+     * 资源授权审核/记录列表(status=0 待审为"授权审核"页; 不传 status 为"授权记录"页)
+     */
+    public BaseResultEntity getAuthorizationList(PageReq req, Integer status) {
+        Map<String, Object> paramMap = new HashMap<>();
+        if (status != null) paramMap.put("status", status);
+        int pageNo = req.getPageNo() == null ? 1 : req.getPageNo();
+        int pageSize = req.getPageSize() == null ? 5 : req.getPageSize();
+        paramMap.put("offset", (pageNo - 1) * pageSize);
+        paramMap.put("pageSize", pageSize);
+        Integer count = dataResourceRepository.queryAuthorizationCount(paramMap);
+        List<DataResourceAuthRecordVo> list = (count == null || count == 0)
+                ? new ArrayList<>() : dataResourceRepository.queryAuthorizationList(paramMap);
+        return BaseResultEntity.success(new PageDataEntity(count == null ? 0 : count, pageSize, pageNo, list));
+    }
+
+    /**
+     * 资源授权审核: 通过/驳回 (status 由前端传入)
+     */
+    public BaseResultEntity resourceApproval(Long recordId, Integer status, Long userId, String userName) {
+        if (recordId == null || status == null) {
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "参数缺失");
+        }
+        dataResourcePrRepository.updateAuthRecordStatus(status, recordId, userId, userName == null ? "" : userName);
+        return BaseResultEntity.success(true);
+    }
+
     public BaseResultEntity saveDataResource(DataResourceReq req, Long userId) {
         Map<String, Object> map = new HashMap<>();
         try {

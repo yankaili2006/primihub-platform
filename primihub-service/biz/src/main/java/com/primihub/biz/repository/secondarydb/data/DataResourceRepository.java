@@ -3,6 +3,7 @@ package com.primihub.biz.repository.secondarydb.data;
 import com.primihub.biz.entity.data.po.*;
 import com.primihub.biz.entity.data.req.DerivationResourceReq;
 import com.primihub.biz.entity.data.vo.DataDerivationResourceVo;
+import com.primihub.biz.entity.data.vo.DataResourceAuthRecordVo;
 import com.primihub.biz.entity.data.vo.DataResourceRecordVo;
 import com.primihub.biz.entity.data.vo.ResourceTagListVo;
 import org.apache.ibatis.annotations.Param;
@@ -23,6 +24,10 @@ public interface DataResourceRepository {
     List<DataResource> queryDataResource(Map<String,Object> paramMap);
 
     Integer queryDataResourceCount(Map<String,Object> paramMap);
+
+    List<DataResourceAuthRecordVo> queryAuthorizationList(Map<String,Object> paramMap);
+
+    Integer queryAuthorizationCount(Map<String,Object> paramMap);
 
     List<DataResource> queryDataResourceByResourceIds(@Param("resourceIds")Set<Long> resourceIds,@Param("stringIds")Set<String> stringIds);
 

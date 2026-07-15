@@ -382,4 +382,23 @@
         from data_source where id = #{id}
     </select>
 
+    <!-- 资源授权审核/记录列表(授权审核 status=0 待审, 授权记录不限) -->
+    <select id="queryAuthorizationList" parameterType="map" resultType="com.primihub.biz.entity.data.vo.DataResourceAuthRecordVo">
+        select r.id as recordId, r.auth_status as recordStatus, r.apply_user_id as userId,
+               r.apply_user_name as userName, r.resource_id as resourceId,
+               dr.resource_name as resourceName, r.auth_organ_id as organId,
+               r.auth_organ_name as organName, r.create_date as createDate
+        from data_resource_auth_record r
+        left join data_resource dr on dr.resource_id = r.resource_id
+        where r.is_del = 0
+        <if test="status != null"> and r.auth_status = #{status} </if>
+        order by r.create_date desc
+        limit #{offset}, #{pageSize}
+    </select>
+    <select id="queryAuthorizationCount" parameterType="map" resultType="java.lang.Integer">
+        select count(1) from data_resource_auth_record r
+        where r.is_del = 0
+        <if test="status != null"> and r.auth_status = #{status} </if>
+    </select>
+
 </mapper>
