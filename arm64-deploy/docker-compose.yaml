@@ -11,7 +11,11 @@ services:
     volumes:
       - ./config/my.cnf:/etc/my.cnf
       - ./data/mysql:/var/lib/mysql
-      - ./data/initsql/:/docker-entrypoint-initdb.d/
+      # base dumps mounted read-only (NOT auto-loaded); the initdb loader runs them with
+      # `mysql --force` so a transient error can't leave a schema half-loaded (e.g. privacy3
+      # missing sys_auth -> Flyway V2 crash-loop).
+      - ./data/initsql/:/initsql:ro
+      - ./config/initdb/:/docker-entrypoint-initdb.d/:ro
     ports:
       - "3306:3306"
     healthcheck:
