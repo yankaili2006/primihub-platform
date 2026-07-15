@@ -6,6 +6,11 @@
         insert into sys_organ (apply_id,organ_id,organ_name,organ_gateway,public_key,examine_state,examine_msg,node_state,fusion_state,platform_state,lat,lon,country,enable,is_del,c_time,u_time)
         values (#{applyId},#{organId},#{organName},#{organGateway},#{publicKey},#{examineState},#{examineMsg},#{nodeState},#{fusionState},#{platformState},#{lat},#{lon},#{country},#{enable},0,now(),now())
     </insert>
+    <insert id="insertOrganNode" useGeneratedKeys="true" keyProperty="id" parameterType="com.primihub.biz.entity.sys.po.SysOrgan">
+        insert into sys_organ (organ_id,organ_name,p_organ_id,organ_index,examine_state,node_state,fusion_state,platform_state,enable,identity,is_del,c_time,u_time)
+        values (#{organId},#{organName},#{parentOrganId},#{organIndex},#{examineState},#{nodeState},#{fusionState},#{platformState},#{enable},#{identity},0,now(),now())
+    </insert>
+
     <update id="updateSysOrgan" parameterType="com.primihub.biz.entity.sys.po.SysOrgan">
         update sys_organ
         <set>

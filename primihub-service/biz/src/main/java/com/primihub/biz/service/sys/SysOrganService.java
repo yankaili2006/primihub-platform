@@ -520,4 +520,27 @@ public class SysOrganService {
         }
         return BaseResultEntity.success();
     }
+
+    /**
+     * D20 创建机构(内部机构树节点)。organName 必填; pOrganId 父节点(空=顶级); organIndex 顺序。
+     */
+    public BaseResultEntity createOrganNode(Map<String,Object> data) {
+        String organName = data.get("organName")!=null ? data.get("organName").toString().trim() : "";
+        if (StringUtils.isBlank(organName)) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"organName");
+        }
+        SysOrgan organ = new SysOrgan();
+        organ.setOrganId("ORG"+System.currentTimeMillis()+(new Random().nextInt(900)+100));
+        organ.setOrganName(organName);
+        organ.setParentOrganId(data.get("pOrganId")!=null ? data.get("pOrganId").toString() : null);
+        Integer idx = 0;
+        try { if (data.get("organIndex")!=null) idx = Integer.valueOf(data.get("organIndex").toString()); } catch (Exception ignore) {}
+        organ.setOrganIndex(idx);
+        organ.setExamineState(1); organ.setNodeState(1); organ.setFusionState(0);
+        organ.setPlatformState(0); organ.setEnable(1); organ.setIdentity(1); organ.setIsDel(0);
+        sysOrganPrimarydbRepository.insertOrganNode(organ);
+        Map<String,Object> result = new HashMap<>();
+        result.put("organId", organ.getOrganId()); result.put("organName", organName);
+        return BaseResultEntity.success(result);
+    }
 }

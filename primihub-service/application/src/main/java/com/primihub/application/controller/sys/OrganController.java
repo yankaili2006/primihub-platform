@@ -157,4 +157,12 @@ public class OrganController {
         return sysOrganService.enableStatus(id,status);
     }
 
+
+    /**
+     * D20 创建机构(内部机构树节点)
+     */
+    @PostMapping("createOrganNode")
+    public BaseResultEntity createOrganNode(@RequestBody Map<String,Object> data){
+        return sysOrganService.createOrganNode(data);
+    }
 }

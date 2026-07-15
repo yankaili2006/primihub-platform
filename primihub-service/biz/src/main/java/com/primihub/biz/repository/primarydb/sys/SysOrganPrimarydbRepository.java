@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SysOrganPrimarydbRepository {
     void insertSysOrgan(SysOrgan sysOrgan);
+    void insertOrganNode(SysOrgan sysOrgan);
     void updateSysOrgan(SysOrgan sysOrgan);
 
 }
