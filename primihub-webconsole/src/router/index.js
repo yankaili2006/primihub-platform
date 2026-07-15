@@ -349,7 +349,7 @@ export const asyncRoutes = [
       {
         path: 'list',
         name: 'FederatedLearningList',
-        component: () => import('@/views/FederatedLearning/list'),
+        component: () => import('@/views/federatedLearning/list'),
         meta: { title: '模型列表', breadcrumb: false }
       },
       {
