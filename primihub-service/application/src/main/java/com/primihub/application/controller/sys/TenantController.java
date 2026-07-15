@@ -53,7 +53,8 @@ public class TenantController {
 
     @ApiOperation(value = "删除租户")
     @PostMapping("deleteTenant")
-    public BaseResultEntity deleteTenant(@RequestParam Long id) {
+    public BaseResultEntity deleteTenant(@RequestBody Map<String, Object> body) {
+        Long id = body.get("id") == null ? null : Long.valueOf(body.get("id").toString());
         if (id == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
@@ -62,7 +63,8 @@ public class TenantController {
 
     @ApiOperation(value = "冻结租户")
     @PostMapping("freezeTenant")
-    public BaseResultEntity freezeTenant(@RequestParam Long id) {
+    public BaseResultEntity freezeTenant(@RequestBody Map<String, Object> body) {
+        Long id = body.get("id") == null ? null : Long.valueOf(body.get("id").toString());
         if (id == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
@@ -71,7 +73,8 @@ public class TenantController {
 
     @ApiOperation(value = "解冻租户")
     @PostMapping("unfreezeTenant")
-    public BaseResultEntity unfreezeTenant(@RequestParam Long id) {
+    public BaseResultEntity unfreezeTenant(@RequestBody Map<String, Object> body) {
+        Long id = body.get("id") == null ? null : Long.valueOf(body.get("id").toString());
         if (id == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
@@ -119,7 +122,8 @@ public class TenantController {
 
     @ApiOperation(value = "删除租户资源")
     @PostMapping("deleteTenantResource")
-    public BaseResultEntity deleteTenantResource(@RequestParam Long id) {
+    public BaseResultEntity deleteTenantResource(@RequestBody Map<String, Object> body) {
+        Long id = body.get("id") == null ? null : Long.valueOf(body.get("id").toString());
         if (id == null) {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM);
         }
