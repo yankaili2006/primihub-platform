@@ -246,12 +246,10 @@ export default {
       this.getTaskList()
     },
     toTaskPage() {
-      this.$message.info('联邦学习任务创建页面开发中...')
-      // this.$router.push({ name: 'FederatedLearningTask' })
+      this.$router.push({ name: 'FederatedModelingWorkbench' })
     },
     toModelList() {
-      this.$message.info('模型管理页面开发中...')
-      // this.$router.push({ name: 'ModelList' })
+      this.$router.push({ name: 'ModelList' })
     },
     toTaskDetailPage(id) {
       this.$message.info('联邦学习任务详情页面开发中...')
