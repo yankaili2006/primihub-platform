@@ -31,7 +31,7 @@ export function deleteWhitelist(data) {
   return request({
     url: '/whitelist/deleteWhitelist',
     method: 'post',
-    data
+    params: data
   })
 }
 
