@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysOsMonitorConfigPrimarydbRepository">
+    <insert id="insert" parameterType="com.primihub.biz.entity.sys.po.SysOsMonitorConfig">
+        INSERT INTO sys_os_monitor_config (config_key,config_name,warning_threshold,critical_threshold,interval_sec,enabled,notify_type,notify_contact,remark)
+        VALUES (#{configKey},#{configName},#{warningThreshold},#{criticalThreshold},#{intervalSec},#{enabled},#{notifyType},#{notifyContact},#{remark})
+    </insert>
+    <update id="update" parameterType="com.primihub.biz.entity.sys.po.SysOsMonitorConfig">
+        UPDATE sys_os_monitor_config SET config_key=#{configKey},config_name=#{configName},
+            warning_threshold=#{warningThreshold},critical_threshold=#{criticalThreshold},
+            interval_sec=#{intervalSec},enabled=#{enabled},notify_type=#{notifyType},
+            notify_contact=#{notifyContact},remark=#{remark} WHERE id=#{id}
+    </update>
+    <update id="delete">UPDATE sys_os_monitor_config SET is_del=1 WHERE id=#{id}</update>
+</mapper>

@@ -200,24 +200,25 @@ export default {
         projectOrgans: this.saveParams.projectOrgans
       }
       this.$refs.dataForm.validate((valid) => {
-        if (valid) {
-          this.loading = true
-          saveProject(params).then(res => {
-            if (res.code === 0) {
-              this.loading = false
-              const id = res.result.id
-              this.$router.push({
-                name: 'ProjectDetail',
-                params: { id }
-              })
+        if (!valid) return
+        this.loading = true
+        saveProject(params).then(res => {
+          this.loading = false
+          if (res && res.code === 0) {
+            const id = res.result && res.result.id
+            if (id) {
+              this.$router.push({ name: 'ProjectDetail', params: { id } })
+            } else {
+              this.$message({ type: 'success', message: '项目创建成功' })
+              this.$router.push({ name: 'ProjectList' })
             }
-          }).catch(() => {
-            this.loading = false
-          })
-        } else {
-          console.log('error submit!!')
-          return false
-        }
+          } else {
+            this.$message({ type: 'error', message: (res && res.msg) || '项目创建失败，请稍后重试' })
+          }
+        }).catch(() => {
+          this.loading = false
+          this.$message({ type: 'error', message: '请求异常，请稍后重试' })
+        })
       })
     },
     getProjectOrgans() {

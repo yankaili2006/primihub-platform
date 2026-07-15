@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysMiddlewareMonitorPrimarydbRepository">
+    <insert id="insert" parameterType="com.primihub.biz.entity.sys.po.SysMiddlewareMonitorConfig">
+        INSERT INTO sys_middleware_monitor_config (mw_type,mw_name,host,port,connect_timeout,warning_threshold,critical_threshold,check_interval,enabled,notify_type,remark)
+        VALUES (#{mwType},#{mwName},#{host},#{port},#{connectTimeout},#{warningThreshold},#{criticalThreshold},#{checkInterval},#{enabled},#{notifyType},#{remark})
+    </insert>
+    <update id="update" parameterType="com.primihub.biz.entity.sys.po.SysMiddlewareMonitorConfig">
+        UPDATE sys_middleware_monitor_config SET mw_type=#{mwType},mw_name=#{mwName},host=#{host},port=#{port},
+            connect_timeout=#{connectTimeout},warning_threshold=#{warningThreshold},critical_threshold=#{criticalThreshold},
+            check_interval=#{checkInterval},enabled=#{enabled},notify_type=#{notifyType},remark=#{remark}
+        WHERE id=#{id}
+    </update>
+    <update id="delete">UPDATE sys_middleware_monitor_config SET is_del=1 WHERE id=#{id}</update>
+</mapper>

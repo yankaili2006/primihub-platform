@@ -6,12 +6,16 @@ import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.service.data.DataProjectService;
 import com.primihub.biz.util.crypt.DateUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+
 @RequestMapping("project")
 @RestController
+@Slf4j
 public class ProjectController {
 
     @Autowired
@@ -188,6 +192,24 @@ public class ProjectController {
             return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"projectId");
         }
         return dataProjectService.getDerivationResourceList(projectId);
+    }
+
+    /**
+     * 项目台账导出
+     * @param projectIds 项目ID列表，逗号分隔
+     */
+    @GetMapping("exportProjectLedger")
+    public void exportProjectLedger(HttpServletResponse response, String projectIds) {
+        try {
+            byte[] data = dataProjectService.exportProjectLedger(projectIds);
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            response.setHeader("Content-Disposition",
+                "attachment; filename=project_ledger_" + System.currentTimeMillis() + ".xlsx");
+            response.getOutputStream().write(data);
+            response.getOutputStream().flush();
+        } catch (Exception e) {
+            log.error("导出项目台账失败", e);
+        }
     }
 
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysApprovalWorkflowPrimarydbRepository">
+    <insert id="insert" parameterType="com.primihub.biz.entity.sys.po.SysApprovalWorkflow">
+        INSERT INTO sys_approval_workflow (workflow_name,workflow_desc,approval_type,approval_levels,approvers,status)
+        VALUES (#{workflowName},#{workflowDesc},#{approvalType},#{approvalLevels},#{approvers},#{status})
+    </insert>
+    <update id="update" parameterType="com.primihub.biz.entity.sys.po.SysApprovalWorkflow">
+        UPDATE sys_approval_workflow SET workflow_name=#{workflowName},workflow_desc=#{workflowDesc},
+            approval_type=#{approvalType},approval_levels=#{approvalLevels},approvers=#{approvers},status=#{status}
+        WHERE id=#{id}
+    </update>
+    <update id="delete">UPDATE sys_approval_workflow SET is_del=1 WHERE id=#{id}</update>
+</mapper>

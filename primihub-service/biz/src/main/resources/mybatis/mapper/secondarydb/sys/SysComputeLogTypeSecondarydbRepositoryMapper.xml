@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysComputeLogTypeSecondarydbRepository">
+    <sql id="Base_Column_List">id, type_name, type_code, type_desc, status, sort_order, c_time</sql>
+    <select id="selectList" resultType="com.primihub.biz.entity.sys.po.SysComputeLogType">
+        SELECT <include refid="Base_Column_List"/> FROM sys_compute_log_type WHERE is_del=0 ORDER BY sort_order ASC
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.sys.po.SysComputeLogType">
+        SELECT <include refid="Base_Column_List"/> FROM sys_compute_log_type WHERE id=#{id} AND is_del=0
+    </select>
+    <select id="selectByCode" resultType="com.primihub.biz.entity.sys.po.SysComputeLogType">
+        SELECT <include refid="Base_Column_List"/> FROM sys_compute_log_type WHERE type_code=#{typeCode} AND is_del=0
+    </select>
+</mapper>

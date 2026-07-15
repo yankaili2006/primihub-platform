@@ -351,6 +351,24 @@ export const asyncRoutes = [
         meta: { title: '中心管理' }
       },
       {
+        path: 'whiteList',
+        name: 'WhiteList',
+        component: () => import('@/views/setting/whiteList'),
+        meta: { title: '白名单管理', icon: 'el-icon-document' }
+      },
+      {
+        path: 'workflow',
+        name: 'ApprovalWorkflow',
+        component: () => import('@/views/setting/workflow/index'),
+        meta: { title: '审批工作流', icon: 'el-icon-s-check' }
+      },
+      {
+        path: 'access',
+        name: 'AccessPartyManage',
+        component: () => import('@/views/setting/access/index'),
+        meta: { title: '接入方管理', icon: 'el-icon-s-platform' }
+      },
+      {
         path: 'ui',
         name: 'UISetting',
         component: () => import('@/views/setting/ui'),
@@ -360,18 +378,77 @@ export const asyncRoutes = [
     ]
   },
   {
+    path: '/evidence',
+    component: Layout,
+    name: 'Evidence',
+    redirect: '/evidence/timestamp',
+    meta: { title: '存证管理', icon: 'el-icon-document' },
+    children: [{
+      path: 'timestamp',
+      name: 'EvidenceTimestamp',
+      component: () => import('@/views/evidence/timestamp'),
+      meta: { title: '时间戳管理', breadcrumb: false }
+    }]
+  },
+  {
     path: '/log',
     component: Layout,
     name: 'Log',
     redirect: '/log/index',
     meta: { title: '日志管理', icon: 'el-icon-warning-outline' },
-    children: [{
-      path: 'index',
-      name: 'LogList',
-      component: () => import('@/views/log/index'),
-      meta: { title: '日志管理', breadcrumb: false }
-
-    }]
+    children: [
+      {
+        path: 'index',
+        name: 'LogList',
+        component: () => import('@/views/log/index'),
+        meta: { title: '日志管理', breadcrumb: false }
+      },
+      {
+        path: 'define',
+        name: 'LogDefine',
+        component: () => import('@/views/log/define/index'),
+        meta: { title: '操作日志定义', breadcrumb: false }
+      },
+      {
+        path: 'compute',
+        name: 'ComputeLogDefine',
+        component: () => import('@/views/log/compute/index'),
+        meta: { title: '计算日志定义', breadcrumb: false }
+      },
+      {
+        path: 'exchange',
+        name: 'DataExchangeLog',
+        component: () => import('@/views/log/exchange'),
+        meta: { title: '数据交换日志', breadcrumb: false }
+      }
+    ]
+  },
+  {
+    path: '/monitor',
+    component: Layout,
+    name: 'OsMonitor',
+    redirect: '/monitor/index',
+    meta: { title: '监控管理', icon: 'el-icon-monitor' },
+    children: [
+      {
+        path: 'index',
+        name: 'OsMonitorConfig',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '操作系统监控及报警', breadcrumb: false }
+      },
+      {
+        path: 'middleware',
+        name: 'MiddlewareMonitor',
+        component: () => import('@/views/monitor/middleware'),
+        meta: { title: '中间件监控及报警', breadcrumb: false }
+      },
+      {
+        path: 'database',
+        name: 'DatabaseMonitor',
+        component: () => import('@/views/monitor/database'),
+        meta: { title: '数据库监控及报警', breadcrumb: false }
+      }
+    ]
   },
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.DataTimestampSecondarydbRepository">
+
+    <sql id="Base_Column_List">
+        id, apply_id, title, file_name, file_hash, file_size,
+        timestamp_value, cert_number, apply_status,
+        apply_user_id, apply_user_name, apply_time, issue_time, remark, c_time
+    </sql>
+
+    <select id="selectTimestampPage" resultType="com.primihub.biz.entity.data.po.DataTimestamp">
+        SELECT <include refid="Base_Column_List"/>
+        FROM data_timestamp
+        WHERE is_del = 0
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="applyStatus != null">
+            AND apply_status = #{applyStatus}
+        </if>
+        ORDER BY c_time DESC
+        LIMIT #{pageSize} OFFSET #{pageNum} * #{pageSize} - #{pageSize}
+    </select>
+
+    <select id="selectTimestampCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM data_timestamp
+        WHERE is_del = 0
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="applyStatus != null">
+            AND apply_status = #{applyStatus}
+        </if>
+    </select>
+
+    <select id="selectTimestampById" resultType="com.primihub.biz.entity.data.po.DataTimestamp">
+        SELECT <include refid="Base_Column_List"/> FROM data_timestamp WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectTimestampByApplyId" resultType="com.primihub.biz.entity.data.po.DataTimestamp">
+        SELECT <include refid="Base_Column_List"/> FROM data_timestamp WHERE apply_id = #{applyId} AND is_del = 0
+    </select>
+
+</mapper>

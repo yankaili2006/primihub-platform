@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataTimestampPrimarydbRepository">
+
+    <insert id="insertTimestamp" parameterType="com.primihub.biz.entity.data.po.DataTimestamp">
+        INSERT INTO data_timestamp (apply_id, title, file_name, file_hash, file_size,
+                                    apply_status, apply_user_id, apply_user_name, apply_time, remark)
+        VALUES (#{applyId}, #{title}, #{fileName}, #{fileHash}, #{fileSize},
+                #{applyStatus}, #{applyUserId}, #{applyUserName}, NOW(3), #{remark})
+    </insert>
+
+    <update id="updateTimestamp" parameterType="com.primihub.biz.entity.data.po.DataTimestamp">
+        UPDATE data_timestamp
+        SET title = #{title},
+            file_name = #{fileName},
+            file_hash = #{fileHash},
+            file_size = #{fileSize},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateTimestampStatus">
+        UPDATE data_timestamp
+        SET apply_status = #{applyStatus},
+            timestamp_value = #{timestampValue},
+            cert_number = #{certNumber},
+            issue_time = NOW(3)
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteTimestamp">
+        UPDATE data_timestamp SET is_del = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

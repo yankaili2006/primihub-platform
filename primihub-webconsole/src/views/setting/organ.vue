@@ -155,30 +155,25 @@ export default {
         organName: this.form.organName
       }
       this.$refs['form'].validate(async valid => {
-        if (valid) {
-          switch (this.dialogType) {
-            case 'add':
-              await createOrganNode(params)
-              this.$message({
-                type: 'success',
-                message: '添加成功'
-              })
-              this.pageNum = 1
-              this.closeDialog()
-              this.getOrgans()
-              break
-            case 'edit':
-              await alterOrganNodeStatus(params)
-              this.$message({
-                type: 'success',
-                message: '更新成功'
-              })
-              this.closeDialog()
-              this.getOrgans()
-              break
-            default:
-              break
+        if (!valid) return
+        try {
+          let res
+          if (this.dialogType === 'add') {
+            res = await createOrganNode(params)
+          } else {
+            res = await alterOrganNodeStatus(params)
           }
+          if (res && res.code === 0) {
+            this.$message({ type: 'success', message: this.dialogType === 'add' ? '添加成功' : '更新成功' })
+            if (this.dialogType === 'add') this.pageNum = 1
+            this.closeDialog()
+            this.getOrgans()
+          } else {
+            this.$message({ type: 'error', message: (res && res.msg) || '请求异常' })
+          }
+        } catch (e) {
+          console.error('organ operation error', e)
+          this.$message({ type: 'error', message: '请求异常' })
         }
       })
     },

@@ -1,0 +1,31 @@
+package com.primihub.biz.entity.sys.po;
+
+import lombok.Data;
+import java.util.Date;
+
+/**
+ * 白名单 PO
+ */
+@Data
+public class SysWhiteList {
+    /** 自增ID */
+    private Long id;
+    /** 白名单类型 1=手机号 2=IP地址 3=邮箱 */
+    private Integer wlType;
+    /** 白名单值 */
+    private String wlValue;
+    /** 添加原因/备注 */
+    private String wlReason;
+    /** 状态 1=启用 0=禁用 */
+    private Integer status;
+    /** 创建人用户ID */
+    private Long creatorId;
+    /** 创建人名称 */
+    private String creatorName;
+    /** 是否删除 */
+    private Integer isDel;
+    /** 创建时间 */
+    private Date cTime;
+    /** 更新时间 */
+    private Date uTime;
+}

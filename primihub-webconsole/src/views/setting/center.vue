@@ -187,39 +187,38 @@ export default {
     },
     connectConfirmDialog() {
       this.$refs['connectForm'].validate(async valid => {
-        if (valid) {
-          this.serverAddress = encodeURI(this.connectForm.serverAddress.trim())
-          await this.registerConnection()
+        if (!valid) return
+        this.serverAddress = encodeURI(this.connectForm.serverAddress.trim())
+        const success = await this.registerConnection()
+        if (success) {
           await this.getLocalOrganInfo()
           this.closeConnectDialog()
         }
       })
     },
     async registerConnection() {
-      const { code } = await healthConnection({ serverAddress: this.serverAddress })
-      if (code === 0) {
-        const { result } = await registerConnection({ serverAddress: this.serverAddress })
-        if (result.isRegistered) {
-          const index = this.treeData.length
-          this.treeData.push({
-            id: index,
-            label: `中心节点${index + 1}: ${this.connectForm.serverAddress}`,
-            serverAddress: this.connectForm.serverAddress,
-            registered: result.isRegistered,
-            show: result.show || true,
-            icon: connectIcon
-          })
-          this.$message({
-            type: 'success',
-            message: result.fusionMsg
-          })
+      try {
+        const healthRes = await healthConnection({ serverAddress: this.serverAddress })
+        if (healthRes.code !== 0) {
+          this.$message({ type: 'error', message: healthRes.msg || '节点连接失败，请检查地址是否正确' })
+          return false
         }
-        return true
-      } else {
-        this.$message({
-          type: 'error',
-          message: '连接失败'
-        })
+        const regRes = await registerConnection({ serverAddress: this.serverAddress })
+        if (regRes.code !== 0) {
+          this.$message({ type: 'error', message: regRes.msg || '注册失败' })
+          return false
+        }
+        const result = regRes.result || {}
+        if (result.isRegistered) {
+          this.$message({ type: 'success', message: result.fusionMsg || '添加成功' })
+          return true
+        } else {
+          this.$message({ type: 'warning', message: result.fusionMsg || '节点已存在，无需重复添加' })
+          return false
+        }
+      } catch (e) {
+        console.error('registerConnection error', e)
+        this.$message({ type: 'error', message: '请求异常，请稍后重试' })
         return false
       }
     }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysOsMonitorConfigSecondarydbRepository">
+    <sql id="Base_Column_List">id,config_key,config_name,warning_threshold,critical_threshold,interval_sec,enabled,notify_type,notify_contact,remark,c_time,u_time</sql>
+    <select id="selectList" resultType="com.primihub.biz.entity.sys.po.SysOsMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_os_monitor_config WHERE is_del=0 ORDER BY id ASC
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.sys.po.SysOsMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_os_monitor_config WHERE id=#{id} AND is_del=0
+    </select>
+    <select id="selectByKey" resultType="com.primihub.biz.entity.sys.po.SysOsMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_os_monitor_config WHERE config_key=#{configKey} AND is_del=0
+    </select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysAccessPartySecondarydbRepository">
+    <sql id="Base_Column_List">id,party_name,party_code,api_key,contact_person,contact_phone,status,remark,c_time</sql>
+    <select id="selectList" resultType="com.primihub.biz.entity.sys.po.SysAccessParty">
+        SELECT <include refid="Base_Column_List"/> FROM sys_access_party WHERE is_del=0 ORDER BY c_time DESC
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.sys.po.SysAccessParty">
+        SELECT <include refid="Base_Column_List"/> FROM sys_access_party WHERE id=#{id} AND is_del=0
+    </select>
+    <select id="selectByCode" resultType="com.primihub.biz.entity.sys.po.SysAccessParty">
+        SELECT <include refid="Base_Column_List"/> FROM sys_access_party WHERE party_code=#{partyCode} AND is_del=0
+    </select>
+</mapper>

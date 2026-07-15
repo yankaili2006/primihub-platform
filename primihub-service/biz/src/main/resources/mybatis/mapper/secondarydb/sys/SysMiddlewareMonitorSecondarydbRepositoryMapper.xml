@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.SysMiddlewareMonitorSecondarydbRepository">
+    <sql id="Base_Column_List">id,mw_type,mw_name,host,port,connect_timeout,warning_threshold,critical_threshold,check_interval,enabled,notify_type,remark,c_time</sql>
+    <select id="selectList" resultType="com.primihub.biz.entity.sys.po.SysMiddlewareMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_middleware_monitor_config WHERE is_del=0 ORDER BY mw_type ASC
+    </select>
+    <select id="selectById" resultType="com.primihub.biz.entity.sys.po.SysMiddlewareMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_middleware_monitor_config WHERE id=#{id} AND is_del=0
+    </select>
+    <select id="selectByType" resultType="com.primihub.biz.entity.sys.po.SysMiddlewareMonitorConfig">
+        SELECT <include refid="Base_Column_List"/> FROM sys_middleware_monitor_config WHERE mw_type=#{mwType} AND is_del=0
+    </select>
+</mapper>

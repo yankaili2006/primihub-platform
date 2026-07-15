@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysAccessPartyPrimarydbRepository">
+    <insert id="insert" parameterType="com.primihub.biz.entity.sys.po.SysAccessParty">
+        INSERT INTO sys_access_party (party_name,party_code,api_key,contact_person,contact_phone,status,remark)
+        VALUES (#{partyName},#{partyCode},#{apiKey},#{contactPerson},#{contactPhone},#{status},#{remark})
+    </insert>
+    <update id="update" parameterType="com.primihub.biz.entity.sys.po.SysAccessParty">
+        UPDATE sys_access_party SET party_name=#{partyName},party_code=#{partyCode},api_key=#{apiKey},
+            contact_person=#{contactPerson},contact_phone=#{contactPhone},status=#{status},remark=#{remark}
+        WHERE id=#{id}
+    </update>
+    <update id="delete">UPDATE sys_access_party SET is_del=1 WHERE id=#{id}</update>
+</mapper>

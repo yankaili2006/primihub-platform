@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.SysWhiteListPrimarydbRepository">
+
+    <insert id="insertWhiteList" parameterType="com.primihub.biz.entity.sys.po.SysWhiteList">
+        INSERT INTO sys_white_list (wl_type, wl_value, wl_reason, status, creator_id, creator_name)
+        VALUES (#{wlType}, #{wlValue}, #{wlReason}, #{status}, #{creatorId}, #{creatorName})
+    </insert>
+
+    <update id="updateWhiteList" parameterType="com.primihub.biz.entity.sys.po.SysWhiteList">
+        UPDATE sys_white_list
+        SET wl_value = #{wlValue},
+            wl_type = #{wlType},
+            wl_reason = #{wlReason},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteWhiteList">
+        UPDATE sys_white_list SET is_del = 1 WHERE id = #{id}
+    </update>
+
+    <update id="batchDeleteWhiteList">
+        UPDATE sys_white_list SET is_del = 1 WHERE id IN
+        <foreach collection="idList" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
