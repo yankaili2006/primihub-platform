@@ -29,4 +29,6 @@ public class SysOrgan {
     private Date cTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date uTime;
+    private String parentOrganId;
+    private Integer organIndex;
 }

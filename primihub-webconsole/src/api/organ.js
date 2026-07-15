@@ -29,7 +29,7 @@ export function getOrgans(params) {
  */
 export function createOrganNode(data) {
   return request({
-    url: '/sys/organ/createOrganNode',
+    url: '/organ/createOrganNode',
     method: 'post',
     data
   })
