@@ -106,7 +106,7 @@ export function createFederatedAnalysisTask(data) {
  */
 export function getFederatedAnalysisTaskList(params) {
   return request({
-    url: '/data/federatedAnalysis/sqlTask/list',
+    url: '/data/federatedAnalysis/task/list',
     method: 'get',
     params,
     showLoading: false
