@@ -385,8 +385,8 @@
     <!-- 资源授权审核/记录列表(授权审核 status=0 待审, 授权记录不限) -->
     <select id="queryAuthorizationList" parameterType="map" resultType="com.primihub.biz.entity.data.vo.DataResourceAuthRecordVo">
         select r.id as recordId, r.auth_status as recordStatus, r.apply_user_id as userId,
-               r.apply_user_name as userName, r.resource_id as resourceId,
-               dr.resource_name as resourceName, r.auth_organ_id as organId,
+               r.apply_user_name as userName,
+               dr.resource_name as resourceName,
                r.auth_organ_name as organName, r.create_date as createDate
         from data_resource_auth_record r
         left join data_resource dr on dr.resource_id = r.resource_id
