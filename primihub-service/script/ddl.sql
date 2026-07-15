@@ -742,7 +742,14 @@ CREATE TABLE `sys_organ`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1000 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '机构信息' ROW_FORMAT = Dynamic;
 
 
--- ==== [patch] 补全缺失表: sys_config + 19 功能表 (2026-07-15) ====
+-- ============================================================================
+-- develop 源码 patch ①：补全 primihub-service/script/ddl.sql 缺失的建表
+-- 应用: 把本文件内容【追加到 ddl.sql 末尾】(ddl.sql 顶部已有 'use privacy;')。
+-- 使全新部署(init.sh 按 ddl.sql 建 privacy1/2/3)即含这些表, 根治缺表导致的保存/查询失败。
+-- 表: sys_config(数据隔离配置) + 求差/求并/联邦学习/统计日志/单方/项目台账·权限·结果·工作流。
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS `sys_config` (
   `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
   `config_group` VARCHAR(64)  DEFAULT NULL COMMENT '配置分组',
   `config_key`   VARCHAR(128) DEFAULT NULL COMMENT '配置键',
