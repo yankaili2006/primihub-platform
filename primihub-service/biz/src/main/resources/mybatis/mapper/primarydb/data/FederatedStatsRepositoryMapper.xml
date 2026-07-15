@@ -62,7 +62,7 @@
             <if test="taskState != null">AND task_state = #{taskState}</if>
             <if test="statsType != null and statsType != ''">AND stats_type = #{statsType}</if>
             <if test="projectId != null">AND project_id = #{projectId}</if>
-            <if test="taskId != null and taskId != ''">AND task_id LIKE CONCAT('%', #{taskId}, '%')</if>
+            <if test="taskId != null and taskId != ''">AND id LIKE CONCAT('%', #{taskId}, '%')</if>
         </where>
         ORDER BY created_at DESC
         LIMIT #{pageSize} OFFSET #{offset}
@@ -75,7 +75,7 @@
             <if test="taskState != null">AND task_state = #{taskState}</if>
             <if test="statsType != null and statsType != ''">AND stats_type = #{statsType}</if>
             <if test="projectId != null">AND project_id = #{projectId}</if>
-            <if test="taskId != null and taskId != ''">AND task_id LIKE CONCAT('%', #{taskId}, '%')</if>
+            <if test="taskId != null and taskId != ''">AND id LIKE CONCAT('%', #{taskId}, '%')</if>
         </where>
     </select>
 
