@@ -30,11 +30,11 @@ import javax.sql.DataSource;
 @ConditionalOnProperty(name = "app.flyway.enabled", havingValue = "true", matchIfMissing = true)
 public class FlywayMigrationConfiguration {
 
-    @Bean(name = "flyway", initMethod = "migrate")
+    @Bean(name = "flyway")
     @DependsOn("primaryDB")
     public Flyway flyway(@Qualifier("primaryDB") DataSource primaryDB) {
         log.info("Flyway: migrating schema evolution against primaryDB");
-        return Flyway.configure()
+        Flyway flyway = Flyway.configure()
                 .dataSource(primaryDB)
                 .locations("classpath:db/migration")
                 .table("flyway_schema_history")
@@ -45,5 +45,18 @@ public class FlywayMigrationConfiguration {
                 .cleanDisabled(true)
                 .outOfOrder(false)
                 .load();
+        // Repair BEFORE migrate so a prior *failed* migration self-heals on restart instead of
+        // Flyway's validate permanently blocking the node. Multi-node fresh deploys race the mysql
+        // initsql load: an app node can start Flyway before its base dump (e.g. sys_auth) finished
+        // loading, so an early migration transiently fails and is recorded success=0. repair() drops
+        // that failed row (and realigns checksums); the migrations are idempotent, so the next
+        // startup — by when the base schema is present — re-applies cleanly. No-op on a healthy DB.
+        try {
+            flyway.repair();
+        } catch (Exception e) {
+            log.warn("Flyway repair skipped: {}", e.getMessage());
+        }
+        flyway.migrate();
+        return flyway;
     }
 }
