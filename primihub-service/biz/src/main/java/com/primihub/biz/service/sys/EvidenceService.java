@@ -71,7 +71,8 @@ public class EvidenceService {
             String description = data.get("description") != null ? data.get("description").toString() : "";
             Long createdBy = data.get("createdBy") != null ? Long.valueOf(data.get("createdBy").toString()) : null;
 
-            String hash = sha256Hex(evidenceData + System.currentTimeMillis());
+            // 存证哈希对内容本身取值（不掺时间戳），保证可复现，使 verifyEvidence 能重算比对做完整性校验
+            String hash = sha256Hex(evidenceData);
 
             EvidenceRecord record = new EvidenceRecord();
             record.setEvidenceHash(hash);
@@ -111,12 +112,18 @@ public class EvidenceService {
             }
             EvidenceTimestamp timestamp = evidenceRepository.selectEvidenceTimestampByEvidenceId(id);
 
+            // 真·完整性校验：重算存证内容哈希并与落库哈希比对，而非仅看上链状态
+            String evidenceData = record.getEvidenceData() != null ? record.getEvidenceData() : "";
+            String recomputedHash = sha256Hex(evidenceData);
+            boolean valid = recomputedHash.equals(record.getEvidenceHash());
+
             Map<String, Object> result = new HashMap<>();
-            result.put("valid", record.getStatus() >= 1);
+            result.put("valid", valid);
             result.put("evidenceHash", record.getEvidenceHash());
+            result.put("recomputedHash", recomputedHash);
             result.put("status", record.getStatus());
             result.put("timestamp", timestamp != null ? timestamp.getTimestampValue() : null);
-            result.put("message", record.getStatus() >= 1 ? "存证验证通过" : "存证尚未上链");
+            result.put("message", valid ? "存证验证通过：数据完整未被篡改" : "存证验证失败：内容哈希不匹配，数据可能已被篡改");
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("验证存证失败", e);
