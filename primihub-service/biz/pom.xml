@@ -72,6 +72,13 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>8.0.11</version>
         </dependency>
+        <!-- Flyway DB migrations (app owns schema evolution). 7.15.0 = last Java-8 line;
+             overrides Spring Boot 2.3.12 managed 6.4.4 which predates MariaDB 10.11. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>7.15.0</version>
+        </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>

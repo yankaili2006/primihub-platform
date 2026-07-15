@@ -13,6 +13,9 @@ ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".")
 WEB  = os.path.join(ROOT, "primihub-webconsole", "src")
 SVC  = os.path.join(ROOT, "primihub-service")
 INITSQL = sorted(glob.glob(os.path.join(ROOT, "arm64-deploy", "data", "initsql", "*.sql")))
+# Flyway migrations (app-owned schema evolution) are also a deployment seed source.
+MIGRATIONS = sorted(glob.glob(os.path.join(ROOT, "primihub-service", "biz", "src", "main", "resources", "db", "migration", "*.sql")))
+SEED_FILES = INITSQL + MIGRATIONS
 
 def read(p):
     try: return open(p, encoding="utf-8", errors="ignore").read()
@@ -39,13 +42,14 @@ be_segs = set()
 for m in re.findall(r'@(?:Request|Post|Get|Put|Delete)Mapping\(\s*(?:value\s*=\s*)?["\']([^"\']+)', read_glob(os.path.join(SVC, "**", "*.java"))):
     be_segs.add(m.strip("/").split("/")[-1])
 
-# ---------- gather deployment seed ----------
-seed_txt = "".join(read(p) for p in INITSQL)
+# ---------- gather deployment seed (initsql dumps + Flyway migrations) ----------
+seed_txt = "".join(read(p) for p in SEED_FILES)
 # authType=3 codes: privacy dump style  'name','CODE',3,
 seed_btn = set(re.findall(r"'[^']*'\s*,\s*'([A-Za-z0-9_]+)'\s*,\s*3\s*,", seed_txt))
-# zz-*.sql seed buttons via _btn_map/grant lists: treat any fe code present (non-comment) as seeded
-for p in INITSQL:
-    if os.path.basename(p).startswith("zz"):
+# zz-*.sql / Flyway migrations seed buttons via _btn_map / grant IN-lists (not the literal
+# ',CODE',3, form): treat any fe code present (non-comment line) as seeded.
+for p in SEED_FILES:
+    if os.path.basename(p).startswith("zz") or p in MIGRATIONS:
         body = "\n".join(l for l in read(p).splitlines() if not l.strip().startswith("--"))
         for c in fe_btn:
             if re.search(r"'" + re.escape(c) + r"'", body): seed_btn.add(c)

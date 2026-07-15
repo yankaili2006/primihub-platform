@@ -128,6 +128,19 @@ jobs:
           done
           echo "✅ all 18 v1.8.0 backend tables present on all 3 nodes"
 
+      - name: Verify Flyway migrations applied (app owns schema evolution)
+        run: |
+          # the app (not the mysql entrypoint) now applies V2/V3 via Flyway on startup.
+          # flyway_schema_history must exist with the baseline + V2 + V3 rows, all success.
+          for db in privacy1 privacy2 privacy3; do
+            n=$(docker exec mysql mysql -uroot -proot -N -e \
+              "SELECT COUNT(*) FROM $db.flyway_schema_history WHERE success=1;" 2>/dev/null | tr -d '[:space:]')
+            echo "$db flyway_schema_history success rows = $n (expect >= 3)"
+            [ -n "$n" ] && [ "$n" -ge 3 ] || { echo "::error::$db flyway history incomplete ($n)"; \
+              docker exec mysql mysql -uroot -proot -e "SELECT installed_rank,version,description,type,success FROM $db.flyway_schema_history;" 2>/dev/null || true; exit 1; }
+          done
+          echo "✅ Flyway applied baseline + V2 + V3 on all 3 nodes"
+
       - name: Verify function menus (18 modules / 224 points)
         run: |
           cd offline/arm64-deploy
