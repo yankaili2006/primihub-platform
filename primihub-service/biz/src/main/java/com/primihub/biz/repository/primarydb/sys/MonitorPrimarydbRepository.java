@@ -44,6 +44,9 @@ public interface MonitorPrimarydbRepository {
 
     int selectPendingAlertCount();
 
+    /** 已处理告警的平均处理时长(分钟)，无数据返回 0。 */
+    double selectAvgAlertHandleMinutes();
+
     // ========== 监控记录 ==========
 
     void insertMonitorRecord(MonitorRecord record);

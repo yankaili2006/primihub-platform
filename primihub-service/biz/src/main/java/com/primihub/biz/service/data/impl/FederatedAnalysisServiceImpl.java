@@ -196,50 +196,55 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
         }
     }
 
+    // 诚实标注: 平台 node 引擎(TaskTypeEnum: MODEL/PSI/PIR/REASONING/JOINT_STATISTICAL/DATA_SET)
+    // 不含"联邦SQL分析"执行器,故本功能为指定数据源上的【单方本地SQL执行】,非多方隐私计算(MPC)。
+    // SQL 改写/校验/格式化(sqlRewriteEngine)是真实的;查询结果亦为真实行数据,但不具备隐私保护语义。
+    private static final String ANALYSIS_ENGINE_LABEL = "local-single-party-sql";
+    private static final String ANALYSIS_PRIVACY_NOTE =
+            "单方本地SQL执行,非隐私计算/联邦MPC(node引擎暂无联邦SQL执行器)";
+
     private void executeAnalysisAsync(FederatedAnalysisTask task) {
         CompletableFuture.runAsync(() -> {
             try {
                 String sql = task.getRewrittenSql() != null ? task.getRewrittenSql() : task.getSourceSql();
-                String resultJson = "{\"message\":\"分析完成\"}";
-                int rowCount = 0;
-
+                Long datasourceId = null;
                 if (task.getTaskParam() != null && !task.getTaskParam().isEmpty()) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> params = objectMapper.readValue(task.getTaskParam(), Map.class);
-                        Object dsId = params.get("datasourceId");
-                        if (dsId != null) {
-                            Long datasourceId = dsId instanceof Number ? ((Number) dsId).longValue() : Long.valueOf(dsId.toString());
-                            FederatedAnalysisDatasource ds = analysisRepository.selectDatasourceById(datasourceId);
-                            if (ds != null) {
-                                DataSourceConnector connector = DataSourceConnectorFactory.create(ds.getSourceType(), ds.getSourceConfig());
-                                try {
-                                    List<Map<String, Object>> rows = connector.executeQuery(sql);
-                                    rowCount = rows.size();
-                                    resultJson = objectMapper.writeValueAsString(rows.size() > 100
-                                        ? rows.subList(0, 100) : rows);
-                                } finally {
-                                    connector.close();
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.warn("通过数据源执行SQL失败，使用改写后SQL直接执行: {}", e.getMessage());
-                        try {
-                            DataSourceConnector connector = DataSourceConnectorFactory.create("MySQL",
-                                "{\"host\":\"localhost\",\"port\":3306,\"db\":\"primihub\"}");
-                            List<Map<String, Object>> rows = connector.executeQuery(sql);
-                            rowCount = rows.size();
-                            resultJson = objectMapper.writeValueAsString(rows.size() > 100 ? rows.subList(0, 100) : rows);
-                            connector.close();
-                        } catch (Exception e2) {
-                            log.warn("默认数据源执行也失败: {}", e2.getMessage());
-                            resultJson = "{\"message\":\"分析完成\",\"sql\":\"" + sql + "\",\"note\":\"结果查询请查看数据源\"}";
-                        }
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> params = objectMapper.readValue(task.getTaskParam(), Map.class);
+                    Object dsId = params.get("datasourceId");
+                    if (dsId != null) {
+                        datasourceId = dsId instanceof Number ? ((Number) dsId).longValue() : Long.valueOf(dsId.toString());
                     }
                 }
+                if (datasourceId == null) {
+                    // 不再静默回退到硬编码 localhost:3306/primihub(会对错误的库返回误导性结果)
+                    analysisRepository.updateTaskState(task.getId(), 3, null, "未指定数据源(datasourceId),无法执行分析");
+                    return;
+                }
+                FederatedAnalysisDatasource ds = analysisRepository.selectDatasourceById(datasourceId);
+                if (ds == null) {
+                    analysisRepository.updateTaskState(task.getId(), 3, null, "数据源不存在: " + datasourceId);
+                    return;
+                }
 
-                analysisRepository.updateTaskState(task.getId(), 2, "分析完成，共返回" + rowCount + "条记录", null);
+                List<Map<String, Object>> rows;
+                DataSourceConnector connector = DataSourceConnectorFactory.create(ds.getSourceType(), ds.getSourceConfig());
+                try {
+                    rows = connector.executeQuery(sql);   // 真实执行,真实行数据
+                } finally {
+                    connector.close();
+                }
+                int rowCount = rows.size();
+
+                Map<String, Object> payload = new LinkedHashMap<>();
+                payload.put("engine", ANALYSIS_ENGINE_LABEL);
+                payload.put("privacyNote", ANALYSIS_PRIVACY_NOTE);
+                payload.put("rowCount", rowCount);
+                payload.put("rows", rowCount > 100 ? rows.subList(0, 100) : rows);
+                String resultJson = objectMapper.writeValueAsString(payload);
+
+                analysisRepository.updateTaskState(task.getId(), 2,
+                        "分析完成,共返回" + rowCount + "条记录(" + ANALYSIS_PRIVACY_NOTE + ")", null);
                 analysisRepository.updateTaskRewrittenSql(task.getId(), sql);
                 FederatedAnalysisResult result = new FederatedAnalysisResult();
                 result.setTaskId(task.getId());

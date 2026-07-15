@@ -122,6 +122,68 @@ public class TenantService {
     }
 
     /**
+     * 获取租户隔离配置(计算流程隔离/资源配额)。配置不存在时按默认值初始化后返回，
+     * 保证 #16/#19 "租户间计算流程隔离/数据隔离" 有真实可读写的配置。
+     */
+    public BaseResultEntity getTenantIsolationConfig(Long tenantId) {
+        if (tenantId == null) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "租户ID不能为空");
+        }
+        try {
+            Map<String, Object> config = tenantPrimarydbRepository.selectTenantIsolationConfig(tenantId);
+            if (config == null || config.isEmpty()) {
+                Tenant tenant = tenantPrimarydbRepository.selectTenantById(tenantId);
+                if (tenant == null) {
+                    return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "租户不存在");
+                }
+                config = defaultIsolationConfig(tenantId, tenant.getTenantCode());
+                tenantPrimarydbRepository.insertTenantIsolationConfig(config);
+            }
+            return BaseResultEntity.success(config);
+        } catch (Exception e) {
+            log.error("查询租户隔离配置失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 保存(新增或更新)租户隔离配置。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity saveTenantIsolationConfig(Map<String, Object> params) {
+        if (params == null || params.get("tenantId") == null) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "租户ID不能为空");
+        }
+        try {
+            Long tenantId = Long.valueOf(params.get("tenantId").toString());
+            Map<String, Object> existing = tenantPrimarydbRepository.selectTenantIsolationConfig(tenantId);
+            if (existing == null || existing.isEmpty()) {
+                tenantPrimarydbRepository.insertTenantIsolationConfig(params);
+            } else {
+                tenantPrimarydbRepository.updateTenantIsolationConfig(params);
+            }
+            return BaseResultEntity.success("保存成功");
+        } catch (Exception e) {
+            log.error("保存租户隔离配置失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "保存失败: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> defaultIsolationConfig(Long tenantId, String tenantCode) {
+        Map<String, Object> config = new HashMap<>();
+        config.put("tenantId", tenantId);
+        config.put("cpuQuota", 0);
+        config.put("memoryQuota", 0);
+        config.put("storageQuota", 0);
+        config.put("datasetLimit", 0);
+        config.put("modelLimit", 0);
+        config.put("concurrentTasks", 10);
+        config.put("networkIsolation", 0);
+        config.put("namespace", "tenant_" + tenantCode);
+        return config;
+    }
+
+    /**
      * 更新租户
      */
     @Transactional(rollbackFor = Exception.class)

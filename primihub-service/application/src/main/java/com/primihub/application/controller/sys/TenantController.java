@@ -87,6 +87,18 @@ public class TenantController {
         return tenantService.getTenantDetail(id);
     }
 
+    @ApiOperation(value = "获取租户隔离配置")
+    @GetMapping("getTenantIsolationConfig")
+    public BaseResultEntity getTenantIsolationConfig(@RequestParam Long tenantId) {
+        return tenantService.getTenantIsolationConfig(tenantId);
+    }
+
+    @ApiOperation(value = "保存租户隔离配置")
+    @PostMapping("saveTenantIsolationConfig")
+    public BaseResultEntity saveTenantIsolationConfig(@RequestBody Map<String, Object> params) {
+        return tenantService.saveTenantIsolationConfig(params);
+    }
+
     @ApiOperation(value = "查询租户资源列表")
     @GetMapping("findTenantResourceList")
     public BaseResultEntity findTenantResourceList(

@@ -34,11 +34,20 @@ import java.util.stream.Collectors;
 @Service("jointStatisticalComponentTaskServiceImpl")
 @Slf4j
 public class JointStatisticalComponentTaskServiceImpl extends BaseComponentServiceImpl implements ComponentTaskService {
+    // 运算类型码 -> 结果CSV后缀名(与 node mpc_statistics.cc 的 MPCStatisticsType 1-9 对应)。
+    // node 侧真实支持 1-9(见 primihub/src/primihub/algorithm/mpc_statistics.cc: 5=T_TEST 6=F_TEST
+    // 7=CHI_SQUARE 8=REGRESSION 9=CORRELATION);此处词条决定输出文件名 <id>-<word>.csv,
+    // 数值型(type)经 TaskDetail 直传 node。zip 打包按目录实际文件过滤,缺失的运算词条无副作用。
     private static final Map<String,String> MAP_TYPE = new HashMap(){{
         put("1","average");
         put("2","sum");
         put("3","max");
         put("4","min");
+        put("5","t_test");
+        put("6","f_test");
+        put("7","chi_square");
+        put("8","regression");
+        put("9","correlation");
     }};
     @Autowired
     private BaseConfiguration baseConfiguration;

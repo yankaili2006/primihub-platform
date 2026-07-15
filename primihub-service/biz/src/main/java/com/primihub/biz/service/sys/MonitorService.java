@@ -9,10 +9,19 @@ import com.primihub.biz.entity.sys.po.MonitorRecord;
 import com.primihub.biz.repository.primarydb.sys.MonitorPrimarydbRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
+import javax.sql.DataSource;
 import java.lang.management.*;
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -22,6 +31,13 @@ public class MonitorService {
 
     @Autowired
     private MonitorPrimarydbRepository monitorRepository;
+
+    @Autowired(required = false)
+    @Qualifier("primaryDB")
+    private DataSource primaryDataSource;
+
+    @Resource(name = "primaryStringRedisTemplate")
+    private StringRedisTemplate primaryStringRedisTemplate;
 
     private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -74,13 +90,11 @@ public class MonitorService {
             List<MonitorRecord> history = monitorRepository.selectMonitorHistory("CPU", null, null);
             List<Double> historyData = new ArrayList<>();
             for (MonitorRecord record : history) {
-                historyData.add(record.getMetricValue().doubleValue());
-            }
-            if (historyData.isEmpty()) {
-                for (int i = 0; i < 20; i++) {
-                    historyData.add(Math.random() * 100);
+                if (record.getMetricValue() != null) {
+                    historyData.add(record.getMetricValue().doubleValue());
                 }
             }
+            // 无历史记录时返回空序列（由定时采集写入 monitor_record 后自然填充），不再伪造随机数据
             result.put("history", historyData);
             return BaseResultEntity.success(result);
         } catch (Exception e) {
@@ -142,18 +156,53 @@ public class MonitorService {
     }
 
     public BaseResultEntity getDatabaseMonitor() {
-        try {
+        if (primaryDataSource == null) {
+            log.warn("primaryDB DataSource 未注入，无法采集数据库监控");
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "数据库数据源不可用");
+        }
+        try (Connection conn = primaryDataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // 从 MySQL 实时全局状态/变量采集，不再硬编码
+            Map<String, Long> status = queryKeyValue(stmt,
+                    "SHOW GLOBAL STATUS WHERE Variable_name IN " +
+                            "('Threads_connected','Threads_running','Questions','Queries','Slow_queries','Uptime')");
+            Map<String, Long> variables = queryKeyValue(stmt,
+                    "SHOW GLOBAL VARIABLES WHERE Variable_name IN ('max_connections')");
+
             Map<String, Object> result = new HashMap<>();
-            result.put("connections", 25);
-            result.put("maxConnections", 100);
-            result.put("queries", 1523);
-            result.put("slowQueries", 3);
-            result.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime() / 1000);
+            result.put("connections", status.getOrDefault("Threads_connected", 0L));
+            result.put("activeConnections", status.getOrDefault("Threads_running", 0L));
+            result.put("maxConnections", variables.getOrDefault("max_connections", 0L));
+            // Queries 含存储过程调用；旧版本无该项时回退 Questions
+            result.put("queries", status.getOrDefault("Queries", status.getOrDefault("Questions", 0L)));
+            result.put("slowQueries", status.getOrDefault("Slow_queries", 0L));
+            result.put("uptime", status.getOrDefault("Uptime",
+                    ManagementFactory.getRuntimeMXBean().getUptime() / 1000));
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("获取数据库监控失败", e);
-            return getFallbackResult("connections", 25);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "数据库监控采集失败: " + e.getMessage());
         }
+    }
+
+    /** 执行 SHOW ... 形式的两列(Variable_name,Value)查询，转成数值 Map；非数值项跳过。 */
+    private Map<String, Long> queryKeyValue(Statement stmt, String sql) throws java.sql.SQLException {
+        Map<String, Long> map = new HashMap<>();
+        try (ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                String name = rs.getString(1);
+                String value = rs.getString(2);
+                if (name == null || value == null) {
+                    continue;
+                }
+                try {
+                    map.put(name, Long.parseLong(value.trim()));
+                } catch (NumberFormatException ignore) {
+                    // 非数值型状态项忽略
+                }
+            }
+        }
+        return map;
     }
 
     public BaseResultEntity getJvmMonitor() {
@@ -192,17 +241,41 @@ public class MonitorService {
 
     public BaseResultEntity getRedisMonitor() {
         try {
+            // 通过 Redis INFO 命令实时采集，不再硬编码
+            Properties info = primaryStringRedisTemplate.execute(
+                    (RedisCallback<Properties>) connection -> connection.info());
+            if (info == null) {
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE, "Redis INFO 无返回");
+            }
+            long usedMemoryBytes = parseLong(info.getProperty("used_memory"), 0);
+            long maxMemoryBytes = parseLong(info.getProperty("maxmemory"), 0);
+            long hits = parseLong(info.getProperty("keyspace_hits"), 0);
+            long misses = parseLong(info.getProperty("keyspace_misses"), 0);
+            double hitRate = (hits + misses) > 0
+                    ? Math.round(hits * 10000.0 / (hits + misses)) / 100.0 : 0.0;
+
             Map<String, Object> result = new HashMap<>();
-            result.put("version", "6.2.6");
-            result.put("uptime", 259200);
-            result.put("connectedClients", 12);
-            result.put("usedMemory", 2048);
-            result.put("maxMemory", 4096);
-            result.put("hitRate", 95.6);
+            result.put("version", info.getProperty("redis_version", ""));
+            result.put("uptime", parseLong(info.getProperty("uptime_in_seconds"), 0));
+            result.put("connectedClients", parseLong(info.getProperty("connected_clients"), 0));
+            result.put("usedMemory", usedMemoryBytes / (1024 * 1024));   // MB
+            result.put("maxMemory", maxMemoryBytes / (1024 * 1024));      // MB, 0 表示未设上限
+            result.put("hitRate", hitRate);
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("获取Redis监控失败", e);
-            return getFallbackResult("version", "6.2.6");
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "Redis监控采集失败: " + e.getMessage());
+        }
+    }
+
+    private long parseLong(String value, long defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
     }
 
@@ -217,25 +290,11 @@ public class MonitorService {
                 data.put("metricName", record.getMetricName());
                 result.add(data);
             }
-            if (result.isEmpty()) {
-                for (int i = 0; i < 24; i++) {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("time", "2026-01-09 " + String.format("%02d", i) + ":00:00");
-                    data.put("value", Math.round(Math.random() * 100 * 10.0) / 10.0);
-                    result.add(data);
-                }
-            }
+            // 无记录时返回空序列，不再伪造 24 点随机曲线
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("获取监控历史数据失败", e);
-            List<Map<String, Object>> result = new ArrayList<>();
-            for (int i = 0; i < 24; i++) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("time", "2026-01-09 " + String.format("%02d", i) + ":00:00");
-                data.put("value", Math.round(Math.random() * 100 * 10.0) / 10.0);
-                result.add(data);
-            }
-            return BaseResultEntity.success(result);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "监控历史查询失败: " + e.getMessage());
         }
     }
 
@@ -281,27 +340,32 @@ public class MonitorService {
     public BaseResultEntity saveAlertConfig(Map<String, Object> data) {
         try {
             Long id = data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null;
+            String monitorType = readString(data, "type", readString(data, "monitorType", "CPU"));
             MonitorAlertConfig config;
             if (id != null) {
                 config = monitorRepository.selectAlertConfigById(id);
-                if (config == null) {
-                    return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "配置不存在");
+                if (config == null || !monitorType.equals(config.getMonitorType())) {
+                    id = null;
                 }
             } else {
-                config = new MonitorAlertConfig();
+                config = null;
             }
-            // 缺陷整改 T6：前端字段名/类型与后端不一致导致保存崩溃/静默——统一容错映射
-            // 主因：前端 enabled 传布尔 true，旧代码 Integer.valueOf("true") 抛 NumberFormatException → 保存无响应
+            // 合并: 保留新建配置时的空值守卫(否则 config==null 时 setXXX 会 NPE),
+            // 再套用 develop 缺陷整改 T6 的前端字段名/类型容错映射(enabled 布尔/level 字符串等)。
+            if (config == null) {
+                Map<String, Object> params = new HashMap<>();
+                params.put("monitorType", monitorType);
+                List<MonitorAlertConfig> existing = monitorRepository.selectAlertConfigList(params);
+                config = existing == null || existing.isEmpty() ? new MonitorAlertConfig() : existing.get(0);
+                id = config.getId();
+            }
             config.setMonitorType(data.get("type") != null ? data.get("type").toString() : data.get("monitorType") != null ? data.get("monitorType").toString() : "CPU");
             config.setThreshold(data.get("threshold") != null ? new java.math.BigDecimal(data.get("threshold").toString()) : java.math.BigDecimal.valueOf(80));
             config.setDuration(parseIntSafe(data.get("duration"), 300));
-            // level: 前端传字符串 INFO/WARNING/CRITICAL；也兼容 alertLevel 整型
             config.setAlertLevel(parseAlertLevel(data.get("level") != null ? data.get("level") : data.get("alertLevel")));
-            // notifyMethods: 前端传数组；也兼容 notifyMethod 字符串 → 逗号拼接入库
             config.setNotifyMethod(joinNotify(data.get("notifyMethods") != null ? data.get("notifyMethods") : data.get("notifyMethod")));
             config.setNotifyTarget(data.get("notifyTargets") != null ? data.get("notifyTargets").toString()
                     : (data.get("notifyTarget") != null ? data.get("notifyTarget").toString() : ""));
-            // enabled: 前端传布尔 → 0/1；兼容 isEnabled
             config.setIsEnabled(parseEnabledFlag(data.get("enabled") != null ? data.get("enabled") : data.get("isEnabled")));
 
             if (id != null) {
@@ -437,11 +501,12 @@ public class MonitorService {
             result.put("totalAlerts", totalAlerts);
             result.put("todayAlerts", todayAlerts);
             result.put("pendingAlerts", pendingAlerts);
-            result.put("avgResponseTime", 125.6);
+            // 告警平均处理时长(分钟)：由已处理告警的 handledAt-createdAt 实测，无数据则 0
+            result.put("avgResponseTime", monitorRepository.selectAvgAlertHandleMinutes());
             return BaseResultEntity.success(result);
         } catch (Exception e) {
             log.error("获取监控统计失败", e);
-            return getFallbackResult("totalAlerts", 156);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "监控统计查询失败: " + e.getMessage());
         }
     }
 
@@ -450,9 +515,12 @@ public class MonitorService {
     private double getSystemCpuLoad() {
         try {
             OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-            return osBean.getSystemLoadAverage() * 10;
+            double load = osBean.getSystemLoadAverage();
+            // getSystemLoadAverage 在部分平台返回 -1(不支持)，此时以核数归一后返回 0
+            return load < 0 ? 0.0 : load * 10;
         } catch (Exception e) {
-            return Math.round(Math.random() * 100 * 10.0) / 10.0;
+            log.warn("采集系统 CPU 负载失败", e);
+            return 0.0;
         }
     }
 

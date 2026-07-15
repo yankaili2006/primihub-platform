@@ -104,18 +104,7 @@ public class EvidenceController {
     @ApiOperation(value = "获取区块链列表")
     @GetMapping("getChainList")
     public BaseResultEntity getChainList() {
-        List<Map<String, Object>> chains = new ArrayList<>();
-        Map<String, Object> chain1 = new HashMap<>();
-        chain1.put("id", "1");
-        chain1.put("name", "Fabric");
-        chain1.put("type", "FABRIC");
-        chains.add(chain1);
-        Map<String, Object> chain2 = new HashMap<>();
-        chain2.put("id", "2");
-        chain2.put("name", "Ethereum");
-        chain2.put("type", "ETH");
-        chains.add(chain2);
-        return BaseResultEntity.success(chains);
+        return evidenceService.getChainList();
     }
 
     // ========== 存证导出相关 ==========
@@ -189,10 +178,39 @@ public class EvidenceController {
     @ApiOperation(value = "测试API连接")
     @PostMapping("testApiConnection")
     public BaseResultEntity testApiConnection(@RequestBody Map<String, Object> data) {
+        Object urlObj = data.get("url") != null ? data.get("url") : data.get("apiUrl");
+        String url = urlObj != null ? urlObj.toString().trim() : "";
         Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", "连接成功");
-        result.put("responseTime", "125ms");
+        if (url.isEmpty() || !(url.startsWith("http://") || url.startsWith("https://"))) {
+            result.put("success", false);
+            result.put("message", "无效的URL(需以 http:// 或 https:// 开头)");
+            return BaseResultEntity.success(result);
+        }
+        // 真实探测目标接口连通性，测量真实响应耗时/状态码，不再恒返回成功
+        long start = System.currentTimeMillis();
+        java.net.HttpURLConnection conn = null;
+        try {
+            conn = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            conn.setRequestMethod("GET");
+            conn.setInstanceFollowRedirects(true);
+            int code = conn.getResponseCode();
+            long cost = System.currentTimeMillis() - start;
+            result.put("success", code >= 200 && code < 400);
+            result.put("statusCode", code);
+            result.put("message", code >= 200 && code < 400 ? "连接成功" : "目标返回状态码 " + code);
+            result.put("responseTime", cost + "ms");
+        } catch (Exception e) {
+            long cost = System.currentTimeMillis() - start;
+            result.put("success", false);
+            result.put("message", "连接失败: " + e.getMessage());
+            result.put("responseTime", cost + "ms");
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
         return BaseResultEntity.success(result);
     }
 }

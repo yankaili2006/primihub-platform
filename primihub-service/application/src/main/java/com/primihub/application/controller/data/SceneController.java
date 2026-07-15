@@ -212,6 +212,12 @@ public class SceneController {
     @ApiOperation("电子证件-隐私比对")
     @PostMapping("/electronicCert/compare")
     public BaseResultEntity compareFeature(@RequestBody Map<String, Object> req) {
+        // 隐私比对是真实隐私计算: 强制 taskType 走 createTask 的 certCompare→真实 PSI(node MPC)分支,
+        // 需请求带 ownResourceId/otherResourceId(两方特征资源)才会触发真实 PSI 求交。
+        Object t = req.get("taskType");
+        if (t == null || t.toString().isEmpty()) {
+            req.put("taskType", "privacyCompare");
+        }
         return sceneService.createTask("electronic_cert", req, getCurrentUserId());
     }
 

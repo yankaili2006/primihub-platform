@@ -135,6 +135,12 @@
         SELECT COUNT(*) FROM monitor_alert_history WHERE status = 0
     </select>
 
+    <select id="selectAvgAlertHandleMinutes" resultType="double">
+        SELECT COALESCE(AVG(TIMESTAMPDIFF(SECOND, created_at, handled_at)) / 60, 0)
+        FROM monitor_alert_history
+        WHERE status = 1 AND handled_at IS NOT NULL AND created_at IS NOT NULL
+    </select>
+
     <!-- Monitor Record -->
     <insert id="insertMonitorRecord" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO monitor_record (monitor_type, metric_name, metric_value, unit, extra_data, recorded_at)

@@ -281,6 +281,49 @@ public class EvidenceService {
         }
     }
 
+    /**
+     * 返回平台可锚定的区块链列表。默认是已实现的链适配器(Fabric/Ethereum)，
+     * 可通过存证配置 key=supportedChains(形如 "Fabric:FABRIC,Ethereum:ETH")覆盖，
+     * 从而按部署实际启用的链动态呈现，而非在 Controller 里写死。
+     */
+    public BaseResultEntity getChainList() {
+        try {
+            List<Map<String, Object>> chains = new ArrayList<>();
+            EvidenceConfig cfg = evidenceRepository.selectEvidenceConfigByKey("supportedChains");
+            String raw = cfg != null ? cfg.getConfigValue() : null;
+            if (raw != null && !raw.trim().isEmpty()) {
+                int id = 1;
+                for (String item : raw.split(",")) {
+                    String[] kv = item.trim().split(":");
+                    if (kv.length >= 2 && !kv[0].trim().isEmpty()) {
+                        Map<String, Object> chain = new HashMap<>();
+                        chain.put("id", String.valueOf(id++));
+                        chain.put("name", kv[0].trim());
+                        chain.put("type", kv[1].trim());
+                        chains.add(chain);
+                    }
+                }
+            }
+            if (chains.isEmpty()) {
+                // 未配置时回退到平台内置已实现的链适配器
+                chains.add(buildChain("1", "Fabric", "FABRIC"));
+                chains.add(buildChain("2", "Ethereum", "ETH"));
+            }
+            return BaseResultEntity.success(chains);
+        } catch (Exception e) {
+            log.error("查询区块链列表失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    private Map<String, Object> buildChain(String id, String name, String type) {
+        Map<String, Object> chain = new HashMap<>();
+        chain.put("id", id);
+        chain.put("name", name);
+        chain.put("type", type);
+        return chain;
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity saveEvidenceConfig(Map<String, Object> data) {
         try {

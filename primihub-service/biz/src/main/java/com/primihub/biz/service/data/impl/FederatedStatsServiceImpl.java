@@ -57,14 +57,20 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
     private static final Long DEFAULT_PROJECT_ID = 2L;
 
-    // node JointStatistical 组件真实支持且平台端结果打包完整覆盖的运算类型(avg/sum/max/min)
-    // (node C++ mpc_statistics 亦支持 5-9=t_test/f_test/chi_square/regression/correlation,
-    //  但 Java 组件的结果 zip 打包硬编码为 1-4, 故只把 1-4 作为高置信度真实路径)
+    // node JointStatistical 组件真实支持的运算类型码 -> 结果CSV后缀名。
+    // 1-4=描述性聚合(avg/sum/max/min);5-9=统计检验(t检验/F检验/卡方/回归/相关),
+    // 均由 node C++ mpc_statistics(MPCStatisticsType 1-9)真实计算。
+    // 词条必须与 JointStatisticalComponentTaskServiceImpl.MAP_TYPE 完全一致(决定 <id>-<word>.csv 文件名)。
     private static final Map<String, String> NODE_OP_NAMES = new LinkedHashMap<String, String>() {{
         put("1", "average");
         put("2", "sum");
         put("3", "max");
         put("4", "min");
+        put("5", "t_test");
+        put("6", "f_test");
+        put("7", "chi_square");
+        put("8", "regression");
+        put("9", "correlation");
     }};
 
     private static final Map<String, String> STATS_TYPE_NAMES = new LinkedHashMap<>();
@@ -290,8 +296,19 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
         switch (statsType) {
             case "descriptive":
                 return new ArrayList<>(Arrays.asList("1", "2", "3", "4"));  // 均值/求和/最大/最小
+            case "t_test":
+                return new ArrayList<>(Collections.singletonList("5"));     // node T_TEST
+            case "f_test":
+                return new ArrayList<>(Collections.singletonList("6"));     // node F_STAT_TEST
+            case "chi_square":
+                return new ArrayList<>(Collections.singletonList("7"));     // node CHI_SQUARE_TEST
+            case "regression":
+                return new ArrayList<>(Collections.singletonList("8"));     // node REGRESSION
+            case "correlation":
+                return new ArrayList<>(Collections.singletonList("9"));     // node CORRELATION
             default:
-                return Collections.emptyList();  // 其余类型 node 无对应安全聚合 -> 本地近似
+                // group_by/conditional/proportion: node 无对应安全算子 -> 走本地近似(executeStatsAsync)
+                return Collections.emptyList();
         }
     }
 
