@@ -287,8 +287,9 @@ public class EvidenceService {
      * 从而按部署实际启用的链动态呈现，而非在 Controller 里写死。
      */
     public BaseResultEntity getChainList() {
+        List<Map<String, Object>> chains = new ArrayList<>();
+        // 配置读取 best-effort: evidence_config 缺失/漂移时不应让整个接口失败, 回退内置适配器
         try {
-            List<Map<String, Object>> chains = new ArrayList<>();
             EvidenceConfig cfg = evidenceRepository.selectEvidenceConfigByKey("supportedChains");
             String raw = cfg != null ? cfg.getConfigValue() : null;
             if (raw != null && !raw.trim().isEmpty()) {
@@ -304,16 +305,15 @@ public class EvidenceService {
                     }
                 }
             }
-            if (chains.isEmpty()) {
-                // 未配置时回退到平台内置已实现的链适配器
-                chains.add(buildChain("1", "Fabric", "FABRIC"));
-                chains.add(buildChain("2", "Ethereum", "ETH"));
-            }
-            return BaseResultEntity.success(chains);
         } catch (Exception e) {
-            log.error("查询区块链列表失败", e);
-            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+            log.warn("读取 supportedChains 配置失败(evidence_config 缺失?), 回退内置链适配器: {}", e.getMessage());
         }
+        if (chains.isEmpty()) {
+            // 未配置或读取失败时回退到平台内置已实现的链适配器
+            chains.add(buildChain("1", "Fabric", "FABRIC"));
+            chains.add(buildChain("2", "Ethereum", "ETH"));
+        }
+        return BaseResultEntity.success(chains);
     }
 
     private Map<String, Object> buildChain(String id, String name, String type) {
