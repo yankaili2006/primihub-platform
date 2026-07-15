@@ -43,12 +43,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.junit.vintage</groupId>
-                    <artifactId>junit-vintage-engine</artifactId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+        <!-- 现有单测均为 JUnit4(org.junit.Test); 需 vintage 引擎才能在 JUnit Platform(surefire)上被发现执行。
+             此前 spring-boot-starter-test 排除了 vintage-engine, 导致 JUnit4 用例全部被发现为 0。 -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

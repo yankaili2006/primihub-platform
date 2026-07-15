@@ -351,16 +351,19 @@ public class FederatedAnalysisServiceImplTest {
     }
 
     @Test
-    public void runTask_asyncExecution_completesSuccessfully() throws Exception {
+    public void runTask_asyncExecution_noDatasource_marksFailed() throws Exception {
+        // 非聚合SQL + 未指定数据源: 不桥接MPC, 本地路径诚实 fail-fast 到状态3,
+        // 不再伪造 updateTaskRewrittenSql/insertResult(此前 localhost:3306 硬编码回退已移除)。
         FederatedAnalysisTask task = createTaskPo(TASK_ID, "async", "SELECT * FROM users", 0);
         when(analysisRepository.selectTaskById(TASK_ID)).thenReturn(task);
 
         analysisService.runTask(TASK_ID, USER_ID);
         Thread.sleep(400);
 
-        verify(analysisRepository, atLeastOnce()).updateTaskState(eq(TASK_ID), any(), any(), any());
-        verify(analysisRepository, atLeastOnce()).updateTaskRewrittenSql(eq(TASK_ID), anyString());
-        verify(analysisRepository, atLeastOnce()).insertResult(any());
+        verify(analysisRepository, atLeastOnce()).updateTaskState(eq(TASK_ID), eq(1), any(), any());
+        verify(analysisRepository, atLeastOnce()).updateTaskState(eq(TASK_ID), eq(3), any(), any());
+        verify(analysisRepository, never()).updateTaskRewrittenSql(eq(TASK_ID), anyString());
+        verify(analysisRepository, never()).insertResult(any());
     }
 
     // ==================== stopTask ====================
