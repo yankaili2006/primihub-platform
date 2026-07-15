@@ -1,7 +1,10 @@
--- V13__missing_feature_tables.sql — 11 tables referenced by backend mappers but created
--- nowhere (contract-check [C] failures on develop). DDL from the code-aligned production
--- schema (fusion*). NO `USE`; idempotent CREATE TABLE IF NOT EXISTS.
+-- V13__missing_feature_tables.sql — 补齐 11 张「mapper 用到但未接入部署」的功能表
+-- 这些表 DDL 原在 primihub-service/script/ddl.sql，但既不在 initsql 也不在任何 Flyway 迁移，
+-- fresh build-from-develop 时不会被创建 → 对应功能(项目台账/权限/结果、FL工作流、单方ext、
+-- 联邦统计任务日志、资源授权记录)会「表不存在」。同 D41 类根因。幂等 IF NOT EXISTS。
+-- 修复 contract-check [C]。
 
+-- data_resource_auth_record
 CREATE TABLE IF NOT EXISTS `data_resource_auth_record` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `resource_id` varchar(255) DEFAULT NULL,
@@ -24,6 +27,7 @@ CREATE TABLE IF NOT EXISTS `data_resource_auth_record` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- federated_stats_task_log
 CREATE TABLE IF NOT EXISTS `federated_stats_task_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `task_id` bigint(20) DEFAULT NULL,
@@ -43,8 +47,9 @@ CREATE TABLE IF NOT EXISTS `federated_stats_task_log` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 
+-- fl_workflow
 CREATE TABLE IF NOT EXISTS `fl_workflow` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `workflow_id` varchar(64) DEFAULT NULL,
@@ -70,6 +75,7 @@ CREATE TABLE IF NOT EXISTS `fl_workflow` (
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联邦建模工作流';
 
+-- fl_workflow_log
 CREATE TABLE IF NOT EXISTS `fl_workflow_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `workflow_id` varchar(64) DEFAULT NULL,
@@ -81,6 +87,7 @@ CREATE TABLE IF NOT EXISTS `fl_workflow_log` (
   KEY `idx_wf` (`workflow_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联邦建模工作流日志';
 
+-- project_ledger_export
 CREATE TABLE IF NOT EXISTS `project_ledger_export` (
   `export_id` bigint(20) NOT NULL AUTO_INCREMENT,
   `export_type` varchar(16) DEFAULT NULL,
@@ -99,6 +106,7 @@ CREATE TABLE IF NOT EXISTS `project_ledger_export` (
   KEY `idx_user` (`export_user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目台账导出记录';
 
+-- project_permission
 CREATE TABLE IF NOT EXISTS `project_permission` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `project_id` varchar(141) DEFAULT NULL,
@@ -124,6 +132,7 @@ CREATE TABLE IF NOT EXISTS `project_permission` (
   KEY `idx_status` (`permission_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目权限';
 
+-- project_permission_template
 CREATE TABLE IF NOT EXISTS `project_permission_template` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `template_name` varchar(255) DEFAULT NULL,
@@ -136,6 +145,7 @@ CREATE TABLE IF NOT EXISTS `project_permission_template` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目权限模板';
 
+-- project_result
 CREATE TABLE IF NOT EXISTS `project_result` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `project_id` varchar(141) DEFAULT NULL,
@@ -164,6 +174,7 @@ CREATE TABLE IF NOT EXISTS `project_result` (
   KEY `idx_status` (`save_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目结果保存';
 
+-- project_result_config
 CREATE TABLE IF NOT EXISTS `project_result_config` (
   `id` bigint(20) NOT NULL,
   `default_path` varchar(255) DEFAULT '/data/results',
@@ -174,6 +185,7 @@ CREATE TABLE IF NOT EXISTS `project_result_config` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目结果保存配置';
 
+-- sp_ext_log
 CREATE TABLE IF NOT EXISTS `sp_ext_log` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `task_id` varchar(141) DEFAULT NULL,
@@ -187,6 +199,7 @@ CREATE TABLE IF NOT EXISTS `sp_ext_log` (
   KEY `idx_task` (`task_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='单方作业学习日志';
 
+-- sp_ext_task
 CREATE TABLE IF NOT EXISTS `sp_ext_task` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `task_id` varchar(141) DEFAULT NULL,
@@ -215,4 +228,3 @@ CREATE TABLE IF NOT EXISTS `sp_ext_task` (
   KEY `idx_cat` (`task_category`),
   KEY `idx_state` (`task_state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='单方作业预处理/脚本任务';
-
