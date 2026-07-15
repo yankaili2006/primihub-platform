@@ -344,13 +344,13 @@ export const asyncRoutes = [
     component: Layout,
     name: 'FederatedLearning',
     redirect: '/FederatedLearning/list',
-    meta: { title: '联邦学习', icon: 'el-icon-data-analysis' },
+    meta: { title: '联邦模型管理', icon: 'el-icon-data-analysis' },
     children: [
       {
         path: 'list',
         name: 'FederatedLearningList',
         component: () => import('@/views/FederatedLearning/list'),
-        meta: { title: '联邦学习', breadcrumb: false }
+        meta: { title: '模型列表', breadcrumb: false }
       },
       {
         path: 'modelPreview',
