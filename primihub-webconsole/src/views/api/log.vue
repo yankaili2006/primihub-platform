@@ -372,6 +372,11 @@ export default {
       this.detailVisible = true
     },
     exportLog() {
+      // 无数据时不发起导出：否则后端返回空文件/JSON 错误体，前端仍会误报"导出成功"
+      if (!this.itemTotalCount || this.itemTotalCount === 0) {
+        this.$message.warning('暂无数据可导出')
+        return
+      }
       const params = {
         keyword: this.searchForm.keyword,
         method: this.searchForm.method,
@@ -380,7 +385,17 @@ export default {
         startTime: this.dateRange && this.dateRange.length > 0 ? this.dateRange[0] : '',
         endTime: this.dateRange && this.dateRange.length > 1 ? this.dateRange[1] : ''
       }
-      exportApiLog(params).then(response => {
+      exportApiLog(params).then(async response => {
+        // 兜底：后端在无数据/出错时可能返回 JSON 错误体而非 xlsx 二进制，不能当作成功
+        if (response && response.type && response.type.indexOf('application/json') !== -1) {
+          let msg = '暂无数据可导出'
+          try {
+            const json = JSON.parse(await response.text())
+            msg = json.msg || json.message || msg
+          } catch (e) { /* 解析失败则用默认提示 */ }
+          this.$message.warning(msg)
+          return
+        }
         const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -390,7 +405,6 @@ export default {
         window.URL.revokeObjectURL(url)
         this.$message.success('导出成功')
       }).catch(() => {
-        // 无数据时后端返回 JSON 错误体，被 request.js blob 拦截器识别并提示（如"暂无数据可导出"）
         this.$message.error('导出失败')
       })
     },
