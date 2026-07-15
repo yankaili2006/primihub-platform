@@ -311,7 +311,7 @@ export default {
         type: 'warning'
       }).then(async() => {
         try {
-          const res = await deleteWhitelist(row.whitelistId)
+          const res = await deleteWhitelist({ id: row.whitelistId })
           if (res.code === 0) {
             this.$message.success('删除成功')
             this.fetchData()
