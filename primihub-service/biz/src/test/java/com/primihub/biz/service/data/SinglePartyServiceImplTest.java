@@ -153,10 +153,10 @@ public class SinglePartyServiceImplTest {
 
         assertEquals(0, result.getCode().intValue());
         Map<?, ?> map = (Map<?, ?>) result.getResult();
-        assertEquals(1, map.get("total"));
+        assertEquals(1L, map.get("total"));
         assertEquals(1, map.get("pageNo"));
         assertEquals(10, map.get("pageSize"));
-        assertEquals(Integer.valueOf(1), map.get("totalPage"));
+        assertEquals(1L, map.get("totalPage"));
         List<?> list = (List<?>) map.get("data");
         assertEquals(1, list.size());
     }
@@ -222,6 +222,8 @@ public class SinglePartyServiceImplTest {
     public void downloadResult_existingFile_writesResponse() throws Exception {
         SinglePartyTask task = createTask(TASK_UUID, 1);
         task.setResultFilePath("/tmp/test_result.csv");
+        // 下载仅在文件真实存在时设置 content-type; 建临时文件走成功分支
+        java.nio.file.Files.write(java.nio.file.Paths.get("/tmp/test_result.csv"), "a,b\n1,2\n".getBytes());
         when(singlePartyRepository.selectTaskByTaskId(TASK_UUID)).thenReturn(task);
 
         singlePartyService.downloadResult(response, TASK_UUID);

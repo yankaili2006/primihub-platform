@@ -5,8 +5,12 @@ import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.po.FederatedLearning;
 import com.primihub.biz.entity.data.po.FederatedLearningTask;
 import com.primihub.biz.entity.data.req.FederatedLearningReq;
+import com.primihub.biz.entity.data.req.DataComponentReq;
+import com.primihub.biz.entity.data.req.DataModelAndComponentReq;
 import com.primihub.biz.repository.primarydb.data.FederatedLearningPrRepository;
 import com.primihub.biz.repository.secondarydb.data.FederatedLearningRepository;
+import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
+import com.primihub.biz.service.data.DataModelService;
 import com.primihub.biz.service.sys.LogManagementService;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +27,7 @@ import java.util.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class FederatedLearningServiceImplTest {
 
     @Mock
@@ -34,6 +38,13 @@ public class FederatedLearningServiceImplTest {
 
     @Mock
     private FederatedLearningPrRepository federatedLearningPrRepository;
+
+    // createTask 现桥接真实 FL(node DAG), 需 mock 这两个依赖, 否则 NPE -> 返回失败
+    @Mock
+    private DataModelService dataModelService;
+
+    @Mock
+    private DataResourceRepository dataResourceRepository;
 
     @InjectMocks
     private FederatedLearningService federatedLearningService;
@@ -107,9 +118,26 @@ public class FederatedLearningServiceImplTest {
         return task;
     }
 
+    /** createTask 现桥接真实 FL(node DAG): stub getModelComponentReq/saveModelAndComponent/runTaskModel 走通happy path。 */
+    private void stubFlBridge() {
+        DataComponentReq start = new DataComponentReq();
+        start.setComponentCode("start"); start.setComponentId("s1"); start.setComponentValues(new ArrayList<>());
+        DataComponentReq ds = new DataComponentReq();
+        ds.setComponentCode("dataSet"); ds.setComponentId("d1"); ds.setComponentValues(new ArrayList<>());
+        DataComponentReq model = new DataComponentReq();
+        model.setComponentCode("model"); model.setComponentId("m1"); model.setComponentValues(new ArrayList<>());
+        DataModelAndComponentReq mr = new DataModelAndComponentReq();
+        mr.setModelComponents(new ArrayList<>(Arrays.asList(start, ds, model)));
+        when(dataModelService.getModelComponentReq(anyLong(), anyLong(), anyLong())).thenReturn(mr);
+        Map<String, Object> saved = new HashMap<>(); saved.put("modelId", 99L);
+        when(dataModelService.saveModelAndComponent(anyLong(), any())).thenReturn(BaseResultEntity.success(saved));
+        when(dataModelService.runTaskModel(anyLong(), anyLong())).thenReturn(BaseResultEntity.success());
+    }
+
     @Test
     public void createTask_withTrainingParams_savesAndReturnsTaskId() {
         FederatedLearningReq req = createReq(1, 1, 2);
+        stubFlBridge();
         when(federatedLearningPrRepository.saveFederatedLearning(any())).thenReturn(1);
         when(federatedLearningPrRepository.saveFederatedLearningTask(any())).thenReturn(1);
 
@@ -118,7 +146,8 @@ public class FederatedLearningServiceImplTest {
         assertEquals(0, result.getCode().intValue());
         Map<?, ?> map = (Map<?, ?>) result.getResult();
         assertNotNull(map.get("taskId"));
-        assertEquals("任务已创建，正在执行中...", map.get("message"));
+        // 真实FL桥接后 message 改为提交到节点(node gRPC FL), 非旧的"任务已创建，正在执行中..."
+        assertEquals("真实联邦学习已提交到节点", map.get("message"));
 
         verify(federatedLearningPrRepository).saveFederatedLearning(flCaptor.capture());
         FederatedLearning captured = flCaptor.getValue();
@@ -149,6 +178,7 @@ public class FederatedLearningServiceImplTest {
 
     @Test
     public void createTask_allAlgorithmTypes_succeed() {
+        stubFlBridge();
         int[][] combos = {{1, 1}, {1, 2}, {1, 3}, {2, 1}, {2, 2}, {2, 3}};
         for (int[] combo : combos) {
             FederatedLearningReq req = createReq(combo[0], combo[1], 1);
@@ -164,7 +194,9 @@ public class FederatedLearningServiceImplTest {
     }
 
     @Test
-    public void createTask_repositoryThrows_returnsFailure() {
+    public void createTask_noTemplateDag_returnsFailure() {
+        // 审计记录保存是 best-effort(异常被吞, 不阻断FL); 无模板 DAG(getModelComponentReq 返回 null,
+        // 未 stubFlBridge)时 createTask 返回失败 —— 这是当前真实的失败路径。
         FederatedLearningReq req = createReq(1, 1, 1);
         when(federatedLearningPrRepository.saveFederatedLearning(any()))
                 .thenThrow(new RuntimeException("DB error"));
@@ -172,7 +204,7 @@ public class FederatedLearningServiceImplTest {
         BaseResultEntity result = federatedLearningService.createTask(req, USER_ID);
 
         assertEquals(BaseResultEnum.FAILURE.getReturnCode(), result.getCode());
-        assertTrue(result.getMsg().contains("创建任务失败"));
+        assertTrue(result.getMsg().contains("模板模型 DAG"));
     }
 
     @Test
@@ -193,7 +225,7 @@ public class FederatedLearningServiceImplTest {
 
         assertEquals(0, result.getCode().intValue());
         Map<?, ?> map = (Map<?, ?>) result.getResult();
-        assertEquals(1, map.get("total"));
+        assertEquals(1L, map.get("total"));
         assertEquals(1, map.get("pageNo"));
         assertEquals(10, map.get("pageSize"));
     }
@@ -272,7 +304,7 @@ public class FederatedLearningServiceImplTest {
 
         assertEquals(0, result.getCode().intValue());
         Map<?, ?> map = (Map<?, ?>) result.getResult();
-        assertEquals(1, map.get("total"));
+        assertEquals(1L, map.get("total"));
         List<?> list = (List<?>) map.get("data");
         assertEquals(1, list.size());
     }
@@ -291,6 +323,8 @@ public class FederatedLearningServiceImplTest {
     public void downloadModel_existingFile_writesResponse() throws Exception {
         FederatedLearningTask task = createTask(FL_ID, TASK_UUID, 1);
         FederatedLearning fl = createFl(FL_ID, 1);
+        // 下载仅在文件真实存在时设置 content-type; 建临时文件走成功分支
+        java.nio.file.Files.write(java.nio.file.Paths.get(fl.getModelPath()), "model-bytes".getBytes());
 
         when(federatedLearningRepository.selectTaskByTaskId(MODEL_ID)).thenReturn(task);
         when(federatedLearningRepository.selectById(FL_ID)).thenReturn(fl);
@@ -329,6 +363,7 @@ public class FederatedLearningServiceImplTest {
     public void downloadResult_existingFile_writesResponse() throws Exception {
         FederatedLearningTask task = createTask(FL_ID, TASK_UUID, 1);
         task.setResultFilePath("/tmp/prediction.csv");
+        java.nio.file.Files.write(java.nio.file.Paths.get("/tmp/prediction.csv"), "a,b\n1,2\n".getBytes());
 
         when(federatedLearningRepository.selectTaskByTaskId(TASK_UUID)).thenReturn(task);
 
