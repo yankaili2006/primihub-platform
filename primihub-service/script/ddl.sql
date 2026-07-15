@@ -741,3 +741,402 @@ CREATE TABLE `sys_organ`  (
                               PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1000 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '机构信息' ROW_FORMAT = Dynamic;
 
+
+-- ==== [patch] 补全缺失表: sys_config + 19 功能表 (2026-07-15) ====
+  `id` BIGINT(20) NOT NULL AUTO_INCREMENT,
+  `config_group` VARCHAR(64)  DEFAULT NULL COMMENT '配置分组',
+  `config_key`   VARCHAR(128) DEFAULT NULL COMMENT '配置键',
+  `config_value` MEDIUMTEXT             COMMENT '配置值(JSON)',
+  `config_desc`  VARCHAR(255) DEFAULT NULL,
+  `config_type`  VARCHAR(32)  DEFAULT NULL,
+  `is_encrypted` TINYINT(1)   DEFAULT 0,
+  `created_by`   BIGINT(20)   DEFAULT NULL,
+  `created_at`   DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`   DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`), UNIQUE KEY `uk_group_key` (`config_group`,`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统配置(键值)';
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `data_difference` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `own_organ_id` varchar(255) DEFAULT NULL,
+  `own_resource_id` varchar(255) DEFAULT NULL,
+  `own_keyword` varchar(255) DEFAULT NULL,
+  `other_organ_id` varchar(255) DEFAULT NULL,
+  `other_resource_id` varchar(255) DEFAULT NULL,
+  `other_keyword` varchar(255) DEFAULT NULL,
+  `result_name` varchar(255) DEFAULT NULL,
+  `output_file_path_type` int(11) DEFAULT NULL,
+  `tag` varchar(255) DEFAULT NULL,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `data_difference_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `difference_id` bigint(20) DEFAULT NULL,
+  `task_id` varchar(255) DEFAULT NULL,
+  `task_state` int(11) DEFAULT '0',
+  `ascription` int(11) DEFAULT NULL,
+  `ascription_type` int(11) DEFAULT NULL,
+  `file_path` varchar(512) DEFAULT NULL,
+  `file_content` text,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `data_resource_auth_record` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `resource_id` varchar(255) DEFAULT NULL,
+  `auth_organ_id` varchar(255) DEFAULT NULL,
+  `auth_organ_name` varchar(255) DEFAULT NULL,
+  `auth_type` int(11) DEFAULT NULL,
+  `grouping` int(11) DEFAULT NULL,
+  `relevance` int(11) DEFAULT NULL,
+  `protection_status` int(11) DEFAULT NULL,
+  `auth_status` int(11) DEFAULT '0',
+  `apply_user_id` bigint(20) DEFAULT NULL,
+  `apply_user_name` varchar(255) DEFAULT NULL,
+  `approve_user_id` bigint(20) DEFAULT NULL,
+  `approve_user_name` varchar(255) DEFAULT NULL,
+  `approve_comment` text,
+  `approve_date` datetime DEFAULT NULL,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `data_union` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `own_organ_id` varchar(255) DEFAULT NULL,
+  `own_resource_id` varchar(255) DEFAULT NULL,
+  `own_keyword` varchar(255) DEFAULT NULL,
+  `other_organ_id` varchar(255) DEFAULT NULL,
+  `other_resource_id` varchar(255) DEFAULT NULL,
+  `other_keyword` varchar(255) DEFAULT NULL,
+  `result_name` varchar(255) DEFAULT NULL,
+  `output_file_path_type` int(11) DEFAULT NULL,
+  `tag` varchar(255) DEFAULT NULL,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `data_union_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `union_id` bigint(20) DEFAULT NULL,
+  `task_id` varchar(255) DEFAULT NULL,
+  `task_state` int(11) DEFAULT '0',
+  `ascription` int(11) DEFAULT NULL,
+  `ascription_type` int(11) DEFAULT NULL,
+  `file_path` varchar(512) DEFAULT NULL,
+  `file_content` text,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `federated_learning` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `task_name` varchar(255) DEFAULT NULL,
+  `task_type` int(11) DEFAULT NULL COMMENT '1=horizontal 2=vertical',
+  `algorithm_type` int(11) DEFAULT NULL,
+  `federated_type` int(11) DEFAULT NULL,
+  `project_id` bigint(20) DEFAULT NULL,
+  `resource_id` varchar(255) DEFAULT NULL,
+  `selected_features` text,
+  `algorithm_params` text,
+  `result_path` varchar(512) DEFAULT NULL,
+  `remarks` varchar(512) DEFAULT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `federated_learning_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fl_id` bigint(20) DEFAULT NULL,
+  `task_id` varchar(255) DEFAULT NULL,
+  `task_state` int(11) DEFAULT '0' COMMENT '0=init 1=running 2=success 3=fail 4=cancel',
+  `current_round` int(11) DEFAULT '0',
+  `total_rounds` int(11) DEFAULT '0',
+  `accuracy` double DEFAULT NULL,
+  `loss` double DEFAULT NULL,
+  `result_rows` bigint(20) DEFAULT NULL,
+  `result_file_path` varchar(512) DEFAULT NULL,
+  `execution_log` text,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `federated_stats_task_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `task_id` bigint(20) DEFAULT NULL,
+  `task_name` varchar(255) DEFAULT NULL,
+  `project_id` bigint(20) DEFAULT NULL,
+  `stats_type` int(11) DEFAULT NULL,
+  `algorithm_type` int(11) DEFAULT NULL,
+  `task_state` int(11) DEFAULT '0',
+  `task_param` text,
+  `result_type` int(11) DEFAULT NULL,
+  `result_data` text,
+  `result_file` varchar(512) DEFAULT NULL,
+  `result_summary` text,
+  `row_count` bigint(20) DEFAULT NULL,
+  `error_message` text,
+  `created_by` bigint(20) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `fl_workflow` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `workflow_id` varchar(64) DEFAULT NULL,
+  `workflow_name` varchar(255) DEFAULT NULL,
+  `participants` text,
+  `dataset_id` varchar(141) DEFAULT NULL,
+  `dataset_name` varchar(255) DEFAULT NULL,
+  `rounds` int(11) DEFAULT '100',
+  `learning_rate` double DEFAULT '0.01',
+  `nodes` mediumtext,
+  `status` tinyint(4) DEFAULT '0',
+  `result_summary` varchar(1000) DEFAULT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
+  `user_name` varchar(64) DEFAULT NULL,
+  `organ_id` varchar(64) DEFAULT NULL,
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_wf` (`workflow_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联邦建模工作流';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `fl_workflow_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `workflow_id` varchar(64) DEFAULT NULL,
+  `log_level` varchar(16) DEFAULT 'info',
+  `log_content` varchar(2000) DEFAULT NULL,
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_wf` (`workflow_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='联邦建模工作流日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `project_ledger_export` (
+  `export_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `export_type` varchar(16) DEFAULT NULL,
+  `export_format` varchar(16) DEFAULT NULL,
+  `project_count` int(11) DEFAULT '0',
+  `project_ids` varchar(4000) DEFAULT NULL,
+  `export_status` tinyint(4) DEFAULT '1',
+  `export_user_id` bigint(20) DEFAULT NULL,
+  `export_user_name` varchar(64) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `file_content` mediumtext,
+  `error_msg` varchar(500) DEFAULT NULL,
+  `export_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`export_id`),
+  KEY `idx_user` (`export_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目台账导出记录';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `project_permission` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `project_id` varchar(141) DEFAULT NULL,
+  `project_name` varchar(255) DEFAULT NULL,
+  `organ_id` varchar(64) DEFAULT NULL,
+  `organ_name` varchar(255) DEFAULT NULL,
+  `permission_type` varchar(32) DEFAULT NULL,
+  `permission_status` tinyint(4) DEFAULT '0',
+  `template_id` bigint(20) DEFAULT NULL,
+  `resource_ids` varchar(2000) DEFAULT NULL,
+  `grant_date` datetime DEFAULT NULL,
+  `expire_date` datetime DEFAULT NULL,
+  `grant_user_id` bigint(20) DEFAULT NULL,
+  `grant_user_name` varchar(64) DEFAULT NULL,
+  `revoke_user_id` bigint(20) DEFAULT NULL,
+  `revoke_user_name` varchar(64) DEFAULT NULL,
+  `remark` varchar(500) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_project` (`project_id`),
+  KEY `idx_status` (`permission_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目权限';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `project_permission_template` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `template_name` varchar(255) DEFAULT NULL,
+  `template_desc` varchar(500) DEFAULT NULL,
+  `permissions` varchar(255) DEFAULT NULL,
+  `create_user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目权限模板';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `project_result` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `project_id` varchar(141) DEFAULT NULL,
+  `project_name` varchar(255) DEFAULT NULL,
+  `task_id` varchar(141) DEFAULT NULL,
+  `task_name` varchar(255) DEFAULT NULL,
+  `result_type` varchar(32) DEFAULT NULL,
+  `result_name` varchar(255) DEFAULT NULL,
+  `result_desc` varchar(500) DEFAULT NULL,
+  `save_status` tinyint(4) DEFAULT '0',
+  `file_size` bigint(20) DEFAULT NULL,
+  `file_md5` varchar(64) DEFAULT NULL,
+  `save_path` varchar(500) DEFAULT NULL,
+  `save_directory` varchar(255) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `save_format` varchar(32) DEFAULT NULL,
+  `file_content` mediumtext,
+  `remark` varchar(500) DEFAULT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
+  `organ_id` varchar(64) DEFAULT NULL,
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `save_date` datetime DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_project` (`project_id`),
+  KEY `idx_status` (`save_status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目结果保存';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `project_result_config` (
+  `id` bigint(20) NOT NULL,
+  `default_path` varchar(255) DEFAULT '/data/results',
+  `auto_save` tinyint(4) DEFAULT '0',
+  `retention_days` int(11) DEFAULT '30',
+  `max_storage_gb` int(11) DEFAULT '100',
+  `update_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目结果保存配置';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `single_party` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `algorithm_type` int(11) DEFAULT NULL,
+  `task_name` varchar(255) DEFAULT NULL,
+  `project_id` bigint(20) DEFAULT NULL,
+  `resource_id` varchar(255) DEFAULT NULL,
+  `selected_features` text,
+  `algorithm_params` text,
+  `result_path` varchar(512) DEFAULT NULL,
+  `remarks` varchar(512) DEFAULT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `single_party_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `sp_id` bigint(20) DEFAULT NULL,
+  `task_id` varchar(255) DEFAULT NULL,
+  `task_state` int(11) DEFAULT '0',
+  `result_rows` bigint(20) DEFAULT NULL,
+  `result_file_path` varchar(512) DEFAULT NULL,
+  `execution_log` text,
+  `is_del` tinyint(1) DEFAULT '0',
+  `create_date` datetime DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `sp_ext_log` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `task_id` varchar(141) DEFAULT NULL,
+  `task_name` varchar(255) DEFAULT NULL,
+  `task_category` varchar(16) DEFAULT NULL,
+  `log_level` varchar(16) DEFAULT 'INFO',
+  `log_content` varchar(2000) DEFAULT NULL,
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_task` (`task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='单方作业学习日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `sp_ext_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `task_id` varchar(141) DEFAULT NULL,
+  `task_name` varchar(255) DEFAULT NULL,
+  `task_category` varchar(16) DEFAULT 'PREPROCESS',
+  `algorithm_type` int(11) DEFAULT NULL,
+  `sub_type` varchar(32) DEFAULT NULL,
+  `resource_id` varchar(141) DEFAULT NULL,
+  `resource_name` varchar(255) DEFAULT NULL,
+  `params` text,
+  `task_state` tinyint(4) DEFAULT '0',
+  `progress` int(11) DEFAULT '0',
+  `result_content` mediumtext,
+  `result_path` varchar(500) DEFAULT NULL,
+  `error_msg` varchar(1000) DEFAULT NULL,
+  `remark` varchar(500) DEFAULT NULL,
+  `user_id` bigint(20) DEFAULT NULL,
+  `user_name` varchar(64) DEFAULT NULL,
+  `organ_id` varchar(64) DEFAULT NULL,
+  `create_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `is_del` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `idx_task` (`task_id`),
+  KEY `idx_cat` (`task_category`),
+  KEY `idx_state` (`task_state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='单方作业预处理/脚本任务';
+/*!40101 SET character_set_client = @saved_cs_client */;
