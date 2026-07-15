@@ -61,6 +61,19 @@ public class FederatedLearningController {
         return singlePartyExtService.importModel(reg, userId, null);
     }
 
+    @ApiOperation(value = "联邦学习-导入模型列表(FLMODEL 登记)")
+    @GetMapping("listImportedModels")
+    public BaseResultEntity listImportedModels(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") Integer pageNo,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        Map<String, Object> query = new HashMap<>();
+        query.put("keyword", keyword);
+        query.put("pageNo", pageNo);
+        query.put("pageSize", pageSize);
+        return singlePartyExtService.listModel(query);
+    }
+
     /**
      * 创建并运行联邦学习任务
      */
