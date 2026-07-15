@@ -152,7 +152,7 @@
 </template>
 
 <script>
-import { getWhitelistAccessLogPage, getWhitelistAccessLogDetail, getWhitelistAccessStatistics } from '@/api/whitelist'
+import { getWhitelistAccessLogPage, getWhitelistAccessLogDetail, getWhitelistAccessStatistics, exportAccessLog } from '@/api/whitelist'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -241,10 +241,15 @@ export default {
       }
     },
     handleExport() {
-      this.$message({
-        type: 'info',
-        message: '导出功能开发中...'
-      })
+      exportAccessLog(this.searchForm).then(res => {
+        const blob = new Blob([res], { type: 'application/octet-stream' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = '白名单访问日志_' + Date.now() + '.csv'
+        link.click()
+        URL.revokeObjectURL(link.href)
+        this.$message.success('导出成功')
+      }).catch(() => { this.$message.error('导出失败，请稍后重试') })
     }
   }
 }
