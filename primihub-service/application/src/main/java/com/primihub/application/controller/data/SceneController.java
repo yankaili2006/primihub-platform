@@ -105,13 +105,13 @@ public class SceneController {
     @ApiOperation("警务数据融合-密文交换(批量)")
     @PostMapping("/policeFusion/exchange/batch")
     public BaseResultEntity policeBatchExchange(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("police_fusion", req, getCurrentUserId());
+        return sceneService.exchangeData("police_fusion", req, getCurrentUserId(), "batch");
     }
 
     @ApiOperation("警务数据融合-密文交换(实时)")
     @PostMapping("/policeFusion/exchange/realtime")
     public BaseResultEntity policeRealtimeExchange(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("police_fusion", req, getCurrentUserId());
+        return sceneService.exchangeData("police_fusion", req, getCurrentUserId(), "realtime");
     }
 
     // ==================== 警务数据融合-数据源对接 ====================
@@ -285,25 +285,27 @@ public class SceneController {
     @ApiOperation("电子证件-数据接入")
     @PostMapping("/electronicCert/import")
     public BaseResultEntity importData(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+        return sceneService.importData("electronic_cert", req, getCurrentUserId());
     }
 
     @ApiOperation("电子证件-数据导出")
     @PostMapping("/electronicCert/export")
     public BaseResultEntity exportData(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+        Long taskId = req.get("taskId") != null ? Long.valueOf(req.get("taskId").toString()) : null;
+        String batchNo = req.get("batchNo") != null ? req.get("batchNo").toString() : null;
+        return sceneService.exportImportedData("electronic_cert", taskId, batchNo);
     }
 
     @ApiOperation("电子证件-密文交换(批量)")
     @PostMapping("/electronicCert/exchange/batch")
     public BaseResultEntity batchExchange(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+        return sceneService.exchangeData("electronic_cert", req, getCurrentUserId(), "batch");
     }
 
     @ApiOperation("电子证件-密文交换(实时)")
     @PostMapping("/electronicCert/exchange/realtime")
     public BaseResultEntity realtimeExchange(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+        return sceneService.exchangeData("electronic_cert", req, getCurrentUserId(), "realtime");
     }
 
     @ApiOperation("电子证件-流程执行日志导出(CSV)")

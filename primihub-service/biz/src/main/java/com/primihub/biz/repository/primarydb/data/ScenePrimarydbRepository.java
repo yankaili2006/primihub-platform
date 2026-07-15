@@ -3,6 +3,7 @@ package com.primihub.biz.repository.primarydb.data;
 import com.primihub.biz.entity.data.po.SceneApiConfig;
 import com.primihub.biz.entity.data.po.SceneDataSource;
 import com.primihub.biz.entity.data.po.SceneDataSyncRecord;
+import com.primihub.biz.entity.data.po.SceneImportedData;
 import com.primihub.biz.entity.data.po.SceneKeyConfig;
 import com.primihub.biz.entity.data.po.SceneTask;
 import org.apache.ibatis.annotations.Param;
@@ -67,4 +68,14 @@ public interface ScenePrimarydbRepository {
     int insertSceneDataSyncRecord(SceneDataSyncRecord record);
 
     List<SceneDataSyncRecord> selectSceneDataSyncRecordList(@Param("limit") int limit);
+
+    // ========== 场景机构数据接入(真实落库) ==========
+
+    int batchInsertSceneImportedData(@Param("list") List<SceneImportedData> list);
+
+    List<SceneImportedData> selectSceneImportedData(@Param("sceneType") String sceneType,
+                                                    @Param("taskId") Long taskId,
+                                                    @Param("batchNo") String batchNo);
+
+    int countSceneImportedData(@Param("sceneType") String sceneType, @Param("taskId") Long taskId);
 }

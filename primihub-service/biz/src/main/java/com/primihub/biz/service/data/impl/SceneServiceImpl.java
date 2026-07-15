@@ -7,6 +7,7 @@ import com.primihub.biz.entity.base.PageParam;
 import com.primihub.biz.entity.data.po.SceneApiConfig;
 import com.primihub.biz.entity.data.po.SceneDataSource;
 import com.primihub.biz.entity.data.po.SceneDataSyncRecord;
+import com.primihub.biz.entity.data.po.SceneImportedData;
 import com.primihub.biz.entity.data.po.SceneKeyConfig;
 import com.primihub.biz.entity.data.po.SceneTask;
 import com.primihub.biz.entity.data.po.DataPsiTask;
@@ -228,6 +229,175 @@ public class SceneServiceImpl implements SceneService {
             return "\"" + s.replace("\"", "\"\"") + "\"";
         }
         return s;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity importData(String sceneType, Map<String, Object> req, Long userId) {
+        try {
+            // 接受 rows(JSON数组) 或 data(同义); 每元素为一行(对象/标量均可)
+            Object rowsObj = req.get("rows") != null ? req.get("rows") : req.get("data");
+            List<?> rows;
+            if (rowsObj instanceof List) {
+                rows = (List<?>) rowsObj;
+            } else if (rowsObj instanceof String && !((String) rowsObj).trim().isEmpty()) {
+                // 兼容传入 JSON 字符串
+                Object parsed = JSON.parse((String) rowsObj);
+                rows = parsed instanceof List ? (List<?>) parsed : java.util.Collections.singletonList(parsed);
+            } else {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少导入数据 rows");
+            }
+            if (rows.isEmpty()) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "导入数据为空");
+            }
+
+            // 建一条 import 任务记录, 便于在执行日志中追溯
+            SceneTask task = new SceneTask();
+            task.setSceneType(sceneType);
+            task.setTaskName(req.get("taskName") != null ? req.get("taskName").toString() : "机构数据接入");
+            task.setTaskType("import");
+            task.setParams("{\"rowCount\":" + rows.size() + "}");
+            task.setTaskState(2);   // 成功
+            task.setCreatedBy(userId);
+            sceneRepository.insertSceneTask(task);
+
+            String batchNo = "IMP" + task.getId();
+            List<SceneImportedData> batch = new ArrayList<>(rows.size());
+            for (int i = 0; i < rows.size(); i++) {
+                SceneImportedData d = new SceneImportedData();
+                d.setSceneType(sceneType);
+                d.setTaskId(task.getId());
+                d.setBatchNo(batchNo);
+                d.setRowIndex(i);
+                d.setRowJson(JSON.toJSONString(rows.get(i)));
+                d.setCreatedBy(userId);
+                batch.add(d);
+            }
+            sceneRepository.batchInsertSceneImportedData(batch);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("taskId", task.getId());
+            result.put("batchNo", batchNo);
+            result.put("rowCount", rows.size());
+            result.put("engine", "real-db-import");
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("机构数据接入失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "导入失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public BaseResultEntity exportImportedData(String sceneType, Long taskId, String batchNo) {
+        try {
+            List<SceneImportedData> rows = sceneRepository.selectSceneImportedData(sceneType, taskId, batchNo);
+            // 动态列: 汇总所有行 JSON 的 key 作为表头(保持有序)
+            java.util.LinkedHashSet<String> cols = new java.util.LinkedHashSet<>();
+            List<Map<String, Object>> parsed = new ArrayList<>(rows.size());
+            for (SceneImportedData r : rows) {
+                Object o = r.getRowJson() != null ? JSON.parse(r.getRowJson()) : null;
+                if (o instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> m = (Map<String, Object>) o;
+                    cols.addAll(m.keySet());
+                    parsed.add(m);
+                } else {
+                    cols.add("value");
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("value", o);
+                    parsed.add(m);
+                }
+            }
+            StringBuilder csv = new StringBuilder();
+            csv.append("row_index");
+            for (String c : cols) csv.append(',').append(csvCell(c));
+            csv.append('\n');
+            for (int i = 0; i < parsed.size(); i++) {
+                csv.append(i);
+                for (String c : cols) csv.append(',').append(csvCell(parsed.get(i).get(c)));
+                csv.append('\n');
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("fileName", sceneType + "_imported_data.csv");
+            result.put("rowCount", rows.size());
+            result.put("csv", csv.toString());
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("机构数据导出失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "导出失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity exchangeData(String sceneType, Map<String, Object> req, Long userId, String mode) {
+        try {
+            Long keyId = req.get("keyId") != null ? Long.valueOf(req.get("keyId").toString()) : null;
+            if (keyId == null) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少密钥ID keyId");
+            }
+            Object rowsObj = req.get("rows") != null ? req.get("rows") : req.get("data");
+            List<?> rows;
+            if (rowsObj instanceof List) {
+                rows = (List<?>) rowsObj;
+            } else if (rowsObj instanceof String && !((String) rowsObj).trim().isEmpty()) {
+                Object parsed = JSON.parse((String) rowsObj);
+                rows = parsed instanceof List ? (List<?>) parsed : java.util.Collections.singletonList(parsed);
+            } else {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少待交换数据 rows");
+            }
+            if (rows.isEmpty()) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "待交换数据为空");
+            }
+
+            String taskType = "realtime".equalsIgnoreCase(mode) ? "exchange_realtime" : "exchange_batch";
+            SceneTask task = new SceneTask();
+            task.setSceneType(sceneType);
+            task.setTaskName(req.get("taskName") != null ? req.get("taskName").toString() : "密文数据安全交换");
+            task.setTaskType(taskType);
+            task.setTaskState(1);   // 进行中
+            task.setCreatedBy(userId);
+            sceneRepository.insertSceneTask(task);
+
+            String batchNo = "EXC" + task.getId();
+            List<SceneImportedData> batch = new ArrayList<>(rows.size());
+            for (int i = 0; i < rows.size(); i++) {
+                String plain = JSON.toJSONString(rows.get(i));
+                // 复用真实 AES-256-GCM 加密(SceneKeyConfig 密钥)
+                BaseResultEntity enc = encryptData(keyId, plain);
+                if (enc.getCode() != 0 || !(enc.getResult() instanceof Map)) {
+                    throw new IllegalStateException("第" + i + "行加密失败: " + enc.getMsg());
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> em = (Map<String, Object>) enc.getResult();
+                SceneImportedData d = new SceneImportedData();
+                d.setSceneType(sceneType);
+                d.setTaskId(task.getId());
+                d.setBatchNo(batchNo);
+                d.setRowIndex(i);
+                // 落库密文(不落明文), 标注算法/密钥
+                d.setRowJson(JSON.toJSONString(em));
+                d.setCreatedBy(userId);
+                batch.add(d);
+            }
+            sceneRepository.batchInsertSceneImportedData(batch);
+
+            task.setTaskState(2);   // 成功
+            task.setResultData("{\"engine\":\"AES-256-GCM\",\"batchNo\":\"" + batchNo
+                    + "\",\"count\":" + rows.size() + ",\"mode\":\"" + mode + "\"}");
+            sceneRepository.updateSceneTask(task);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("taskId", task.getId());
+            result.put("batchNo", batchNo);
+            result.put("count", rows.size());
+            result.put("mode", mode);
+            result.put("engine", "AES-256-GCM");
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("密文数据交换失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "交换失败: " + e.getMessage());
+        }
     }
 
     @Override

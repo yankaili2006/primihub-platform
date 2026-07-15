@@ -17,6 +17,15 @@ public interface SceneService {
     /** 导出流程执行日志(真实 SceneTask 记录)为 CSV。 */
     BaseResultEntity exportTaskLog(String sceneType, String taskType);
 
+    /** 机构数据接入: 解析上传数据行, 真实落库到 scene_imported_data, 返回导入行数/批次号/taskId。 */
+    BaseResultEntity importData(String sceneType, Map<String, Object> req, Long userId);
+
+    /** 机构数据导出: 查 scene_imported_data 真实数据行, 汇总为 CSV 返回。 */
+    BaseResultEntity exportImportedData(String sceneType, Long taskId, String batchNo);
+
+    /** 密文数据安全交换: 用指定密钥对每行数据做真实 AES-256-GCM 加密并落库, mode=batch|realtime。 */
+    BaseResultEntity exchangeData(String sceneType, Map<String, Object> req, Long userId, String mode);
+
     BaseResultEntity saveApiConfig(String sceneType, Map<String, Object> req, Long userId);
     BaseResultEntity getApiConfigList(String sceneType);
     BaseResultEntity deleteApiConfig(Long id);

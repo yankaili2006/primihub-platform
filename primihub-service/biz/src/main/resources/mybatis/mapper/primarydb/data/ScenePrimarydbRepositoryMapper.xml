@@ -219,4 +219,42 @@
         SELECT * FROM scene_data_sync_record ORDER BY sync_time DESC LIMIT #{limit}
     </select>
 
+    <!-- ========== 场景机构数据接入(真实落库) ========== -->
+    <resultMap id="SceneImportedDataMap" type="com.primihub.biz.entity.data.po.SceneImportedData">
+        <id column="id" property="id"/>
+        <result column="scene_type" property="sceneType"/>
+        <result column="task_id" property="taskId"/>
+        <result column="batch_no" property="batchNo"/>
+        <result column="row_index" property="rowIndex"/>
+        <result column="row_json" property="rowJson"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <insert id="batchInsertSceneImportedData">
+        INSERT INTO scene_imported_data (scene_type, task_id, batch_no, row_index, row_json, created_by)
+        VALUES
+        <foreach collection="list" item="it" separator=",">
+            (#{it.sceneType}, #{it.taskId}, #{it.batchNo}, #{it.rowIndex}, #{it.rowJson}, #{it.createdBy})
+        </foreach>
+    </insert>
+
+    <select id="selectSceneImportedData" resultMap="SceneImportedDataMap">
+        SELECT * FROM scene_imported_data
+        <where>
+            <if test="sceneType != null and sceneType != ''">AND scene_type = #{sceneType}</if>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+            <if test="batchNo != null and batchNo != ''">AND batch_no = #{batchNo}</if>
+        </where>
+        ORDER BY task_id, row_index
+    </select>
+
+    <select id="countSceneImportedData" resultType="int">
+        SELECT COUNT(*) FROM scene_imported_data
+        <where>
+            <if test="sceneType != null and sceneType != ''">AND scene_type = #{sceneType}</if>
+            <if test="taskId != null">AND task_id = #{taskId}</if>
+        </where>
+    </select>
+
 </mapper>
