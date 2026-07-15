@@ -26,6 +26,9 @@ public interface SceneService {
     /** 密文数据安全交换: 用指定密钥对每行数据做真实 AES-256-GCM 加密并落库, mode=batch|realtime。 */
     BaseResultEntity exchangeData(String sceneType, Map<String, Object> req, Long userId, String mode);
 
+    /** 特征转换: 对特征字段归一化后做确定性 SHA-256 令牌化(可用于 PSI 隐私比对), 落库并返回令牌。 */
+    BaseResultEntity convertFeature(String sceneType, Map<String, Object> req, Long userId);
+
     BaseResultEntity saveApiConfig(String sceneType, Map<String, Object> req, Long userId);
     BaseResultEntity getApiConfigList(String sceneType);
     BaseResultEntity deleteApiConfig(Long id);

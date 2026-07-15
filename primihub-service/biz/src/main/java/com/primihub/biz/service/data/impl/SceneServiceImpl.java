@@ -401,6 +401,107 @@ public class SceneServiceImpl implements SceneService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity convertFeature(String sceneType, Map<String, Object> req, Long userId) {
+        try {
+            Object rowsObj = req.get("rows") != null ? req.get("rows") : req.get("data");
+            List<?> rows;
+            if (rowsObj instanceof List) {
+                rows = (List<?>) rowsObj;
+            } else if (rowsObj instanceof String && !((String) rowsObj).trim().isEmpty()) {
+                Object parsed = JSON.parse((String) rowsObj);
+                rows = parsed instanceof List ? (List<?>) parsed : java.util.Collections.singletonList(parsed);
+            } else {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "缺少待转换特征 rows");
+            }
+            if (rows.isEmpty()) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "待转换特征为空");
+            }
+            // 参与令牌化的字段(默认全字段); 指定 featureFields 则只用这些字段, 保证跨方可比对齐
+            List<String> featureFields = new ArrayList<>();
+            Object ff = req.get("featureFields");
+            if (ff instanceof List) {
+                for (Object o : (List<?>) ff) if (o != null) featureFields.add(o.toString());
+            } else if (ff instanceof String && !((String) ff).trim().isEmpty()) {
+                for (String s : ((String) ff).split(",")) if (!s.trim().isEmpty()) featureFields.add(s.trim());
+            }
+            // 可选盐(HMAC 语义): 同一比对域两方需用相同 salt, 否则令牌不可比
+            String salt = req.get("salt") != null ? req.get("salt").toString() : "";
+
+            SceneTask task = new SceneTask();
+            task.setSceneType(sceneType);
+            task.setTaskName(req.get("taskName") != null ? req.get("taskName").toString() : "特征转换");
+            task.setTaskType("feature_convert");
+            task.setTaskState(1);
+            task.setCreatedBy(userId);
+            sceneRepository.insertSceneTask(task);
+
+            String batchNo = "FEA" + task.getId();
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            List<SceneImportedData> batch = new ArrayList<>(rows.size());
+            List<String> tokens = new ArrayList<>(rows.size());
+            for (int i = 0; i < rows.size(); i++) {
+                String token = featureToken(md, rows.get(i), featureFields, salt);
+                tokens.add(token);
+                Map<String, Object> rec = new LinkedHashMap<>();
+                rec.put("featureToken", token);
+                rec.put("source", rows.get(i));
+                SceneImportedData d = new SceneImportedData();
+                d.setSceneType(sceneType);
+                d.setTaskId(task.getId());
+                d.setBatchNo(batchNo);
+                d.setRowIndex(i);
+                d.setRowJson(JSON.toJSONString(rec));
+                d.setCreatedBy(userId);
+                batch.add(d);
+            }
+            sceneRepository.batchInsertSceneImportedData(batch);
+
+            task.setTaskState(2);
+            task.setResultData("{\"engine\":\"deterministic-feature-tokenization(SHA-256)\",\"batchNo\":\""
+                    + batchNo + "\",\"count\":" + rows.size() + "}");
+            sceneRepository.updateSceneTask(task);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("taskId", task.getId());
+            result.put("batchNo", batchNo);
+            result.put("count", rows.size());
+            result.put("tokens", tokens);
+            result.put("engine", "deterministic-feature-tokenization(SHA-256)");
+            result.put("note", "确定性特征令牌化(SHA-256), 可用于 PSI 隐私比对; 非ML生物特征提取");
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("特征转换失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "特征转换失败: " + e.getMessage());
+        }
+    }
+
+    /** 归一化特征字段(排序去空白, 大小写归一)后 SHA-256 令牌化, 保证跨方对相同特征产出相同令牌。 */
+    private String featureToken(java.security.MessageDigest md, Object row, List<String> featureFields, String salt) {
+        java.util.TreeMap<String, String> norm = new java.util.TreeMap<>();
+        if (row instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> m = (Map<String, Object>) row;
+            for (Map.Entry<String, Object> e : m.entrySet()) {
+                if (!featureFields.isEmpty() && !featureFields.contains(e.getKey())) continue;
+                String v = e.getValue() == null ? "" : e.getValue().toString().trim().toLowerCase();
+                norm.put(e.getKey().trim().toLowerCase(), v);
+            }
+        } else {
+            norm.put("value", row == null ? "" : row.toString().trim().toLowerCase());
+        }
+        StringBuilder sb = new StringBuilder(salt).append('|');
+        for (Map.Entry<String, String> e : norm.entrySet()) {
+            sb.append(e.getKey()).append('=').append(e.getValue()).append(';');
+        }
+        md.reset();
+        byte[] digest = md.digest(sb.toString().getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder(digest.length * 2);
+        for (byte b : digest) hex.append(String.format("%02x", b));
+        return hex.toString();
+    }
+
+    @Override
     public BaseResultEntity getTaskDetail(Long taskId) {
         try {
             SceneTask task = sceneRepository.selectSceneTaskById(taskId);

@@ -212,7 +212,7 @@ public class SceneController {
     @ApiOperation("电子证件-特征转换")
     @PostMapping("/electronicCert/feature/convert")
     public BaseResultEntity convertFeature(@RequestBody Map<String, Object> req) {
-        return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+        return sceneService.convertFeature("electronic_cert", req, getCurrentUserId());
     }
 
     @ApiOperation("电子证件-隐私比对")
