@@ -190,6 +190,9 @@
       @close="handleCreateWorkflowDialogClose"
     >
       <el-form ref="workflowForm" :model="workflowFormData" :rules="workflowFormRules" label-width="120px">
+        <el-form-item label="工作流标题" prop="workflowTitle">
+          <el-input v-model="workflowFormData.workflowTitle" placeholder="请输入工作流标题" maxlength="128" show-word-limit />
+        </el-form-item>
         <el-form-item label="工作流类型" prop="workflowType">
           <el-select v-model="workflowFormData.workflowType" placeholder="请选择" style="width: 100%;">
             <el-option label="接入申请" value="ACCESS_APPLICATION" />
@@ -366,6 +369,7 @@ export default {
       createWorkflowDialogVisible: false,
       workflowFormData: {},
       workflowFormRules: {
+        workflowTitle: [{ required: true, message: '请输入工作流标题', trigger: 'blur' }],
         workflowType: [{ required: true, message: '请选择工作流类型', trigger: 'change' }],
         priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
         requestDescription: [{ required: true, message: '请输入申请描述', trigger: 'blur' }]
