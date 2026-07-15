@@ -601,4 +601,31 @@ public class DataProjectService {
         }
         return BaseResultEntity.success(dataDerivationResourceVos);
     }
+
+    public byte[] exportProjectLedger(String projectIds) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("项目ID,项目名称,项目描述,创建机构,创建人,项目状态,创建时间\n");
+        if (StringUtils.isNotBlank(projectIds)) {
+            String[] ids = projectIds.split(",");
+            for (String id : ids) {
+                try {
+                    DataProject project = dataProjectRepository.selectDataProjectById(Long.parseLong(id.trim()));
+                    if (project != null) {
+                        sb.append(project.getProjectId()).append(",");
+                        sb.append(project.getProjectName()).append(",");
+                        sb.append(project.getProjectDesc()).append(",");
+                        sb.append(project.getCreatedOrganName()).append(",");
+                        sb.append(project.getCreatedUsername()).append(",");
+                        String statusStr = project.getStatus() == null ? "" :
+                            new String[]{"审核中", "可用", "关闭"}[project.getStatus()];
+                        sb.append(statusStr).append(",");
+                        sb.append(project.getCreateDate() != null ? project.getCreateDate().toString() : "").append("\n");
+                    }
+                } catch (Exception e) {
+                    log.error("导出项目失败 id={}", id, e);
+                }
+            }
+        }
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
 }
