@@ -10,7 +10,7 @@ name: arm64-deploy-verify
 #       所有步骤 working-directory 指向 arm64-deploy。
 on:
   push:
-    branches: [ ci/arm-images, main ]
+    branches: [ develop, main ]
     paths: [ 'arm64-deploy/**', '.github/workflows/arm64-deploy-verify.yml' ]
   workflow_dispatch:
 
