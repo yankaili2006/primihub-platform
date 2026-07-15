@@ -157,10 +157,10 @@ public class FederatedQueryServiceImplTest {
             Map<String, Object> req = new HashMap<>();
             req.put("taskName", "test-" + algo);
             req.put("algorithm", algo);
-            when(queryTaskRepository.insertQueryTask(any())).thenAnswer(inv -> {
+            doAnswer(inv -> {
                 ((FederatedQueryTask) inv.getArgument(0)).setId(TASK_ID);
                 return null;
-            });
+            }).when(queryTaskRepository).insertQueryTask(any());
             BaseResultEntity result = federatedQueryService.createQuery(req, USER_ID);
             assertEquals(algo + " should succeed", 0, result.getCode().intValue());
         }
@@ -442,7 +442,7 @@ public class FederatedQueryServiceImplTest {
     }
 
     @Test
-    public void exportLogs_emptyLogs_writesHeaderOnly() {
+    public void exportLogs_emptyLogs_writesHeaderOnly() throws Exception {
         LogExportReq req = new LogExportReq();
         req.setTaskId(TASK_ID);
         when(queryTaskRepository.selectQueryLogList(any())).thenReturn(Collections.emptyList());
