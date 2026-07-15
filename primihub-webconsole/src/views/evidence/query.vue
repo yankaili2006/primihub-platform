@@ -539,11 +539,11 @@ export default {
       this.verifyDialogVisible = true
     },
     downloadCert(row) {
-      downloadCertFile({ id: row.evidenceId }).then(res => {
+      downloadCertFile({ id: row.id || row.evidenceId }).then(res => {
         const blob = new Blob([res], { type: 'application/octet-stream' })
         const link = document.createElement('a')
         link.href = URL.createObjectURL(blob)
-        link.download = `evidence_cert_${row.evidenceId}.txt`
+        link.download = `evidence_cert_${row.id || row.evidenceId}.txt`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)

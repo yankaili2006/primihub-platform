@@ -575,11 +575,11 @@ export default {
       }
     },
     downloadTimestamp(row) {
-      downloadTimestampFile({ id: row.timestampId }).then(res => {
+      downloadTimestampFile({ id: row.id || row.timestampId }).then(res => {
         const blob = new Blob([res], { type: 'application/octet-stream' })
         const link = document.createElement('a')
         link.href = URL.createObjectURL(blob)
-        link.download = `timestamp_cert_${row.timestampId}.txt`
+        link.download = `timestamp_cert_${row.id || row.timestampId}.txt`
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
