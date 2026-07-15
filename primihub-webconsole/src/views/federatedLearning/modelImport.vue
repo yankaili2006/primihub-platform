@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import { importModel, getModelList } from '@/api/federatedLearning'
+import { importModel, listImportedModels } from '@/api/federatedLearning'
 
 export default {
   name: 'FederatedModelImport',
@@ -84,18 +84,24 @@ export default {
     },
     // 缺陷整改：导入历史改从真实模型列表加载（原写死 3 行 mock）
     loadImportHistory() {
-      getModelList({ modelType: 'imported', pageNo: 1, pageSize: 100 }).then(res => {
+      // 读 FLMODEL 登记(importModel 真正写入处), 而非无关的真实 FL 模型表
+      listImportedModels({ pageNo: 1, pageSize: 100 }).then(res => {
         const r = (res && res.result) || {}
         const list = r.list || r.data || (Array.isArray(r) ? r : [])
-        this.importHistory = (list || []).map(m => ({
-          modelName: m.modelName,
-          modelType: m.modelType,
-          fileName: m.fileName || m.fileUrl || '',
-          fileSize: m.fileSize || '',
-          importTime: m.createTime || m.importTime || '',
-          status: m.status || 'success',
-          statusText: m.statusText || '成功'
-        }))
+        this.importHistory = (list || []).map(m => {
+          let p = {}
+          try { p = m.params ? JSON.parse(m.params) : {} } catch (e) { p = {} }
+          const size = p.fileSize
+          return {
+            modelName: m.taskName || m.modelName,
+            modelType: m.subType || m.modelType,
+            fileName: p.fileName || m.fileName || '',
+            fileSize: size ? (size / 1024 / 1024).toFixed(1) + 'MB' : '',
+            importTime: m.createDate || m.createTime || m.importTime || '',
+            status: 'success',
+            statusText: '成功'
+          }
+        })
       }).catch(() => { this.importHistory = [] })
     },
     getStatusType(status) {

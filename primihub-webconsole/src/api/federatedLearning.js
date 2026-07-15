@@ -49,6 +49,15 @@ export function getModelList(params) {
   })
 }
 
+export function listImportedModels(params) {
+  return request({
+    url: '/federatedLearning/listImportedModels',
+    method: 'get',
+    params,
+    showLoading: false
+  })
+}
+
 /**
  * 联邦学习模型导入（multipart 上传）
  * @param {FormData} formData 含 file/modelName/modelType/description
