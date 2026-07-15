@@ -9,8 +9,11 @@ import com.primihub.biz.entity.data.po.FederatedAnalysisResult;
 import com.primihub.biz.entity.data.po.FederatedAnalysisTask;
 import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.entity.data.vo.*;
+import com.alibaba.fastjson.JSONObject;
 import com.primihub.biz.repository.primarydb.data.FederatedAnalysisRepository;
 import com.primihub.biz.service.data.FederatedAnalysisService;
+import com.primihub.biz.service.data.FederatedStatsService;
+import com.primihub.biz.entity.data.req.FederatedStatsReq;
 import com.primihub.biz.service.data.analysis.DataSourceConnector;
 import com.primihub.biz.service.data.analysis.DataSourceConnectorFactory;
 import com.primihub.biz.service.data.analysis.SQLRewriteEngine;
@@ -35,6 +38,17 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
     private FederatedAnalysisRepository analysisRepository;
     @Autowired
     private SQLRewriteEngine sqlRewriteEngine;
+    // 聚合类联邦分析桥接到真实 node JointStatistical MPC(复用模块14机制)
+    @Autowired
+    private FederatedStatsService federatedStatsService;
+
+    // 匹配单聚合查询: SELECT AVG|SUM|MAX|MIN(col) ... FROM ...  (col 可含表别名)
+    private static final java.util.regex.Pattern AGG_PATTERN = java.util.regex.Pattern.compile(
+            "(?is)^\\s*select\\s+(avg|sum|max|min)\\s*\\(\\s*([\\w.]+)\\s*\\)\\s+from\\s+.+");
+    // SQL 聚合函数 -> node JointStatistical 运算码(1=avg 2=sum 3=max 4=min)
+    private static final Map<String, String> AGG_OP = new HashMap<String, String>() {{
+        put("avg", "1"); put("sum", "2"); put("max", "3"); put("min", "4");
+    }};
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -188,11 +202,94 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
             }
             analysisRepository.updateTaskState(taskId, 1, null, null);
+            // 优先: 聚合类查询 + 具备多方资源 -> 桥接真实 node JointStatistical MPC
+            BaseResultEntity bridged = tryBridgeToMpc(task, userId);
+            if (bridged != null) {
+                return bridged;
+            }
+            // 回退: 单方本地 SQL(诚实标注, 非隐私计算)
             executeAnalysisAsync(task);
             return BaseResultEntity.success();
         } catch (Exception e) {
             log.error("执行分析任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "执行失败");
+        }
+    }
+
+    /**
+     * 若任务是"聚合查询 + 具备多方资源",则翻译为 FederatedStatsReq 委托 FederatedStatsService
+     * 走真实 node JointStatistical(ABY3)MPC; 否则返回 null 让调用方回退本地 SQL。
+     * 说明: 任意跨方 JOIN 类联邦 SQL 需专门的联邦 SQL 执行器(node 引擎暂无), 不在此桥接范围。
+     */
+    private BaseResultEntity tryBridgeToMpc(FederatedAnalysisTask task, Long userId) {
+        try {
+            String sql = task.getRewrittenSql() != null ? task.getRewrittenSql() : task.getSourceSql();
+            if (sql == null) return null;
+            java.util.regex.Matcher m = AGG_PATTERN.matcher(sql.trim());
+            if (!m.find()) return null;   // 非单聚合查询 -> 不桥接
+            String op = AGG_OP.get(m.group(1).toLowerCase());
+            String column = m.group(2);
+            if (column.contains(".")) column = column.substring(column.lastIndexOf('.') + 1);
+            if (op == null) return null;
+
+            // 多方资源: 从任务 taskParam 读取(与模块14一致的键)
+            if (task.getTaskParam() == null || task.getTaskParam().isEmpty()) return null;
+            JSONObject p = JSONObject.parseObject(task.getTaskParam());
+            if (p.getString("ownResourceId") == null || p.getString("otherResourceId") == null) {
+                return null;   // 无多方资源 -> 非联邦, 回退本地
+            }
+
+            // 组装 FederatedStats 的 taskParam(operations=聚合运算码, features=聚合列, 透传资源)
+            JSONObject sp = new JSONObject();
+            sp.put("ownOrganId", p.getString("ownOrganId"));
+            sp.put("ownResourceId", p.getString("ownResourceId"));
+            sp.put("otherOrganId", p.getString("otherOrganId"));
+            sp.put("otherResourceId", p.getString("otherResourceId"));
+            sp.put("arbiterOrgan", p.getString("arbiterOrgan"));
+            sp.put("thirdOrganId", p.getString("thirdOrganId"));
+            sp.put("thirdResourceId", p.getString("thirdResourceId"));
+            sp.put("thirdResourceName", p.getString("thirdResourceName"));
+            sp.put("operations", java.util.Collections.singletonList(op));
+            sp.put("features", java.util.Collections.singletonList(column));
+
+            FederatedStatsReq statsReq = new FederatedStatsReq();
+            statsReq.setTaskName((task.getTaskName() != null ? task.getTaskName() : "联邦分析") + "-聚合MPC");
+            statsReq.setProjectId(task.getProjectId());
+            statsReq.setStatsType("descriptive");
+            statsReq.setTaskParam(sp.toJSONString());
+
+            BaseResultEntity created = federatedStatsService.createTask(statsReq, userId);
+            if (created.getCode() != 0 || !(created.getResult() instanceof Map)) {
+                log.warn("联邦分析聚合桥接: 创建统计任务失败, 回退本地. {}", created.getMsg());
+                return null;
+            }
+            Object statsTaskId = ((Map<?, ?>) created.getResult()).get("taskId");
+            if (statsTaskId == null) return null;
+            Long stid = Long.valueOf(statsTaskId.toString());
+            BaseResultEntity ran = federatedStatsService.runTask(stid, userId);
+
+            // 在分析任务上记录桥接引用 + 真实引擎标注
+            String note = "{\"engine\":\"node-MPC(JointStatistical/ABY3) via federated-analysis bridge\","
+                    + "\"refStatsTaskId\":" + stid + ",\"operation\":\"" + m.group(1).toLowerCase()
+                    + "\",\"column\":\"" + column + "\"}";
+            analysisRepository.updateTaskState(task.getId(), 1, "已桥接真实联合统计MPC(refStatsTaskId=" + stid + ")", null);
+            FederatedAnalysisResult result = new FederatedAnalysisResult();
+            result.setTaskId(task.getId());
+            result.setResultType("dispatch");
+            result.setResultData(note);
+            analysisRepository.insertResult(result);
+
+            if (ran.getCode() != 0) {
+                log.warn("联邦分析聚合桥接: 统计任务 {} 触发返回非0({}), 已受理待异步回填", stid, ran.getMsg());
+            }
+            Map<String, Object> out = new HashMap<>();
+            out.put("engine", "node-MPC(JointStatistical/ABY3)");
+            out.put("refStatsTaskId", stid);
+            out.put("note", "聚合查询已桥接真实3方安全统计MPC; 结果查询关联的联邦统计任务");
+            return BaseResultEntity.success(out);   // 已提交即视为受理, 结果异步回填
+        } catch (Exception e) {
+            log.warn("联邦分析聚合桥接异常, 回退本地: {}", e.getMessage());
+            return null;
         }
     }
 
