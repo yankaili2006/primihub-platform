@@ -15,11 +15,11 @@ export function updateBillingRule(data) {
 }
 
 export function deleteBillingRule(data) {
-  return request({ url: '/federatedBilling/rule/delete', method: 'post', data })
+  return request({ url: '/federatedBilling/rule/delete', method: 'post', type: 'json', data })
 }
 
 export function toggleBillingRule(data) {
-  return request({ url: '/federatedBilling/rule/toggle', method: 'post', data })
+  return request({ url: '/federatedBilling/rule/toggle', method: 'post', type: 'json', data })
 }
 
 export function getBillingRuleDetail(params) {

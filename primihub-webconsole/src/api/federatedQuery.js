@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 export function createFederatedQuery(data) {
-  return request({ url: '/federatedQuery/create', method: 'post', data })
+  return request({ url: '/federatedQuery/create', method: 'post', type: 'json', data })
 }
 
 export function getFederatedQueryList(params) {
@@ -13,7 +13,7 @@ export function getFederatedQueryDetail(params) {
 }
 
 export function runFederatedQuery(data) {
-  return request({ url: '/federatedQuery/run', method: 'post', data })
+  return request({ url: '/federatedQuery/run', method: 'post', type: 'json', data })
 }
 
 export function getFederatedQueryResult(params) {
@@ -29,7 +29,7 @@ export function getFederatedQueryLogs(params) {
 }
 
 export function exportFederatedQueryLogs(data) {
-  return request({ url: '/federatedQuery/logs/export', method: 'post', data })
+  return request({ url: '/federatedQuery/logs/export', method: 'post', type: 'json', data })
 }
 
 export function createPsiTask(data) {

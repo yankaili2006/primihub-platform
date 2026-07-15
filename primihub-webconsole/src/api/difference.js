@@ -8,7 +8,7 @@ import request from '@/utils/request'
 export function saveDataDifference(data) {
   return request({
     url: '/data/difference/saveDataDifference',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

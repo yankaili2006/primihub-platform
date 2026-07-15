@@ -8,7 +8,7 @@ import request from '@/utils/request'
 export function createTask(data) {
   return request({
     url: '/federatedLearning/createTask',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -399,7 +399,7 @@ export function getFederatedLearningTaskLogs(params) {
 export function batchExportFederatedLearningLogs(data) {
   return request({
     url: '/federatedLearning/batchExportLogs',
-    method: 'post',
+    method: 'post', type: 'json',
     data,
     responseType: 'blob'
   })
@@ -502,5 +502,5 @@ export function flWorkflowLogs(workflowId) {
   return request({ url: '/federatedLearning/workflow/logs', method: 'get', params: { workflowId }})
 }
 export function flWorkflowDelete(workflowId) {
-  return request({ url: '/federatedLearning/workflow/delete', method: 'post', params: { workflowId }})
+  return request({ url: '/federatedLearning/workflow/delete', method: 'post', type: 'json', params: { workflowId }})
 }

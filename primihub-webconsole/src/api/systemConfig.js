@@ -31,7 +31,7 @@ export function getNetworkConfig(params) {
 export function saveNetworkConfig(data) {
   return request({
     url: '/systemConfig/saveNetworkConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -49,7 +49,7 @@ export function getTimeConfig(params) {
 export function saveTimeConfig(data) {
   return request({
     url: '/systemConfig/saveTimeConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -67,7 +67,7 @@ export function getLoginRestriction(params) {
 export function saveLoginRestriction(data) {
   return request({
     url: '/systemConfig/saveLoginRestriction',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -85,7 +85,7 @@ export function getPersonalizationConfig(params) {
 export function savePersonalizationConfig(data) {
   return request({
     url: '/systemConfig/savePersonalizationConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -103,7 +103,7 @@ export function getFtpConfig(params) {
 export function saveFtpConfig(data) {
   return request({
     url: '/systemConfig/saveFtpConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -112,7 +112,7 @@ export function saveFtpConfig(data) {
 export function testFtpConnection(data) {
   return request({
     url: '/systemConfig/testFtpConnection',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

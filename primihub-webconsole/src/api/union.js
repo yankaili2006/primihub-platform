@@ -8,7 +8,7 @@ import request from '@/utils/request'
 export function saveDataUnion(data) {
   return request({
     url: '/data/union/saveDataUnion',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

@@ -225,7 +225,7 @@ export function getAnalysisTaskList(params) {
 export function createAnalysisTask(data) {
   return request({
     url: '/federatedAnalysis/task/create',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -247,7 +247,7 @@ export function getAnalysisTaskDetail(params) {
 export function runAnalysisTask(data) {
   return request({
     url: '/federatedAnalysis/task/run',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -258,7 +258,7 @@ export function runAnalysisTask(data) {
 export function stopAnalysisTask(data) {
   return request({
     url: '/federatedAnalysis/task/stop',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -293,7 +293,7 @@ export function getAnalysisLogDetail(params) {
 export function exportAnalysisLogs(data) {
   return request({
     url: '/federatedAnalysis/logs/export',
-    method: 'post',
+    method: 'post', type: 'json',
     data,
     responseType: 'blob'
   })

@@ -13,6 +13,7 @@ export function addTenant(data) {
   return request({
     url: '/tenant/addTenant',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -21,6 +22,7 @@ export function updateTenant(data) {
   return request({
     url: '/tenant/updateTenant',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -29,6 +31,7 @@ export function deleteTenant(data) {
   return request({
     url: '/tenant/deleteTenant',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -37,6 +40,7 @@ export function freezeTenant(data) {
   return request({
     url: '/tenant/freezeTenant',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -45,6 +49,7 @@ export function unfreezeTenant(data) {
   return request({
     url: '/tenant/unfreezeTenant',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -70,6 +75,7 @@ export function addTenantResource(data) {
   return request({
     url: '/tenant/addTenantResource',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -78,6 +84,7 @@ export function deleteTenantResource(data) {
   return request({
     url: '/tenant/deleteTenantResource',
     method: 'post',
+    type: 'json',
     data
   })
 }
@@ -103,6 +110,7 @@ export function saveTenantIsolationConfig(data) {
   return request({
     url: '/tenant/saveTenantIsolationConfig',
     method: 'post',
+    type: 'json',
     data
   })
 }

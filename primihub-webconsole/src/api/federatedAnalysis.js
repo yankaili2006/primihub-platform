@@ -32,7 +32,7 @@ export function getFederatedAnalysisDetail(params) {
 export function startFederatedAnalysis(data) {
   return request({
     url: '/data/federatedAnalysis/task/run',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -82,7 +82,7 @@ export function updateDataSource(data) {
 export function deleteDataSource(data) {
   return request({
     url: '/data/federatedAnalysis/datasource/delete',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }

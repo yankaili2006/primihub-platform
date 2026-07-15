@@ -3,12 +3,12 @@ import request from '@/utils/request'
 // ==================== 警务数据融合 ====================
 
 export function createPoliceTask(data) {
-  return request({ url: '/policeFusion/task/create', method: 'post', data })
+  return request({ url: '/policeFusion/task/create', method: 'post', type: 'json', data })
 }
 
 // #209 加密模型联合运算
 export function encryptedCompute(data) {
-  return request({ url: '/policeFusion/model/compute', method: 'post', data })
+  return request({ url: '/policeFusion/model/compute', method: 'post', type: 'json', data })
 }
 
 export function getPoliceTaskList(params) {
@@ -20,7 +20,7 @@ export function getPoliceTaskDetail(params) {
 }
 
 export function savePoliceApi(data) {
-  return request({ url: '/policeFusion/api/save', method: 'post', data })
+  return request({ url: '/policeFusion/api/save', method: 'post', type: 'json', data })
 }
 
 export function getPoliceApiList(params) {
@@ -28,7 +28,7 @@ export function getPoliceApiList(params) {
 }
 
 export function deletePoliceApi(data) {
-  return request({ url: '/policeFusion/api/delete', method: 'post', data })
+  return request({ url: '/policeFusion/api/delete', method: 'post', type: 'json', data })
 }
 
 export function testPoliceApi(params) {
@@ -36,7 +36,7 @@ export function testPoliceApi(params) {
 }
 
 export function generatePoliceKey(data) {
-  return request({ url: '/policeFusion/key/generate', method: 'post', data })
+  return request({ url: '/policeFusion/key/generate', method: 'post', type: 'json', data })
 }
 
 export function getPoliceKeyList(params) {
@@ -44,55 +44,55 @@ export function getPoliceKeyList(params) {
 }
 
 export function deletePoliceKey(data) {
-  return request({ url: '/policeFusion/key/delete', method: 'post', data })
+  return request({ url: '/policeFusion/key/delete', method: 'post', type: 'json', data })
 }
 
 export function encryptPoliceData(data) {
-  return request({ url: '/policeFusion/key/encrypt', method: 'post', data })
+  return request({ url: '/policeFusion/key/encrypt', method: 'post', type: 'json', data })
 }
 
 export function decryptPoliceData(data) {
-  return request({ url: '/policeFusion/key/decrypt', method: 'post', data })
+  return request({ url: '/policeFusion/key/decrypt', method: 'post', type: 'json', data })
 }
 
 // ==================== 电子证件 ====================
 
 export function convertFeature(data) {
-  return request({ url: '/electronicCert/feature/convert', method: 'post', data })
+  return request({ url: '/electronicCert/feature/convert', method: 'post', type: 'json', data })
 }
 
 // #216 现场证件特征转换
 export function convertFeatureOnSite(data) {
-  return request({ url: '/electronicCert/feature/convert/onsite', method: 'post', data })
+  return request({ url: '/electronicCert/feature/convert/onsite', method: 'post', type: 'json', data })
 }
 
 export function compareFeature(data) {
-  return request({ url: '/electronicCert/compare', method: 'post', data })
+  return request({ url: '/electronicCert/compare', method: 'post', type: 'json', data })
 }
 
 export function importSceneData(data) {
-  return request({ url: '/electronicCert/import', method: 'post', data })
+  return request({ url: '/electronicCert/import', method: 'post', type: 'json', data })
 }
 
 export function exportSceneData(data) {
-  return request({ url: '/electronicCert/export', method: 'post', data })
+  return request({ url: '/electronicCert/export', method: 'post', type: 'json', data })
 }
 
 export function batchExchange(data) {
-  return request({ url: '/electronicCert/exchange/batch', method: 'post', data })
+  return request({ url: '/electronicCert/exchange/batch', method: 'post', type: 'json', data })
 }
 
 export function realtimeExchange(data) {
-  return request({ url: '/electronicCert/exchange/realtime', method: 'post', data })
+  return request({ url: '/electronicCert/exchange/realtime', method: 'post', type: 'json', data })
 }
 
 // ==================== 警务数据融合-密文交换 ====================
 export function policeBatchExchange(data) {
-  return request({ url: '/policeFusion/exchange/batch', method: 'post', data })
+  return request({ url: '/policeFusion/exchange/batch', method: 'post', type: 'json', data })
 }
 
 export function policeRealtimeExchange(data) {
-  return request({ url: '/policeFusion/exchange/realtime', method: 'post', data })
+  return request({ url: '/policeFusion/exchange/realtime', method: 'post', type: 'json', data })
 }
 
 // ==================== 警务数据融合-数据源对接 ====================
@@ -101,15 +101,15 @@ export function getPoliceDataSourceList(params) {
 }
 
 export function savePoliceDataSource(data) {
-  return request({ url: '/policeFusion/datasource/save', method: 'post', data })
+  return request({ url: '/policeFusion/datasource/save', method: 'post', type: 'json', data })
 }
 
 export function deletePoliceDataSource(data) {
-  return request({ url: '/policeFusion/datasource/delete', method: 'post', data })
+  return request({ url: '/policeFusion/datasource/delete', method: 'post', type: 'json', data })
 }
 
 export function syncPoliceDataSource(data) {
-  return request({ url: '/policeFusion/datasource/sync', method: 'post', data })
+  return request({ url: '/policeFusion/datasource/sync', method: 'post', type: 'json', data })
 }
 
 export function testPoliceDataSource(params) {

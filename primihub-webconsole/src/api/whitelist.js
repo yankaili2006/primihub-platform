@@ -55,7 +55,7 @@ export function getWhitelistConfigList(params) {
 export function saveWhitelistConfig(data) {
   return request({
     url: '/whitelist/saveWhitelistConfig',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
@@ -97,7 +97,7 @@ export function getWhitelistAccessStatistics(params) {
 export function batchDeleteAccessLog(data) {
   return request({
     url: '/whitelist/batchDeleteAccessLog',
-    method: 'post',
+    method: 'post', type: 'json',
     data
   })
 }
