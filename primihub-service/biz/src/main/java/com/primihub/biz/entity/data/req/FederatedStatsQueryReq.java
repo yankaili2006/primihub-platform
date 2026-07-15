@@ -8,6 +8,7 @@ public class FederatedStatsQueryReq {
     private Integer taskState;
     private String statsType;
     private Long projectId;
+    private String taskId;
     private String startDate;
     private String endDate;
     private Integer pageNo = 1;

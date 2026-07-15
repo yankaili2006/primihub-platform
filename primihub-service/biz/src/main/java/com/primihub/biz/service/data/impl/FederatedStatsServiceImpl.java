@@ -147,6 +147,7 @@ public class FederatedStatsServiceImpl implements FederatedStatsService {
             params.put("taskState", req.getTaskState());
             params.put("statsType", req.getStatsType());
             params.put("projectId", req.getProjectId());
+            params.put("taskId", req.getTaskId());
 
             int total = federatedStatsRepository.selectTaskCount(params);
             PageParam pageParam = new PageParam(req.getPageNo(), req.getPageSize());
