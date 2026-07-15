@@ -1,0 +1,320 @@
+{
+  "target": "http://localhost:30821",
+  "summary": {
+    "pass": 22,
+    "fail": 9,
+    "skip": 2,
+    "manual": 11,
+    "total": 44
+  },
+  "results": [
+    {
+      "defect_id": "D01",
+      "status": "fail",
+      "detail": "roundtrip failed: [{'create': -1, 'msg': \"请求异常:系统异常: \\n### Error updating database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column 'first_login' in 'field list'\\n### The error may involve defaultParameterMap\\n### The error occurred while setting parameters\\n### SQL: insert into sys_user(user_account,user_password,user_name,role_id_list,is_forbid,is_editable,auth_uuid,is_del,register_type,first_login)         values(?,?,?,?,?,?,?,?,?,1)\\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column 'first_login' in 'field list'\\n; bad SQL grammar []; nested exception is java.sql.SQLSyntaxErrorException: Unknown column 'first_login' in 'field list'\"}, {'find_after_create': False}]",
+      "category": "无响应",
+      "module": "用户管理"
+    },
+    {
+      "defect_id": "D02",
+      "status": "pass",
+      "detail": "code=0（按钮可视性仍需人工确认）",
+      "category": "无按钮",
+      "module": "白名单"
+    },
+    {
+      "defect_id": "D03",
+      "status": "pass",
+      "detail": "code=0（按钮可视性仍需人工确认）",
+      "category": "无按钮",
+      "module": "租户管理"
+    },
+    {
+      "defect_id": "D04",
+      "status": "fail",
+      "detail": "route missing: code=None msg=",
+      "category": "404",
+      "module": "租户管理"
+    },
+    {
+      "defect_id": "D05",
+      "status": "fail",
+      "detail": "route missing: code=None msg=",
+      "category": "404",
+      "module": "租户管理"
+    },
+    {
+      "defect_id": "D06",
+      "status": "manual",
+      "detail": "OPEN(申请时间戳为写操作，无安全只读端点，需手工)",
+      "category": "无响应",
+      "module": "存证管理"
+    },
+    {
+      "defect_id": "D07",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "请求异常",
+      "module": "日志管理"
+    },
+    {
+      "defect_id": "D08",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "请求异常",
+      "module": "日志管理"
+    },
+    {
+      "defect_id": "D09",
+      "status": "pass",
+      "detail": "route wired: code=-1 msg=请求异常:查询失败",
+      "category": "请求异常",
+      "module": "日志管理"
+    },
+    {
+      "defect_id": "D10",
+      "status": "pass",
+      "detail": "non-json body (200B)",
+      "category": "导出",
+      "module": "日志管理"
+    },
+    {
+      "defect_id": "D11",
+      "status": "manual",
+      "detail": "OPEN(时间字段正确性需人工核对创建时间显示)",
+      "category": "时间字段",
+      "module": "角色管理"
+    },
+    {
+      "defect_id": "D12",
+      "status": "manual",
+      "detail": "OPEN(告警保存为写操作，端点未知，需手工；页面 /monitor/getCpuMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D13",
+      "status": "manual",
+      "detail": "OPEN(需手工；页面 /monitor/getMemoryMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D14",
+      "status": "manual",
+      "detail": "OPEN(需手工；页面 /monitor/getDiskMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D15",
+      "status": "manual",
+      "detail": "OPEN(需手工；页面 /monitor/getDatabaseMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D16",
+      "status": "manual",
+      "detail": "OPEN(需手工；页面 /monitor/getJvmMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D17",
+      "status": "manual",
+      "detail": "OPEN(需手工；页面 /monitor/getRedisMonitor)",
+      "category": "无响应",
+      "module": "监控管理"
+    },
+    {
+      "defect_id": "D18",
+      "status": "pass",
+      "detail": "route wired: code=100 msg=缺少参数:projectName",
+      "category": "无响应",
+      "module": "项目管理"
+    },
+    {
+      "defect_id": "D19",
+      "status": "skip",
+      "detail": "export needs real data: code=-1 msg=请求异常:系统异常: Content type 'application/x-www-form-urlencoded;c",
+      "category": "导出",
+      "module": "项目管理"
+    },
+    {
+      "defect_id": "D20",
+      "status": "fail",
+      "detail": "route missing (inferred 路由不存在): code=None msg=",
+      "category": "请求异常",
+      "module": "节点管理"
+    },
+    {
+      "defect_id": "D21",
+      "status": "pass",
+      "detail": "safe create→edit→delete round-trip ok",
+      "category": "请求异常",
+      "module": "节点管理"
+    },
+    {
+      "defect_id": "D22",
+      "status": "manual",
+      "detail": "OPEN(假成功需前后状态比对，需手工)",
+      "category": "假成功",
+      "module": "节点管理"
+    },
+    {
+      "defect_id": "D23",
+      "status": "manual",
+      "detail": "OPEN(工作流创建端点未知，需手工)",
+      "category": "请求异常",
+      "module": "系统设置"
+    },
+    {
+      "defect_id": "D24",
+      "status": "manual",
+      "detail": "OPEN(假成功需前后状态比对，需手工)",
+      "category": "假成功",
+      "module": "系统设置"
+    },
+    {
+      "defect_id": "D25",
+      "status": "fail",
+      "detail": "route missing (inferred 路由不存在): code=None msg=",
+      "category": "请求异常",
+      "module": "数据管理"
+    },
+    {
+      "defect_id": "D26",
+      "status": "pass",
+      "detail": "route wired: code=100 msg=缺少参数:需求编码不能为空",
+      "category": "请求异常",
+      "module": "数据管理"
+    },
+    {
+      "defect_id": "D27",
+      "status": "pass",
+      "detail": "no rows for \"-001\" (special char handled, no crash)",
+      "category": "查询",
+      "module": "数据管理"
+    },
+    {
+      "defect_id": "D28",
+      "status": "fail",
+      "detail": "route missing (inferred 路由不存在): code=None msg=",
+      "category": "请求异常",
+      "module": "数据管理"
+    },
+    {
+      "defect_id": "D29",
+      "status": "fail",
+      "detail": "search errored: code=-1 msg=请求异常:查询失败",
+      "category": "查询",
+      "module": "数据管理"
+    },
+    {
+      "defect_id": "D30",
+      "status": "pass",
+      "detail": "safe create→edit→delete round-trip ok",
+      "category": "无响应",
+      "module": "接口管理"
+    },
+    {
+      "defect_id": "D31",
+      "status": "pass",
+      "detail": "export returned code=0",
+      "category": "导出",
+      "module": "接口管理"
+    },
+    {
+      "defect_id": "D32",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "功能缺失",
+      "module": "联邦查询功能"
+    },
+    {
+      "defect_id": "D33",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "功能缺失",
+      "module": "联邦查询功能"
+    },
+    {
+      "defect_id": "D34",
+      "status": "pass",
+      "detail": "non-json body (19B)",
+      "category": "功能缺失",
+      "module": "联邦查询功能"
+    },
+    {
+      "defect_id": "D35",
+      "status": "skip",
+      "detail": "export needs real data: code=-1 msg=请求异常:系统异常: Required Long parameter 'taskId' is not present",
+      "category": "导出",
+      "module": "联邦统计功能"
+    },
+    {
+      "defect_id": "D36",
+      "status": "pass",
+      "detail": "no rows for \"001\" (special char handled, no crash)",
+      "category": "查询",
+      "module": "联邦统计功能"
+    },
+    {
+      "defect_id": "D37",
+      "status": "fail",
+      "detail": "export route missing (inferred 路由不存在): ",
+      "category": "导出",
+      "module": "联邦统计功能"
+    },
+    {
+      "defect_id": "D38",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "整模块",
+      "module": "联邦学习功能"
+    },
+    {
+      "defect_id": "D39",
+      "status": "pass",
+      "detail": "route wired: code=-1 msg=请求异常:查询失败",
+      "category": "功能缺失",
+      "module": "联邦学习功能"
+    },
+    {
+      "defect_id": "D40",
+      "status": "pass",
+      "detail": "route wired: code=100 msg=缺少参数:taskType",
+      "category": "功能缺失",
+      "module": "联邦学习功能"
+    },
+    {
+      "defect_id": "D41",
+      "status": "pass",
+      "detail": "no rows for \"001\" (special char handled, no crash)",
+      "category": "查询",
+      "module": "联邦学习功能"
+    },
+    {
+      "defect_id": "D42",
+      "status": "fail",
+      "detail": "export route missing (inferred 路由不存在): ",
+      "category": "导出",
+      "module": "联邦学习功能"
+    },
+    {
+      "defect_id": "D43",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "整模块",
+      "module": "场景定制化一"
+    },
+    {
+      "defect_id": "D44",
+      "status": "pass",
+      "detail": "route wired: code=0 msg=请求成功",
+      "category": "整模块",
+      "module": "场景定制化二"
+    }
+  ]
+}
