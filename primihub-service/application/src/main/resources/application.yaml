@@ -5,6 +5,8 @@ spring:
     active: simple
   application:
     name: platform
+  flyway:
+    enabled: false   # Boot auto-Flyway off; Flyway wired manually to primaryDB (FlywayMigrationConfiguration)
   servlet:
     multipart:
       enabled: true
