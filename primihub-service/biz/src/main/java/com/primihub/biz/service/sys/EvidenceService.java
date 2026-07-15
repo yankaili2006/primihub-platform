@@ -213,7 +213,8 @@ public class EvidenceService {
                 if (!isFile && evidenceData.isEmpty()) {
                     return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "数据内容不能为空");
                 }
-                String hash = sha256Hex((isFile ? fileHash : evidenceData) + System.currentTimeMillis());
+                // 与 createEvidence 保持一致：哈希对内容本身取值（不掺时间戳），使 verifyEvidence 能重算比对
+                String hash = sha256Hex(isFile ? fileHash : evidenceData);
 
                 record = new EvidenceRecord();
                 record.setEvidenceHash(hash);
