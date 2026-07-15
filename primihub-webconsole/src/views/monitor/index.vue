@@ -874,8 +874,19 @@ export default {
       }
     },
     viewAlertDetail(row) {
-      this.$message.info('告警详情功能开发中...')
-      // TODO: 实现告警详情查看
+      const h = this.$createElement
+      const pick = (keys) => { for (const k of keys) { if (row && row[k] != null && row[k] !== '') return row[k] } return '-' }
+      const fields = [
+        ['告警类型', ['alertType', 'type', 'monitorType', 'metricType']],
+        ['告警级别', ['level', 'alertLevel', 'severity']],
+        ['告警内容', ['content', 'message', 'alertContent', 'description', 'msg']],
+        ['指标/当前值', ['metric', 'value', 'currentValue', 'metricValue']],
+        ['阈值', ['threshold', 'thresholdValue', 'limitValue']],
+        ['告警时间', ['createTime', 'alertTime', 'time', 'createDate', 'triggerTime']],
+        ['处理状态', ['status', 'handleStatus', 'state']]
+      ]
+      const items = fields.map(([label, keys]) => h('p', { style: 'margin:4px 0' }, label + '：' + pick(keys)))
+      this.$msgbox({ title: '告警详情', message: h('div', null, items), confirmButtonText: '关闭' })
     },
     getProgressColor(percentage) {
       if (percentage < 60) return '#67c23a'
