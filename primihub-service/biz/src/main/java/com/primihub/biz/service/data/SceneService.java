@@ -29,6 +29,9 @@ public interface SceneService {
     /** 特征转换: 对特征字段归一化后做确定性 SHA-256 令牌化(可用于 PSI 隐私比对), 落库并返回令牌。 */
     BaseResultEntity convertFeature(String sceneType, Map<String, Object> req, Long userId);
 
+    /** 加密模型联合运算(#209): 用密钥解密加密模型后, 对警务数据集执行聚合运算并落库返回真实结果。 */
+    BaseResultEntity encryptedCompute(String sceneType, Map<String, Object> req, Long userId);
+
     BaseResultEntity saveApiConfig(String sceneType, Map<String, Object> req, Long userId);
     BaseResultEntity getApiConfigList(String sceneType);
     BaseResultEntity deleteApiConfig(Long id);

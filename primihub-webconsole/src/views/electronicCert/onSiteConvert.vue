@@ -68,6 +68,7 @@
 </template>
 
 <script>
+import { convertFeatureOnSite } from '@/api/scene'
 export default {
   name: 'OnSiteCertFeatureConvert',
   data() {
@@ -120,12 +121,24 @@ export default {
     handlePreview(row) {
       this.$message.info(`预览记录: ${row.recordId}`)
     },
-    handleExtract(row) {
-      this.$message.success('开始提取特征')
-      setTimeout(() => {
-        row.featureStatus = 'extracted'
-        this.$message.success('特征提取完成')
-      }, 1500)
+    async handleExtract(row) {
+      // #216 现场证件特征转换: 调后端真实确定性 SHA-256 令牌化
+      try {
+        const res = await convertFeatureOnSite({
+          rows: [{ recordId: row.recordId, deviceName: row.deviceName, captureType: row.captureType, qualityScore: row.qualityScore }],
+          featureFields: ['recordId', 'captureType'],
+          salt: 'onsite'
+        })
+        if (res && res.code === 0) {
+          row.featureStatus = 'extracted'
+          row.featureToken = (res.result && res.result.tokens && res.result.tokens[0]) || ''
+          this.$message.success('特征转换完成(SHA-256令牌化)')
+        } else {
+          this.$message.error((res && res.msg) || '特征转换失败')
+        }
+      } catch (e) {
+        this.$message.error('请求失败')
+      }
     }
   }
 }

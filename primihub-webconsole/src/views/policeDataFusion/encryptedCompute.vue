@@ -75,7 +75,7 @@
 </template>
 
 <script>
-import { createPoliceTask, getPoliceTaskList } from '@/api/scene'
+import { encryptedCompute, getPoliceTaskList } from '@/api/scene'
 export default {
   name: 'EncryptedModelCompute',
   data() {
@@ -138,10 +138,19 @@ export default {
       }
       this.computing = true
       try {
-        const res = await createPoliceTask({ taskType: 'encryptedCompute', params: this.computeForm })
+        const res = await encryptedCompute({
+          encryptedModelId: this.computeForm.encryptedModelId,
+          policeDatasetId: this.computeForm.policeDatasetId,
+          operations: this.computeForm.operations,
+          keyId: this.computeForm.keyId,
+          encryptedModel: this.computeForm.encryptedModel,
+          rows: this.computeForm.rows
+        })
         if (res && res.code === 0) {
-          this.$message.success('联合运算任务已提交')
+          this.$message.success('联合运算完成')
           this.fetchTaskList()
+        } else {
+          this.$message.error((res && res.msg) || '联合运算失败')
         }
       } catch (e) {
         this.$message.error('提交失败')

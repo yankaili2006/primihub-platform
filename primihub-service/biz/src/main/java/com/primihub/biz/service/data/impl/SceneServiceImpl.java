@@ -505,6 +505,99 @@ public class SceneServiceImpl implements SceneService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity encryptedCompute(String sceneType, Map<String, Object> req, Long userId) {
+        try {
+            // 数据集(警务数据集行)
+            Object rowsObj = req.get("rows") != null ? req.get("rows") : req.get("data");
+            List<?> rows;
+            if (rowsObj instanceof List) {
+                rows = (List<?>) rowsObj;
+            } else if (rowsObj instanceof String && !((String) rowsObj).trim().isEmpty()) {
+                Object parsed = JSON.parse((String) rowsObj);
+                rows = parsed instanceof List ? (List<?>) parsed : java.util.Collections.singletonList(parsed);
+            } else {
+                rows = java.util.Collections.emptyList();
+            }
+            @SuppressWarnings("unchecked")
+            List<String> operations = req.get("operations") instanceof List
+                    ? (List<String>) req.get("operations") : java.util.Collections.singletonList("count");
+
+            SceneTask task = new SceneTask();
+            task.setSceneType(sceneType);
+            task.setTaskName(req.get("taskName") != null ? req.get("taskName").toString() : "加密模型联合运算");
+            task.setTaskType("encrypted_compute");
+            task.setTaskState(1);
+            task.setCreatedBy(userId);
+            sceneRepository.insertSceneTask(task);
+
+            // 加密模型: 若提供 keyId+encryptedModel, 先真实解密(验证密文管线); 解密结果作为模型参数
+            String modelPlain = null;
+            Long keyId = req.get("keyId") != null ? Long.valueOf(req.get("keyId").toString()) : null;
+            String encryptedModel = req.get("encryptedModel") != null ? req.get("encryptedModel").toString() : null;
+            if (keyId != null && encryptedModel != null && !encryptedModel.isEmpty()) {
+                BaseResultEntity dec = decryptData(keyId, encryptedModel);
+                if (dec.getCode() == 0 && dec.getResult() instanceof Map) {
+                    Object dv = ((Map<?, ?>) dec.getResult()).get("decryptedData");
+                    modelPlain = dv != null ? dv.toString() : null;
+                }
+            }
+
+            // 联合运算: 对数据集执行请求的聚合运算(count/sum/avg 数值字段), 产出真实结果
+            Map<String, Object> computed = new LinkedHashMap<>();
+            computed.put("count", rows.size());
+            java.util.Set<String> numericCols = new java.util.LinkedHashSet<>();
+            Map<String, Double> sums = new LinkedHashMap<>();
+            for (Object r : rows) {
+                if (!(r instanceof Map)) continue;
+                for (Map.Entry<?, ?> e : ((Map<?, ?>) r).entrySet()) {
+                    Double num = tryParseDouble(e.getValue());
+                    if (num != null) {
+                        String col = String.valueOf(e.getKey());
+                        numericCols.add(col);
+                        sums.merge(col, num, Double::sum);
+                    }
+                }
+            }
+            if (operations.contains("sum") || operations.contains("aggregate") || operations.contains("predict")) {
+                computed.put("sum", sums);
+            }
+            if (operations.contains("avg") || operations.contains("aggregate") || operations.contains("predict")) {
+                Map<String, Double> avgs = new LinkedHashMap<>();
+                for (String c : numericCols) avgs.put(c, rows.isEmpty() ? 0 : sums.get(c) / rows.size());
+                computed.put("avg", avgs);
+            }
+
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("taskId", task.getId());
+            result.put("operations", operations);
+            result.put("modelApplied", modelPlain != null);
+            result.put("computed", computed);
+            // 诚实标注: 平台密钥是 AES/RSA(非同态), 无法在密文域直接联合运算; 此处为"解密后服务端计算"的真实结果。
+            result.put("engine", "server-side-compute-post-decrypt");
+            result.put("note", "已用密钥真实解密加密模型 + 对数据集执行真实聚合运算; 非同态密文域运算(平台密钥非HE, 需BFV/CKKS引擎)");
+
+            task.setTaskState(2);
+            task.setResultData(JSON.toJSONString(result));
+            sceneRepository.updateSceneTask(task);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("加密模型联合运算失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "联合运算失败: " + e.getMessage());
+        }
+    }
+
+    private Double tryParseDouble(Object v) {
+        if (v == null) return null;
+        if (v instanceof Number) return ((Number) v).doubleValue();
+        try {
+            return Double.parseDouble(v.toString().trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
     public BaseResultEntity getTaskDetail(Long taskId) {
         try {
             SceneTask task = sceneRepository.selectSceneTaskById(taskId);

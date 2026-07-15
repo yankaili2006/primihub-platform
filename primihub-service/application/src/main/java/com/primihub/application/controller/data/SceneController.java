@@ -26,6 +26,12 @@ public class SceneController {
         return sceneService.createTask("police_fusion", req, getCurrentUserId());
     }
 
+    @ApiOperation("警务数据融合-加密模型联合运算(#209)")
+    @PostMapping("/policeFusion/model/compute")
+    public BaseResultEntity encryptedCompute(@RequestBody Map<String, Object> req) {
+        return sceneService.encryptedCompute("police_fusion", req, getCurrentUserId());
+    }
+
     @ApiOperation("警务数据融合任务列表")
     @GetMapping("/policeFusion/task/list")
     public BaseResultEntity getPoliceTaskList(@RequestParam(required = false) String taskType,
@@ -206,6 +212,15 @@ public class SceneController {
     @ApiOperation("电子证件-特征转换")
     @PostMapping("/electronicCert/feature/convert")
     public BaseResultEntity convertFeature(@RequestBody Map<String, Object> req) {
+        return sceneService.convertFeature("electronic_cert", req, getCurrentUserId());
+    }
+
+    @ApiOperation("电子证件-现场证件特征转换(#216)")
+    @PostMapping("/electronicCert/feature/convert/onsite")
+    public BaseResultEntity convertFeatureOnSite(@RequestBody Map<String, Object> req) {
+        // 现场证件特征转换与电子证件同为确定性 SHA-256 令牌化, 仅数据来源不同; 打标 onSite 便于区分
+        req.put("taskName", req.get("taskName") != null ? req.get("taskName") : "现场证件特征转换");
+        req.put("source", "onSite");
         return sceneService.convertFeature("electronic_cert", req, getCurrentUserId());
     }
 

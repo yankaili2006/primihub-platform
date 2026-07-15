@@ -6,6 +6,11 @@ export function createPoliceTask(data) {
   return request({ url: '/policeFusion/task/create', method: 'post', data })
 }
 
+// #209 加密模型联合运算
+export function encryptedCompute(data) {
+  return request({ url: '/policeFusion/model/compute', method: 'post', data })
+}
+
 export function getPoliceTaskList(params) {
   return request({ url: '/policeFusion/task/list', method: 'get', params })
 }
@@ -54,6 +59,11 @@ export function decryptPoliceData(data) {
 
 export function convertFeature(data) {
   return request({ url: '/electronicCert/feature/convert', method: 'post', data })
+}
+
+// #216 现场证件特征转换
+export function convertFeatureOnSite(data) {
+  return request({ url: '/electronicCert/feature/convert/onsite', method: 'post', data })
 }
 
 export function compareFeature(data) {
