@@ -506,10 +506,12 @@ public class FederatedAnalysisServiceImplTest {
         assertEquals(0, result.getCode().intValue());
         List<?> list = (List<?>) result.getResult();
         assertEquals(4, list.size());
-        assertTrue(list.contains("MySQL"));
-        assertTrue(list.contains("PostgreSQL"));
-        assertTrue(list.contains("Oracle"));
-        assertTrue(list.contains("SQL Server"));
+        java.util.Set<Object> names = new java.util.HashSet<>();
+        for (Object o : list) names.add(((Map<?, ?>) o).get("name"));
+        assertTrue(names.contains("MySQL"));
+        assertTrue(names.contains("PostgreSQL"));
+        assertTrue(names.contains("Oracle"));
+        assertTrue(names.contains("SQL Server"));
     }
 
     // ==================== getSupportedBigDataPlatforms ====================
@@ -521,10 +523,13 @@ public class FederatedAnalysisServiceImplTest {
         assertEquals(0, result.getCode().intValue());
         List<?> list = (List<?>) result.getResult();
         assertEquals(4, list.size());
-        assertTrue(list.contains("Spark"));
-        assertTrue(list.contains("Hive"));
-        assertTrue(list.contains("Flink"));
-        assertTrue(list.contains("Presto"));
+        java.util.List<String> names = new java.util.ArrayList<>();
+        for (Object o : list) names.add(String.valueOf(((Map<?, ?>) o).get("name")));
+        // 名称为全称(Apache Spark / Presto/Trino), 用子串匹配更稳
+        assertTrue(names.stream().anyMatch(n -> n.contains("Spark")));
+        assertTrue(names.stream().anyMatch(n -> n.contains("Hive")));
+        assertTrue(names.stream().anyMatch(n -> n.contains("Flink")));
+        assertTrue(names.stream().anyMatch(n -> n.contains("Presto")));
     }
 
     // ==================== getSupportedCloudPlatforms ====================
@@ -536,10 +541,12 @@ public class FederatedAnalysisServiceImplTest {
         assertEquals(0, result.getCode().intValue());
         List<?> list = (List<?>) result.getResult();
         assertEquals(4, list.size());
-        assertTrue(list.contains("阿里云OSS"));
-        assertTrue(list.contains("AWS S3"));
-        assertTrue(list.contains("腾讯云COS"));
-        assertTrue(list.contains("华为云OBS"));
+        java.util.Set<Object> names = new java.util.HashSet<>();
+        for (Object o : list) names.add(((Map<?, ?>) o).get("name"));
+        assertTrue(names.contains("阿里云OSS"));
+        assertTrue(names.contains("AWS S3"));
+        assertTrue(names.contains("腾讯云COS"));
+        assertTrue(names.contains("华为云OBS"));
     }
 
     // ==================== getLogs / exportLogs / batchExportLogs ====================

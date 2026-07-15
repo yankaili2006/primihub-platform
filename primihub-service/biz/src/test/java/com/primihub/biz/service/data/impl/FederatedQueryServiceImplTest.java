@@ -291,9 +291,10 @@ public class FederatedQueryServiceImplTest {
 
         assertEquals(0, result.getCode().intValue());
 
+        // updateQueryTask 被调用2次(状态 1→2)。注意: captor 捕获的是同一个被复用的 task 引用,
+        // 两次取值都反映最终状态(2), 无法断言中间态1(Mockito captor 引用捕获局限)。
         verify(queryTaskRepository, times(2)).updateQueryTask(taskCaptor.capture());
         List<FederatedQueryTask> capturedTasks = taskCaptor.getAllValues();
-        assertEquals(Integer.valueOf(1), capturedTasks.get(0).getTaskState());
         assertEquals(Integer.valueOf(2), capturedTasks.get(1).getTaskState());
         assertNotNull(capturedTasks.get(1).getResultSummary());
 

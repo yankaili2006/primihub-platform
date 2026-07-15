@@ -522,6 +522,10 @@ public class FederatedStatsServiceImplTest {
 
     @Test
     public void previewStoredResult_returnsPreviewData() {
+        // 补 mock: 无此 stub 时 selectResultById 返 null → DATA_QUERY_NULL, 预览走不到成功分支
+        when(federatedStatsRepository.selectResultById(RESULT_ID))
+                .thenReturn(createResultPo(RESULT_ID, TASK_ID, "final", "{\"key\":\"value\"}"));
+
         BaseResultEntity result = federatedStatsService.previewStoredResult(RESULT_ID, 10);
 
         assertEquals(0, result.getCode().intValue());
@@ -611,6 +615,12 @@ public class FederatedStatsServiceImplTest {
     public void exportLogs_writesToResponse() {
         LogExportReq req = new LogExportReq();
         req.setTaskId(TASK_ID);
+        // 补 mock: 无日志时 exportLogs 走 writeExportError(application/json); 需返回非空日志才进 text/plain 分支
+        Map<String, Object> logEntry = new HashMap<>();
+        logEntry.put("level", "INFO");
+        logEntry.put("message", "统计完成");
+        when(federatedStatsRepository.selectLogList(any()))
+                .thenReturn(Collections.singletonList(logEntry));
 
         federatedStatsService.exportLogs(req, response);
 

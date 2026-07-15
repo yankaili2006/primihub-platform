@@ -625,6 +625,7 @@ public class SceneServiceImplTest {
 
         BaseResultEntity result = sceneService.decryptData(KEY_ID, "data");
 
-        assertEquals(BaseResultEnum.FAILURE.getReturnCode(), result.getCode());
+        // 异常被通用 catch 捕获 → DECRYPTION_FAILED(仍是失败, 非成功码0)
+        assertEquals(BaseResultEnum.DECRYPTION_FAILED.getReturnCode(), result.getCode());
     }
 }

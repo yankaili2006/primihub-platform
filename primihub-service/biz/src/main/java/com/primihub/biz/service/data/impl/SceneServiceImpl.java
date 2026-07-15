@@ -46,6 +46,9 @@ import java.util.*;
 @Service
 public class SceneServiceImpl implements SceneService {
 
+    /** 加解密私钥材料最小字节数(低于此值熵不足, 拒绝) */
+    private static final int MIN_KEY_BYTES = 16;
+
     @Autowired
     private ScenePrimarydbRepository sceneRepository;
     @Autowired
@@ -767,6 +770,11 @@ public class SceneServiceImpl implements SceneService {
             }
 
             byte[] keyBytes = Base64.getDecoder().decode(config.getPrivateKey());
+            // 拒绝过短密钥(熵不足易被暴力破解); AES-256 派生至少要求 16 字节私钥材料
+            if (keyBytes.length < MIN_KEY_BYTES) {
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE,
+                        "密钥长度不足(至少 " + MIN_KEY_BYTES + " 字节)");
+            }
             javax.crypto.SecretKeyFactory factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
             java.security.spec.KeySpec spec = new javax.crypto.spec.PBEKeySpec(
                 config.getPublicKey() != null ? config.getPublicKey().substring(0, Math.min(16, config.getPublicKey().length())).toCharArray() : "PrimiHubScene".toCharArray(),
