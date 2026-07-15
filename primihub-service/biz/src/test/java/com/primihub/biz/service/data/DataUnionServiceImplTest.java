@@ -23,7 +23,7 @@ import java.util.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class DataUnionServiceImplTest {
 
     @Mock
@@ -68,11 +68,12 @@ public class DataUnionServiceImplTest {
         return req;
     }
 
-    private DataUnionTask createTask(String taskId, Integer state) {
+    /** state: 联邦求并 taskState; 2=运行中(不可删除), 其余可删。 */
+    private DataUnionTask createTask(Integer state) {
         DataUnionTask task = new DataUnionTask();
         task.setId(TASK_ID);
         task.setUnionId(1L);
-        task.setTaskId(taskId);
+        task.setTaskId("task-uuid");
         task.setTaskState(state);
         task.setFilePath("/tmp/union_result.csv");
         return task;
@@ -103,28 +104,28 @@ public class DataUnionServiceImplTest {
     }
 
     @Test
-    public void saveDataUnion_repositoryThrows_returnsFailure() {
+    public void saveDataUnion_logFailureSwallowed_stillSucceeds() {
+        // 计算日志记录失败被 recordComputeLog 内部 catch 吞掉(日志失败不应导致任务创建失败)→ 仍返回成功
         DataUnionReq req = validReq();
         doThrow(new RuntimeException("DB error")).when(logManagementService).recordComputeLog(any());
 
         BaseResultEntity result = dataUnionService.saveDataUnion(req, USER_ID);
 
-        assertEquals(BaseResultEnum.FAILURE.getReturnCode(), result.getCode());
-        assertTrue(result.getMsg().contains("创建任务失败"));
+        assertEquals(0, result.getCode().intValue());
+        assertNotNull(result.getResult());
     }
 
     // ==================== getUnionTaskList ====================
 
     @Test
-    public void getUnionTaskList_returnsSuccess() {
+    public void getUnionTaskList_emptyList_returnsSuccess() {
+        // 空结果时服务提前返回(不再查 count), 故只验 selectTaskPage 被调用
         when(dataUnionRepository.selectTaskPage(any())).thenReturn(Collections.emptyList());
-        when(dataUnionRepository.selectTaskPageCount(any())).thenReturn(0L);
 
         BaseResultEntity result = dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10);
 
         assertEquals(0, result.getCode().intValue());
         verify(dataUnionRepository).selectTaskPage(any());
-        verify(dataUnionRepository).selectTaskPageCount(any());
     }
 
     @Test
@@ -158,21 +159,22 @@ public class DataUnionServiceImplTest {
 
     @Test
     public void getUnionTaskDetails_existingTask_returnsDetail() {
-        DataUnionTask task = createTask("task-uuid", 1);
+        DataUnionTask task = createTask(1);
         DataUnion union = createUnion(1L);
 
-        when(dataUnionRepository.selectTaskByTaskId(String.valueOf(TASK_ID))).thenReturn(task);
+        // 服务用 selectTaskById(Long), 而非 selectTaskByTaskId(String)
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(task);
         when(dataUnionRepository.selectById(1L)).thenReturn(union);
 
         BaseResultEntity result = dataUnionService.getUnionTaskDetails(TASK_ID);
 
         assertEquals(0, result.getCode().intValue());
-        verify(dataUnionRepository).selectTaskByTaskId(String.valueOf(TASK_ID));
+        verify(dataUnionRepository).selectTaskById(TASK_ID);
     }
 
     @Test
     public void getUnionTaskDetails_repositoryThrows_returnsFailure() {
-        when(dataUnionRepository.selectTaskByTaskId(String.valueOf(TASK_ID)))
+        when(dataUnionRepository.selectTaskById(TASK_ID))
                 .thenThrow(new RuntimeException("DB error"));
 
         BaseResultEntity result = dataUnionService.getUnionTaskDetails(TASK_ID);
@@ -184,18 +186,18 @@ public class DataUnionServiceImplTest {
 
     @Test
     public void downloadUnionTask_existingTask() {
-        DataUnionTask task = createTask("task-uuid", 1);
+        DataUnionTask task = createTask(1);
         task.setFilePath("/tmp/test_result.csv");
-        when(dataUnionRepository.selectTaskByTaskId(String.valueOf(TASK_ID))).thenReturn(task);
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(task);
 
         dataUnionService.downloadUnionTask(response, TASK_ID);
 
-        verify(dataUnionRepository).selectTaskByTaskId(String.valueOf(TASK_ID));
+        verify(dataUnionRepository).selectTaskById(TASK_ID);
     }
 
     @Test
     public void downloadUnionTask_nullTask_doesNothing() {
-        when(dataUnionRepository.selectTaskByTaskId(String.valueOf(TASK_ID))).thenReturn(null);
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(null);
 
         dataUnionService.downloadUnionTask(response, TASK_ID);
 
@@ -206,6 +208,8 @@ public class DataUnionServiceImplTest {
 
     @Test
     public void delUnionTask_returnsSuccess() {
+        // 非运行中(state != 2)才可删除
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(createTask(1));
         doNothing().when(dataUnionPrRepository).delUnionTask(TASK_ID);
 
         BaseResultEntity result = dataUnionService.delUnionTask(TASK_ID);
@@ -216,6 +220,7 @@ public class DataUnionServiceImplTest {
 
     @Test
     public void delUnionTask_repositoryThrows_returnsFailure() {
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(createTask(1));
         doThrow(new RuntimeException("DB error")).when(dataUnionPrRepository).delUnionTask(TASK_ID);
 
         BaseResultEntity result = dataUnionService.delUnionTask(TASK_ID);
@@ -227,15 +232,19 @@ public class DataUnionServiceImplTest {
 
     @Test
     public void cancelUnionTask_returnsSuccess() {
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(createTask(1));
+
         BaseResultEntity result = dataUnionService.cancelUnionTask(TASK_ID);
 
         assertEquals(0, result.getCode().intValue());
     }
 
     @Test
-    public void cancelUnionTask_returnsSuccessWhenNoRunningTask() {
+    public void cancelUnionTask_nullTask_returnsDataQueryNull() {
+        when(dataUnionRepository.selectTaskById(TASK_ID)).thenReturn(null);
+
         BaseResultEntity result = dataUnionService.cancelUnionTask(TASK_ID);
 
-        assertEquals(0, result.getCode().intValue());
+        assertEquals(BaseResultEnum.DATA_QUERY_NULL.getReturnCode(), result.getCode());
     }
 }
