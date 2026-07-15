@@ -252,8 +252,7 @@ export default {
       this.$router.push({ name: 'ModelList' })
     },
     toTaskDetailPage(id) {
-      this.$message.info('联邦学习任务详情页面开发中...')
-      // this.$router.push({ name: 'FederatedLearningDetail', params: { id } })
+      this.$router.push({ name: 'FederatedLearningTrainingReport', query: { taskId: id } })
     },
     statusStyle(state) {
       return state === 0 ? 'state-default' : state === 1 ? 'state-end' : state === 2 ? 'state-running' : state === 4 ? 'state-default' : 'state-error'
