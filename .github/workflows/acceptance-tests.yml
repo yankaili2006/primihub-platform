@@ -1,0 +1,26 @@
+name: acceptance-tests (44-defect offline invariants)
+
+# 离线不变量门：锁死 demand.csv ↔ 18 模块 ↔ 44 缺陷 ↔ CRUD registry 不漂移。
+# 不连平台（@live 用例自动 skip），纯静态断言，秒级完成，适合每次前后端改动的回归门。
+on:
+  push:
+    paths: ['acceptance-tests/**']
+  pull_request:
+    paths: ['acceptance-tests/**']
+  workflow_dispatch: {}
+
+jobs:
+  offline-invariants:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: acceptance-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install pytest cryptography
+      - name: Offline invariants (must be green)
+        run: python -m pytest tests/ -m "not live" -q
