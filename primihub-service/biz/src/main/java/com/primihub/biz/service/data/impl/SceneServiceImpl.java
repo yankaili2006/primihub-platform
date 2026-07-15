@@ -171,6 +171,66 @@ public class SceneServiceImpl implements SceneService {
     }
 
     @Override
+    public BaseResultEntity exportTaskLog(String sceneType, String taskType) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("sceneType", sceneType);
+            params.put("taskType", taskType);
+            // 导出全部匹配记录(真实 SceneTask 执行日志), 不分页
+            int total = sceneRepository.selectSceneTaskCount(params);
+            params.put("offset", 0);
+            params.put("pageSize", Math.max(total, 1));
+            List<SceneTask> list = sceneRepository.selectSceneTaskList(params);
+
+            StringBuilder csv = new StringBuilder();
+            csv.append("任务ID,场景类型,任务名称,任务类型,状态,引擎/结果,错误信息,创建人,创建时间,更新时间\n");
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            for (SceneTask t : list) {
+                csv.append(csvCell(t.getId()))
+                        .append(',').append(csvCell(t.getSceneType()))
+                        .append(',').append(csvCell(t.getTaskName()))
+                        .append(',').append(csvCell(t.getTaskType()))
+                        .append(',').append(csvCell(taskStateName(t.getTaskState())))
+                        .append(',').append(csvCell(t.getResultData()))
+                        .append(',').append(csvCell(t.getErrorMessage()))
+                        .append(',').append(csvCell(t.getCreatedBy()))
+                        .append(',').append(csvCell(t.getCreatedAt() != null ? sdf.format(t.getCreatedAt()) : ""))
+                        .append(',').append(csvCell(t.getUpdatedAt() != null ? sdf.format(t.getUpdatedAt()) : ""))
+                        .append('\n');
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("fileName", sceneType + "_task_log.csv");
+            result.put("rowCount", list.size());
+            result.put("csv", csv.toString());
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("导出场景任务日志失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "导出失败");
+        }
+    }
+
+    private String taskStateName(Integer state) {
+        if (state == null) return "";
+        switch (state) {
+            case 0: return "待执行";
+            case 1: return "执行中";
+            case 2: return "成功/运行中";
+            case 3: return "失败";
+            default: return String.valueOf(state);
+        }
+    }
+
+    /** CSV 单元格转义: 含逗号/引号/换行时用双引号包裹并转义内部引号。 */
+    private String csvCell(Object value) {
+        if (value == null) return "";
+        String s = value.toString();
+        if (s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")) {
+            return "\"" + s.replace("\"", "\"\"") + "\"";
+        }
+        return s;
+    }
+
+    @Override
     public BaseResultEntity getTaskDetail(Long taskId) {
         try {
             SceneTask task = sceneRepository.selectSceneTaskById(taskId);

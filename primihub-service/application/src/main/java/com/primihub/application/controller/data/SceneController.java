@@ -189,6 +189,12 @@ public class SceneController {
 
     // ==================== 电子证件 ====================
 
+    @ApiOperation("警务融合-流程执行日志导出(CSV)")
+    @GetMapping("/policeFusion/log/export")
+    public BaseResultEntity exportPoliceLog(@RequestParam(required = false) String taskType) {
+        return sceneService.exportTaskLog("police_fusion", taskType);
+    }
+
     @ApiOperation("电子证件-创建任务")
     @PostMapping("/electronicCert/task/create")
     public BaseResultEntity createCertTask(@RequestBody Map<String, Object> req) {
@@ -298,6 +304,12 @@ public class SceneController {
     @PostMapping("/electronicCert/exchange/realtime")
     public BaseResultEntity realtimeExchange(@RequestBody Map<String, Object> req) {
         return sceneService.createTask("electronic_cert", req, getCurrentUserId());
+    }
+
+    @ApiOperation("电子证件-流程执行日志导出(CSV)")
+    @GetMapping("/electronicCert/log/export")
+    public BaseResultEntity exportCertLog(@RequestParam(required = false) String taskType) {
+        return sceneService.exportTaskLog("electronic_cert", taskType);
     }
 
     private Long getCurrentUserId() {

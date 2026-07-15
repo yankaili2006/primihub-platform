@@ -340,7 +340,8 @@ public class MonitorService {
     public BaseResultEntity saveAlertConfig(Map<String, Object> data) {
         try {
             Long id = data.get("id") != null ? Long.valueOf(data.get("id").toString()) : null;
-            String monitorType = readString(data, "type", readString(data, "monitorType", "CPU"));
+            String monitorType = data.get("type") != null ? data.get("type").toString()
+                    : (data.get("monitorType") != null ? data.get("monitorType").toString() : "CPU");
             MonitorAlertConfig config;
             if (id != null) {
                 config = monitorRepository.selectAlertConfigById(id);

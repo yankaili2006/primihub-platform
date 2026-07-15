@@ -14,6 +14,8 @@ public interface SceneService {
     BaseResultEntity getTaskList(String sceneType, String taskType, Integer pageNo, Integer pageSize);
     BaseResultEntity getTaskDetail(Long taskId);
     BaseResultEntity executeTask(Long taskId);
+    /** 导出流程执行日志(真实 SceneTask 记录)为 CSV。 */
+    BaseResultEntity exportTaskLog(String sceneType, String taskType);
 
     BaseResultEntity saveApiConfig(String sceneType, Map<String, Object> req, Long userId);
     BaseResultEntity getApiConfigList(String sceneType);
