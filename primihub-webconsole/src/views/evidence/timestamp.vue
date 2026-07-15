@@ -333,7 +333,7 @@
 </template>
 
 <script>
-import { getTimestampPage, applyTimestamp, verifyTimestamp, getTimestampDetail } from '@/api/evidence'
+import { getTimestampPage, applyTimestamp, verifyTimestamp, getTimestampDetail, downloadTimestampFile } from '@/api/evidence'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -575,16 +575,25 @@ export default {
       }
     },
     downloadTimestamp(row) {
-      // TODO: 实现下载功能
-      this.$message.info('下载功能开发中...')
+      downloadTimestampFile({ id: row.timestampId }).then(res => {
+        const blob = new Blob([res], { type: 'application/octet-stream' })
+        const link = document.createElement('a')
+        link.href = URL.createObjectURL(blob)
+        link.download = `timestamp_cert_${row.timestampId}.txt`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(link.href)
+      }).catch(() => {
+        this.$message.error('下载失败')
+      })
     },
     batchDownload() {
       if (this.selectedRows.length === 0) {
         this.$message.warning('请选择要下载的时间戳')
         return
       }
-      // TODO: 实现批量下载
-      this.$message.info('批量下载功能开发中...')
+      this.selectedRows.forEach(row => this.downloadTimestamp(row))
     }
   }
 }

@@ -159,3 +159,21 @@ export function testApiConnection(data) {
     data
   })
 }
+
+export function downloadCertFile(params) {
+  return request({
+    url: '/evidence/downloadCert',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function downloadTimestampFile(params) {
+  return request({
+    url: '/evidence/downloadTimestamp',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
