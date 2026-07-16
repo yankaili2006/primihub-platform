@@ -10,6 +10,7 @@ import com.primihub.biz.constant.DataConstant;
 import com.primihub.biz.entity.base.BaseFunctionHandleEntity;
 import com.primihub.biz.entity.base.BaseFunctionHandleEnum;
 import com.primihub.biz.entity.base.BaseResultEntity;
+import com.primihub.biz.entity.data.vo.DataResourceCopyVo;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.data.base.DataPirKeyQuery;
 import com.primihub.biz.entity.data.dataenum.ModelStateEnum;
@@ -228,6 +229,26 @@ public class DataAsyncService implements ApplicationContextAware {
         DataResource otherDataResource = dataResourceRepository.queryDataResourceByResourceFusionId(dataPsi.getOtherResourceId());
         if (otherDataResource == null && StringUtils.isNumeric(dataPsi.getOtherResourceId())) {
             otherDataResource = dataResourceRepository.queryDataResourceById(Long.parseLong(dataPsi.getOtherResourceId()));
+        }
+        // 跨机构回退：对方公开资源可能未同步进本地 data_resource(隔离 fusion / 离线部署)。
+        // 本地查不到时，改从 fusion 中心(otherBusinessesService.getDataResource)拉取元数据，
+        // 使跨机构 PSI 不因本地缺失而直接失败。下游只用到 fusionId/列名/状态三项。
+        if (otherDataResource == null) {
+            try {
+                BaseResultEntity fusionRes = otherBusinessesService.getDataResource(dataPsi.getOtherResourceId());
+                if (fusionRes != null && fusionRes.getCode() == 0 && fusionRes.getResult() != null) {
+                    DataResourceCopyVo copyVo = JSONObject.parseObject(JSON.toJSONString(fusionRes.getResult()), DataResourceCopyVo.class);
+                    if (copyVo != null && StringUtils.isNotBlank(copyVo.getResourceColumnNameList())) {
+                        otherDataResource = new DataResource();
+                        otherDataResource.setResourceFusionId(StringUtils.isNotBlank(copyVo.getResourceId()) ? copyVo.getResourceId() : dataPsi.getOtherResourceId());
+                        otherDataResource.setFileHandleField(copyVo.getResourceColumnNameList());
+                        otherDataResource.setResourceState(copyVo.getResourceState() == null ? 0 : copyVo.getResourceState());
+                        log.info("Resolved other resource via fusion center for resourceId: {}", dataPsi.getOtherResourceId());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Cross-org fetch of other resource failed for resourceId: {}", dataPsi.getOtherResourceId(), e);
+            }
         }
         if (otherDataResource == null) {
             log.error("Failed to query other resource from local database for resourceId: {}", dataPsi.getOtherResourceId());
