@@ -18,6 +18,8 @@ import com.primihub.biz.entity.sys.param.ChangeOtherOrganInfoParam;
 import com.primihub.biz.entity.sys.param.OrganParam;
 import com.primihub.biz.entity.sys.po.SysLocalOrganInfo;
 import com.primihub.biz.entity.sys.po.SysOrgan;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.util.List;
 import com.primihub.biz.repository.primarydb.sys.SysOrganPrimarydbRepository;
 import com.primihub.biz.repository.primaryredis.sys.SysCommonPrimaryRedisRepository;
 import com.primihub.biz.repository.secondarydb.sys.SysOrganSecondarydbRepository;
@@ -59,6 +61,35 @@ public class SysOrganService {
     private SysOrganSecondarydbRepository sysOrganSecondarydbRepository;
     @Autowired
     private FusionOrganService fusionOrganService;
+
+    /**
+     * 幂等自动注册本机构及所有已审批机构到 fusion 中心(fusion_organ)。
+     * 修复: 离线部署或未手动执行 changeLocalOrganInfo 时 fusion_organ 为空,
+     * 导致公开资源无法注册到 fusion 中心(saveResource 前校验机构在 fusion_organ)、跨机构资源不可发现、
+     * 联邦任务(PSI等)因查不到对方资源而失败。启动 1 分钟后开始, 每 5 分钟幂等重试(容错 fusion 未就绪)。
+     */
+    @Scheduled(initialDelay = 60000, fixedDelay = 300000)
+    public void ensureFusionOrganRegistration() {
+        try {
+            SysLocalOrganInfo local = organConfiguration.getSysLocalOrganInfo();
+            if (local == null || StringUtils.isBlank(local.getOrganId())) {
+                return;
+            }
+            // 注册本机构
+            fusionOrganService.organData(local.getOrganId(), local.getOrganName());
+            // 注册所有已审批机构, 使本地 fusion 中心可发现各机构公开资源(跨机构 PSI/求交等前提)
+            List<SysOrgan> organs = sysOrganSecondarydbRepository.selectSysOrganByExamine();
+            if (organs != null) {
+                for (SysOrgan organ : organs) {
+                    if (StringUtils.isNotBlank(organ.getOrganId())) {
+                        fusionOrganService.organData(organ.getOrganId(), organ.getOrganName());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ensureFusionOrganRegistration skipped this round: {}", e.getMessage());
+        }
+    }
 
     public BaseResultEntity getLocalOrganInfo() {
         String group = environment.getProperty("nacos.config.group");
