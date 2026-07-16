@@ -1,0 +1,43 @@
+name: schema-drift-check
+# 后端 mybatis mapper 引用的列/类型 vs 部署 base dump 的实际 schema。
+# 取代 Flyway 运行时收敛：把「新功能加了列/改了类型但 initsql dump 没同步」这类
+# 「Unknown column / Data truncation」漂移，从客户运行时提前到构建期拦截。
+on:
+  pull_request:
+    paths:
+      - 'primihub-service/**'
+      - 'arm64-deploy/data/initsql/**'
+      - 'test-tools/mapper_check.py'
+  push:
+    branches: [ develop, main ]
+  workflow_dispatch:
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install mariadb client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq mariadb-client
+      - name: Load complete base dump (privacy1)
+        run: mariadb -h127.0.0.1 -uroot -proot --force < arm64-deploy/data/initsql/privacy1.sql
+      - name: Export live schema
+        run: |
+          mariadb -h127.0.0.1 -uroot -proot -N -e \
+            "SELECT TABLE_NAME,COLUMN_NAME,DATA_TYPE FROM information_schema.columns WHERE TABLE_SCHEMA='privacy1'" \
+            > cols.tsv
+          echo "columns exported: $(wc -l < cols.tsv)"
+      - name: Mapper drift check (fail on missing column / HIGH type mismatch)
+        run: python3 test-tools/mapper_check.py cols.tsv

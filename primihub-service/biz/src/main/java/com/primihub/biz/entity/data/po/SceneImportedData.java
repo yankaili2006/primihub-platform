@@ -6,7 +6,7 @@ import java.util.Date;
 
 /**
  * 场景机构数据接入-真实数据行(electronic_cert/police_fusion)。
- * 对应表 scene_imported_data(见 Flyway V4)。
+ * 对应表 scene_imported_data(见 base dump privacy*.sql)。
  */
 @Data
 public class SceneImportedData {
