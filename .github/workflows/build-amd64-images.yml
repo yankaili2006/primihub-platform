@@ -1,0 +1,76 @@
+name: build-amd64-images
+
+# Build the latest primihub backend + web console images for linux/amd64 natively
+# on a GitHub-hosted x86_64 runner, then push to Aliyun ACR. Mirror of
+# build-arm-images.yml (same Dockerfiles, native build — no QEMU cross-compile).
+# Image names match the offline package env/x86.env mapping (NO -arm64 suffix):
+#   backend  -> registry.cn-beijing.aliyuncs.com/primihub/privacy:1.8.1
+#   web      -> registry.cn-beijing.aliyuncs.com/primihub/platform:1.8.1
+#
+# Why this exists: the pre-existing amd64 tags in ACR were stale/mis-built
+# (platform:1.8.1 amd64 contained a backend jar with no nginx; privacy:1.8.1 amd64
+# was an old backend that ignored the privacy1 datasource override). Rebuilding from
+# current source on a native amd64 runner produces correct, arm64-equivalent images.
+on:
+  push:
+    branches: [ ci/amd64-images ]
+  workflow_dispatch:
+
+env:
+  ACR: registry.cn-beijing.aliyuncs.com
+  BACKEND_IMG: registry.cn-beijing.aliyuncs.com/primihub/privacy:1.8.1
+  WEB_IMG: registry.cn-beijing.aliyuncs.com/primihub/platform:1.8.1
+
+jobs:
+  build-amd64-images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify runner arch
+        run: uname -m   # expect x86_64
+
+      - name: Login to Aliyun ACR
+        run: |
+          echo "${{ secrets.ALIYUN_PASSWORD }}" | docker login "$ACR" \
+            --username "${{ secrets.ALIYUN_USERNAME }}" --password-stdin
+
+      # ---------- Backend: primihub-platform (Maven, arch-aware Dockerfile) ----------
+      - name: Build & push backend amd64 image
+        run: |
+          # aliyun maven mirror intermittently 502s; BuildKit --mount=type=cache .m2
+          # persists across retries within this job, so retries resume with cached deps.
+          ok=0
+          for i in 1 2 3 4 5; do
+            if DOCKER_BUILDKIT=1 docker build -f Dockerfile -t "$BACKEND_IMG" .; then ok=1; break; fi
+            echo "::warning::backend build attempt $i failed (likely transient maven 502), retry in 20s"; sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "::error::backend build failed after 5 attempts"; exit 1; }
+          docker image inspect "$BACKEND_IMG" -f 'arch={{.Os}}/{{.Architecture}}'
+          docker push "$BACKEND_IMG"
+
+      # ---------- Web console: npm build dist/ then nginx image ----------
+      - name: Set up Node 16
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.20.2'
+
+      - name: Build webconsole dist
+        working-directory: primihub-webconsole
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund
+          npm run build:prod
+          test -d dist && echo "dist built: $(du -sh dist | cut -f1)"
+
+      - name: Build & push web amd64 image
+        run: |
+          docker build -f primihub-webconsole/Dockerfile -t "$WEB_IMG" primihub-webconsole
+          docker image inspect "$WEB_IMG" -f 'arch={{.Os}}/{{.Architecture}}'
+          docker push "$WEB_IMG"
+
+      - name: Summary
+        run: |
+          echo "Pushed amd64 images to Aliyun ACR:"
+          echo "  $BACKEND_IMG"
+          echo "  $WEB_IMG"
