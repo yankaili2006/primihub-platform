@@ -22,7 +22,9 @@ ACR_USER=... ACR_PASS=... PTAG=<platform/web tag> TS=<version> \
 
 Prereqs: `git`, `docker` (arm64 native, or x86 w/ QEMU + containerd snapshotter for
 `docker save --platform linux/arm64`), `curl`, `python3` (only for OSS upload).
-All inputs are env vars — see the header of each script. The package version (`TS`) and the
+All inputs are env vars — see the header of each script. `docker-bins.tar` is built from the
+**official** static releases (download.docker.com + github); where github is slow/blocked, set
+`COMPOSE_URL=<mirror>` or drop a pre-fetched `docker-bins.tar` into `$WORK`. The package version (`TS`) and the
 platform/web image tag (`PTAG`) are independent so you can repackage without rebuilding images.
 
 ## Schema ownership (post-Flyway)

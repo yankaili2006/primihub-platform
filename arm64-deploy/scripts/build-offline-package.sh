@@ -11,7 +11,8 @@
 #   META_TAG NODE_TAG                             (default: 2026.07.15)
 #   TS          package version stamp            (default: today's date)
 #   WORK        build workdir                    (default: /tmp/ph-build)
-#   DOCKER_BINS_URL  static docker bins tarball   (default: OSS cache)
+#   DOCKER_VER  docker static version            (default: 26.1.4)
+#   COMPOSE_VER docker compose version           (default: v2.24.5)
 #   OSS_ID OSS_SECRET  set to also upload to OSS  (optional)
 set -euo pipefail
 R=registry.cn-beijing.aliyuncs.com/primihub
@@ -23,7 +24,10 @@ TS="${TS:-$(date +%Y%m%d)}"
 WORK="${WORK:-/tmp/ph-build}"
 PKG="primihub-offline-arm64-$TS"
 DEST="$WORK/$PKG"
-DOCKER_BINS_URL="${DOCKER_BINS_URL:-https://primihub.oss-cn-beijing.aliyuncs.com/primihub-offline/arm64/docker-bins.tar}"
+DOCKER_VER="${DOCKER_VER:-26.1.4}"
+COMPOSE_VER="${COMPOSE_VER:-v2.24.5}"
+# compose binary URL; override with a mirror (e.g. ghproxy) where github is slow/blocked
+COMPOSE_URL="${COMPOSE_URL:-https://github.com/docker/compose/releases/download/$COMPOSE_VER/docker-compose-linux-aarch64}"
 log(){ echo -e "\033[0;36m>> $*\033[0m"; }
 
 [ "$(uname -m)" = "aarch64" ] || echo "WARN: not aarch64 ($(uname -m)) — docker save --platform still needed for arm64 images"
@@ -40,9 +44,22 @@ sed -i -E "s#(PRIMIHUB_NODE=$R/primihub-node:).*#\1$NODE_TAG#"           "$DEST/
 grep -E "PRIMIHUB_(PLATFORM|WEB_MANAGE|META|NODE)=" "$DEST/arm64-deploy/.env"
 echo "initsql dumps: $(ls "$DEST"/arm64-deploy/data/initsql/privacy*.sql | wc -l) (complete schema, Flyway removed)"
 
-log "fetch static docker aarch64 bins"
-if [ -f "$WORK/docker-bins.tar" ]; then cp "$WORK/docker-bins.tar" "$DEST/"; else curl -fSL --retry 3 -o "$DEST/docker-bins.tar" "$DOCKER_BINS_URL"; fi
-tar tf "$DEST/docker-bins.tar" | grep -q dockerd && echo "docker-bins OK"
+log "build docker-bins.tar from official static releases (docker $DOCKER_VER, compose $COMPOSE_VER)"
+if [ -f "$WORK/docker-bins.tar" ]; then
+  cp "$WORK/docker-bins.tar" "$DEST/"          # reuse a pre-fetched tarball if provided
+else
+  BD="$WORK/_docker-bins"; rm -rf "$BD"; mkdir -p "$BD"
+  curl -fSL --retry 3 "https://download.docker.com/linux/static/stable/aarch64/docker-$DOCKER_VER.tgz" \
+    | tar xz -C "$BD" --strip-components=1   # docker dockerd containerd containerd-shim-runc-v2 ctr runc docker-init docker-proxy
+  curl -fSL --retry 3 -o "$BD/docker-compose" "$COMPOSE_URL"
+  chmod +x "$BD"/*
+  tar cf "$DEST/docker-bins.tar" -C "$BD" .
+fi
+members="$(tar tf "$DEST/docker-bins.tar" | sed 's#^\./##')"
+for b in dockerd docker containerd runc docker-compose; do
+  echo "$members" | grep -qx "$b" || { echo "docker-bins missing $b"; exit 1; }
+done
+echo "docker-bins OK ($(echo "$members" | grep -c .) files)"
 
 log "ACR login + pull 9 images (arm64)"
 echo "$ACR_PASS" | docker login "$R" -u "$ACR_USER" --password-stdin >/dev/null
