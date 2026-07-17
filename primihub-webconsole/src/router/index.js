@@ -1032,7 +1032,6 @@ export const asyncRoutes = [
     component: Layout,
     name: 'PoliceDataFusion',
     redirect: '/policeDataFusion/intersection',
-    hidden: true,
     meta: { title: '警务数据融合', icon: 'el-icon-connection' },
     children: [
       {
@@ -1102,7 +1101,6 @@ export const asyncRoutes = [
     component: Layout,
     name: 'ElectronicCertCompare',
     redirect: '/electronicCert/featureConvert',
-    hidden: true,
     meta: { title: '电子证件比对', icon: 'el-icon-postcard' },
     children: [
       {
