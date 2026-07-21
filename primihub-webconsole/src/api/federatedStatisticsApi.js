@@ -176,6 +176,19 @@ export function exportStatisticsResult(data) {
 }
 
 /**
+ * 下载统计任务结果文件
+ * @param {{taskId: number|string}} params
+ */
+export function downloadStatisticsTask(params) {
+  return request({
+    url: '/federatedStatistics/task/download',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+/**
  * 批量导出统计结果（缺陷整改 T2：后端已实现 /result/batchExport，此前前端缺封装）
  * @param {{taskIds: number[], format: string}} data
  */

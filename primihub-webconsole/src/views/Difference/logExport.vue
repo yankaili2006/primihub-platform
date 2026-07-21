@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header content="联邦统计日志导出" style="margin-bottom: 20px;" @back="goBack" />
+    <el-page-header content="联邦求差日志导出" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-card>
       <div slot="header"><span>导出配置</span></div>
@@ -9,16 +9,6 @@
           <el-select v-model="exportFormData.taskIds" multiple placeholder="请选择任务（可多选）" style="width: 100%;">
             <el-option v-for="t in taskList" :key="t.taskId" :label="t.taskName" :value="t.taskId" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="统计类型">
-          <el-checkbox-group v-model="exportFormData.statisticsTypes">
-            <el-checkbox label="SUM">求和</el-checkbox>
-            <el-checkbox label="AVG">平均值</el-checkbox>
-            <el-checkbox label="COUNT">计数</el-checkbox>
-            <el-checkbox label="MAX">最大值</el-checkbox>
-            <el-checkbox label="MIN">最小值</el-checkbox>
-            <el-checkbox label="VARIANCE">方差</el-checkbox>
-          </el-checkbox-group>
         </el-form-item>
         <el-form-item label="时间范围">
           <el-date-picker v-model="exportFormData.dateRange" type="datetimerange" range-separator="至" start-placeholder="开始时间" end-placeholder="结束时间" value-format="yyyy-MM-dd HH:mm:ss" style="width: 100%;" />
@@ -36,11 +26,10 @@
             <el-option label="Excel (.xlsx)" value="EXCEL" />
             <el-option label="CSV (.csv)" value="CSV" />
             <el-option label="TXT (.txt)" value="TXT" />
-            <el-option label="JSON (.json)" value="JSON" />
           </el-select>
         </el-form-item>
         <el-form-item label="文件名前缀">
-          <el-input v-model="exportFormData.fileNamePrefix" placeholder="federated_statistics_log" style="width: 300px;" />
+          <el-input v-model="exportFormData.fileNamePrefix" placeholder="difference_log" style="width: 300px;" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="exporting" @click="handleExport">开始导出</el-button>
@@ -76,20 +65,19 @@
 </template>
 
 <script>
-import { getStatisticsTaskList, exportStatisticsLogs, getLogExportHistory, downloadLogExportFile } from '@/api/federatedStatisticsApi'
+import { getDifferenceTaskList, exportDifferenceLog } from '@/api/difference'
 
 export default {
-  name: 'FederatedStatisticsLogExport',
+  name: 'DifferenceLogExport',
   data() {
     return {
       exporting: false,
       exportFormData: {
         taskIds: [],
-        statisticsTypes: ['SUM', 'AVG', 'COUNT'],
         dateRange: [],
         logTypes: ['INFO', 'WARN', 'ERROR'],
         exportFormat: 'EXCEL',
-        fileNamePrefix: 'federated_statistics_log'
+        fileNamePrefix: 'difference_log'
       },
       taskList: [],
       exportHistory: []
@@ -97,43 +85,37 @@ export default {
   },
   mounted() {
     this.fetchTaskList()
-    this.fetchExportHistory()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
     },
-    // 缺陷整改 T2：任务下拉改真实任务
     fetchTaskList() {
-      getStatisticsTaskList({ pageNo: 1, pageSize: 200 }).then(res => {
-        if (res && res.code === 0 && res.result) {
-          this.taskList = (res.result.list || []).map(t => ({ taskId: t.id, taskName: t.taskName }))
-        }
+      getDifferenceTaskList({ pageNo: 1, pageSize: 200 }).then(res => {
+        const data = (res && res.result && (res.result.data || res.result.list)) || []
+        this.taskList = data.map(t => ({ taskId: t.taskId, taskName: t.taskName }))
       }).catch(() => { this.taskList = [] })
     },
-    // 缺陷整改：改为真实导出并触发下载，将导出记录加入本地历史
     handleExport() {
       if (this.exportFormData.taskIds.length === 0) {
         this.$message.warning('请选择至少一个任务')
         return
       }
       this.exporting = true
-      const data = {
+      const params = {
         taskId: this.exportFormData.taskIds[0],
-        format: this.exportFormData.exportFormat,
-        startDate: this.exportFormData.dateRange && this.exportFormData.dateRange[0] ? this.exportFormData.dateRange[0] : '',
-        endDate: this.exportFormData.dateRange && this.exportFormData.dateRange[1] ? this.exportFormData.dateRange[1] : ''
+        startTime: this.exportFormData.dateRange && this.exportFormData.dateRange[0] ? this.exportFormData.dateRange[0] : '',
+        endTime: this.exportFormData.dateRange && this.exportFormData.dateRange[1] ? this.exportFormData.dateRange[1] : ''
       }
-      exportStatisticsLogs(data).then(response => {
+      exportDifferenceLog(params).then(response => {
         const blob = new Blob([response], { type: 'application/octet-stream' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.csv`
+        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
         link.click()
         window.URL.revokeObjectURL(url)
-        this.$message.success('日志导出成功')
-        // 将导出记录加入本地历史（含导出参数，用于后续重新下载）
+        // 将导出记录加入本地历史
         this.exportHistory.unshift({
           id: 'EXP_' + Date.now(),
           fileName: link.download,
@@ -142,10 +124,9 @@ export default {
           fileSize: '-',
           createTime: new Date().toLocaleString(),
           status: 'completed',
-          _exportParams: { ...data }
+          _exportParams: { ...params }
         })
-        // 同时尝试从后端获取真实导出历史
-        this.fetchExportHistory()
+        this.$message.success('日志导出成功')
       }).catch(() => {
         this.$message.error('导出失败')
       }).finally(() => {
@@ -155,55 +136,25 @@ export default {
     handleReset() {
       this.exportFormData = {
         taskIds: [],
-        statisticsTypes: ['SUM', 'AVG', 'COUNT'],
         dateRange: [],
         logTypes: ['INFO', 'WARN', 'ERROR'],
         exportFormat: 'EXCEL',
-        fileNamePrefix: 'federated_statistics_log'
+        fileNamePrefix: 'difference_log'
       }
     },
-    fetchExportHistory() {
-      getLogExportHistory({ pageNo: 1, pageSize: 50 }).then(res => {
-        if (res && res.code === 0 && res.result) {
-          this.exportHistory = (res.result.list || res.result.data || res.result) || []
-        }
-      }).catch(() => { /* 静默失败 */ })
-    },
-    // 缺陷整改：下载按钮支持两种模式 — ① 从后端下载（有 exportId）② 本地记录用导出参数重新导出
     handleDownload(row) {
-      // 本地记录：使用保存的导出参数重新导出
-      if (row._exportParams) {
-        this.$message.info('正在重新导出，请稍候...')
-        exportStatisticsLogs(row._exportParams).then(response => {
-          const blob = new Blob([response], { type: 'application/octet-stream' })
-          const url = window.URL.createObjectURL(blob)
-          const link = document.createElement('a')
-          link.href = url
-          link.download = row.fileName || `export_${Date.now()}.csv`
-          link.click()
-          window.URL.revokeObjectURL(url)
-        }).catch(() => {
-          this.$message.error('下载失败')
-        })
+      const params = row._exportParams
+      if (!params || !params.taskId) {
+        this.$message.warning('历史记录缺少导出参数，无法重新下载')
         return
       }
-      // 后端记录：调用下载接口
-      const id = row.id || row.exportId || row.taskId
-      if (!id) {
-        this.$message.warning('下载参数缺失')
-        return
-      }
-      this.$message.info('正在下载，请稍候...')
-      downloadLogExportFile({ exportId: id }).then(response => {
-        if (!response || (response instanceof Blob && response.size === 0)) {
-          this.$message.error('下载文件为空')
-          return
-        }
-        const blob = new Blob([response])
+      this.$message.info('正在重新导出，请稍候...')
+      exportDifferenceLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/octet-stream' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = row.fileName || `export_${id}.csv`
+        link.download = row.fileName || `difference_export_${params.taskId}.xlsx`
         link.click()
         window.URL.revokeObjectURL(url)
       }).catch(() => {

@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-page-header content="联邦统计日志记录" style="margin-bottom: 20px;" @back="goBack" />
+    <el-page-header content="联邦求差日志记录" style="margin-bottom: 20px;" @back="goBack" />
 
     <el-form :inline="true" :model="queryForm" class="demo-form-inline">
       <el-form-item label="任务ID">
@@ -12,16 +12,6 @@
           <el-option label="WARN" value="WARN" />
           <el-option label="ERROR" value="ERROR" />
           <el-option label="DEBUG" value="DEBUG" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="统计类型">
-        <el-select v-model="queryForm.statisticsType" placeholder="请选择" clearable style="width: 140px;">
-          <el-option label="求和" value="SUM" />
-          <el-option label="平均值" value="AVG" />
-          <el-option label="计数" value="COUNT" />
-          <el-option label="最大值" value="MAX" />
-          <el-option label="最小值" value="MIN" />
-          <el-option label="方差" value="VARIANCE" />
         </el-select>
       </el-form-item>
       <el-form-item label="时间范围">
@@ -38,9 +28,9 @@
       <el-table-column prop="logId" label="日志ID" width="100" />
       <el-table-column prop="taskId" label="任务ID" width="100" />
       <el-table-column prop="taskName" label="任务名称" width="180" />
-      <el-table-column prop="statisticsType" label="统计类型" width="100">
+      <el-table-column prop="differenceDirection" label="求差方向" width="100">
         <template slot-scope="scope">
-          {{ getStatisticsTypeLabel(scope.row.statisticsType) }}
+          <span>{{ scope.row.differenceDirection === 0 ? '本方-对方' : '对方-本方' }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="logType" label="日志类型" width="100">
@@ -65,7 +55,7 @@
         <el-descriptions-item label="日志ID">{{ detailData.logId }}</el-descriptions-item>
         <el-descriptions-item label="任务ID">{{ detailData.taskId }}</el-descriptions-item>
         <el-descriptions-item label="任务名称">{{ detailData.taskName }}</el-descriptions-item>
-        <el-descriptions-item label="统计类型">{{ getStatisticsTypeLabel(detailData.statisticsType) }}</el-descriptions-item>
+        <el-descriptions-item label="求差方向">{{ detailData.differenceDirection === 0 ? '本方-对方' : '对方-本方' }}</el-descriptions-item>
         <el-descriptions-item label="日志类型">
           <el-tag :type="getLogTypeTag(detailData.logType)" size="small">{{ detailData.logType }}</el-tag>
         </el-descriptions-item>
@@ -82,17 +72,16 @@
 </template>
 
 <script>
-import { getStatisticsLogs, getStatisticsLogDetail } from '@/api/federatedStatisticsApi'
+import { getComputeLogPage } from '@/api/logManagement'
 
 export default {
-  name: 'FederatedStatisticsLogRecord',
+  name: 'DifferenceLogRecord',
   data() {
     return {
       loading: false,
       queryForm: {
         taskId: '',
         logType: '',
-        statisticsType: '',
         dateRange: [],
         pageNum: 1,
         pageSize: 10
@@ -112,21 +101,19 @@ export default {
     },
     fetchData() {
       this.loading = true
-      // 缺陷整改：所有查询条件（含 statisticsType）真正下发后端过滤
-      // 同时增加客户端 taskId 过滤（后端可能未实现过滤，作为降级方案）
       const taskIdFilter = this.queryForm.taskId ? this.queryForm.taskId.trim() : ''
       const params = {
         taskId: taskIdFilter || undefined,
-        logLevel: this.queryForm.logType || undefined,
-        statisticsType: this.queryForm.statisticsType || undefined,
-        startDate: this.queryForm.dateRange && this.queryForm.dateRange[0] ? this.queryForm.dateRange[0] : undefined,
-        endDate: this.queryForm.dateRange && this.queryForm.dateRange[1] ? this.queryForm.dateRange[1] : undefined,
+        logType: this.queryForm.logType || undefined,
+        computeType: '联邦求差',
+        startTime: this.queryForm.dateRange && this.queryForm.dateRange[0] ? this.queryForm.dateRange[0] : undefined,
+        endTime: this.queryForm.dateRange && this.queryForm.dateRange[1] ? this.queryForm.dateRange[1] : undefined,
         pageNo: this.queryForm.pageNum,
         pageSize: this.queryForm.pageSize
       }
-      getStatisticsLogs(params).then(res => {
+      getComputeLogPage(params).then(res => {
         if (res && res.code === 0 && res.result) {
-          let list = res.result.list || []
+          let list = res.result.list || res.result.data || []
           // 客户端二次过滤：后端未按 taskId 过滤时，前端自行过滤
           if (taskIdFilter && list.length > 0) {
             list = list.filter(row => {
@@ -152,7 +139,7 @@ export default {
       this.fetchData()
     },
     handleReset() {
-      this.queryForm = { taskId: '', logType: '', statisticsType: '', dateRange: [], pageNum: 1, pageSize: 10 }
+      this.queryForm = { taskId: '', logType: '', dateRange: [], pageNum: 1, pageSize: 10 }
       this.fetchData()
     },
     handleSizeChange(val) {
@@ -164,22 +151,12 @@ export default {
       this.fetchData()
     },
     handleViewDetail(row) {
-      const logId = row.logId || row.id
-      getStatisticsLogDetail({ logId }).then(res => {
-        this.detailData = (res && res.code === 0 && res.result) ? res.result : { ...row }
-        this.detailDialogVisible = true
-      }).catch(() => {
-        this.detailData = { ...row }
-        this.detailDialogVisible = true
-      })
+      this.detailData = { ...row }
+      this.detailDialogVisible = true
     },
     getLogTypeTag(type) {
       const map = { 'INFO': 'info', 'WARN': 'warning', 'ERROR': 'danger', 'DEBUG': '' }
       return map[type] || 'info'
-    },
-    getStatisticsTypeLabel(type) {
-      const map = { 'SUM': '求和', 'AVG': '平均值', 'COUNT': '计数', 'MAX': '最大值', 'MIN': '最小值', 'VARIANCE': '方差' }
-      return map[type] || type
     }
   }
 }

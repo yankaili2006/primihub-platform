@@ -372,11 +372,6 @@ export default {
       this.detailVisible = true
     },
     exportLog() {
-      // 无数据时不发起导出：否则后端返回空文件/JSON 错误体，前端仍会误报"导出成功"
-      if (!this.itemTotalCount || this.itemTotalCount === 0) {
-        this.$message.warning('暂无数据可导出')
-        return
-      }
       const params = {
         keyword: this.searchForm.keyword,
         method: this.searchForm.method,
@@ -385,25 +380,36 @@ export default {
         startTime: this.dateRange && this.dateRange.length > 0 ? this.dateRange[0] : '',
         endTime: this.dateRange && this.dateRange.length > 1 ? this.dateRange[1] : ''
       }
-      exportApiLog(params).then(async response => {
-        // 兜底：后端在无数据/出错时可能返回 JSON 错误体而非 xlsx 二进制，不能当作成功
-        if (response && response.type && response.type.indexOf('application/json') !== -1) {
-          let msg = '暂无数据可导出'
-          try {
-            const json = JSON.parse(await response.text())
-            msg = json.msg || json.message || msg
-          } catch (e) { /* 解析失败则用默认提示 */ }
-          this.$message.warning(msg)
+      exportApiLog(params).then(response => {
+        // 检查响应是否为空 blob 或含有 JSON 错误信息
+        if (!response || (response instanceof Blob && response.size === 0)) {
+          this.$message.warning('暂无数据可导出')
           return
         }
-        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = window.URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = `接口日志_${new Date().getTime()}.xlsx`
-        link.click()
-        window.URL.revokeObjectURL(url)
-        this.$message.success('导出成功')
+        // 尝试读取 blob 内容，判断是否为 JSON 错误消息
+        if (response instanceof Blob && response.size > 0) {
+          const reader = new FileReader()
+          reader.onload = function(e) {
+            const text = e.target.result
+            try {
+              const json = JSON.parse(text)
+              if (json.code !== undefined && json.code !== 0) {
+                this.$message.warning(json.message || json.msg || '暂无数据可导出')
+                return
+              }
+            } catch (_) { /* 非 JSON，说明是正常文件内容 */ }
+            // 正常文件内容，触发下载
+            const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `接口日志_${new Date().getTime()}.xlsx`
+            link.click()
+            window.URL.revokeObjectURL(url)
+            this.$message.success('导出成功')
+          }.bind(this)
+          reader.readAsText(response.slice(0, 1024))
+        }
       }).catch(() => {
         this.$message.error('导出失败')
       })

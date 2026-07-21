@@ -157,11 +157,45 @@
         <pagination v-show="totalPage>1" :limit.sync="pageSize" :page-count="totalPage" :page.sync="pageNo" :total="total" @pagination="handlePagination" />
       </div>
     </div>
+    <!-- 创建任务弹窗 -->
+    <el-dialog title="创建联邦学习任务" :visible.sync="createDialogVisible" width="50%">
+      <el-form ref="createForm" :model="createFormData" :rules="createFormRules" label-width="100px">
+        <el-form-item label="任务名称" prop="taskName">
+          <el-input v-model="createFormData.taskName" placeholder="请输入任务名称" />
+        </el-form-item>
+        <el-form-item label="任务类型" prop="taskType">
+          <el-radio-group v-model="createFormData.taskType">
+            <el-radio :label="1">建模</el-radio>
+            <el-radio :label="2">预测</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="算法类型" prop="algorithmType">
+          <el-select v-model="createFormData.algorithmType" placeholder="请选择算法类型" style="width: 100%;">
+            <el-option label="线性回归" :value="1" />
+            <el-option label="逻辑回归" :value="2" />
+            <el-option label="XGBoost" :value="3" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="联邦类型" prop="federatedType">
+          <el-radio-group v-model="createFormData.federatedType">
+            <el-radio :label="1">横向联邦</el-radio>
+            <el-radio :label="2">纵向联邦</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="训练轮数">
+          <el-input-number v-model="createFormData.totalRounds" :min="1" :max="10000" :step="10" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="createDialogVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="createLoading" @click="handleCreateSubmit">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getTaskList, deleteTask, cancelTask, downloadModel, downloadResult, exportFederatedLearningLog } from '@/api/federatedLearning'
+import { getTaskList, createTask, deleteTask, cancelTask, downloadModel, downloadResult, exportFederatedLearningLog } from '@/api/federatedLearning'
 import Pagination from '@/components/Pagination'
 import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
@@ -211,7 +245,22 @@ export default {
         { label: '已取消', value: 4 }
       ],
       datePickerOptions: dateRangePickerOptions,
-      exporting: false
+      exporting: false,
+      createDialogVisible: false,
+      createLoading: false,
+      createFormData: {
+        taskName: '',
+        taskType: 1,
+        algorithmType: '',
+        federatedType: 1,
+        totalRounds: 100
+      },
+      createFormRules: {
+        taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
+        taskType: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
+        algorithmType: [{ required: true, message: '请选择算法类型', trigger: 'change' }],
+        federatedType: [{ required: true, message: '请选择联邦类型', trigger: 'change' }]
+      }
     }
   },
   created() {
@@ -246,13 +295,40 @@ export default {
       this.getTaskList()
     },
     toTaskPage() {
-      this.$router.push({ name: 'FederatedModelingWorkbench' })
+      this.createFormData = { taskName: '', taskType: 1, algorithmType: '', federatedType: 1, totalRounds: 100 }
+      this.createDialogVisible = true
+    },
+    handleCreateSubmit() {
+      this.$refs.createForm.validate((valid) => {
+        if (!valid) return
+        this.createLoading = true
+        const params = {
+          taskName: this.createFormData.taskName,
+          taskType: this.createFormData.taskType,
+          algorithmType: this.createFormData.algorithmType,
+          federatedType: this.createFormData.federatedType,
+          totalRounds: this.createFormData.totalRounds
+        }
+        createTask(params).then(res => {
+          if (res && res.code === 0) {
+            this.$message.success('联邦学习任务创建成功')
+            this.createDialogVisible = false
+            this.getTaskList()
+          } else {
+            this.$message.error((res && res.msg) || '创建失败')
+          }
+        }).catch(() => {
+          this.$message.error('创建失败，请检查网络或联系管理员')
+        }).finally(() => {
+          this.createLoading = false
+        })
+      })
     },
     toModelList() {
       this.$router.push({ name: 'ModelList' })
     },
     toTaskDetailPage(id) {
-      this.$router.push({ name: 'FederatedLearningTrainingReport', query: { taskId: id } })
+      this.$router.push({ name: 'FederatedLearningDetail', params: { id } })
     },
     statusStyle(state) {
       return state === 0 ? 'state-default' : state === 1 ? 'state-end' : state === 2 ? 'state-running' : state === 4 ? 'state-default' : 'state-error'

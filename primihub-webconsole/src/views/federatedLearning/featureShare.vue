@@ -159,7 +159,7 @@ export default {
         const res = await getFLPreprocessList({ preprocessType: PREPROCESS_TYPE })
         this.taskList = res.data || []
       } catch (e) {
-        this.$message.error('加载任务列表失败')
+        this.taskList = []
       } finally {
         this.listLoading = false
       }

@@ -442,12 +442,9 @@ export default {
           } else {
             this.$message.error(res.msg || '匹配失败')
           }
-        }).catch(() => {
+        }).catch((e) => {
           this.matchLoading = false
-          // 模拟匹配成功
-          this.$message.success('匹配成功，找到4个匹配资源')
-          this.matchedResources = this.getMockMatchedResources()
-          this.matchedResourcesTotal = this.matchedResources.length
+          this.$message.error('请求异常：' + (e.message || '匹配失败'))
         })
       }).catch(() => {})
     },
@@ -465,11 +462,8 @@ export default {
           } else {
             this.$message.error(res.msg || '确认失败')
           }
-        }).catch(() => {
-          // 模拟确认成功
-          row.matchStatus = 1
-          row.confirmUserName = this.userName || 'admin'
-          this.$message.success('确认成功')
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '确认失败'))
         })
       }).catch(() => {})
     },
@@ -486,11 +480,8 @@ export default {
           } else {
             this.$message.error(res.msg || '拒绝失败')
           }
-        }).catch(() => {
-          // 模拟拒绝成功
-          row.matchStatus = 2
-          row.confirmUserName = this.userName || 'admin'
-          this.$message.success('已拒绝')
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '拒绝失败'))
         })
       }).catch(() => {})
     },

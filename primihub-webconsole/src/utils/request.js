@@ -226,11 +226,14 @@ service.interceptors.response.use(
     }
     console.log('err' + err.message) // for debug
     endLoading()
-    message({
-      message: err.message,
-      type: 'error',
-      duration: 5 * 1000
-    })
+    // 4xx 错误由各组件自行处理，不弹全局通知（避免重复弹窗）
+    if (err && err.response && err.response.status >= 500) {
+      message({
+        message: err.message,
+        type: 'error',
+        duration: 5 * 1000
+      })
+    }
     return Promise.reject(err)
   }
 )

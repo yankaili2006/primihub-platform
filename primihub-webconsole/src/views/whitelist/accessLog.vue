@@ -152,7 +152,7 @@
 </template>
 
 <script>
-import { getWhitelistAccessLogPage, getWhitelistAccessLogDetail, getWhitelistAccessStatistics, exportAccessLog } from '@/api/whitelist'
+import { getWhitelistAccessLogPage, getWhitelistAccessLogDetail, getWhitelistAccessStatistics } from '@/api/whitelist'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -241,15 +241,21 @@ export default {
       }
     },
     handleExport() {
-      exportAccessLog(this.searchForm).then(res => {
-        const blob = new Blob([res], { type: 'application/octet-stream' })
+      this.$message.info('正在导出...')
+      const params = {
+        keyword: this.query.keyword || '',
+        startTime: this.query.createDate && this.query.createDate[0] || '',
+        endTime: this.query.createDate && this.query.createDate[1] || ''
+      }
+      getWhitelistAccessLogPage({ ...params, pageNo: 1, pageSize: 99999 }).then(res => {
+        const list = (res && res.result && (res.result.list || res.result.data)) || []
+        const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json;charset=utf-8' })
+        const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = '白名单访问日志_' + Date.now() + '.csv'
-        link.click()
-        URL.revokeObjectURL(link.href)
-        this.$message.success('导出成功')
-      }).catch(() => { this.$message.error('导出失败，请稍后重试') })
+        link.href = url; link.download = `白名单访问日志_${new Date().getTime()}.json`
+        link.click(); window.URL.revokeObjectURL(url)
+        this.$message.success(`导出成功，共 ${list.length} 条记录`)
+      }).catch(() => this.$message.error('导出失败'))
     }
   }
 }

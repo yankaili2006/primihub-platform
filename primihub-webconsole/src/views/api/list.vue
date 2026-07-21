@@ -437,16 +437,20 @@ export default {
       this.$refs.apiForm.validate(async(valid) => {
         if (valid) {
           this.submitting = true
-          // TODO: 调用实际接口
-          const res = this.isEdit ? await updateApi(this.apiForm) : await addApi(this.apiForm)
-          this.submitting = false
-          if (res && res.code === 0) {
-            this.$message.success(this.isEdit ? '接口更新成功' : '接口创建成功')
-            this.dialogVisible = false
-            this.fetchData()
-            this.fetchStatistics()
-          } else {
-            this.$message.error((res && res.msg) || (this.isEdit ? '接口更新失败' : '接口创建失败'))
+          try {
+            const res = this.isEdit ? await updateApi(this.apiForm) : await addApi(this.apiForm)
+            if (res && res.code === 0) {
+              this.$message.success(this.isEdit ? '接口更新成功' : '接口创建成功')
+              this.dialogVisible = false
+              this.fetchData()
+              this.fetchStatistics()
+            } else {
+              this.$message.error((res && res.msg) || (this.isEdit ? '接口更新失败' : '接口创建失败'))
+            }
+          } catch (e) {
+            this.$message.error('请求异常：' + (e.message || ''))
+          } finally {
+            this.submitting = false
           }
         }
       })

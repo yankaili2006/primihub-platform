@@ -6,6 +6,9 @@ module.exports = {
       'jest-transform-stub',
     '^.+\\.jsx?$': 'babel-jest'
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(vue-echarts|echarts|resize-detector)/)'
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },

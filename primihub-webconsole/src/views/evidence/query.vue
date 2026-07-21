@@ -348,7 +348,7 @@
 </template>
 
 <script>
-import { getEvidencePage, getEvidenceDetail, verifyEvidence, getEvidenceStatistics, createEvidence, downloadCertFile } from '@/api/evidence'
+import { getEvidencePage, getEvidenceDetail, verifyEvidence, getEvidenceStatistics, createEvidence } from '@/api/evidence'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -539,18 +539,15 @@ export default {
       this.verifyDialogVisible = true
     },
     downloadCert(row) {
-      downloadCertFile({ id: row.id || row.evidenceId }).then(res => {
-        const blob = new Blob([res], { type: 'application/octet-stream' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = `evidence_cert_${row.id || row.evidenceId}.txt`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(link.href)
-      }).catch(() => {
-        this.$message.error('证书下载失败')
-      })
+      this.$message.info('正在下载证书...')
+      const certContent = row.certContent || row.certificate || JSON.stringify(row, null, 2)
+      const blob = new Blob([certContent], { type: 'application/octet-stream' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `evidence_cert_${row.id || Date.now()}.cert`
+      link.click()
+      window.URL.revokeObjectURL(url)
     },
     copyToClipboard(text) {
       const textarea = document.createElement('textarea')

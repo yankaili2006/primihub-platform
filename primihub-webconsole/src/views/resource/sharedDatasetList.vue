@@ -307,15 +307,15 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
-          // 使用测试数据
-          this.tableData = this.getMockData()
-          this.total = this.tableData.length
+          this.$message.warning('查询失败：' + (res.msg || '未知错误'))
+          this.tableData = []
+          this.total = 0
         }
       }).catch(() => {
         this.loading = false
-        // 使用测试数据
-        this.tableData = this.getMockData()
-        this.total = this.tableData.length
+        this.$message.warning('查询失败，请检查网络或联系管理员')
+        this.tableData = []
+        this.total = 0
       })
     },
     getMockData() {
@@ -501,10 +501,8 @@ export default {
           } else {
             this.$message.error(res.msg || '删除失败')
           }
-        }).catch(() => {
-          // 模拟删除成功
-          this.$message.success('删除成功')
-          this.tableData = this.tableData.filter(item => item.id !== row.id)
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '删除失败'))
         })
       }).catch(() => {})
     },
@@ -521,11 +519,8 @@ export default {
           } else {
             this.$message.error(res.msg || '批量删除失败')
           }
-        }).catch(() => {
-          // 模拟删除成功
-          this.$message.success('批量删除成功')
-          this.tableData = this.tableData.filter(item => !this.selectedIds.includes(item.id))
-          this.selectedIds = []
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '批量删除失败'))
         })
       }).catch(() => {})
     },
@@ -542,10 +537,8 @@ export default {
           } else {
             this.$message.error(res.msg || '下架失败')
           }
-        }).catch(() => {
-          // 模拟下架成功
-          row.shareStatus = 3
-          this.$message.success('下架成功')
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '下架失败'))
         })
       }).catch(() => {})
     },
@@ -562,10 +555,8 @@ export default {
           } else {
             this.$message.error(res.msg || '上架失败')
           }
-        }).catch(() => {
-          // 模拟上架成功
-          row.shareStatus = 1
-          this.$message.success('上架成功')
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '上架失败'))
         })
       }).catch(() => {})
     },
@@ -591,19 +582,8 @@ export default {
             } else {
               this.$message.error(res.msg || (this.isEdit ? '更新失败' : '添加失败'))
             }
-          }).catch(() => {
-            // 模拟成功
-            this.$message.success(this.isEdit ? '更新成功' : '添加成功')
-            this.dialogVisible = false
-            if (!this.isEdit) {
-              const newItem = {
-                ...this.formData,
-                id: Date.now(),
-                createDate: new Date().toLocaleString(),
-                updateDate: new Date().toLocaleString()
-              }
-              this.tableData.unshift(newItem)
-            }
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || '请检查网络或联系管理员'))
           })
         }
       })

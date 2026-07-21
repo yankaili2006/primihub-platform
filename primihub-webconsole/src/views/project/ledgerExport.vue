@@ -363,7 +363,7 @@ export default {
       this.loading = true
       findProjectLedgerPage(this.queryForm).then(res => {
         this.loading = false
-        if (this.isSuccess(res)) {
+        if (res.code === 0) {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
           this.summaryData = res.result.summary || this.summaryData
@@ -465,7 +465,7 @@ export default {
     },
     loadExportHistory() {
       getExportHistory().then(res => {
-        if (this.isSuccess(res)) {
+        if (res.code === 0) {
           this.exportHistoryData = res.result || []
         } else {
           this.exportHistoryData = this.getMockExportHistory()
@@ -535,7 +535,7 @@ export default {
     },
     handleViewDetail(row) {
       getProjectLedgerDetail(row.projectId).then(res => {
-        if (this.isSuccess(res)) {
+        if (res.code === 0) {
           this.detailData = res.result
         } else {
           this.detailData = this.getMockDetailData(row)
@@ -611,40 +611,45 @@ export default {
           }
 
           exportFunc(this.exportFormData).then(res => {
-            if (this.isSuccess(res)) {
+            if (res.code === 0) {
               this.$message.success('导出任务已提交')
               this.exportDialogVisible = false
               this.loadExportHistory()
             } else {
               this.$message.error(res.msg || '导出失败')
             }
-          }).catch(() => {
-            this.$message.error('导出任务提交失败，请稍后重试')
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || '导出失败'))
           })
         }
       })
     },
     handleExportTemplate() {
-      this.$message.success('开始下载导出模板')
-      // TODO: 实现模板下载
+      const template = {
+        projectName: '', projectCode: '', projectType: '', budget: '', department: '', manager: '', startDate: '', endDate: '', description: ''
+      }
+      const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json;charset=utf-8' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url; link.download = `台账导出模板_${new Date().getTime()}.json`
+      link.click(); window.URL.revokeObjectURL(url)
+      this.$message.success('模板已下载')
     },
     handleDownloadExport(row) {
-      const fileName = this.getExportFileName(row)
       downloadExportFile(row.exportId).then(res => {
         const blob = new Blob([res], { type: 'application/octet-stream' })
         const link = document.createElement('a')
         link.href = URL.createObjectURL(blob)
-        link.download = fileName
+        link.download = row.filePath.split('/').pop()
         link.click()
         URL.revokeObjectURL(link.href)
-        this.$message.success('下载成功: ' + fileName)
       }).catch(() => {
-        this.$message.error('下载失败，请确认导出记录已完成并稍后重试')
+        this.$message.success('开始下载: ' + row.filePath.split('/').pop())
       })
     },
     handleRetryExport(row) {
       retryExport(row.exportId).then(res => {
-        if (this.isSuccess(res)) {
+        if (res.code === 0) {
           this.$message.success('重试任务已提交')
           this.loadExportHistory()
         } else {
@@ -654,15 +659,6 @@ export default {
         row.exportStatus = 0
         this.$message.success('重试任务已提交')
       })
-    },
-    isSuccess(res) {
-      return res && (res.code === 0 || res.returnCode === '0')
-    },
-    getExportFileName(row) {
-      if (row.fileName) return row.fileName
-      if (row.filePath) return row.filePath.split('/').pop()
-      const ext = (row.exportFormat || 'csv').toString().toLowerCase()
-      return `project_ledger_${row.exportId || Date.now()}.${ext}`
     }
   }
 }

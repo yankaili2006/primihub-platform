@@ -519,11 +519,8 @@ export default {
             } else {
               this.$message.error(res.msg || '取消合作失败')
             }
-          }).catch(() => {
-            // 模拟成功
-            this.$message.success('取消合作成功')
-            this.cancelDialogVisible = false
-            this.tableData = this.tableData.filter(item => item.id !== this.cancelForm.id)
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || '取消合作失败'))
           })
         }
       })
@@ -548,12 +545,8 @@ export default {
             } else {
               this.$message.error(res.msg || '批量取消合作失败')
             }
-          }).catch(() => {
-            // 模拟成功
-            this.$message.success('批量取消合作成功')
-            this.batchCancelDialogVisible = false
-            this.tableData = this.tableData.filter(item => !ids.includes(item.id))
-            this.selectedRows = []
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || '批量取消合作失败'))
           })
         }
       })
@@ -576,10 +569,8 @@ export default {
           } else {
             this.$message.error(res.msg || '建立合作失败')
           }
-        }).catch(() => {
-          // 模拟成功
-          this.$message.success('重新建立合作成功，请前往合作方管理页面查看')
-          this.historyTableData = this.historyTableData.filter(item => item.id !== row.id)
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '建立合作失败'))
         })
       }).catch(() => {})
     },

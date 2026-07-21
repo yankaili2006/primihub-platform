@@ -103,8 +103,7 @@ export default {
         this.taskList = data.map(t => ({ taskId: t.taskId, taskName: t.taskName }))
       }).catch(() => { this.taskList = [] })
     },
-    // 缺陷整改 T2：改为真实导出并触发文件下载（原 setTimeout 假成功、不产文件）
-    // 后端 /log/exportComputeLog 按单 taskId 过滤，多选时导出所选第一个任务
+    // 缺陷整改：导出为即时下载 blob，同时将导出记录加入本地导出历史
     handleExport() {
       if (this.exportFormData.taskIds.length === 0) {
         this.$message.warning('请选择至少一个任务')
@@ -124,6 +123,17 @@ export default {
         link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
         link.click()
         window.URL.revokeObjectURL(url)
+        // 加入本地导出历史
+        this.exportHistory.unshift({
+          id: 'EXP_' + Date.now(),
+          fileName: link.download,
+          format: this.exportFormData.exportFormat,
+          recordCount: '-',
+          fileSize: '-',
+          createTime: new Date().toLocaleString(),
+          status: 'completed',
+          _params: params
+        })
         this.$message.success('日志导出成功')
       }).catch(() => {
         this.$message.error('导出失败')
@@ -141,8 +151,25 @@ export default {
         fileNamePrefix: 'federated_learning_log'
       }
     },
+    // 缺陷整改：从本地历史记录中重新导出并下载（后端无持久化存储，使用导出时的参数重新请求）
     handleDownload(row) {
-      this.$message.success(`开始下载: ${row.fileName}`)
+      const params = row._params
+      if (!params || !params.taskId) {
+        this.$message.warning('历史记录缺少导出参数，无法重新下载')
+        return
+      }
+      this.$message.info('正在下载，请稍候...')
+      exportFederatedLearningLog(params).then(response => {
+        const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = row.fileName || `fl_export_${params.taskId}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+      }).catch(() => {
+        this.$message.error('下载失败')
+      })
     }
   }
 }

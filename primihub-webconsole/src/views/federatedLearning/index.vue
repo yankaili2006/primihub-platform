@@ -4,6 +4,7 @@
     <el-tabs v-model="activeTab" type="card" @tab-click="handleTabClick">
       <el-tab-pane label="联邦学习任务" name="tasks" />
       <el-tab-pane label="建模工作台" name="workbench" />
+      <el-tab-pane label="单方数据模块" name="singleParty" />
       <el-tab-pane label="参数调优" name="tuning" />
       <el-tab-pane label="训练迭代" name="iteration" />
       <el-tab-pane label="训练报告" name="report" />
@@ -156,6 +157,49 @@
       <el-row style="margin-top: 20px; text-align: center;">
         <el-button type="primary" @click="handleSaveWorkbench">保存配置</el-button>
         <el-button type="success" @click="handleStartFromWorkbench">开始训练</el-button>
+      </el-row>
+    </div>
+
+    <!-- 单方数据模块 Panel -->
+    <div v-show="activeTab === 'singleParty'">
+      <el-alert title="单方数据模块提供本地数据预处理功能，无需多方协作即可完成数据清洗、合并、分割、转换等操作。" type="info" show-icon :closable="false" style="margin-bottom: 20px;" />
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-card shadow="hover" style="cursor: pointer;" @click.native="$router.push('/federatedLearning/dataMerge')">
+            <div style="text-align: center; padding: 30px 0;">
+              <i class="el-icon-connection" style="font-size: 48px; color: #409EFF;"></i>
+              <h3 style="margin: 16px 0 8px;">数据合并</h3>
+              <p style="color: #999; font-size: 13px; margin: 0;">纵向/横向合并多源数据</p>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" style="cursor: pointer;" @click.native="$router.push('/federatedLearning/dataFusion')">
+            <div style="text-align: center; padding: 30px 0;">
+              <i class="el-icon-sort" style="font-size: 48px; color: #67C23A;"></i>
+              <h3 style="margin: 16px 0 8px;">数据融合</h3>
+              <p style="color: #999; font-size: 13px; margin: 0;">多方数据隐私保护对齐</p>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" style="cursor: pointer;" @click.native="$router.push('/federatedLearning/dataSplit')">
+            <div style="text-align: center; padding: 30px 0;">
+              <i class="el-icon-share" style="font-size: 48px; color: #E6A23C;"></i>
+              <h3 style="margin: 16px 0 8px;">数据分割</h3>
+              <p style="color: #999; font-size: 13px; margin: 0;">训练集/测试集智能分割</p>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="6">
+          <el-card shadow="hover" style="cursor: pointer;" @click.native="$router.push('/federatedLearning/dataTransform')">
+            <div style="text-align: center; padding: 30px 0;">
+              <i class="el-icon-refresh" style="font-size: 48px; color: #F56C6C;"></i>
+              <h3 style="margin: 16px 0 8px;">数据转换</h3>
+              <p style="color: #999; font-size: 13px; margin: 0;">格式/编码/类型转换</p>
+            </div>
+          </el-card>
+        </el-col>
       </el-row>
     </div>
 

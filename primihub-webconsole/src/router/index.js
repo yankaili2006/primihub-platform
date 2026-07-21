@@ -200,6 +200,18 @@ export const asyncRoutes = [
         hidden: true,
         component: () => import('@/views/Difference/detail'),
         meta: { title: '求差详情', activeMenu: '/Difference/list' }
+      },
+      {
+        path: 'logExport',
+        name: 'DifferenceLogExport',
+        component: () => import('@/views/Difference/logExport'),
+        meta: { title: '联邦求差日志导出' }
+      },
+      {
+        path: 'logRecord',
+        name: 'DifferenceLogRecord',
+        component: () => import('@/views/Difference/logRecord'),
+        meta: { title: '联邦求差日志记录' }
       }
     ]
   },
@@ -1024,6 +1036,12 @@ export const asyncRoutes = [
         name: 'FederatedQueryApiValidation',
         component: () => import('@/views/federatedQuery/apiValidation'),
         meta: { title: '接口校验' }
+      },
+      {
+        path: 'difference',
+        name: 'FederatedQueryDifference',
+        component: () => import('@/views/Difference/list'),
+        meta: { title: '联邦求差' }
       }
     ]
   },

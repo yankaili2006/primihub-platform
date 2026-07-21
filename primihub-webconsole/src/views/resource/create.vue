@@ -333,6 +333,7 @@ export default {
           }).catch(err => {
             this.loading = false
             console.log(err)
+            this.$message.error('请求异常：' + (err.message || '请检查网络或联系管理员'))
           })
         } else {
           console.log('error submit!!')

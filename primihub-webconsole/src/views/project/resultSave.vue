@@ -433,17 +433,8 @@ export default {
             } else {
               this.$message.error(res.msg || '保存失败')
             }
-          }).catch(() => {
-            // 模拟保存成功
-            const row = this.tableData.find(item => item.id === this.saveFormData.id)
-            if (row) {
-              row.saveStatus = 1
-              row.saveDate = new Date().toLocaleString()
-              row.savePath = `${this.saveFormData.saveDirectory}/${this.saveFormData.fileName}`
-              row.fileMd5 = Math.random().toString(36).substring(7)
-            }
-            this.$message.success('保存成功')
-            this.saveDialogVisible = false
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || '保存失败'))
           })
         }
       })
@@ -482,8 +473,7 @@ export default {
         link.click()
         URL.revokeObjectURL(link.href)
       }).catch(() => {
-        // 模拟下载
-        this.$message.success('开始下载: ' + row.resultName)
+        this.$message.error('下载失败')
       })
     },
     handleRetry(row) {

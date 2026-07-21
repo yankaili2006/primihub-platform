@@ -297,10 +297,8 @@ export default {
           } else {
             this.$message.error(res.msg || '删除失败')
           }
-        }).catch(() => {
-          // 模拟删除成功
-          this.$message.success('删除成功')
-          this.tableData = this.tableData.filter(item => item.id !== row.id)
+        }).catch((e) => {
+          this.$message.error('请求异常：' + (e.message || '删除失败'))
         })
       }).catch(() => {})
     },
@@ -313,9 +311,8 @@ export default {
           // Revert the switch
           row.isEnabled = row.isEnabled === 1 ? 0 : 1
         }
-      }).catch(() => {
-        // 模拟状态更新成功
-        this.$message.success('状态更新成功')
+      }).catch((e) => {
+        this.$message.error('请求异常：' + (e.message || '状态更新失败'))
       })
     },
     handleSubmit() {
@@ -330,18 +327,8 @@ export default {
             } else {
               this.$message.error(res.msg || (this.isEdit ? '更新失败' : '添加失败'))
             }
-          }).catch(() => {
-            // 模拟成功
-            this.$message.success(this.isEdit ? '更新成功' : '添加成功')
-            this.dialogVisible = false
-            if (!this.isEdit) {
-              const newItem = {
-                ...this.formData,
-                id: Date.now(),
-                createDate: new Date().toLocaleString()
-              }
-              this.tableData.unshift(newItem)
-            }
+          }).catch((e) => {
+            this.$message.error('请求异常：' + (e.message || (this.isEdit ? '更新失败' : '添加失败')))
           })
         }
       })

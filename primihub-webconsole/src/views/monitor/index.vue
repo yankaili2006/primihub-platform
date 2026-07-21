@@ -550,6 +550,7 @@
 
 <script>
 import {
+  getSystemMonitor,
   getCpuMonitor,
   getMemoryMonitor,
   getDiskMonitor,
@@ -788,69 +789,25 @@ export default {
       this.loadAlertConfig(type)
     },
     async loadAlertConfig(type) {
+      // TODO: 调用实际接口获取告警配置
       const res = await getAlertConfig({ type })
       if (res && res.code === 0) {
-        const configs = Array.isArray(res.result) ? res.result : []
-        const config = configs.find(item => item.monitorType === type || item.type === type) || res.result || {}
-        this.alertConfigForm = this.normalizeAlertConfig(config)
+        this.alertConfigForm = res.result || this.alertConfigForm
       }
     },
     async saveAlertConfiguration() {
+      // TODO: 调用实际接口保存告警配置
       const data = {
-        id: this.alertConfigForm.id,
         type: this.currentAlertType,
-        monitorType: this.currentAlertType,
-        threshold: this.alertConfigForm.threshold,
-        duration: this.alertConfigForm.duration,
-        alertLevel: this.alertLevelToValue(this.alertConfigForm.level),
-        notifyMethod: (this.alertConfigForm.notifyMethods || []).join(','),
-        notifyTarget: this.alertConfigForm.notifyTargets || '',
-        isEnabled: this.alertConfigForm.enabled ? 1 : 0
+        ...this.alertConfigForm
       }
-      try {
-        const res = await saveAlertConfig(data)
-        if (res && res.code === 0) {
-          this.$message.success('告警配置保存成功')
-          this.alertConfigVisible = false
-        } else {
-          this.$message.error((res && res.msg) || '告警配置保存失败')
-        }
-      } catch (e) {
-        this.$message.error('告警配置保存失败，请稍后重试')
+      const res = await saveAlertConfig(data)
+      if (res && res.code === 0) {
+        this.$message.success('告警配置保存成功')
+        this.alertConfigVisible = false
+      } else {
+        this.$message.error((res && res.msg) || '告警配置保存失败')
       }
-    },
-    normalizeAlertConfig(config) {
-      const defaults = {
-        enabled: true,
-        threshold: 80,
-        duration: 5,
-        level: 'WARNING',
-        notifyMethods: ['EMAIL'],
-        notifyTargets: '',
-        silencePeriod: 30
-      }
-      if (!config || !Object.keys(config).length) return defaults
-      return {
-        ...defaults,
-        id: config.id,
-        enabled: config.enabled !== undefined ? !!config.enabled : config.isEnabled !== 0,
-        threshold: config.threshold !== undefined ? Number(config.threshold) : defaults.threshold,
-        duration: config.duration !== undefined ? Number(config.duration) : defaults.duration,
-        level: config.level || this.alertLevelToName(config.alertLevel),
-        notifyMethods: Array.isArray(config.notifyMethods)
-          ? config.notifyMethods
-          : (config.notifyMethod ? config.notifyMethod.split(',').filter(Boolean) : defaults.notifyMethods),
-        notifyTargets: config.notifyTargets || config.notifyTarget || '',
-        silencePeriod: config.silencePeriod !== undefined ? Number(config.silencePeriod) : defaults.silencePeriod
-      }
-    },
-    alertLevelToValue(level) {
-      const levelMap = { INFO: 0, WARNING: 1, CRITICAL: 2 }
-      return levelMap[level] !== undefined ? levelMap[level] : 1
-    },
-    alertLevelToName(level) {
-      const levelMap = { 0: 'INFO', 1: 'WARNING', 2: 'CRITICAL' }
-      return levelMap[level] || 'WARNING'
     },
     handleAlertItem(row) {
       this.currentAlertItem = row
@@ -874,19 +831,19 @@ export default {
       }
     },
     viewAlertDetail(row) {
-      const h = this.$createElement
-      const pick = (keys) => { for (const k of keys) { if (row && row[k] != null && row[k] !== '') return row[k] } return '-' }
-      const fields = [
-        ['告警类型', ['alertType', 'type', 'monitorType', 'metricType']],
-        ['告警级别', ['level', 'alertLevel', 'severity']],
-        ['告警内容', ['content', 'message', 'alertContent', 'description', 'msg']],
-        ['指标/当前值', ['metric', 'value', 'currentValue', 'metricValue']],
-        ['阈值', ['threshold', 'thresholdValue', 'limitValue']],
-        ['告警时间', ['createTime', 'alertTime', 'time', 'createDate', 'triggerTime']],
-        ['处理状态', ['status', 'handleStatus', 'state']]
-      ]
-      const items = fields.map(([label, keys]) => h('p', { style: 'margin:4px 0' }, label + '：' + pick(keys)))
-      this.$msgbox({ title: '告警详情', message: h('div', null, items), confirmButtonText: '关闭' })
+      this.$alert(
+        `<div style="max-height:400px;overflow:auto;">
+          <p><b>告警类型：</b>${row.type || '-'}</p>
+          <p><b>告警级别：</b>${row.level || '-'}</p>
+          <p><b>告警时间：</b>${row.alertTime || '-'}</p>
+          <p><b>告警内容：</b>${row.message || '-'}</p>
+          <p><b>当前值：</b>${row.value || '-'}</p>
+          <p><b>处理状态：</b>${row.status === 'PENDING' ? '待处理' : row.status === 'HANDLED' ? '已处理' : row.status || '-'}</p>
+          <p><b>处理人：</b>${row.handler || '-'}</p>
+        </div>`,
+        '告警详情',
+        { dangerouslyUseHTMLString: true, confirmButtonText: '关闭' }
+      )
     },
     getProgressColor(percentage) {
       if (percentage < 60) return '#67c23a'

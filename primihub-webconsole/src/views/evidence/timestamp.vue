@@ -333,7 +333,7 @@
 </template>
 
 <script>
-import { getTimestampPage, applyTimestamp, verifyTimestamp, getTimestampDetail, downloadTimestampFile } from '@/api/evidence'
+import { getTimestampPage, applyTimestamp, verifyTimestamp, getTimestampDetail } from '@/api/evidence'
 import Pagination from '@/components/Pagination'
 
 export default {
@@ -575,25 +575,34 @@ export default {
       }
     },
     downloadTimestamp(row) {
-      downloadTimestampFile({ id: row.id || row.timestampId }).then(res => {
-        const blob = new Blob([res], { type: 'application/octet-stream' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = `timestamp_cert_${row.id || row.timestampId}.txt`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(link.href)
-      }).catch(() => {
-        this.$message.error('下载失败')
-      })
+      this.$message.info('正在下载时间戳...')
+      const content = row.timestampContent || row.content || JSON.stringify(row, null, 2)
+      const blob = new Blob([content], { type: 'application/octet-stream' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `timestamp_${row.id || Date.now()}.tsa`
+      link.click()
+      window.URL.revokeObjectURL(url)
     },
     batchDownload() {
       if (this.selectedRows.length === 0) {
         this.$message.warning('请选择要下载的时间戳')
         return
       }
-      this.selectedRows.forEach(row => this.downloadTimestamp(row))
+      this.selectedRows.forEach((row, i) => {
+        setTimeout(() => {
+          const content = row.timestampContent || row.content || JSON.stringify(row, null, 2)
+          const blob = new Blob([content], { type: 'application/octet-stream' })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `timestamp_${row.id || Date.now()}_${i}.tsa`
+          link.click()
+          window.URL.revokeObjectURL(url)
+        }, i * 500)
+      })
+      this.$message.success(`开始批量下载 ${this.selectedRows.length} 个时间戳`)
     }
   }
 }

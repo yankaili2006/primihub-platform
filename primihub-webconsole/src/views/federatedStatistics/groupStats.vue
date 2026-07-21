@@ -146,15 +146,13 @@ export default {
       } catch (e) { this.$message.error('请求异常') }
     },
     async handleDownload(row) {
-      exportStatisticsResult({ taskId: row.taskId }).then(res => {
-        const blob = new Blob([res], { type: 'application/octet-stream' })
-        const link = document.createElement('a')
-        link.href = URL.createObjectURL(blob)
-        link.download = '统计结果_' + (row.taskName || row.taskId) + '.csv'
-        link.click()
-        URL.revokeObjectURL(link.href)
+      try {
+        const res = await downloadStatisticsTask({ taskId: row.taskId })
+        const url = URL.createObjectURL(new Blob([res]))
+        const a = document.createElement('a'); a.href = url; a.download = `分组统计_${row.taskName}_${Date.now()}.csv`
+        a.click(); URL.revokeObjectURL(url)
         this.$message.success('下载成功')
-      }).catch(() => { this.$message.error('下载失败，请确认任务已完成') })
+      } catch (e) { this.$message.error('下载失败') }
     },
     async handleDelete(row) {
       try {

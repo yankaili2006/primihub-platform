@@ -85,10 +85,7 @@ export default {
         fileNamePrefix: 'federated_statistics_result'
       },
       taskList: [],
-      exportHistory: [
-        { id: 'EXP001', fileName: 'federated_statistics_result_20240115.xlsx', format: 'EXCEL', taskCount: 3, fileSize: '1.2 MB', createTime: '2024-01-15 16:00:00', status: 'completed' },
-        { id: 'EXP002', fileName: 'statistics_summary_20240114.pdf', format: 'PDF', taskCount: 2, fileSize: '856 KB', createTime: '2024-01-14 18:30:00', status: 'completed' }
-      ]
+      exportHistory: []
     }
   },
   mounted() {
@@ -106,7 +103,7 @@ export default {
         }
       }).catch(() => { this.taskList = [] })
     },
-    // 缺陷整改 T2：改为真实批量导出并触发下载（原 setTimeout 假成功、不产文件）
+    // 缺陷整改：改为真实批量导出并触发下载，将导出记录加入本地历史
     handleExport() {
       if (this.exportFormData.taskIds.length === 0) {
         this.$message.warning('请选择至少一个统计任务')
@@ -117,19 +114,24 @@ export default {
         taskIds: this.exportFormData.taskIds,
         format: this.exportFormData.exportFormat
       }
-      const fileName = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
       batchExportStatisticsResult(data).then(response => {
-        this.triggerBlobDownload(response, fileName)
-        // 记录真实导出历史(带 taskIds, 供"导出历史→下载"再次下载)
+        const blob = new Blob([response], { type: 'application/octet-stream' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${this.exportFormData.fileNamePrefix}_${new Date().getTime()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
+        // 将导出记录加入本地历史（含导出参数，用于后续重新下载）
         this.exportHistory.unshift({
-          id: 'EXP' + Date.now(),
-          fileName,
+          id: 'EXP_' + Date.now(),
+          fileName: link.download,
           format: this.exportFormData.exportFormat,
-          taskIds: [...this.exportFormData.taskIds],
           taskCount: this.exportFormData.taskIds.length,
           fileSize: '-',
           createTime: new Date().toLocaleString(),
-          status: 'completed'
+          status: 'completed',
+          _exportParams: { ...data }
         })
         this.$message.success('结果导出成功')
       }).catch(() => {
@@ -137,18 +139,6 @@ export default {
       }).finally(() => {
         this.exporting = false
       })
-    },
-    // 把 blob 响应真正触发浏览器下载(通用)
-    triggerBlobDownload(response, filename) {
-      const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/octet-stream' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
     },
     handleReset() {
       this.exportFormData = {
@@ -160,15 +150,22 @@ export default {
         fileNamePrefix: 'federated_statistics_result'
       }
     },
-    // 缺陷整改: 原 handleDownload 只弹提示不下载 -> 真实按 taskIds 重新导出并触发下载
+    // 缺陷整改：从本地历史记录中重新导出并下载（使用导出时的参数重新请求）
     handleDownload(row) {
-      if (!row.taskIds || row.taskIds.length === 0) {
-        this.$message.warning('该历史记录为演示数据(无关联任务)，请在上方选择任务重新导出')
+      const params = row._exportParams
+      if (!params || !params.taskIds || params.taskIds.length === 0) {
+        this.$message.warning('历史记录缺少导出参数，无法重新下载')
         return
       }
-      batchExportStatisticsResult({ taskIds: row.taskIds, format: row.format }).then(response => {
-        this.triggerBlobDownload(response, row.fileName || `export_${row.id}.xlsx`)
-        this.$message.success('下载完成')
+      this.$message.info('正在重新导出，请稍候...')
+      batchExportStatisticsResult(params).then(response => {
+        const blob = new Blob([response], { type: 'application/octet-stream' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = row.fileName || `export_${params.taskIds[0]}_${Date.now()}.xlsx`
+        link.click()
+        window.URL.revokeObjectURL(url)
       }).catch(() => {
         this.$message.error('下载失败')
       })
