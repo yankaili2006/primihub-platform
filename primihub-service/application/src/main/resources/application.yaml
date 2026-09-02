@@ -18,7 +18,9 @@ spring:
       primary:
         driver-class-name: com.mysql.cj.jdbc.Driver
         username: root
-        url: jdbc:mysql://mysql:3306/privacy1?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false
+        # url 不在此处提供：必须由部署方按机构显式传入
+        # --spring.datasource.druid.primary.url=jdbc:mysql://mysql:3306/privacyN?...
+        # 缺失时应用启动即失败（见 PrimaryNacosDatabaseConfigConfiguration）。
         password: root
         connection-properties: config.decrypt=false
         filter:

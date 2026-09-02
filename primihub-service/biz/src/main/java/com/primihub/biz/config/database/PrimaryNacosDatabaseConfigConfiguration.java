@@ -23,7 +23,7 @@ public class PrimaryNacosDatabaseConfigConfiguration {
     @Value("classpath*:/mybatis/mapper/primarydb/**/*.xml")
     private String locationPattern;
 
-    @Value("${spring.datasource.druid.primary.url:jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false}")
+    @Value("${spring.datasource.druid.primary.url}")
     private String primaryUrl;
 
     @Value("${spring.datasource.druid.primary.username:root}")
