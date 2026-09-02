@@ -182,9 +182,34 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
             vo.setErrorMessage(task.getErrorMessage());
             vo.setCreatedAt(task.getCreatedAt());
             if (results != null && !results.isEmpty()) {
-                if (results.get(0).getRowCount() != null) {
-                    vo.setResultRowCount(results.get(0).getRowCount());
+                // mapper 是 ORDER BY created_at 升序，results.get(0) 是**最早**那条。
+                // 任务重跑后详情会一直显示第一次的结果（实测 task 5 重跑得到 3 行，
+                // 详情却仍返回首次的 0）。这里取最后一条 = 最新一次执行。
+                FederatedAnalysisResult latest = results.get(results.size() - 1);
+                if (latest.getRowCount() != null) {
+                    vo.setResultRowCount(latest.getRowCount());
                 }
+                // VO 本就有 results 字段，但此前从未赋值 → 前端只能看到行数、拿不到任何结果行。
+                List<AnalysisTaskDetailVO.FederatedAnalysisResultVO> resultVOs = new ArrayList<>();
+                for (FederatedAnalysisResult r : results) {
+                    AnalysisTaskDetailVO.FederatedAnalysisResultVO rv =
+                            new AnalysisTaskDetailVO.FederatedAnalysisResultVO();
+                    rv.setId(r.getId());
+                    rv.setResultType(r.getResultType());
+                    rv.setRowCount(r.getRowCount());
+                    rv.setCreatedAt(r.getCreatedAt());
+                    Object data = r.getResultData();
+                    if (r.getResultData() != null) {
+                        try {
+                            data = objectMapper.readValue(r.getResultData(), Object.class);
+                        } catch (Exception ignore) {
+                            data = r.getResultData();
+                        }
+                    }
+                    rv.setResultData(data);
+                    resultVOs.add(rv);
+                }
+                vo.setResults(resultVOs);
             }
             return BaseResultEntity.success(vo);
         } catch (Exception e) {
