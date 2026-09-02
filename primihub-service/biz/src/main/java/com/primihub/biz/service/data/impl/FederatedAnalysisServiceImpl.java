@@ -148,6 +148,35 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
                 vo.setTaskStateName(TASK_STATE_NAMES.getOrDefault(t.getTaskState(), "未知"));
                 vo.setResultRowCount(t.getResultRowCount());
                 vo.setCreatedAt(t.getCreatedAt());
+                // 数据量：federated_analysis_task.result_row_count 常年为 NULL（执行器只写结果表），
+                // 详情接口是从结果表现算的，列表却直接取任务表 → 该列永远空白。这里同样取最新一条结果。
+                if (vo.getResultRowCount() == null) {
+                    try {
+                        List<FederatedAnalysisResult> rs = analysisRepository.selectResultsByTaskId(t.getId());
+                        if (rs != null && !rs.isEmpty()) {
+                            vo.setResultRowCount(rs.get(rs.size() - 1).getRowCount());
+                        }
+                    } catch (Exception ignore) {
+                        // 单条失败不影响列表
+                    }
+                }
+                // 数据源类型：前端列表本来就有这一列，但后端从未提供 → 永远空白。
+                // task_param 里存着 datasourceId，解析出来查一次即可。解析失败不影响列表。
+                try {
+                    if (t.getTaskParam() != null && !t.getTaskParam().isEmpty()) {
+                        Map<?, ?> tp = objectMapper.readValue(t.getTaskParam(), Map.class);
+                        Object dsId = tp.get("datasourceId");
+                        if (dsId != null) {
+                            FederatedAnalysisDatasource ds = analysisRepository.selectDatasourceById(
+                                    Long.valueOf(dsId.toString()));
+                            if (ds != null) {
+                                vo.setDataSourceType(ds.getSourceType());
+                            }
+                        }
+                    }
+                } catch (Exception ignore) {
+                    // 单条解析失败不应让整个列表 500
+                }
                 return vo;
             }).collect(Collectors.toList());
 

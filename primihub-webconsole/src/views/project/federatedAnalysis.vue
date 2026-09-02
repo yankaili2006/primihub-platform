@@ -47,20 +47,14 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="任务ID" width="120" />
         <el-table-column prop="taskName" label="任务名称" width="180" />
-        <el-table-column prop="analysisType" label="分析类型" width="120">
-          <template slot-scope="scope">
-            <el-tag :type="getAnalysisTag(scope.row.analysisType)">
-              {{ getAnalysisLabel(scope.row.analysisType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="dataSourceType" label="数据源类型" width="120">
+        <!-- 「分析类型」「参与方数」两列已移除：后端 AnalysisTaskListVO 无对应字段，
+             原先永远空白（来自早期 mock 数据的遗留）。需要的话应先在后端补字段。 -->
+        <el-table-column prop="dataSourceType" label="数据源类型" width="130">
           <template slot-scope="scope">
             <el-tag v-if="scope.row.dataSourceType" size="small" type="info">{{ scope.row.dataSourceType }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="participantCount" label="参与方数" width="100" />
         <el-table-column prop="resultRowCount" label="数据量" width="100" />
         <el-table-column prop="taskState" label="任务状态" width="100">
           <template slot-scope="scope">
@@ -273,9 +267,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="任务ID">{{ viewData.id }}</el-descriptions-item>
         <el-descriptions-item label="任务名称">{{ viewData.taskName }}</el-descriptions-item>
-        <el-descriptions-item label="分析类型">{{ getAnalysisLabel(viewData.analysisType) }}</el-descriptions-item>
         <el-descriptions-item label="数据源类型">{{ viewData.dataSourceType || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="参与方数量">{{ viewData.participantCount }}</el-descriptions-item>
         <el-descriptions-item label="数据量">{{ viewData.resultRowCount }}</el-descriptions-item>
         <el-descriptions-item label="任务状态">
           <el-tag v-if="viewData.taskState === 2" type="success">已完成</el-tag>
