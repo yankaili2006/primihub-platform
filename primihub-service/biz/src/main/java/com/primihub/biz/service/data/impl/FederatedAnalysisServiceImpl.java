@@ -148,6 +148,23 @@ public class FederatedAnalysisServiceImpl implements FederatedAnalysisService {
                 vo.setTaskStateName(TASK_STATE_NAMES.getOrDefault(t.getTaskState(), "未知"));
                 vo.setResultRowCount(t.getResultRowCount());
                 vo.setCreatedAt(t.getCreatedAt());
+                // 数据源类型：前端列表本来就有这一列，但后端从未提供 → 永远空白。
+                // task_param 里存着 datasourceId，解析出来查一次即可。解析失败不影响列表。
+                try {
+                    if (t.getTaskParam() != null && !t.getTaskParam().isEmpty()) {
+                        Map<?, ?> tp = objectMapper.readValue(t.getTaskParam(), Map.class);
+                        Object dsId = tp.get("datasourceId");
+                        if (dsId != null) {
+                            FederatedAnalysisDatasource ds = analysisRepository.selectDatasourceById(
+                                    Long.valueOf(dsId.toString()));
+                            if (ds != null) {
+                                vo.setDataSourceType(ds.getSourceType());
+                            }
+                        }
+                    }
+                } catch (Exception ignore) {
+                    // 单条解析失败不应让整个列表 500
+                }
                 return vo;
             }).collect(Collectors.toList());
 
