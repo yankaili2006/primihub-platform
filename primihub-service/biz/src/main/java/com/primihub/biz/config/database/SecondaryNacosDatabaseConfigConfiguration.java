@@ -22,7 +22,7 @@ public class SecondaryNacosDatabaseConfigConfiguration {
     @Value("classpath*:/mybatis/mapper/secondarydb/**/*.xml")
     private String locationPattern;
 
-    @Value("${spring.datasource.druid.secondary.url:jdbc:mysql://mysql:3306/privacy?characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&allowMultiQueries=true&serverTimezone=Asia/Shanghai&useSSL=false}")
+    @Value("${spring.datasource.druid.secondary.url:${spring.datasource.druid.primary.url}}")
     private String secondaryUrl;
 
     @Value("${spring.datasource.druid.secondary.username:root}")
