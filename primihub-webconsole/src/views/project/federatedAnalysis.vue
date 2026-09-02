@@ -104,24 +104,25 @@
             <el-button icon="el-icon-refresh" @click="fetchRdbmsList">刷新</el-button>
           </div>
           <el-table :data="rdbmsList" border style="margin-top: 15px;">
-            <el-table-column prop="name" label="连接名称" width="150" />
-            <el-table-column prop="dbType" label="数据库类型" width="120">
+            <el-table-column prop="id" label="ID" width="70" />
+            <el-table-column prop="sourceName" label="连接名称" width="180" />
+            <el-table-column prop="sourceType" label="数据库类型" width="140">
               <template slot-scope="scope">
-                <el-tag size="small">{{ scope.row.dbType }}</el-tag>
+                <el-tag size="small">{{ scope.row.sourceType }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="host" label="主机地址" width="150" />
-            <el-table-column prop="port" label="端口" width="80" />
-            <el-table-column prop="database" label="数据库名" width="120" />
-            <el-table-column prop="username" label="用户名" width="100" />
-            <el-table-column prop="status" label="状态" width="100">
+            <!-- 主机/端口/库名/用户名四列已移除：后端 datasource/list **有意不返回**这些字段
+                 （source_config 里含密码，不应下发到前端）。原先它们来自 mock，永远显示假值。 -->
+            <el-table-column prop="isConnected" label="连接状态" width="110">
               <template slot-scope="scope">
-                <el-tag :type="scope.row.status === 'connected' ? 'success' : 'danger'" size="small">
-                  {{ scope.row.status === 'connected' ? '已连接' : '未连接' }}
+                <el-tag :type="scope.row.isConnected ? 'success' : 'info'" size="small">
+                  {{ scope.row.isConnected ? '已连接' : '未测试' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="160" />
+            <el-table-column prop="lastTestTime" label="最后测试时间" width="180">
+              <template slot-scope="scope">{{ scope.row.lastTestTime || '-' }}</template>
+            </el-table-column>
             <el-table-column label="操作" fixed="right" width="200">
               <template slot-scope="scope">
                 <el-button size="mini" type="primary" @click="handleTestRdbms(scope.row)">测试</el-button>
@@ -816,35 +817,61 @@ export default {
       ]
     },
     // Data source mock data
-    // ⚠️ 纯 mock：本方法**从不调用任何接口**，关系型数据库列表全是硬编码假数据
-    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
-    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
-    fetchRdbmsList() {
-      this.rdbmsList = [
-        { id: '1', name: '生产环境MySQL', dbType: 'MySQL', host: '192.168.1.100', port: 3306, database: 'prod_db', username: 'admin', status: 'connected', createTime: '2024-01-10 10:00:00' },
-        { id: '2', name: '测试环境PostgreSQL', dbType: 'PostgreSQL', host: '192.168.1.101', port: 5432, database: 'test_db', username: 'test_user', status: 'connected', createTime: '2024-01-11 14:00:00' },
-        { id: '3', name: '数据仓库Oracle', dbType: 'Oracle', host: '192.168.1.102', port: 1521, database: 'ORCL', username: 'dw_user', status: 'disconnected', createTime: '2024-01-12 09:00:00' }
-      ]
+    async fetchRdbmsList() {
+      // 原实现是纯 mock（生产环境MySQL 192.168.1.100 等硬编码假数据），从不调接口。
+      // 现接真实 /data/federatedAnalysis/datasource/list —— 注意它返回的是**数组**，不是 {list,total}。
+      try {
+        const res = await getDataSourceList({})
+        if (res && res.code === 0) {
+          this.rdbmsList = Array.isArray(res.result) ? res.result : (res.result && res.result.list) || []
+        } else {
+          this.rdbmsList = []
+          this.$message.error(`加载数据源失败: ${(res && res.msg) || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.rdbmsList = []
+        this.$message.error(`加载数据源失败: ${e.message || e}`)
+      }
     },
-    // ⚠️ 纯 mock：本方法**从不调用任何接口**，大数据源列表全是硬编码假数据
-    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
-    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
-    fetchBigDataList() {
-      this.bigDataList = [
-        { id: '1', name: '生产Hive集群', platformType: 'Hive', clusterAddress: 'hive.cluster.local:10000', version: '3.1.2', authType: 'KERBEROS', status: 'connected', createTime: '2024-01-08 10:00:00' },
-        { id: '2', name: 'Spark计算集群', platformType: 'Spark', clusterAddress: 'spark://master:7077', version: '3.3.0', authType: 'NONE', status: 'connected', createTime: '2024-01-09 11:00:00' },
-        { id: '3', name: 'ClickHouse分析库', platformType: 'ClickHouse', clusterAddress: '192.168.1.200:8123', version: '22.8', authType: 'PASSWORD', status: 'connected', createTime: '2024-01-10 15:00:00' }
-      ]
+    async fetchBigDataList() {
+      // 原实现是纯 mock（硬编码假大数据源），从不调接口。
+      // 后端**没有** 大数据源的 list 端点（只有 types/create/test），但所有数据源都落在
+      // federated_analysis_datasource 同一张表里，故复用 datasource/list 按 sourceType 过滤。
+      // 没有就显示空 —— 不再编造。
+      const TYPES = ['hive','spark','hbase','clickhouse','impala','presto','doris']
+      try {
+        const res = await getDataSourceList({})
+        const all = (res && res.code === 0)
+          ? (Array.isArray(res.result) ? res.result : (res.result && res.result.list) || [])
+          : []
+        this.bigDataList = all.filter(d => TYPES.includes(String(d.sourceType || '').toLowerCase()))
+        if (res && res.code !== 0) {
+          this.$message.error(`加载大数据源失败: ${res.msg || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.bigDataList = []
+        this.$message.error(`加载大数据源失败: ${e.message || e}`)
+      }
     },
-    // ⚠️ 纯 mock：本方法**从不调用任何接口**，云存储列表全是硬编码假数据
-    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
-    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
-    fetchCloudList() {
-      this.cloudList = [
-        { id: '1', name: '阿里云生产环境', cloudType: 'ALIYUN', region: 'cn-hangzhou', serviceType: 'OBJECT_STORAGE', accessKeyId: 'LTAI5t****', status: 'connected', createTime: '2024-01-05 10:00:00' },
-        { id: '2', name: '腾讯云测试环境', cloudType: 'TENCENT', region: 'ap-guangzhou', serviceType: 'OBJECT_STORAGE', accessKeyId: 'AKID****', status: 'connected', createTime: '2024-01-06 14:00:00' },
-        { id: '3', name: 'AWS数据湖', cloudType: 'AWS', region: 'us-east-1', serviceType: 'DATA_LAKE', accessKeyId: 'AKIA****', status: 'disconnected', createTime: '2024-01-07 09:00:00' }
-      ]
+    async fetchCloudList() {
+      // 原实现是纯 mock（硬编码假云存储），从不调接口。
+      // 后端**没有** 云存储的 list 端点（只有 types/create/test），但所有数据源都落在
+      // federated_analysis_datasource 同一张表里，故复用 datasource/list 按 sourceType 过滤。
+      // 没有就显示空 —— 不再编造。
+      const TYPES = ['oss','s3','cos','obs','minio','gcs']
+      try {
+        const res = await getDataSourceList({})
+        const all = (res && res.code === 0)
+          ? (Array.isArray(res.result) ? res.result : (res.result && res.result.list) || [])
+          : []
+        this.cloudList = all.filter(d => TYPES.includes(String(d.sourceType || '').toLowerCase()))
+        if (res && res.code !== 0) {
+          this.$message.error(`加载云存储失败: ${res.msg || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.cloudList = []
+        this.$message.error(`加载云存储失败: ${e.message || e}`)
+      }
     },
     async fetchLogs() {
       try {
