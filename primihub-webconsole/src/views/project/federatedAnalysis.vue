@@ -45,7 +45,7 @@
       <!-- Table -->
       <el-table v-loading="loading" :data="tableData" border @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="taskId" label="任务ID" width="120" />
+        <el-table-column prop="id" label="任务ID" width="120" />
         <el-table-column prop="taskName" label="任务名称" width="180" />
         <el-table-column prop="analysisType" label="分析类型" width="120">
           <template slot-scope="scope">
@@ -61,21 +61,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="participantCount" label="参与方数" width="100" />
-        <el-table-column prop="dataVolume" label="数据量" width="100" />
-        <el-table-column prop="taskStatus" label="任务状态" width="100">
+        <el-table-column prop="resultRowCount" label="数据量" width="100" />
+        <el-table-column prop="taskState" label="任务状态" width="100">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.taskStatus === 0" type="info">待执行</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 1" type="warning">执行中</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 2" type="success">已完成</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 3" type="danger">已失败</el-tag>
+            <el-tag v-if="scope.row.taskState === 0" type="info">待执行</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 1" type="warning">执行中</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 2" type="success">已完成</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 3" type="danger">已失败</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createDate" label="创建时间" width="160" />
+        <el-table-column prop="createdAt" label="创建时间" width="160" />
         <el-table-column label="操作" fixed="right" width="250">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
-            <el-button v-if="scope.row.taskStatus === 0" size="mini" type="primary" @click="handleStart(scope.row)">执行</el-button>
-            <el-button v-if="scope.row.taskStatus === 2" size="mini" type="success" @click="handleViewResult(scope.row)">结果</el-button>
+            <el-button v-if="scope.row.taskState === 0" size="mini" type="primary" @click="handleStart(scope.row)">执行</el-button>
+            <el-button v-if="scope.row.taskState === 2" size="mini" type="success" @click="handleViewResult(scope.row)">结果</el-button>
             <el-button size="mini" type="info" @click="handleViewTaskLogs(scope.row)">日志</el-button>
           </template>
         </el-table-column>
@@ -270,19 +270,19 @@
     <!-- View Dialog -->
     <el-dialog title="联邦分析任务详情" :visible.sync="viewDialogVisible" width="60%">
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="任务ID">{{ viewData.taskId }}</el-descriptions-item>
+        <el-descriptions-item label="任务ID">{{ viewData.id }}</el-descriptions-item>
         <el-descriptions-item label="任务名称">{{ viewData.taskName }}</el-descriptions-item>
         <el-descriptions-item label="分析类型">{{ getAnalysisLabel(viewData.analysisType) }}</el-descriptions-item>
         <el-descriptions-item label="数据源类型">{{ viewData.dataSourceType || '-' }}</el-descriptions-item>
         <el-descriptions-item label="参与方数量">{{ viewData.participantCount }}</el-descriptions-item>
-        <el-descriptions-item label="数据量">{{ viewData.dataVolume }}</el-descriptions-item>
+        <el-descriptions-item label="数据量">{{ viewData.resultRowCount }}</el-descriptions-item>
         <el-descriptions-item label="任务状态">
-          <el-tag v-if="viewData.taskStatus === 2" type="success">已完成</el-tag>
-          <el-tag v-else-if="viewData.taskStatus === 1" type="warning">执行中</el-tag>
-          <el-tag v-else-if="viewData.taskStatus === 3" type="danger">已失败</el-tag>
+          <el-tag v-if="viewData.taskState === 2" type="success">已完成</el-tag>
+          <el-tag v-else-if="viewData.taskState === 1" type="warning">执行中</el-tag>
+          <el-tag v-else-if="viewData.taskState === 3" type="danger">已失败</el-tag>
           <el-tag v-else type="info">待执行</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ viewData.createDate }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ viewData.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="完成时间">{{ viewData.completeDate || '-' }}</el-descriptions-item>
       </el-descriptions>
       <span slot="footer" class="dialog-footer">
@@ -756,12 +756,16 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.total || 0
         } else {
-          this.tableData = this.getMockData()
-          this.total = this.tableData.length
+          // 不再回落到 getMockData(): 接口失败时编造任务会让"后端越坏页面越好看",
+          // 且展示的是完全虚构的隐私计算任务。失败就要看得见。
+          this.tableData = []
+          this.total = 0
+          this.$message.error(`加载联邦分析任务失败: ${(res && res.msg) || '接口返回异常'}`)
         }
       } catch (error) {
-        this.tableData = this.getMockData()
-        this.total = this.tableData.length
+        this.tableData = []
+        this.total = 0
+        this.$message.error(`加载联邦分析任务失败: ${error.message || error}`)
       }
       this.loading = false
     },
@@ -784,6 +788,9 @@ export default {
       ]
     },
     // Data source mock data
+    // ⚠️ 纯 mock：本方法**从不调用任何接口**，关系型数据库列表全是硬编码假数据
+    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
+    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
     fetchRdbmsList() {
       this.rdbmsList = [
         { id: '1', name: '生产环境MySQL', dbType: 'MySQL', host: '192.168.1.100', port: 3306, database: 'prod_db', username: 'admin', status: 'connected', createTime: '2024-01-10 10:00:00' },
@@ -791,6 +798,9 @@ export default {
         { id: '3', name: '数据仓库Oracle', dbType: 'Oracle', host: '192.168.1.102', port: 1521, database: 'ORCL', username: 'dw_user', status: 'disconnected', createTime: '2024-01-12 09:00:00' }
       ]
     },
+    // ⚠️ 纯 mock：本方法**从不调用任何接口**，大数据源列表全是硬编码假数据
+    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
+    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
     fetchBigDataList() {
       this.bigDataList = [
         { id: '1', name: '生产Hive集群', platformType: 'Hive', clusterAddress: 'hive.cluster.local:10000', version: '3.1.2', authType: 'KERBEROS', status: 'connected', createTime: '2024-01-08 10:00:00' },
@@ -798,6 +808,9 @@ export default {
         { id: '3', name: 'ClickHouse分析库', platformType: 'ClickHouse', clusterAddress: '192.168.1.200:8123', version: '22.8', authType: 'PASSWORD', status: 'connected', createTime: '2024-01-10 15:00:00' }
       ]
     },
+    // ⚠️ 纯 mock：本方法**从不调用任何接口**，云存储列表全是硬编码假数据
+    //    （生产环境MySQL 192.168.1.100 等）。接后端前请勿对外演示此 tab。
+    //    真实端点已存在：/federatedAnalysis/datasource/list、/federatedAnalysis/rdbms/types。
     fetchCloudList() {
       this.cloudList = [
         { id: '1', name: '阿里云生产环境', cloudType: 'ALIYUN', region: 'cn-hangzhou', serviceType: 'OBJECT_STORAGE', accessKeyId: 'LTAI5t****', status: 'connected', createTime: '2024-01-05 10:00:00' },
@@ -817,11 +830,13 @@ export default {
           this.logData = res.result.list || []
           this.logTotal = res.result.total || 0
         } else {
-          this.logData = this.getMockLogs()
+          this.logData = []
+          this.$message.error('加载任务日志失败')
           this.logTotal = this.logData.length
         }
       } catch (error) {
-        this.logData = this.getMockLogs()
+        this.logData = []
+        this.$message.error('加载任务日志失败')
         this.logTotal = this.logData.length
       }
     },
@@ -1285,14 +1300,14 @@ export default {
           this.taskLogData = {
             taskId: row.taskId,
             taskName: row.taskName,
-            logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+            logs: []
           }
         }
       } catch (error) {
         this.taskLogData = {
           taskId: row.taskId,
           taskName: row.taskName,
-          logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+          logs: []
         }
       }
       this.taskLogDialogVisible = true
