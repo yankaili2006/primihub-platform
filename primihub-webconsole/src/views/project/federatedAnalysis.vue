@@ -45,7 +45,7 @@
       <!-- Table -->
       <el-table v-loading="loading" :data="tableData" border @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="taskId" label="任务ID" width="120" />
+        <el-table-column prop="id" label="任务ID" width="120" />
         <el-table-column prop="taskName" label="任务名称" width="180" />
         <el-table-column prop="analysisType" label="分析类型" width="120">
           <template slot-scope="scope">
@@ -61,21 +61,21 @@
           </template>
         </el-table-column>
         <el-table-column prop="participantCount" label="参与方数" width="100" />
-        <el-table-column prop="dataVolume" label="数据量" width="100" />
-        <el-table-column prop="taskStatus" label="任务状态" width="100">
+        <el-table-column prop="resultRowCount" label="数据量" width="100" />
+        <el-table-column prop="taskState" label="任务状态" width="100">
           <template slot-scope="scope">
-            <el-tag v-if="scope.row.taskStatus === 0" type="info">待执行</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 1" type="warning">执行中</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 2" type="success">已完成</el-tag>
-            <el-tag v-else-if="scope.row.taskStatus === 3" type="danger">已失败</el-tag>
+            <el-tag v-if="scope.row.taskState === 0" type="info">待执行</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 1" type="warning">执行中</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 2" type="success">已完成</el-tag>
+            <el-tag v-else-if="scope.row.taskState === 3" type="danger">已失败</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createDate" label="创建时间" width="160" />
+        <el-table-column prop="createdAt" label="创建时间" width="160" />
         <el-table-column label="操作" fixed="right" width="250">
           <template slot-scope="scope">
             <el-button size="mini" @click="handleView(scope.row)">查看</el-button>
-            <el-button v-if="scope.row.taskStatus === 0" size="mini" type="primary" @click="handleStart(scope.row)">执行</el-button>
-            <el-button v-if="scope.row.taskStatus === 2" size="mini" type="success" @click="handleViewResult(scope.row)">结果</el-button>
+            <el-button v-if="scope.row.taskState === 0" size="mini" type="primary" @click="handleStart(scope.row)">执行</el-button>
+            <el-button v-if="scope.row.taskState === 2" size="mini" type="success" @click="handleViewResult(scope.row)">结果</el-button>
             <el-button size="mini" type="info" @click="handleViewTaskLogs(scope.row)">日志</el-button>
           </template>
         </el-table-column>
@@ -104,24 +104,25 @@
             <el-button icon="el-icon-refresh" @click="fetchRdbmsList">刷新</el-button>
           </div>
           <el-table :data="rdbmsList" border style="margin-top: 15px;">
-            <el-table-column prop="name" label="连接名称" width="150" />
-            <el-table-column prop="dbType" label="数据库类型" width="120">
+            <el-table-column prop="id" label="ID" width="70" />
+            <el-table-column prop="sourceName" label="连接名称" width="180" />
+            <el-table-column prop="sourceType" label="数据库类型" width="140">
               <template slot-scope="scope">
-                <el-tag size="small">{{ scope.row.dbType }}</el-tag>
+                <el-tag size="small">{{ scope.row.sourceType }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="host" label="主机地址" width="150" />
-            <el-table-column prop="port" label="端口" width="80" />
-            <el-table-column prop="database" label="数据库名" width="120" />
-            <el-table-column prop="username" label="用户名" width="100" />
-            <el-table-column prop="status" label="状态" width="100">
+            <!-- 主机/端口/库名/用户名四列已移除：后端 datasource/list **有意不返回**这些字段
+                 （source_config 里含密码，不应下发到前端）。原先它们来自 mock，永远显示假值。 -->
+            <el-table-column prop="isConnected" label="连接状态" width="110">
               <template slot-scope="scope">
-                <el-tag :type="scope.row.status === 'connected' ? 'success' : 'danger'" size="small">
-                  {{ scope.row.status === 'connected' ? '已连接' : '未连接' }}
+                <el-tag :type="scope.row.isConnected ? 'success' : 'info'" size="small">
+                  {{ scope.row.isConnected ? '已连接' : '未测试' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="160" />
+            <el-table-column prop="lastTestTime" label="最后测试时间" width="180">
+              <template slot-scope="scope">{{ scope.row.lastTestTime || '-' }}</template>
+            </el-table-column>
             <el-table-column label="操作" fixed="right" width="200">
               <template slot-scope="scope">
                 <el-button size="mini" type="primary" @click="handleTestRdbms(scope.row)">测试</el-button>
@@ -270,24 +271,46 @@
     <!-- View Dialog -->
     <el-dialog title="联邦分析任务详情" :visible.sync="viewDialogVisible" width="60%">
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="任务ID">{{ viewData.taskId }}</el-descriptions-item>
+        <el-descriptions-item label="任务ID">{{ viewData.id }}</el-descriptions-item>
         <el-descriptions-item label="任务名称">{{ viewData.taskName }}</el-descriptions-item>
         <el-descriptions-item label="分析类型">{{ getAnalysisLabel(viewData.analysisType) }}</el-descriptions-item>
         <el-descriptions-item label="数据源类型">{{ viewData.dataSourceType || '-' }}</el-descriptions-item>
         <el-descriptions-item label="参与方数量">{{ viewData.participantCount }}</el-descriptions-item>
-        <el-descriptions-item label="数据量">{{ viewData.dataVolume }}</el-descriptions-item>
+        <el-descriptions-item label="数据量">{{ viewData.resultRowCount }}</el-descriptions-item>
         <el-descriptions-item label="任务状态">
-          <el-tag v-if="viewData.taskStatus === 2" type="success">已完成</el-tag>
-          <el-tag v-else-if="viewData.taskStatus === 1" type="warning">执行中</el-tag>
-          <el-tag v-else-if="viewData.taskStatus === 3" type="danger">已失败</el-tag>
+          <el-tag v-if="viewData.taskState === 2" type="success">已完成</el-tag>
+          <el-tag v-else-if="viewData.taskState === 1" type="warning">执行中</el-tag>
+          <el-tag v-else-if="viewData.taskState === 3" type="danger">已失败</el-tag>
           <el-tag v-else type="info">待执行</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ viewData.createDate }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ viewData.createdAt }}</el-descriptions-item>
         <el-descriptions-item label="完成时间">{{ viewData.completeDate || '-' }}</el-descriptions-item>
       </el-descriptions>
       <span slot="footer" class="dialog-footer">
         <el-button @click="viewDialogVisible = false">关 闭</el-button>
       </span>
+    </el-dialog>
+
+    <!-- 分析结果弹窗：展示后端 task/detail 返回的真实结果行 -->
+    <el-dialog :visible.sync="resultDialogVisible" title="分析结果" width="70%">
+      <div style="margin-bottom: 10px; color: #606266;">
+        任务：{{ resultTaskName }}　共 {{ resultRows.length }} 行
+      </div>
+      <el-table v-loading="resultLoading" :data="resultRows" border max-height="420">
+        <el-table-column
+          v-for="col in resultColumns"
+          :key="col"
+          :prop="col"
+          :label="col"
+          show-overflow-tooltip
+        />
+      </el-table>
+      <div v-if="!resultLoading && resultRows.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+        无结果行
+      </div>
+      <div slot="footer">
+        <el-button @click="resultDialogVisible = false">关 闭</el-button>
+      </div>
     </el-dialog>
 
     <!-- Create Dialog -->
@@ -588,6 +611,7 @@
 <script>
 import {
   getFederatedAnalysisList,
+  getFederatedAnalysisDetail,
   createFederatedAnalysis,
   startFederatedAnalysis,
   exportFederatedAnalysisResult,
@@ -615,6 +639,11 @@ export default {
       tableData: [],
       total: 0,
       selectedRows: [],
+      resultDialogVisible: false,
+      resultLoading: false,
+      resultRows: [],
+      resultColumns: [],
+      resultTaskName: '',
       queryForm: {
         taskName: '',
         analysisType: null,
@@ -756,12 +785,16 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.total || 0
         } else {
-          this.tableData = this.getMockData()
-          this.total = this.tableData.length
+          // 不再回落到 getMockData(): 接口失败时编造任务会让"后端越坏页面越好看",
+          // 且展示的是完全虚构的隐私计算任务。失败就要看得见。
+          this.tableData = []
+          this.total = 0
+          this.$message.error(`加载联邦分析任务失败: ${(res && res.msg) || '接口返回异常'}`)
         }
       } catch (error) {
-        this.tableData = this.getMockData()
-        this.total = this.tableData.length
+        this.tableData = []
+        this.total = 0
+        this.$message.error(`加载联邦分析任务失败: ${error.message || error}`)
       }
       this.loading = false
     },
@@ -784,26 +817,61 @@ export default {
       ]
     },
     // Data source mock data
-    fetchRdbmsList() {
-      this.rdbmsList = [
-        { id: '1', name: '生产环境MySQL', dbType: 'MySQL', host: '192.168.1.100', port: 3306, database: 'prod_db', username: 'admin', status: 'connected', createTime: '2024-01-10 10:00:00' },
-        { id: '2', name: '测试环境PostgreSQL', dbType: 'PostgreSQL', host: '192.168.1.101', port: 5432, database: 'test_db', username: 'test_user', status: 'connected', createTime: '2024-01-11 14:00:00' },
-        { id: '3', name: '数据仓库Oracle', dbType: 'Oracle', host: '192.168.1.102', port: 1521, database: 'ORCL', username: 'dw_user', status: 'disconnected', createTime: '2024-01-12 09:00:00' }
-      ]
+    async fetchRdbmsList() {
+      // 原实现是纯 mock（生产环境MySQL 192.168.1.100 等硬编码假数据），从不调接口。
+      // 现接真实 /data/federatedAnalysis/datasource/list —— 注意它返回的是**数组**，不是 {list,total}。
+      try {
+        const res = await getDataSourceList({})
+        if (res && res.code === 0) {
+          this.rdbmsList = Array.isArray(res.result) ? res.result : (res.result && res.result.list) || []
+        } else {
+          this.rdbmsList = []
+          this.$message.error(`加载数据源失败: ${(res && res.msg) || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.rdbmsList = []
+        this.$message.error(`加载数据源失败: ${e.message || e}`)
+      }
     },
-    fetchBigDataList() {
-      this.bigDataList = [
-        { id: '1', name: '生产Hive集群', platformType: 'Hive', clusterAddress: 'hive.cluster.local:10000', version: '3.1.2', authType: 'KERBEROS', status: 'connected', createTime: '2024-01-08 10:00:00' },
-        { id: '2', name: 'Spark计算集群', platformType: 'Spark', clusterAddress: 'spark://master:7077', version: '3.3.0', authType: 'NONE', status: 'connected', createTime: '2024-01-09 11:00:00' },
-        { id: '3', name: 'ClickHouse分析库', platformType: 'ClickHouse', clusterAddress: '192.168.1.200:8123', version: '22.8', authType: 'PASSWORD', status: 'connected', createTime: '2024-01-10 15:00:00' }
-      ]
+    async fetchBigDataList() {
+      // 原实现是纯 mock（硬编码假大数据源），从不调接口。
+      // 后端**没有** 大数据源的 list 端点（只有 types/create/test），但所有数据源都落在
+      // federated_analysis_datasource 同一张表里，故复用 datasource/list 按 sourceType 过滤。
+      // 没有就显示空 —— 不再编造。
+      const TYPES = ['hive','spark','hbase','clickhouse','impala','presto','doris']
+      try {
+        const res = await getDataSourceList({})
+        const all = (res && res.code === 0)
+          ? (Array.isArray(res.result) ? res.result : (res.result && res.result.list) || [])
+          : []
+        this.bigDataList = all.filter(d => TYPES.includes(String(d.sourceType || '').toLowerCase()))
+        if (res && res.code !== 0) {
+          this.$message.error(`加载大数据源失败: ${res.msg || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.bigDataList = []
+        this.$message.error(`加载大数据源失败: ${e.message || e}`)
+      }
     },
-    fetchCloudList() {
-      this.cloudList = [
-        { id: '1', name: '阿里云生产环境', cloudType: 'ALIYUN', region: 'cn-hangzhou', serviceType: 'OBJECT_STORAGE', accessKeyId: 'LTAI5t****', status: 'connected', createTime: '2024-01-05 10:00:00' },
-        { id: '2', name: '腾讯云测试环境', cloudType: 'TENCENT', region: 'ap-guangzhou', serviceType: 'OBJECT_STORAGE', accessKeyId: 'AKID****', status: 'connected', createTime: '2024-01-06 14:00:00' },
-        { id: '3', name: 'AWS数据湖', cloudType: 'AWS', region: 'us-east-1', serviceType: 'DATA_LAKE', accessKeyId: 'AKIA****', status: 'disconnected', createTime: '2024-01-07 09:00:00' }
-      ]
+    async fetchCloudList() {
+      // 原实现是纯 mock（硬编码假云存储），从不调接口。
+      // 后端**没有** 云存储的 list 端点（只有 types/create/test），但所有数据源都落在
+      // federated_analysis_datasource 同一张表里，故复用 datasource/list 按 sourceType 过滤。
+      // 没有就显示空 —— 不再编造。
+      const TYPES = ['oss','s3','cos','obs','minio','gcs']
+      try {
+        const res = await getDataSourceList({})
+        const all = (res && res.code === 0)
+          ? (Array.isArray(res.result) ? res.result : (res.result && res.result.list) || [])
+          : []
+        this.cloudList = all.filter(d => TYPES.includes(String(d.sourceType || '').toLowerCase()))
+        if (res && res.code !== 0) {
+          this.$message.error(`加载云存储失败: ${res.msg || '接口返回异常'}`)
+        }
+      } catch (e) {
+        this.cloudList = []
+        this.$message.error(`加载云存储失败: ${e.message || e}`)
+      }
     },
     async fetchLogs() {
       try {
@@ -817,11 +885,13 @@ export default {
           this.logData = res.result.list || []
           this.logTotal = res.result.total || 0
         } else {
-          this.logData = this.getMockLogs()
+          this.logData = []
+          this.$message.error('加载任务日志失败')
           this.logTotal = this.logData.length
         }
       } catch (error) {
-        this.logData = this.getMockLogs()
+        this.logData = []
+        this.$message.error('加载任务日志失败')
         this.logTotal = this.logData.length
       }
     },
@@ -929,8 +999,39 @@ export default {
         // cancelled
       }
     },
-    handleViewResult(row) {
-      this.$message.success('查看分析结果: ' + row.taskName)
+    async handleViewResult(row) {
+      // 原实现只 $message.success('查看分析结果: ...') —— 一个什么都不做的绿色成功提示。
+      // 后端 /data/federatedAnalysis/task/detail 已返回 results[].resultData（含结果行），
+      // 这里真正取回并展示。
+      this.resultDialogVisible = true
+      this.resultLoading = true
+      this.resultRows = []
+      this.resultColumns = []
+      this.resultTaskName = row.taskName
+      try {
+        const res = await getFederatedAnalysisDetail({ taskId: row.id })
+        if (!res || res.code !== 0) {
+          this.$message.error(`获取分析结果失败: ${(res && res.msg) || '接口返回异常'}`)
+          return
+        }
+        const list = (res.result && res.result.results) || []
+        const latest = list.length ? list[list.length - 1] : null
+        let data = latest && latest.resultData
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data) } catch (e) { data = null }
+        }
+        const rows = data && (Array.isArray(data) ? data : data.rows)
+        if (Array.isArray(rows) && rows.length) {
+          this.resultRows = rows
+          this.resultColumns = Object.keys(rows[0])
+        } else {
+          this.$message.warning('该任务没有可展示的结果行')
+        }
+      } catch (e) {
+        this.$message.error(`获取分析结果失败: ${e.message || e}`)
+      } finally {
+        this.resultLoading = false
+      }
     },
     handleExportResults() {
       this.$message.success('导出选中的 ' + this.selectedRows.length + ' 个分析结果')
@@ -1285,14 +1386,14 @@ export default {
           this.taskLogData = {
             taskId: row.taskId,
             taskName: row.taskName,
-            logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+            logs: []
           }
         }
       } catch (error) {
         this.taskLogData = {
           taskId: row.taskId,
           taskName: row.taskName,
-          logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+          logs: []
         }
       }
       this.taskLogDialogVisible = true
