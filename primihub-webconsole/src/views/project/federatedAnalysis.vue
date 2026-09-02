@@ -290,6 +290,28 @@
       </span>
     </el-dialog>
 
+    <!-- 分析结果弹窗：展示后端 task/detail 返回的真实结果行 -->
+    <el-dialog :visible.sync="resultDialogVisible" title="分析结果" width="70%">
+      <div style="margin-bottom: 10px; color: #606266;">
+        任务：{{ resultTaskName }}　共 {{ resultRows.length }} 行
+      </div>
+      <el-table v-loading="resultLoading" :data="resultRows" border max-height="420">
+        <el-table-column
+          v-for="col in resultColumns"
+          :key="col"
+          :prop="col"
+          :label="col"
+          show-overflow-tooltip
+        />
+      </el-table>
+      <div v-if="!resultLoading && resultRows.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+        无结果行
+      </div>
+      <div slot="footer">
+        <el-button @click="resultDialogVisible = false">关 闭</el-button>
+      </div>
+    </el-dialog>
+
     <!-- Create Dialog -->
     <el-dialog title="创建联邦分析任务" :visible.sync="createDialogVisible" width="60%">
       <el-form ref="createForm" :model="createFormData" :rules="createFormRules" label-width="120px">
@@ -588,6 +610,7 @@
 <script>
 import {
   getFederatedAnalysisList,
+  getFederatedAnalysisDetail,
   createFederatedAnalysis,
   startFederatedAnalysis,
   exportFederatedAnalysisResult,
@@ -615,6 +638,11 @@ export default {
       tableData: [],
       total: 0,
       selectedRows: [],
+      resultDialogVisible: false,
+      resultLoading: false,
+      resultRows: [],
+      resultColumns: [],
+      resultTaskName: '',
       queryForm: {
         taskName: '',
         analysisType: null,
@@ -944,8 +972,39 @@ export default {
         // cancelled
       }
     },
-    handleViewResult(row) {
-      this.$message.success('查看分析结果: ' + row.taskName)
+    async handleViewResult(row) {
+      // 原实现只 $message.success('查看分析结果: ...') —— 一个什么都不做的绿色成功提示。
+      // 后端 /data/federatedAnalysis/task/detail 已返回 results[].resultData（含结果行），
+      // 这里真正取回并展示。
+      this.resultDialogVisible = true
+      this.resultLoading = true
+      this.resultRows = []
+      this.resultColumns = []
+      this.resultTaskName = row.taskName
+      try {
+        const res = await getFederatedAnalysisDetail({ taskId: row.id })
+        if (!res || res.code !== 0) {
+          this.$message.error(`获取分析结果失败: ${(res && res.msg) || '接口返回异常'}`)
+          return
+        }
+        const list = (res.result && res.result.results) || []
+        const latest = list.length ? list[list.length - 1] : null
+        let data = latest && latest.resultData
+        if (typeof data === 'string') {
+          try { data = JSON.parse(data) } catch (e) { data = null }
+        }
+        const rows = data && (Array.isArray(data) ? data : data.rows)
+        if (Array.isArray(rows) && rows.length) {
+          this.resultRows = rows
+          this.resultColumns = Object.keys(rows[0])
+        } else {
+          this.$message.warning('该任务没有可展示的结果行')
+        }
+      } catch (e) {
+        this.$message.error(`获取分析结果失败: ${e.message || e}`)
+      } finally {
+        this.resultLoading = false
+      }
     },
     handleExportResults() {
       this.$message.success('导出选中的 ' + this.selectedRows.length + ' 个分析结果')
