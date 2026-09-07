@@ -49,8 +49,12 @@ public class FederatedLearningService {
     // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
     private static final Long DEFAULT_PROJECT_ID = 2L;
-    // 横向 FL 的可信第三方(arbiter)= 机构C(org2),已 onboard
-    private static final String DEFAULT_ARBITER_ORGAN = "e8a592ce-b572-4191-b510-f634760dc376";
+    // 横向 FL 的可信第三方(arbiter)。原硬编码为某套部署的 org2 id，换个部署 arbiter 就检索不到
+    // (「可信第三方检索失败」)。改为可配置：env FL_ARBITER_ORGAN > JVM -Dfl.arbiter.organ > 兜底常量。
+    // 部署时把它设成本联邦第三方机构(无数据、仅做 arbiter 的那方)的 organId。
+    private static final String DEFAULT_ARBITER_ORGAN =
+            System.getenv().getOrDefault("FL_ARBITER_ORGAN",
+                    System.getProperty("fl.arbiter.organ", "e8a592ce-b572-4191-b510-f634760dc376"));
 
     /** 解析 resourceId(数值主键 或 fusionId) -> DataResource */
     private DataResource resolveResource(String idOrFusion) {
