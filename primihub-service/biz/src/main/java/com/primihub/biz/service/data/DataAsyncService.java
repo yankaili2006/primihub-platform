@@ -379,7 +379,12 @@ public class DataAsyncService implements ApplicationContextAware {
                 taskParam.getTaskContentParam().setQueryParam(querys);
                 taskParam.getTaskContentParam().setServerData(dataPirTask.getResourceId());
                 taskParam.getTaskContentParam().setOutputFullFilename(sb.toString());
-                taskParam.getTaskContentParam().setPirType(0);
+                // 关键词/匿踪查询走 APSI(PirType.KEY_PIR=1)：本平台的 PIR 是按 keyColumns 的
+                // **键值**检索(pirParam 是键值而非行下标)，对应 node 的 APSI 算子(有
+                // pir_server_config.json)。原硬编码 0=ID_PIR(SealPIR 索引 PIR)在 node 上
+                // `Pir init operator failed`(2026-09-07 实测)——它期望的是行下标、且本部署未配
+                // SealPIR 参数。改为 1 后 node 走 APSI 关键词 PIR，跨机构匿踪查询可跑通。
+                taskParam.getTaskContentParam().setPirType(1);
                 List<String> columns = Arrays.asList(resourceColumnNames.split(","));
                 List<String> keyColumns = Arrays.asList(dataPirKeyQuery.getKey());
                 Integer[] keyIdx = keyColumns.stream().map(columns::indexOf).toArray(Integer[]::new);
