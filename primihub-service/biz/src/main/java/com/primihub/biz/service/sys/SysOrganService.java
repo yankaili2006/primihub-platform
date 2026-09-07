@@ -43,6 +43,18 @@ import java.util.stream.Collectors;
 @Service
 public class SysOrganService {
 
+    // 合法 organId 必须是 36 位标准 UUID。OrganConfiguration.getLocalOrganShortCode()
+    // 取 organId.substring(24,36) 作 12 位机构短码；organId 短于 36 位会越界/短码错位，
+    // 与 meta 端 batchSaveResource 的 12 位短码前缀校验同源。握手接收对方 organId 时若不校验，
+    // 一条被截断的 organId（实测见过 34 位、末段少 2 位）会入库 sys_organ 污染合作节点列表，
+    // 且畸形 self-id 不等于本机构 id、躲过下面的「不可以是本机构」检查。
+    private static final java.util.regex.Pattern ORGAN_ID_PATTERN =
+            java.util.regex.Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+    private static boolean isValidOrganId(String organId) {
+        return organId != null && ORGAN_ID_PATTERN.matcher(organId).matches();
+    }
+
     @Resource
     private Environment environment;
     @Resource(name = "soaRestTemplate")
@@ -273,7 +285,11 @@ public class SysOrganService {
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE,"合作方建立通信失败,请检查gateway和publicKey是否正确匹配！！！");
             }
             Map<String,Object> resultMap = (Map<String,Object>)baseResultEntity.getResult();
-            sysOrgan.setOrganId(resultMap.get("organId").toString());
+            String partnerOrganId = resultMap.get("organId") == null ? null : resultMap.get("organId").toString();
+            if (!isValidOrganId(partnerOrganId)){
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE,"合作方 organId 格式非法(需 36 位 UUID)，拒绝入库: " + partnerOrganId);
+            }
+            sysOrgan.setOrganId(partnerOrganId);
             if (organConfiguration.getSysLocalOrganId().equals(sysOrgan.getOrganId())){
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE,"合作方不可以是本机构!!!");
             }
@@ -298,6 +314,10 @@ public class SysOrganService {
     public BaseResultEntity applyForJoinNode(Map<String, Object> info) {
         log.info(JSONObject.toJSONString(info));
 //        SysOrgan sysOrgan = sysOrganSecondarydbRepository.selectSysOrganByApplyId(info.get("applyId").toString());
+        String applyOrganId = info.get("organId") == null ? null : info.get("organId").toString();
+        if (!isValidOrganId(applyOrganId)){
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE,"申请方 organId 格式非法(需 36 位 UUID)，拒绝入库: " + applyOrganId);
+        }
         if (organConfiguration.getSysLocalOrganId().equals(info.get("organId").toString())){
             return BaseResultEntity.success();
         }
@@ -519,7 +539,11 @@ public class SysOrganService {
             }
             Map<String,Object> resultMap = (Map<String,Object>)baseResultEntity.getResult();
             // 得到一个返回的机构id
-            sysOrgan.setOrganId(resultMap.get("organId").toString());
+            String partnerOrganId = resultMap.get("organId") == null ? null : resultMap.get("organId").toString();
+            if (!isValidOrganId(partnerOrganId)){
+                return BaseResultEntity.failure(BaseResultEnum.FAILURE,"合作方 organId 格式非法(需 36 位 UUID)，拒绝入库: " + partnerOrganId);
+            }
+            sysOrgan.setOrganId(partnerOrganId);
             if (organConfiguration.getSysLocalOrganId().equals(sysOrgan.getOrganId())){
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE,"合作方不可以是本机构!!!");
             }
