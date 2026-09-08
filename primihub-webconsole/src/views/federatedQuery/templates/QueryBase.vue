@@ -14,7 +14,7 @@
         <AdvancedConfigPanel v-model="form.advancedConfig" />
 
         <el-form-item>
-          <el-button type="primary" @click="submitQuery" :loading="loading">提交查询</el-button>
+          <el-button type="primary" :loading="loading" @click="submitQuery">提交查询</el-button>
           <el-button @click="$router.back()">取消</el-button>
         </el-form-item>
       </el-form>
@@ -33,12 +33,14 @@ export default {
   props: {
     pageTitle: { type: String, default: '联邦查询' },
     defaultAlgorithm: { type: String, default: 'DH' },
-    defaultMode: { type: String, default: 'batch' }
+    defaultMode: { type: String, default: 'batch' },
+    queryType: { type: String, default: 'psi' },
+    variant: { type: String, default: '' }
   },
   data() {
     return {
       algorithmConfig: { algorithm: this.defaultAlgorithm, mode: this.defaultMode },
-      form: { taskName: '', parties: [], advancedConfig: {} },
+      form: { taskName: '', parties: [], advancedConfig: {}},
       loading: false,
       rules: {
         taskName: [
@@ -57,7 +59,9 @@ export default {
           const res = await createFederatedQuery({
             ...this.form,
             algorithm: this.algorithmConfig.algorithm,
-            mode: this.algorithmConfig.mode
+            mode: this.algorithmConfig.mode,
+            queryType: this.queryType,
+            ...(this.variant ? { variant: this.variant } : {})
           })
           const taskId = res?.result?.taskId
           if (taskId) {

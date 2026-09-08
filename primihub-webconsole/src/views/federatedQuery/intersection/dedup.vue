@@ -1,38 +1,12 @@
 <template>
-  <div class="intersection-page">
+  <div class="federated-query-page">
     <FederatedQueryNav />
-    <el-card>
-      <div slot="header"><span>联邦求交去重</span></div>
-      <el-form :model="form" label-width="120px">
-        <el-form-item label="任务名称" required>
-          <el-input v-model="form.taskName" placeholder="请输入任务名称" />
-        </el-form-item>
-        <PartySelector v-model="form.parties" />
-        <AdvancedConfigPanel v-model="form.advancedConfig" />
-        <el-form-item>
-          <el-button type="primary" @click="submit" :loading="loading">提交</el-button>
-          <el-button @click="$router.back()">取消</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <QueryBase page-title="求交去重" default-algorithm="DH" default-mode="batch" variant="dedup" />
   </div>
 </template>
 
 <script>
-import PartySelector from '@/components/PartySelector'
-import AdvancedConfigPanel from '@/components/AdvancedConfigPanel'
+import QueryBase from '../templates/QueryBase'
 import FederatedQueryNav from '@/components/FederatedQueryNav'
-export default {
-  components: { PartySelector, AdvancedConfigPanel, FederatedQueryNav },
-  data() {
-    return { form: { taskName: '', parties: [], advancedConfig: {} }, loading: false }
-  },
-  methods: {
-    async submit() {
-      if (!this.form.taskName) return this.$message.warning('请输入任务名称')
-      this.$message.success('提交成功')
-      this.$router.push('/PSI/list')
-    }
-  }
-}
+export default { components: { QueryBase, FederatedQueryNav }}
 </script>
