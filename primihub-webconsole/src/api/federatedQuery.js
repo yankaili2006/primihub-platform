@@ -47,3 +47,15 @@ export function getDifferenceTaskList(params) {
 export function getUnionTaskList(params) {
   return request({ url: '/data/union/getUnionTaskList', method: 'get', params })
 }
+
+export function testFederatedQueryTool(data) {
+  return request({ url: '/federatedQuery/tools/test', method: 'post', type: 'json', data })
+}
+
+export function saveFederatedQueryToolConfig(data) {
+  return request({ url: '/federatedQuery/tools/save', method: 'post', type: 'json', data })
+}
+
+export function getFederatedQueryToolConfig(params) {
+  return request({ url: '/federatedQuery/tools/config', method: 'get', params })
+}

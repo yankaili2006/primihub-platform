@@ -23,10 +23,10 @@
         <el-table-column label="创建时间" width="170">
           <template slot-scope="{ row }">{{ row.createdAt || row.createDate || '-' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="90" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template slot-scope="{ row }">
             <el-button v-if="row.taskState === 2" type="text" size="small" @click="downloadResult(row)">下载结果</el-button>
-            <span v-else>-</span>
+            <el-button type="text" size="small" @click="exportLog(row)">导出日志</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -82,6 +82,11 @@ export default {
     },
     stateTag(s) {
       return { 0: 'info', 1: '', 2: 'success', 3: 'danger' }[s] || 'info'
+    },
+    exportLog(row) {
+      const timestamp = new Date().getTime()
+      const nonce = Math.floor(Math.random() * 1000 + 1)
+      window.open(`${process.env.VUE_APP_BASE_API}/federatedQuery/logs/export?taskId=${row.id}&timestamp=${timestamp}&nonce=${nonce}&token=${getToken()}`, '_self')
     },
     downloadResult(row) {
       // 与 model/history.vue 的 downloadTaskFile 同款：带信封参数直开附件

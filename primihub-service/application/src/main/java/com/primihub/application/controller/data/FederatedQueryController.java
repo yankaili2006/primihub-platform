@@ -70,6 +70,14 @@ public class FederatedQueryController {
         return federatedQueryService.getLogs(req);
     }
 
+    @ApiOperation("导出查询日志(GET,供前端信封直开)")
+    @GetMapping("/logs/export")
+    public void exportLogsGet(@RequestParam Long taskId, HttpServletResponse response) {
+        LogExportReq req = new LogExportReq();
+        req.setTaskId(taskId);
+        federatedQueryService.exportLogs(req, response);
+    }
+
     @ApiOperation("导出查询日志")
     @PostMapping("/logs/export")
     public void exportLogs(@RequestBody LogExportReq req, HttpServletResponse response) {
