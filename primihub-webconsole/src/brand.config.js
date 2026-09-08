@@ -27,5 +27,5 @@ const brands = {
   },
 }
 
-export const brand = brands[BRAND] || brands.primihub
-export default brand
+// CJS 导出：settings.js 会在 vue.config.js（node 环境）里被 require，ESM export 会炸构建
+module.exports = brands[BRAND] || brands.primihub
