@@ -1189,6 +1189,36 @@ export const asyncRoutes = [
         },
         hidden: true,
         component: () => import('@/views/model/detail')
+      },
+      {
+        path: 'artifacts',
+        name: 'ModelArtifactList',
+        component: () => import('@/views/modelArtifact/list'),
+        meta: { title: '模型产物' }
+      },
+      {
+        path: 'artifacts/create',
+        name: 'ModelArtifactCreate',
+        hidden: true,
+        component: () => import('@/views/modelArtifact/create'),
+        meta: { title: '新建模型产物', activeMenu: '/model/artifacts' }
+      },
+      {
+        path: 'artifacts/edit/:id',
+        name: 'ModelArtifactEdit',
+        hidden: true,
+        component: () => import('@/views/modelArtifact/create'),
+        meta: { title: '编辑模型产物', activeMenu: '/model/artifacts' }
+      },
+      {
+        path: 'artifacts/detail/:id',
+        name: 'ModelArtifactDetail',
+        meta: {
+          title: '模型产物详情',
+          activeMenu: '/model/artifacts'
+        },
+        hidden: true,
+        component: () => import('@/views/modelArtifact/detail')
       }
     ]
   },

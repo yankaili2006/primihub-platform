@@ -96,6 +96,7 @@ public class DataResourceService {
         paramMap.put("userName", req.getUserName());
         paramMap.put("derivation", req.getDerivation());
         paramMap.put("fileContainsY", req.getFileContainsY());
+        paramMap.put("resourceKind", req.getResourceKind());
         List<DataResource> dataResources = dataResourceRepository.queryDataResource(paramMap);
         if (dataResources.size() == 0) {
             return BaseResultEntity.success(new PageDataEntity(0, req.getPageSize(), req.getPageNo(), new ArrayList()));
@@ -128,13 +129,19 @@ public class DataResourceService {
             List<DataResourceFieldReq> fieldList = req.getFieldList();
             BaseResultEntity handleDataResourceFileResult = null;
             DataSource dataSource = null;
+            boolean blobKind = req.getResourceKind() != null && req.getResourceKind() != 0;
             if (req.getResourceSource() == 1) {
                 SysFile sysFile = sysFileSecondarydbRepository.selectSysFileByFileId(req.getFileId());
                 if (sysFile == null) {
                     return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "file");
                 }
                 dataResource = DataResourceConvert.dataResourceReqConvertPo(req, userId, null, sysFile);
-                handleDataResourceFileResult = handleDataResourceFile(dataResource, sysFile.getFileUrl());
+                if (blobKind) {
+                    // 非表格资源（图像/blob、模型产物引用）：只登记文件与hash，不做CSV列头/Y值解析
+                    handleDataResourceFileResult = handleBlobResourceFile(dataResource, sysFile.getFileUrl());
+                } else {
+                    handleDataResourceFileResult = handleDataResourceFile(dataResource, sysFile.getFileUrl());
+                }
             } else if (req.getResourceSource() == 2) {
                 dataSource = DataSourceConvert.DataSourceReqConvertPo(req.getDataSource());
                 handleDataResourceFileResult = handleDataResourceSource(dataResource, fieldList, dataSource);
@@ -149,12 +156,17 @@ public class DataResourceService {
                 dataResource.setResourceFusionId(organConfiguration.generateUniqueCode());
             }
             List<DataFileField> dataFileFieldList = new ArrayList<>();
-            for (DataResourceFieldReq field : fieldList) {
-                dataFileFieldList.add(DataResourceConvert.DataFileFieldReqConvertPo(field, 0L, dataResource.getResourceId()));
+            if (fieldList != null) {
+                for (DataResourceFieldReq field : fieldList) {
+                    dataFileFieldList.add(DataResourceConvert.DataFileFieldReqConvertPo(field, 0L, dataResource.getResourceId()));
+                }
             }
-            TaskParam taskParam = resourceSynGRPCDataSet(dataSource, dataResource, dataFileFieldList);
-            if (!taskParam.getSuccess()) {
-                return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "无法将资源注册到数据集中:" + taskParam.getError());
+            if (!blobKind) {
+                // 非表格资源不注册进节点数据集（CSV accessInfo 语义不适用）
+                TaskParam taskParam = resourceSynGRPCDataSet(dataSource, dataResource, dataFileFieldList);
+                if (!taskParam.getSuccess()) {
+                    return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "无法将资源注册到数据集中:" + taskParam.getError());
+                }
             }
             if (dataSource != null) {
                 dataResourcePrRepository.saveSource(dataSource);
@@ -164,7 +176,9 @@ public class DataResourceService {
             for (DataFileField field : dataFileFieldList) {
                 field.setResourceId(dataResource.getResourceId());
             }
-            dataResourcePrRepository.saveResourceFileFieldBatch(dataFileFieldList);
+            if (!dataFileFieldList.isEmpty()) {
+                dataResourcePrRepository.saveResourceFileFieldBatch(dataFileFieldList);
+            }
             List<String> tags = req.getTags();
             for (String tagName : tags) {
                 DataResourceTag dataResourceTag = new DataResourceTag(tagName);
@@ -179,8 +193,11 @@ public class DataResourceService {
                 }
                 dataResourcePrRepository.saveVisibilityAuth(authList);
             }
-            fusionResourceService.saveResource(organConfiguration.getSysLocalOrganId(), findCopyResourceList(dataResource.getResourceId(), dataResource.getResourceId()));
-            singleTaskChannel.input().send(MessageBuilder.withPayload(JSON.toJSONString(new BaseFunctionHandleEntity(BaseFunctionHandleEnum.SINGLE_DATA_FUSION_RESOURCE_TASK.getHandleType(), dataResource))).build());
+            if (!blobKind) {
+                // 非表格资源本轮不进 fusion 跨机构编目（协作方按CSV结构解析会出错），仅本机构可见
+                fusionResourceService.saveResource(organConfiguration.getSysLocalOrganId(), findCopyResourceList(dataResource.getResourceId(), dataResource.getResourceId()));
+                singleTaskChannel.input().send(MessageBuilder.withPayload(JSON.toJSONString(new BaseFunctionHandleEntity(BaseFunctionHandleEnum.SINGLE_DATA_FUSION_RESOURCE_TASK.getHandleType(), dataResource))).build());
+            }
             map.put("resourceId", dataResource.getResourceId());
             map.put("resourceFusionId", dataResource.getResourceFusionId());
             map.put("resourceName", dataResource.getResourceName());
@@ -272,6 +289,9 @@ public class DataResourceService {
                         map.putAll((Map<String, Object>) baseResultEntity.getResult());
                     }
                 }
+            } else if (dataResource.getResourceKind() != null && dataResource.getResourceKind() != 0) {
+                // 非表格资源无CSV数据可预览
+                map.put("dataList", new ArrayList());
             } else {
                 List<LinkedHashMap<String, Object>> csvData = FileUtil.getCsvData(dataResource.getUrl(), DataConstant.READ_DATA_ROW);
                 map.put("dataList", csvData);
@@ -566,6 +586,30 @@ public class DataResourceService {
             }
         } else {
             return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "无文件信息");
+        }
+        return BaseResultEntity.success();
+    }
+
+    /**
+     * 处理非表格（图像/blob、模型产物引用）文件资源：仅登记文件与hash，跳过CSV列头/Y值解析
+     */
+    public BaseResultEntity handleBlobResourceFile(DataResource dataResource, String url) {
+        File file = new File(url);
+        if (!file.exists()) {
+            return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "无文件信息");
+        }
+        dataResource.setFileRows(0);
+        dataResource.setFileColumns(0);
+        dataResource.setFileHandleField("");
+        dataResource.setFileContainsY(0);
+        dataResource.setFileYRows(0);
+        dataResource.setFileYRatio(BigDecimal.ZERO);
+        try {
+            String md5hash = FileUtil.md5HashCode(file);
+            dataResource.setResourceHashCode(md5hash);
+        } catch (Exception e) {
+            log.info("resource_id:{} - url:{} - e:{}", dataResource.getResourceId(), url, e.getMessage());
+            return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "文件hash出错");
         }
         return BaseResultEntity.success();
     }
@@ -957,6 +1001,9 @@ public class DataResourceService {
                         map.putAll((Map<String, Object>) baseResultEntity.getResult());
                     }
                 }
+            } else if (dataResource.getResourceKind() != null && dataResource.getResourceKind() != 0) {
+                // 非表格资源无CSV数据可预览
+                map.put("dataList", new ArrayList());
             } else {
                 List<LinkedHashMap<String, Object>> csvData = FileUtil.getCsvData(dataResource.getUrl(), DataConstant.READ_DATA_ROW);
                 map.put("dataList", csvData);

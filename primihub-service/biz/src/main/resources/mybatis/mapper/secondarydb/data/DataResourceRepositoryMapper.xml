@@ -21,6 +21,8 @@
         resource_fusion_id as resourceFusionId,
         public_organ_id as publicOrganId,
         resource_state as resourceState,
+        resource_kind as resourceKind,
+        object_key as objectKey,
         resource_hash_code as resourceHashCode,
         db_id as dbId,
         user_id as userId,
@@ -67,6 +69,9 @@
         </if>
         <if test="resourceName!=null and resourceName!=''">
             and resource_name like CONCAT('%',#{resourceName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="resourceKind!=null">
+            and resource_kind = #{resourceKind}
         </if>
         <choose>
             <when test="fileContainsY!=null and fileContainsY==1">

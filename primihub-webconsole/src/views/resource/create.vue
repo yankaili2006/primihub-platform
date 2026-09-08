@@ -75,12 +75,20 @@
           <div class="item-wrap-normal">
             <el-radio-group v-model="dataForm.resourceSource" @change="handleRadioChange">
               <el-radio :label="1">文件上传</el-radio>
-              <el-radio v-if="showDatabaseRadio" :label="2">数据库导入</el-radio>
+              <el-radio v-if="showDatabaseRadio && dataForm.resourceKind !== 1" :label="2">数据库导入</el-radio>
+            </el-radio-group>
+          </div>
+        </el-form-item>
+        <el-form-item label="资源形态" prop="resourceKind">
+          <div class="item-wrap-normal">
+            <el-radio-group v-model="dataForm.resourceKind" @change="handleKindChange">
+              <el-radio :label="0">表格数据</el-radio>
+              <el-radio :label="1">图像等非结构化</el-radio>
             </el-radio-group>
           </div>
         </el-form-item>
         <el-form-item v-if="dataForm.resourceSource === 1">
-          <upload :max-size="fileMaxSize" :show-tips="true" :single="true" @success="handleUploadSuccess" />
+          <upload :key="dataForm.resourceKind" :max-size="uploadMaxSize" :file-suffix="uploadFileSuffix" :show-tips="true" :single="true" @success="handleUploadSuccess" />
         </el-form-item>
         <template v-if="showDatabaseRadio && dataForm.resourceSource === 2">
           <DatabaseImport @success="handleImportSuccess" @change="handleImportChange" />
@@ -97,7 +105,7 @@
         element-loading-text="加载中"
         element-loading-spinner="el-icon-loading"
       >
-        <el-col v-if="fieldList.length > 0" :span="12">
+        <el-col v-if="dataForm.resourceKind !== 1 && fieldList.length > 0" :span="12">
           <EditResourceTable
             border
             height="500"
@@ -106,7 +114,7 @@
             @change="handleResourceChange"
           />
         </el-col>
-        <el-col v-if="dataList.length >0" :span="12">
+        <el-col v-if="dataForm.resourceKind !== 1 && dataList.length >0" :span="12">
           <ResourcePreviewTable :data="dataList" height="500" />
         </el-col>
       </el-row>
@@ -148,6 +156,7 @@ export default {
         resourceDesc: '',
         tags: [],
         resourceSource: 1,
+        resourceKind: 0, // 资源形态 0表格 1图像等非结构化
         resourceAuthType: 1,
         fileId: -1, // 文件id
         fieldList: [],
@@ -167,6 +176,9 @@ export default {
         ],
         resourceSource: [
           { required: true, message: '请选择来源', trigger: 'change' }
+        ],
+        resourceKind: [
+          { required: true, message: '请选择资源形态', trigger: 'change' }
         ],
         resourceAuthType: [
           { required: true, message: '请选择授权方式', trigger: 'change' }
@@ -209,7 +221,17 @@ export default {
         lazy: true
       },
       authOrganList: [],
-      showDatabaseRadio: false
+      showDatabaseRadio: false,
+      blobFileSuffixs: ['zip', 'tar', 'gz', 'png', 'jpg', 'jpeg'],
+      blobFileMaxSize: 1024 * 1024 * 512 // 非结构化文件 limit 512MB
+    }
+  },
+  computed: {
+    uploadMaxSize() {
+      return this.dataForm.resourceKind === 1 ? this.blobFileMaxSize : this.fileMaxSize
+    },
+    uploadFileSuffix() {
+      return this.dataForm.resourceKind === 1 ? this.blobFileSuffixs : []
     }
   },
   async created() {
@@ -232,6 +254,16 @@ export default {
       this.fieldList = []
       this.dataList = []
     },
+    handleKindChange(value) {
+      // 切换资源形态时清空已解析数据,非结构化仅支持文件上传
+      this.dataForm.fileId = -1
+      this.dataForm.fieldList = []
+      this.fieldList = []
+      this.dataList = []
+      if (value === 1) {
+        this.dataForm.resourceSource = 1
+      }
+    },
     handleImportSuccess(data) {
       this.dataForm.dataSource = data.dataSource
       this.fieldList = data.fieldList
@@ -249,6 +281,8 @@ export default {
     },
     handleUploadSuccess({ fileId }) {
       this.dataForm.fileId = fileId
+      // 非结构化资源无字段结构,无需文件预览解析
+      if (this.dataForm.resourceKind === 1) return
       this.resourceFilePreview()
     },
     resourceFilePreview() {
@@ -304,7 +338,16 @@ export default {
     async submitForm() {
       this.$refs['dataForm'].validate(async(valid) => {
         if (valid) {
-          if (this.dataForm.fieldList.length < 1) {
+          if (this.dataForm.resourceKind === 1) {
+            if (this.dataForm.fileId === -1) {
+              this.$message({
+                message: '请先上传文件',
+                type: 'warning'
+              })
+              this.loading = false
+              return
+            }
+          } else if (this.dataForm.fieldList.length < 1) {
             this.$message({
               message: '请先上传文件或导入数据',
               type: 'warning'
@@ -350,12 +393,13 @@ export default {
       this.loading = true
       const { result = {}} = await getResourceDetail(this.resourceId)
       const { resource, dataList, fieldList, fusionOrganList } = result
-      const { resourceName, resourceDesc, resourceAuthType, resourceSource, tags, fileId, url } = resource
+      const { resourceName, resourceDesc, resourceAuthType, resourceSource, resourceKind, tags, fileId, url } = resource
       this.resource = resource
       this.dataForm.resourceName = resourceName
       this.dataForm.resourceDesc = resourceDesc
       this.dataForm.resourceAuthType = resourceAuthType
       this.dataForm.resourceSource = resourceSource
+      this.dataForm.resourceKind = resourceKind || 0
       this.dataForm.fileId = fileId
       this.dataList = dataList || []
       this.fieldList = fieldList || []

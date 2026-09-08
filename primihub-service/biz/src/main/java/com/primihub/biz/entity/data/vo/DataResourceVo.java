@@ -126,4 +126,12 @@ public class DataResourceVo {
      * organFusionId
      */
     private String organFusionId;
+    /**
+     * 资源形态 0表格 1图像/blob目录 2模型产物引用
+     */
+    private Integer resourceKind;
+    /**
+     * 对象存储key预留（本轮存本地相对路径）
+     */
+    private String objectKey;
 }

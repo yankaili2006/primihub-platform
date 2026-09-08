@@ -3,9 +3,9 @@
 <mapper namespace="com.primihub.biz.repository.primarydb.data.DataResourcePrRepository">
     <insert id="saveResource" keyProperty="resourceId" useGeneratedKeys="true"
             parameterType="com.primihub.biz.entity.data.po.DataResource">
-        insert into data_resource (resource_name,resource_desc,resource_auth_type,resource_source,resource_hash_code,resource_state,
+        insert into data_resource (resource_name,resource_desc,resource_auth_type,resource_source,resource_hash_code,resource_state,resource_kind,object_key,
                     resource_num,file_id,file_size,file_suffix,file_columns,file_rows,file_handle_field,file_contains_y,file_y_rows,file_y_ratio,file_handle_status,public_organ_id,resource_fusion_id,db_id,user_id,organ_id,url,create_date,update_date)
-        values (#{resourceName},#{resourceDesc},#{resourceAuthType},#{resourceSource},#{resourceHashCode},#{resourceState},#{resourceNum},#{fileId},
+        values (#{resourceName},#{resourceDesc},#{resourceAuthType},#{resourceSource},#{resourceHashCode},#{resourceState},ifnull(#{resourceKind},0),#{objectKey},#{resourceNum},#{fileId},
                 #{fileSize},#{fileSuffix},#{fileColumns},#{fileRows},#{fileHandleField},#{fileContainsY},#{fileYRows},#{fileYRatio},#{fileHandleStatus},#{publicOrganId},#{resourceFusionId},#{dbId},#{userId},#{organId},#{url},now(),now())
     </insert>
 
@@ -70,6 +70,8 @@
             <if test="fileContainsY!=null">file_contains_y = #{fileContainsY},</if>
             <if test="fileYRows!=null">file_y_rows = #{fileYRows},</if>
             <if test="fileYRatio!=null">file_y_ratio = #{fileYRatio},</if>
+            <if test="resourceKind!=null">resource_kind = #{resourceKind},</if>
+            <if test="objectKey!=null">object_key = #{objectKey},</if>
             <if test="publicOrganId!=null">public_organ_id = #{publicOrganId},</if>
             <if test="resourceFusionId!=null">resource_fusion_id = #{resourceFusionId},</if>
             <if test="dbId!=null">db_id = #{dbId},</if>

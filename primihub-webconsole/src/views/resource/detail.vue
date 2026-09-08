@@ -16,15 +16,22 @@
     </div>
     <div class="detail">
       <el-descriptions title="数据信息" :column="2" label-class-name="detail-title">
-        <el-descriptions-item label="样本量">{{ resource.fileRows }}</el-descriptions-item>
-        <el-descriptions-item label="特征量">{{ resource.fileColumns }}</el-descriptions-item>
-        <el-descriptions-item label="正例样本数量">{{ resource.fileYRows ? resource.fileYRows : '0' }}</el-descriptions-item>
-        <el-descriptions-item label="正例样本比例">{{ resource.fileYRatio ? resource.fileYRatio : '0' }}%</el-descriptions-item>
+        <template v-if="!isNonTabular">
+          <el-descriptions-item label="样本量">{{ resource.fileRows }}</el-descriptions-item>
+          <el-descriptions-item label="特征量">{{ resource.fileColumns }}</el-descriptions-item>
+          <el-descriptions-item label="正例样本数量">{{ resource.fileYRows ? resource.fileYRows : '0' }}</el-descriptions-item>
+          <el-descriptions-item label="正例样本比例">{{ resource.fileYRatio ? resource.fileYRatio : '0' }}%</el-descriptions-item>
+        </template>
+        <template v-else>
+          <el-descriptions-item label="资源形态">{{ resource.resourceKind === 2 ? '模型产物' : '图像/blob' }}</el-descriptions-item>
+          <el-descriptions-item label="对象存储Key">{{ resource.objectKey }}</el-descriptions-item>
+          <el-descriptions-item label="文件Hash">{{ resource.resourceHashCode }}</el-descriptions-item>
+        </template>
         <el-descriptions-item label="数据来源">{{ resource.resourceSource | sourceFilter }}</el-descriptions-item>
         <el-descriptions-item v-if="resource.resourceSource === 1" label="数据大小">{{ resource.fileSize | fileSizeFilter }}</el-descriptions-item>
       </el-descriptions>
     </div>
-    <div class="detail">
+    <div v-if="!isNonTabular" class="detail">
       <el-row
         :gutter="20"
         class="data-container"
@@ -70,6 +77,12 @@ export default {
       resourceFieldList: [],
       dataList: [], // resource preview
       fieldList: [] // resource field info
+    }
+  },
+  computed: {
+    // 图像/blob(1) 与模型产物引用(2) 均无字段结构与CSV预览
+    isNonTabular() {
+      return this.resource.resourceKind === 1 || this.resource.resourceKind === 2
     }
   },
   async created() {

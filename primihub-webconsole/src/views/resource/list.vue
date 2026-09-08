@@ -100,6 +100,18 @@
           </template>
         </el-table-column>
         <el-table-column
+          prop="resourceKind"
+          label="形态"
+          align="center"
+          width="90"
+        >
+          <template slot-scope="{row}">
+            <el-tag v-if="row.resourceKind === 1" type="warning" size="mini">图像/blob</el-tag>
+            <el-tag v-else-if="row.resourceKind === 2" type="info" size="mini">模型产物</el-tag>
+            <el-tag v-else size="mini">表格</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="resourceSource"
           label="资源类型"
           align="center"

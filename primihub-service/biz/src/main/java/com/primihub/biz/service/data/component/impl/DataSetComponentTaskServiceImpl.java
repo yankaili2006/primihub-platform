@@ -61,11 +61,17 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
                 if (mprv.getDerivation() == 1) {
                     continue;
                 }
+                if (mprv.getResourceKind() != null && mprv.getResourceKind() != 0) {
+                    // 非表格资源（图像/blob）本轮不进 fusion 编目，不走项目审核链路，仅本机构引用透传
+                    continue;
+                }
                 if (!resourceIds.contains(mprv.getResourceId())) {
                     return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"资源["+mprv.getResourceName()+"]审核未通过或移除,不可使用");
                 }
             }
-            List<String> modelResourceIds = resourceList.stream().map(ModelProjectResourceVo::getResourceId).collect(Collectors.toList());
+            List<String> modelResourceIds = resourceList.stream()
+                    .filter(vo -> vo.getResourceKind() == null || vo.getResourceKind() == 0)
+                    .map(ModelProjectResourceVo::getResourceId).collect(Collectors.toList());
             BaseResultEntity baseResult = otherBusinessesService.getResourceListById(modelResourceIds);
             if (baseResult.getCode()!=0) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"联邦资源查询失败:"+baseResult.getMsg());
@@ -107,6 +113,15 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
         Map<String, String> resourceMap = taskReq.getFusionResourceList().stream().collect(Collectors.toMap(d -> d.get("resourceId").toString(), d -> d.get("resourceColumnNameList").toString()));
         for (int i = 0; i < resourceList.size(); i++) {
             ModelProjectResourceVo modelProjectResourceVo = resourceList.get(i);
+            if (modelProjectResourceVo.getResourceKind()!=null && modelProjectResourceVo.getResourceKind()!=0){
+                // 非表格资源不占据 label/guest 数据集槽位，仅登记引用关系并以 aux 键透传
+                taskReq.getFreemarkerMap().put("aux_resource_"+i, modelProjectResourceVo.getResourceId());
+                DataModelResource auxModelResource = new DataModelResource(taskReq.getDataModel().getModelId());
+                auxModelResource.setTaskId(taskReq.getDataTask().getTaskId());
+                auxModelResource.setResourceId(modelProjectResourceVo.getResourceId());
+                taskReq.getDmrList().add(auxModelResource);
+                continue;
+            }
             if (modelProjectResourceVo.getParticipationIdentity()==1){
                 taskReq.getFreemarkerMap().put(DataConstant.PYTHON_LABEL_DATASET,modelProjectResourceVo.getResourceId());
 //                taskReq.getDataModel().setYValueColumn(fileNaame);
