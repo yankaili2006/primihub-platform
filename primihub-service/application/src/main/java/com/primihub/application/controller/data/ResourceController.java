@@ -147,8 +147,15 @@ public class ResourceController {
                     }
                 }
             }
-            if (req.getFieldList()==null || req.getFieldList().size()==0) {
-                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"fieldList");
+            if (req.getResourceKind()!=null && req.getResourceKind()!=0 && req.getResourceSource()!=1){
+                // 非表格资源（图像/blob、模型产物引用）仅支持文件上传来源
+                return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION,"resourceKind");
+            }
+            // 非表格资源无列头结构，不要求 fieldList
+            if (req.getResourceKind()==null || req.getResourceKind()==0) {
+                if (req.getFieldList()==null || req.getFieldList().size()==0) {
+                    return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"fieldList");
+                }
             }
             return dataResourceService.saveDataResource(req,userId);
         }

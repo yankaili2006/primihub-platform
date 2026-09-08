@@ -34,7 +34,7 @@ import RightDrawer from './RightDrawer'
 
 import { getModelComponent, saveModelAndComponent, getModelComponentDetail, getProjectResourceData, runTaskModel, getTaskModelComponent, getProjectResourceOrgan, restartTaskModel } from '@/api/model'
 
-import { DATA_SET, MODEL, ARBITER_ORGAN, MPC_STATISTICS, DATA_SET_SELECT_DATA, MODEL_TYPE, START_NODE, TASK_NAME, MODEL_NAME } from '@/const/componentCode.js'
+import { DATA_SET, MODEL, ARBITER_ORGAN, MPC_STATISTICS, DATA_SET_SELECT_DATA, MODEL_TYPE, MODEL_ARTIFACT_ID, START_NODE, TASK_NAME, MODEL_NAME } from '@/const/componentCode.js'
 
 const lineAttr = { // 线样式
   'line': {
@@ -1339,6 +1339,20 @@ export default {
           }
           this.getDetailParams(c, item)
         })
+        // 恢复前端注入的"预训练模型产物"选择(非后端组件定义,组件定义匹配不到需单独补回)
+        if (item.componentCode === MODEL) {
+          const artifactValue = item.componentValues.find(v => v.key === MODEL_ARTIFACT_ID)
+          if (artifactValue && artifactValue.val !== '' && !currentData.componentTypes.find(c => c.typeCode === MODEL_ARTIFACT_ID)) {
+            currentData.componentTypes.push({
+              typeCode: MODEL_ARTIFACT_ID,
+              typeName: '预训练模型产物(可选)',
+              inputType: 'artifactSelect',
+              isRequired: false,
+              inputValue: artifactValue.val,
+              inputValues: []
+            })
+          }
+        }
       })
       this.initGraphShape()
       if (this.options.isEditable) {

@@ -12,6 +12,8 @@ public enum ModelTypeEnum {
     REGRESSION_BINARY(7,"taskModel-nn_regression",1,"homo_nn_binary.ftl","homo_nn_binary_infer.ftl","homo_fitTransform.ftl"),
     HFL_LINEAR_REGRESSION(8,"HFL_linear_regression",1,"homo_lr.ftl","homo_lr_infer.ftl","homo_fitTransform.ftl"),
     VFL_LINEAR_REGRESSION(9,"VFL_linear_regression",0,"hetero_lr.ftl","hetero_lr_infer.ftl","hetero_fitTransform.ftl"),
+    // 图像联邦占位模板：仅平台编排层（登记模板+参数骨架），执行依赖 primihub-node 图像算子（另行评估）
+    HFL_IMAGE_PLACEHOLDER(10,"HFL_image_placeholder",1,null,null,null),
     ;
     private Integer type;
     private Integer trainType;

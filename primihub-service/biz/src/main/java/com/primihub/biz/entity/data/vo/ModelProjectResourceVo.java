@@ -49,4 +49,8 @@ public class ModelProjectResourceVo {
     private String calculationField;
 
     private Integer derivation = 0;
+    /**
+     * 资源形态 0表格 1图像/blob目录 2模型产物引用（component_json 透传）
+     */
+    private Integer resourceKind = 0;
 }

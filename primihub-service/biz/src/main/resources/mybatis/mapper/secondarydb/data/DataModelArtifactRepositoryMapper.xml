@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.DataModelArtifactRepository">
+    <sql id="artifactColumns">
+        artifact_id as artifactId,
+        model_name as modelName,
+        model_kind as modelKind,
+        framework as framework,
+        `format` as format,
+        version as version,
+        file_id as fileId,
+        url as url,
+        object_key as objectKey,
+        checksum as checksum,
+        metadata as metadata,
+        organ_id as organId,
+        user_id as userId,
+        create_date as createDate
+    </sql>
+
+    <select id="queryModelArtifactById" resultType="com.primihub.biz.entity.data.po.DataModelArtifact">
+        SELECT
+        <include refid="artifactColumns"></include>
+        FROM data_model_artifact
+        where is_del = 0 and artifact_id = #{artifactId}
+    </select>
+
+    <sql id="queryCondition">
+        <if test="modelName!=null and modelName!=''">
+            and model_name like CONCAT('%',#{modelName,jdbcType=VARCHAR},'%')
+        </if>
+        <if test="modelKind!=null and modelKind!=''">
+            and model_kind = #{modelKind}
+        </if>
+        <if test="framework!=null and framework!=''">
+            and framework = #{framework}
+        </if>
+        <if test="organId!=null and organId!=''">
+            and organ_id = #{organId}
+        </if>
+    </sql>
+
+    <select id="queryModelArtifactList" resultType="com.primihub.biz.entity.data.po.DataModelArtifact">
+        SELECT
+        <include refid="artifactColumns"></include>
+        FROM data_model_artifact
+        where is_del = 0
+        <include refid="queryCondition"></include>
+        ORDER BY artifact_id desc
+        LIMIT #{offset},#{pageSize}
+    </select>
+
+    <select id="queryModelArtifactCount" resultType="java.lang.Integer">
+        SELECT count(artifact_id)
+        FROM data_model_artifact
+        where is_del = 0
+        <include refid="queryCondition"></include>
+    </select>
+</mapper>

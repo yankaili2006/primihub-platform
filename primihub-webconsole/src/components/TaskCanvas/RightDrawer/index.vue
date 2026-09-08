@@ -124,6 +124,18 @@
             <el-input v-model="item.inputValue" :disabled="!options.isEditable" type="textarea" size="small" @change="handleChange" />
           </template>
         </div>
+        <!-- 预训练模型产物(可选) 前端注入,存于componentValues的modelArtifactId -->
+        <template v-if="modelArtifactType">
+          <p class="component-name"><span>{{ modelArtifactType.typeName }}</span></p>
+          <el-select v-model="modelArtifactType.inputValue" :disabled="!options.isEditable" class="block" clearable placeholder="请选择" @change="handleChange">
+            <el-option
+              v-for="artifact in modelArtifactOptions"
+              :key="artifact.artifactId"
+              :label="artifact.modelName"
+              :value="String(artifact.artifactId)"
+            />
+          </el-select>
+        </template>
         <!-- Params part -->
         <template v-if="modelParams">
           <el-row v-for="param in modelParams" :key="param.key">
@@ -221,13 +233,14 @@
 
 <script>
 import { getProjectResourceData, getProjectResourceOrgan } from '@/api/model'
+import { getModelArtifactList } from '@/api/modelArtifact'
 import ModelTaskResourceDialog from '@/components/ModelTaskResourceDialog'
 import ResourceDec from '@/components/ResourceDec'
 import CooperateOrganDialog from '@/components/CooperateOrganDialog'
 import FeatureSelectDialog from '@/components/FeatureSelectDialog'
 import FeatureMultiSelectDialog from '@/components/FeatureMultiSelectDialog'
 import FitTransformCom from '@/components/TaskCanvas/components/FitTransformCom'
-import { DATA_SET, DATA_ALIGN, MODEL, MPC_STATISTICS, ARBITER_ORGAN, DATA_SET_SELECT_DATA, MODEL_TYPE, MULTIPLE_SELECT_FEATURE, MPC_STATISTICS_TYPE, ENCRYPTION_TYPE, FIT_TRANSFORM } from '@/const/componentCode.js'
+import { DATA_SET, DATA_ALIGN, MODEL, MPC_STATISTICS, ARBITER_ORGAN, DATA_SET_SELECT_DATA, MODEL_TYPE, MODEL_ARTIFACT_ID, MULTIPLE_SELECT_FEATURE, MPC_STATISTICS_TYPE, ENCRYPTION_TYPE, FIT_TRANSFORM } from '@/const/componentCode.js'
 
 export default {
   components: {
@@ -294,6 +307,8 @@ export default {
       dataAlignTypeValue: '',
       dataAlignParam: {},
       modelParams: [],
+      modelArtifactType: null,
+      modelArtifactOptions: [],
       defaultComponentConfig: [],
       selectType: 'radio',
       emptyMissingData: {
@@ -429,6 +444,7 @@ export default {
         } else if (newVal.componentCode === MODEL) {
           this.getDataSetComValue()
           this.getModelParams(newVal)
+          this.initModelArtifactType()
           this.flText = this.filterModelValue()
           console.log(this.flText)
         } else if (newVal.componentCode === DATA_ALIGN) {
@@ -529,6 +545,30 @@ export default {
         }
       } else {
         this.modelParams.length > 0 && this.modelParams.splice(0)
+      }
+    },
+    // 注入"预训练模型产物"配置项(可选),保存时随componentTypes序列化为componentValues的modelArtifactId
+    initModelArtifactType() {
+      let artifactType = this.localNodeData.componentTypes.find(item => item.typeCode === MODEL_ARTIFACT_ID)
+      if (!artifactType) {
+        artifactType = {
+          typeCode: MODEL_ARTIFACT_ID,
+          typeName: '预训练模型产物(可选)',
+          inputType: 'artifactSelect',
+          isRequired: false,
+          inputValue: '',
+          inputValues: []
+        }
+        this.localNodeData.componentTypes.push(artifactType)
+      }
+      this.modelArtifactType = artifactType
+      this.getModelArtifactOptions()
+    },
+    async getModelArtifactOptions() {
+      if (this.modelArtifactOptions.length > 0) return
+      const res = await getModelArtifactList({ pageNo: 1, pageSize: 100 })
+      if (res.code === 0 && res.result) {
+        this.modelArtifactOptions = res.result.data || []
       }
     },
     handleModelChange(val) {

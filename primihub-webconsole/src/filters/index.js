@@ -103,7 +103,8 @@ const modelTypeFilter = (type) => {
     6: '横向-NN(分类)',
     7: '横向-NN(回归)',
     8: '横向-线性回归',
-    9: '纵向-线性回归'
+    9: '纵向-线性回归',
+    10: '图像联邦(占位)'
   }
   return typeMap[type]
 }

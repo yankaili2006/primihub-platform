@@ -20,8 +20,13 @@
       <uploader-list />
     </uploader>
     <p v-if="showTips" class="upload-tip">
-      1.只能上传.csv文件，且不超过1MB <br>
-      2.请确保上传的资源文件编码为UTF8
+      <template v-if="fileSuffix.length > 0">
+        1.只能上传{{ suffixTipText }}文件，且不超过{{ maxSizeTipText }}
+      </template>
+      <template v-else>
+        1.只能上传.csv文件，且不超过{{ maxSizeTipText }} <br>
+        2.请确保上传的资源文件编码为UTF8
+      </template>
     </p>
   </div>
 </template>
@@ -114,12 +119,25 @@ export default {
       fileChunkList: []
     }
   },
+  computed: {
+    // 允许上传的文件后缀，未传fileSuffix时保持原默认集合
+    allowFileSuffixs() {
+      return this.fileSuffix.length > 0 ? this.fileSuffix : FILE_SUFFIXS
+    },
+    suffixTipText() {
+      return this.allowFileSuffixs.map(item => `.${String(item).trim()}`).join('/')
+    },
+    maxSizeTipText() {
+      const mb = this.maxSize / (1024 * 1024)
+      return mb >= 1024 ? `${mb / 1024}GB` : `${mb}MB`
+    }
+  },
   methods: {
     // 用于文件校验，忽略该文件则返回 false，文件不会添加到上传列表中
     onFileAdded(file, event) {
       console.log('onFileAdded', file)
       const suffix = file.getExtension()
-      if (!FILE_SUFFIXS.includes(suffix)) {
+      if (!this.allowFileSuffixs.includes(suffix)) {
         this.$message({
           message: '上传文件格式不正确，请重新上传',
           type: 'warning'
@@ -127,7 +145,7 @@ export default {
         file.ignored = true
       } else if (file.size > this.maxSize) {
         this.$message({
-          message: '上传文件不能大于1MB，请重新上传',
+          message: `上传文件不能大于${this.maxSizeTipText}，请重新上传`,
           type: 'warning'
         })
         file.ignored = true

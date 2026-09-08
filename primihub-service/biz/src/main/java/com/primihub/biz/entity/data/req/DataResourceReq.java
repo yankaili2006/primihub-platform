@@ -59,4 +59,9 @@ public class DataResourceReq extends PageReq{
 
     private Integer fileContainsY;
 
+    /**
+     * 资源形态 0表格 1图像/blob目录 2模型产物引用；查询时 null=不过滤，保存时 null 按 0 处理
+     */
+    private Integer resourceKind;
+
 }

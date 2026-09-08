@@ -50,6 +50,8 @@ public class ModelComponentTaskServiceImpl extends BaseComponentServiceImpl impl
     @Autowired
     private DataProjectRepository dataProjectRepository;
     @Autowired
+    private com.primihub.biz.repository.secondarydb.data.DataModelArtifactRepository dataModelArtifactRepository;
+    @Autowired
     private TaskHelper taskHelper;
 
     @Override
@@ -59,8 +61,22 @@ public class ModelComponentTaskServiceImpl extends BaseComponentServiceImpl impl
             return baseResultEntity;
         }
         ModelTypeEnum modelType = ModelTypeEnum.MODEL_TYPE_MAP.get(Integer.valueOf(taskReq.getValueMap().get("modelType")));
+        if (modelType == null) {
+            return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"模型类型未匹配");
+        }
         taskReq.getDataModel().setTrainType(modelType.getTrainType());
         taskReq.getDataModel().setModelType(modelType.getType());
+        // 可选：预训练/初始化模型产物引用（data_model_artifact），仅校验存在性并随 component_json 透传
+        String modelArtifactId = taskReq.getValueMap().get("modelArtifactId");
+        if (StringUtils.isNotBlank(modelArtifactId)) {
+            try {
+                if (dataModelArtifactRepository.queryModelArtifactById(Long.valueOf(modelArtifactId)) == null) {
+                    return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"模型产物["+modelArtifactId+"]不存在");
+                }
+            } catch (NumberFormatException e) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"模型产物id格式错误");
+            }
+        }
         if (taskReq.getValueMap().containsKey("arbiterOrgan")){
             String arbiterOrgan = taskReq.getValueMap().get("arbiterOrgan");
             log.info(arbiterOrgan);
@@ -103,6 +119,12 @@ public class ModelComponentTaskServiceImpl extends BaseComponentServiceImpl impl
         if (modelTypeEnum==null){
             taskReq.getDataTask().setTaskState(TaskStateEnum.FAIL.getStateType());
             taskReq.getDataTask().setTaskErrorMsg("运行失败:无法进行任务执行-任务类型未匹配");
+            return BaseResultEntity.success();
+        }
+        if (modelTypeEnum == ModelTypeEnum.HFL_IMAGE_PLACEHOLDER){
+            // 图像联邦本轮仅平台编排层（资源可引用/模板可选择/参数可下发）；执行算子依赖 primihub-node 引擎，另行评估
+            taskReq.getDataTask().setTaskState(TaskStateEnum.FAIL.getStateType());
+            taskReq.getDataTask().setTaskErrorMsg("图像联邦模板为编排占位：任务执行依赖 primihub-node 图像联邦算子（尚未提供），本轮仅打通平台编排层");
             return BaseResultEntity.success();
         }
         if (modelTypeEnum == ModelTypeEnum.MPC_LR){

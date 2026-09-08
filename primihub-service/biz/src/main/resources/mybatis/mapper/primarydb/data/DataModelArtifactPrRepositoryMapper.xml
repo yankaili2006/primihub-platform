@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataModelArtifactPrRepository">
+    <insert id="saveModelArtifact" keyProperty="artifactId" useGeneratedKeys="true"
+            parameterType="com.primihub.biz.entity.data.po.DataModelArtifact">
+        insert into data_model_artifact (model_name,model_kind,framework,`format`,version,file_id,url,object_key,checksum,metadata,organ_id,user_id,is_del,create_date,update_date)
+        values (#{modelName},#{modelKind},#{framework},#{format},#{version},#{fileId},#{url},#{objectKey},#{checksum},#{metadata},#{organId},#{userId},0,now(),now())
+    </insert>
+
+    <update id="updateModelArtifact" parameterType="com.primihub.biz.entity.data.po.DataModelArtifact">
+        update data_model_artifact
+        <set>
+            <if test="modelName!=null">model_name = #{modelName},</if>
+            <if test="modelKind!=null">model_kind = #{modelKind},</if>
+            <if test="framework!=null">framework = #{framework},</if>
+            <if test="format!=null">`format` = #{format},</if>
+            <if test="version!=null">version = #{version},</if>
+            <if test="fileId!=null">file_id = #{fileId},</if>
+            <if test="url!=null">url = #{url},</if>
+            <if test="objectKey!=null">object_key = #{objectKey},</if>
+            <if test="checksum!=null">checksum = #{checksum},</if>
+            <if test="metadata!=null">metadata = #{metadata},</if>
+            update_date = now()
+        </set>
+        where artifact_id = #{artifactId}
+    </update>
+
+    <update id="deleteModelArtifact">
+        update data_model_artifact set is_del = 1, update_date = now() where artifact_id = #{artifactId}
+    </update>
+</mapper>

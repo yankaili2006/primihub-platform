@@ -52,6 +52,10 @@ public class DataResourceConvert {
         po.setUrl(sysFile.getFileUrl());
         po.setPublicOrganId(req.getPublicOrganId());
         po.setResourceState(0);
+        po.setResourceKind(req.getResourceKind()==null?0:req.getResourceKind());
+        if (po.getResourceKind()!=0){
+            po.setObjectKey(sysFile.getFileUrl());
+        }
         return po;
     }
 
@@ -75,6 +79,7 @@ public class DataResourceConvert {
         po.setUrl("");
         po.setPublicOrganId(req.getPublicOrganId());
         po.setResourceState(0);
+        po.setResourceKind(req.getResourceKind()==null?0:req.getResourceKind());
         return po;
     }
 
@@ -119,6 +124,8 @@ public class DataResourceConvert {
         vo.setResourceState(po.getResourceState());
         vo.setResourceHashCode(po.getResourceHashCode());
         vo.setResourceFusionId(po.getResourceFusionId());
+        vo.setResourceKind(po.getResourceKind()==null?0:po.getResourceKind());
+        vo.setObjectKey(po.getObjectKey());
         return vo;
     }
 
@@ -150,6 +157,8 @@ public class DataResourceConvert {
         vo.setResourceState(po.getResourceState());
         vo.setResourceHashCode(po.getResourceHashCode());
         vo.setResourceFusionId(po.getResourceFusionId());
+        vo.setResourceKind(po.getResourceKind()==null?0:po.getResourceKind());
+        vo.setObjectKey(po.getObjectKey());
         return vo;
     }
     public static DataFileFieldVo DataFileFieldPoConvertVo(DataFileField fileField){
