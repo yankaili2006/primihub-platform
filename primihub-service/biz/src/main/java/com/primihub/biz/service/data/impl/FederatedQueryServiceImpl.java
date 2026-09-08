@@ -68,17 +68,23 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
                 return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "不支持的算法: " + algorithm);
             }
 
+            // 前端信封字段(token/nonce/timestamp)不是任务配置，且 token 是活会话凭据，不得入库
+            Map<String, Object> sourceConfig = new HashMap<>(req);
+            sourceConfig.remove("token");
+            sourceConfig.remove("nonce");
+            sourceConfig.remove("timestamp");
+
             FederatedQueryTask task = new FederatedQueryTask();
             task.setTaskName(taskName);
             task.setAlgorithm(algorithm);
             task.setQueryMode(mode);
             task.setQueryType(queryType);
             task.setTaskState(0);
-            task.setSourceConfig(JSON.toJSONString(req));
+            task.setSourceConfig(JSON.toJSONString(sourceConfig));
             task.setCreatedBy(userId);
             queryTaskRepository.insertQueryTask(task);
 
-            recordLog(task.getId(), "INFO", "查询任务已创建", req);
+            recordLog(task.getId(), "INFO", "查询任务已创建", sourceConfig);
 
             Map<String, Object> result = new HashMap<>();
             result.put("taskId", task.getId());
