@@ -572,7 +572,6 @@
                     }
                   ]
                 },
-                
                 {
                   "is_show": 1,
                   "is_required": 0,
@@ -609,7 +608,6 @@
                     }
                   ]
                 },
-                
                 {
                   "is_show": 0,
                   "is_required": 0,
@@ -1203,7 +1201,6 @@
                     }
                   ]
                 },
-                
                 {
                   "is_show": 1,
                   "is_required": 0,
@@ -1240,7 +1237,6 @@
                     }
                   ]
                 },
-                
                 {
                   "is_show": 0,
                   "is_required": 0,
@@ -1252,6 +1248,48 @@
                     {
                       "key": "min",
                       "val": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "key": "10",
+              "val": "图像联邦(占位)",
+              "param": [
+                {
+                  "is_show": 1,
+                  "is_required": 0,
+                  "type_code": "modelArtifactId",
+                  "type_name": "预训练模型产物ID",
+                  "input_type": "text",
+                  "input_value": "",
+                  "input_values": []
+                },
+                {
+                  "is_show": 1,
+                  "is_required": 0,
+                  "type_code": "learningRate",
+                  "type_name": "Params.LearningRate",
+                  "input_type": "text",
+                  "input_value": "0.01",
+                  "input_values": []
+                },
+                {
+                  "is_show": 1,
+                  "is_required": 0,
+                  "type_code": "globalEpoch",
+                  "type_name": "Params.GlobalEpoch",
+                  "input_type": "number",
+                  "input_value": 5,
+                  "input_values": [
+                    {
+                      "key": "min",
+                      "val": 1
+                    },
+                    {
+                      "key": "max",
+                      "val": 1000
                     }
                   ]
                 }
