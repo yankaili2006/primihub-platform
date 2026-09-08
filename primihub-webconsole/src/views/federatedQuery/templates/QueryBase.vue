@@ -60,7 +60,8 @@ export default {
             mode: this.algorithmConfig.mode
           })
           this.$message.success('提交成功')
-          this.$router.push('/federatedQuery/list')
+          // 路由表没有 /federatedQuery/list，死路由会被守卫弹回登录页——跳查询记录页
+          this.$router.push('/federatedQuery/logs/queryRecord')
         } catch (e) {
           this.$message.error(e.response?.data?.message || '提交失败，请检查网络或参数')
         } finally {
