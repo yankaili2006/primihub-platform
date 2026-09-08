@@ -174,6 +174,11 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
             task.setErrorMessage(null);
             queryTaskRepository.updateQueryTask(task);
             recordLog(taskId, "INFO", "任务开始执行", null);
+            try {
+                java.nio.file.Files.createDirectories(java.nio.file.Paths.get("/data/query_results"));
+            } catch (Exception ignore) {
+                // 目录创建失败交由 node 侧报错，不阻断提交
+            }
             // PSI 执行可达分钟级，异步跑，状态经 detail/result 轮询（1=运行中 2=完成 3=失败）
             FQ_EXECUTOR.submit(() -> executePsi(task, psiParam));
             return BaseResultEntity.success("任务已提交执行");
@@ -199,7 +204,12 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
 
             if (taskParam.getSuccess()) {
                 task.setTaskState(2);
-                task.setResultSummary("查询完成，共匹配 " + (psiParam.getPsiType() == 0 ? "交集" : "差集") + " 数据");
+                Long rows = countResultRows(taskId);
+                task.setResultRowCount(rows != null ? rows.intValue() : null);
+                String kind = psiParam.getPsiType() == 0 ? "交集" : "差集";
+                task.setResultSummary(rows != null
+                        ? "查询完成，" + kind + "共 " + rows + " 行"
+                        : "查询完成，共匹配 " + kind + " 数据");
                 recordLog(taskId, "INFO", "任务执行成功", taskParam.getTaskContentParam());
             } else {
                 task.setTaskState(3);
@@ -587,9 +597,61 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
         }
         psiParam.setClientIndex(clientIdx);
         psiParam.setServerIndex(serverIdx);
-        psiParam.setOutputFullFilename("/tmp/primihub/query_result_" + task.getId() + ".csv");
+        // /data 是 compose 全家共享 bind（application 与各 node 同源）——结果写这里
+        // application 才能回读行数/提供下载；/tmp/primihub 只在 node 容器内不可达
+        psiParam.setOutputFullFilename(resultFilePath(task.getId()));
         psiParam.setSyncResultToServer(0);
         return psiParam;
+    }
+
+    private String resultFilePath(Long taskId) {
+        return "/data/query_results/query_result_" + taskId + ".csv";
+    }
+
+    /** 结果 CSV 数据行数（去表头）；文件未落地返回 null，不让统计失败影响任务状态。 */
+    private Long countResultRows(Long taskId) {
+        try {
+            java.nio.file.Path p = java.nio.file.Paths.get(resultFilePath(taskId));
+            if (!java.nio.file.Files.exists(p)) {
+                return null;
+            }
+            try (java.util.stream.Stream<String> lines = java.nio.file.Files.lines(p, StandardCharsets.UTF_8)) {
+                long n = lines.filter(s -> !s.trim().isEmpty()).count();
+                return Math.max(0, n - 1);
+            }
+        } catch (Exception e) {
+            log.warn("统计结果行数失败 taskId={}", taskId, e);
+            return null;
+        }
+    }
+
+    @Override
+    public BaseResultEntity downloadResult(Long taskId, HttpServletResponse response) {
+        try {
+            FederatedQueryTask task = queryTaskRepository.selectQueryTaskById(taskId);
+            if (task == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
+            }
+            if (task.getTaskState() == null || task.getTaskState() != 2) {
+                return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "任务未完成，无结果可下载");
+            }
+            java.nio.file.Path p = java.nio.file.Paths.get(resultFilePath(taskId));
+            if (!java.nio.file.Files.exists(p)) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "结果文件不存在（可能由旧版本执行或已清理）");
+            }
+            String name = "query_result_" + taskId + ".csv";
+            response.setContentType("text/csv;charset=UTF-8");
+            response.setHeader("Content-Disposition",
+                    "attachment; filename=" + URLEncoder.encode(name, StandardCharsets.UTF_8.name()));
+            try (OutputStream os = response.getOutputStream()) {
+                java.nio.file.Files.copy(p, os);
+                os.flush();
+            }
+            return null; // 响应流已写出
+        } catch (Exception e) {
+            log.error("下载结果失败 taskId={}", taskId, e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "下载失败");
+        }
     }
 
     @SuppressWarnings("unchecked")

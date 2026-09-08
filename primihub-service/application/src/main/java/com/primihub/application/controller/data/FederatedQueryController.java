@@ -52,6 +52,12 @@ public class FederatedQueryController {
         return federatedQueryService.getQueryResult(taskId);
     }
 
+    @ApiOperation("下载查询结果 CSV")
+    @GetMapping("/result/download")
+    public BaseResultEntity downloadResult(@RequestParam Long taskId, HttpServletResponse response) {
+        return federatedQueryService.downloadResult(taskId, response);
+    }
+
     @ApiOperation("获取支持的算法列表")
     @GetMapping("/algorithms")
     public BaseResultEntity getSupportedAlgorithms() {

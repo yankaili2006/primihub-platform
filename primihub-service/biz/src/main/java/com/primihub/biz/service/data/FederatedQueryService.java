@@ -16,6 +16,7 @@ public interface FederatedQueryService {
     BaseResultEntity getQueryDetail(Long taskId);
     BaseResultEntity runQuery(Long taskId, Long userId);
     BaseResultEntity getQueryResult(Long taskId);
+    BaseResultEntity downloadResult(Long taskId, HttpServletResponse response);
     BaseResultEntity getSupportedAlgorithms();
 
     BaseResultEntity getLogs(LogQueryReq req);
