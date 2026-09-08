@@ -96,6 +96,13 @@ rest:
       connect-timeout: 30000
       read-timeout: 30000
 
+# Ribbon(负载均衡 RestTemplate,如 http://fusion/...)读超时默认仅 1000ms —— meta getDataResource
+# 冷调 ~1.2s 会 Read timed out,导致 PIR 首次 code=1007「资源查询失败」(见 PirService)。放宽到
+# 5s(冷调有余量)。ConnectTimeout 3s。注: Ribbon 超时会覆盖 LoadBalanced RestTemplate 自身工厂超时。
+ribbon:
+  ReadTimeout: 5000
+  ConnectTimeout: 3000
+
 logging:
   level:
     root: info
