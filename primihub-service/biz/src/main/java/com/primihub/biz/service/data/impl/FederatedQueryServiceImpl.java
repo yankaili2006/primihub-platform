@@ -213,8 +213,13 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
                 recordLog(taskId, "INFO", "任务执行成功", taskParam.getTaskContentParam());
             } else {
                 task.setTaskState(3);
-                task.setErrorMessage(taskParam.getError());
-                recordLog(taskId, "ERROR", "任务执行失败: " + taskParam.getError(), null);
+                String err = taskParam.getError();
+                if ("HE".equals(task.getAlgorithm())) {
+                    // 引擎的 psiTag=2 走 TEE PSI，无 SGX/TEE 环境时报错极简（如「map value」）
+                    err = (err == null ? "" : err) + "（HE 经引擎 TEE(psiTag=2) 执行，需节点具备 SGX/TEE 环境）";
+                }
+                task.setErrorMessage(err);
+                recordLog(taskId, "ERROR", "任务执行失败: " + err, null);
             }
         } catch (Exception e) {
             log.error("gRPC执行查询失败, 使用模拟模式", e);

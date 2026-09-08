@@ -11,7 +11,7 @@
             <div class="algo-option"><strong>OT</strong><br><small>不经意传输</small></div>
           </el-radio-button>
           <el-radio-button label="HE">
-            <div class="algo-option"><strong>HE</strong><br><small>全同态加密</small></div>
+            <div class="algo-option"><strong>HE</strong><br><small>全同态加密·需TEE</small></div>
           </el-radio-button>
         </el-radio-group>
       </el-col>
@@ -49,7 +49,7 @@ export default {
       descriptions: {
         DH: '基于Diffie-Hellman密钥交换协议，计算速度快。',
         OT: '基于不经意传输协议，保护查询方隐私。',
-        HE: '基于全同态加密，数据全程加密计算。'
+        HE: '基于全同态加密，数据全程加密计算。当前引擎经 TEE(psiTag=2) 执行，需节点具备 SGX/TEE 环境，否则任务将失败。'
       }
     }
   },
