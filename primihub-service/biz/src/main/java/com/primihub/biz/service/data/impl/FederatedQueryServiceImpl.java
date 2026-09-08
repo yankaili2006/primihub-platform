@@ -43,6 +43,14 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
     @Value("${primihub.grpc.port:50050}")
     private Integer grpcPort;
 
+    // PSI 执行分钟级，独立小池异步跑；守护线程，不阻塞应用停机
+    private static final java.util.concurrent.ExecutorService FQ_EXECUTOR =
+            java.util.concurrent.Executors.newFixedThreadPool(2, r -> {
+                Thread t = new Thread(r, "fq-psi-exec");
+                t.setDaemon(true);
+                return t;
+            });
+
     private static final Map<String, Integer> ALGORITHM_PSI_TAG = new LinkedHashMap<>();
     private static final Map<String, String> ALGORITHM_NAMES = new LinkedHashMap<>();
     static {
@@ -149,54 +157,63 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
             if (task == null) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
             }
+            if (task.getTaskState() != null && task.getTaskState() == 1) {
+                return BaseResultEntity.success("任务已在执行中");
+            }
+            // 参数校验留在同步侧，让调用方立刻拿到可读错误
+            TaskPSIParam psiParam = buildPsiParam(task);
+            if (psiParam.getClientData() == null || psiParam.getClientData().isEmpty()
+                    || psiParam.getServerData() == null || psiParam.getServerData().isEmpty()) {
+                task.setTaskState(3);
+                task.setErrorMessage("联邦查询需要两个参与方的数据集（parties 至少两条且均已选数据源）");
+                recordLog(taskId, "ERROR", "参数不完整：缺少双方数据集，未下发 node", null);
+                queryTaskRepository.updateQueryTask(task);
+                return BaseResultEntity.success("任务执行失败");
+            }
             task.setTaskState(1);
+            task.setErrorMessage(null);
             queryTaskRepository.updateQueryTask(task);
             recordLog(taskId, "INFO", "任务开始执行", null);
-
-            try {
-                Channel channel = createGrpcChannel();
-                TaskPSIParam psiParam = buildPsiParam(task);
-                if (psiParam.getClientData() == null || psiParam.getClientData().isEmpty()
-                        || psiParam.getServerData() == null || psiParam.getServerData().isEmpty()) {
-                    task.setTaskState(3);
-                    task.setErrorMessage("联邦查询需要两个参与方的数据集（parties 至少两条且均已选数据源）");
-                    recordLog(taskId, "ERROR", "参数不完整：缺少双方数据集，未下发 node", null);
-                    queryTaskRepository.updateQueryTask(task);
-                    return BaseResultEntity.success("任务执行失败");
-                }
-                TaskParam<TaskPSIParam> taskParam = new TaskParam<>(psiParam);
-                taskParam.setTaskId(String.valueOf(taskId));
-                taskParam.setJobId("1");
-                taskParam.setOpenGetStatus(true);
-
-                AbstractPsiGRPCExecute executor = new AbstractPsiGRPCExecute();
-                CaffeineCacheService cacheService = new CaffeineCacheService();
-                executor.setCacheService(cacheService);
-                executor.execute(channel, taskParam);
-
-                if (taskParam.getSuccess()) {
-                    task.setTaskState(2);
-                    task.setResultSummary("查询完成，共匹配 " + (psiParam.getPsiType() == 0 ? "交集" : "差集") + " 数据");
-                    recordLog(taskId, "INFO", "任务执行成功", taskParam.getTaskContentParam());
-                } else {
-                    task.setTaskState(3);
-                    task.setErrorMessage(taskParam.getError());
-                    recordLog(taskId, "ERROR", "任务执行失败: " + taskParam.getError(), null);
-                }
-            } catch (Exception e) {
-                log.error("gRPC执行查询失败, 使用模拟模式", e);
-                task.setTaskState(2);
-                task.setResultSummary("模拟执行完成(未连接primihub节点)");
-                task.setResultRowCount(0);
-                recordLog(taskId, "WARN", "使用模拟模式执行(未连接primihub节点: " + grpcAddress + ":" + grpcPort + ")", null);
-            }
-
-            queryTaskRepository.updateQueryTask(task);
-            return BaseResultEntity.success(task.getTaskState() == 2 ? "任务执行成功" : "任务执行失败");
+            // PSI 执行可达分钟级，异步跑，状态经 detail/result 轮询（1=运行中 2=完成 3=失败）
+            FQ_EXECUTOR.submit(() -> executePsi(task, psiParam));
+            return BaseResultEntity.success("任务已提交执行");
         } catch (Exception e) {
             log.error("执行查询任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL, "执行失败: " + e.getMessage());
         }
+    }
+
+    private void executePsi(FederatedQueryTask task, TaskPSIParam psiParam) {
+        Long taskId = task.getId();
+        try {
+            Channel channel = createGrpcChannel();
+            TaskParam<TaskPSIParam> taskParam = new TaskParam<>(psiParam);
+            taskParam.setTaskId(String.valueOf(taskId));
+            taskParam.setJobId("1");
+            taskParam.setOpenGetStatus(true);
+
+            AbstractPsiGRPCExecute executor = new AbstractPsiGRPCExecute();
+            CaffeineCacheService cacheService = new CaffeineCacheService();
+            executor.setCacheService(cacheService);
+            executor.execute(channel, taskParam);
+
+            if (taskParam.getSuccess()) {
+                task.setTaskState(2);
+                task.setResultSummary("查询完成，共匹配 " + (psiParam.getPsiType() == 0 ? "交集" : "差集") + " 数据");
+                recordLog(taskId, "INFO", "任务执行成功", taskParam.getTaskContentParam());
+            } else {
+                task.setTaskState(3);
+                task.setErrorMessage(taskParam.getError());
+                recordLog(taskId, "ERROR", "任务执行失败: " + taskParam.getError(), null);
+            }
+        } catch (Exception e) {
+            log.error("gRPC执行查询失败, 使用模拟模式", e);
+            task.setTaskState(2);
+            task.setResultSummary("模拟执行完成(未连接primihub节点)");
+            task.setResultRowCount(0);
+            recordLog(taskId, "WARN", "使用模拟模式执行(未连接primihub节点: " + grpcAddress + ":" + grpcPort + ")", null);
+        }
+        queryTaskRepository.updateQueryTask(task);
     }
 
     @Override
@@ -556,11 +573,40 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
         psiParam.setServerData(serverData);
         psiParam.setPsiType("difference".equals(task.getQueryType()) ? 1 : 0);
         psiParam.setPsiTag(ALGORITHM_PSI_TAG.getOrDefault(task.getAlgorithm(), 0));
-        psiParam.setClientIndex(new Integer[]{0});
-        psiParam.setServerIndex(new Integer[]{0});
+        // 求交键列：前端随 parties[i].fieldIndexes 传所选字段在全量列中的下标；缺省第 0 列
+        Integer[] clientIdx = new Integer[]{0};
+        Integer[] serverIdx = new Integer[]{0};
+        if (partiesObj instanceof List) {
+            List<?> parties = (List<?>) partiesObj;
+            if (parties.size() > 0) {
+                clientIdx = partyFieldIndexes(parties.get(0), clientIdx);
+            }
+            if (parties.size() > 1) {
+                serverIdx = partyFieldIndexes(parties.get(1), serverIdx);
+            }
+        }
+        psiParam.setClientIndex(clientIdx);
+        psiParam.setServerIndex(serverIdx);
         psiParam.setOutputFullFilename("/tmp/primihub/query_result_" + task.getId() + ".csv");
         psiParam.setSyncResultToServer(0);
         return psiParam;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Integer[] partyFieldIndexes(Object party, Integer[] fallback) {
+        if (party instanceof Map) {
+            Object idx = ((Map<String, Object>) party).get("fieldIndexes");
+            if (idx instanceof List && !((List<?>) idx).isEmpty()) {
+                try {
+                    return ((List<?>) idx).stream()
+                            .map(x -> Integer.valueOf(x.toString()))
+                            .toArray(Integer[]::new);
+                } catch (NumberFormatException ignore) {
+                    // 非法下标退回默认，不让脏数据阻断执行
+                }
+            }
+        }
+        return fallback;
     }
 
     @SuppressWarnings("unchecked")

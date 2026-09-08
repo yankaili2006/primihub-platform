@@ -26,7 +26,7 @@
 import AlgorithmSelector from '@/components/AlgorithmSelector'
 import PartySelector from '@/components/PartySelector'
 import AdvancedConfigPanel from '@/components/AdvancedConfigPanel'
-import { createFederatedQuery } from '@/api/federatedQuery'
+import { createFederatedQuery, runFederatedQuery } from '@/api/federatedQuery'
 
 export default {
   components: { AlgorithmSelector, PartySelector, AdvancedConfigPanel },
@@ -54,12 +54,17 @@ export default {
         if (!valid) return
         this.loading = true
         try {
-          await createFederatedQuery({
+          const res = await createFederatedQuery({
             ...this.form,
             algorithm: this.algorithmConfig.algorithm,
             mode: this.algorithmConfig.mode
           })
-          this.$message.success('提交成功')
+          const taskId = res?.result?.taskId
+          if (taskId) {
+            // 创建即自动触发执行（后端异步跑，状态在查询记录页轮询）；失败不阻塞跳转
+            runFederatedQuery({ taskId }).catch(() => {})
+          }
+          this.$message.success('提交成功，任务已开始执行')
           // 路由表没有 /federatedQuery/list，死路由会被守卫弹回登录页——跳查询记录页
           this.$router.push('/federatedQuery/logs/queryRecord')
         } catch (e) {

@@ -105,7 +105,14 @@ export default {
       this.onChange()
     },
     onChange() {
-      this.$emit('input', JSON.parse(JSON.stringify(this.parties)))
+      // 附带所选字段在全量列中的下标——后端 PSI 求交键(clientIndex/serverIndex)按此对位
+      const enriched = this.parties.map(p => {
+        const res = this.allResources.find(r => r.resourceId === p.resourceId)
+        const cols = res ? String(res.resourceColumnNameList || '').split(',').map(s => s.trim()) : []
+        const fieldIndexes = (p.fields || []).map(f => cols.indexOf(f)).filter(i => i >= 0)
+        return { ...p, fieldIndexes }
+      })
+      this.$emit('input', JSON.parse(JSON.stringify(enriched)))
     }
   }
 }
