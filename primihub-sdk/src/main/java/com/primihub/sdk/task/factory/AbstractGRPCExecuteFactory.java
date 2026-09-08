@@ -86,7 +86,8 @@ public abstract class AbstractGRPCExecuteFactory {
         while (true){
             i++;
             try {
-                DataSetServiceGrpc.DataSetServiceBlockingStub dataServiceBlockingStub = DataSetServiceGrpc.newBlockingStub(channel).withDeadlineAfter(3, TimeUnit.SECONDS);
+                // 数据集注册是一次性管理操作，node 侧 meta 落库常超 3s；3s 死线会把慢注册误报为失败
+                DataSetServiceGrpc.DataSetServiceBlockingStub dataServiceBlockingStub = DataSetServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
                 result = functional.run(dataServiceBlockingStub);
                 break;
             }catch (Exception e){
