@@ -341,10 +341,12 @@ public class DataAsyncService implements ApplicationContextAware {
         } else {
             dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
         }
-        // Map TaskStateEnum values to data_psi_task state values:
-        // TaskStateEnum.SUCCESS=1 but data_psi_task success=2, fail=3 (matches TaskStateEnum.FAIL=3)
+        // data_psi_task.task_state 约定(与前端 PSI/list.vue + DataPsiService 一致):
+        //   0未开始 1成功 2运行中 3失败 4取消。成功必须置 1(前端 1=成功可下载/可删除;
+        //   若置 2 会被前端渲染成「运行中」永久转圈、delPsiTask 报「运行中无法删除」、
+        //   结果不可下载)。历史误置为 2 是本 bug 的根因。运行中(line ~300)才用 2。
         if (dataTask.getTaskState().equals(TaskStateEnum.SUCCESS.getStateType())) {
-            psiTask.setTaskState(2);
+            psiTask.setTaskState(TaskStateEnum.SUCCESS.getStateType());  // =1 成功
             // Read result file content and row count
             String fileContent = FileUtil.getFileContent(psiTask.getFilePath());
             if (fileContent != null) {
