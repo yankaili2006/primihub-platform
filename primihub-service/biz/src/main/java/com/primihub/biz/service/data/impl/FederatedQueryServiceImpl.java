@@ -156,6 +156,14 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
             try {
                 Channel channel = createGrpcChannel();
                 TaskPSIParam psiParam = buildPsiParam(task);
+                if (psiParam.getClientData() == null || psiParam.getClientData().isEmpty()
+                        || psiParam.getServerData() == null || psiParam.getServerData().isEmpty()) {
+                    task.setTaskState(3);
+                    task.setErrorMessage("联邦查询需要两个参与方的数据集（parties 至少两条且均已选数据源）");
+                    recordLog(taskId, "ERROR", "参数不完整：缺少双方数据集，未下发 node", null);
+                    queryTaskRepository.updateQueryTask(task);
+                    return BaseResultEntity.success("任务执行失败");
+                }
                 TaskParam<TaskPSIParam> taskParam = new TaskParam<>(psiParam);
                 taskParam.setTaskId(String.valueOf(taskId));
                 taskParam.setJobId("1");
@@ -530,8 +538,22 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
         TaskPSIParam psiParam = new TaskPSIParam();
         Map<String, Object> config = JSON.parseObject(task.getSourceConfig());
 
-        psiParam.setClientData(config.get("clientData") != null ? config.get("clientData").toString() : "");
-        psiParam.setServerData(config.get("serverData") != null ? config.get("serverData").toString() : "");
+        String clientData = config.get("clientData") != null ? config.get("clientData").toString() : "";
+        String serverData = config.get("serverData") != null ? config.get("serverData").toString() : "";
+        // 前端表单发的是 parties[]（organId/resourceId/fields），映射到 PSI 的双方数据集：
+        // 语义对齐 DataAsyncService——client/server 均为 fusion resourceId
+        Object partiesObj = config.get("parties");
+        if (partiesObj instanceof List) {
+            List<?> parties = (List<?>) partiesObj;
+            if (clientData.isEmpty() && parties.size() > 0) {
+                clientData = partyResourceId(parties.get(0));
+            }
+            if (serverData.isEmpty() && parties.size() > 1) {
+                serverData = partyResourceId(parties.get(1));
+            }
+        }
+        psiParam.setClientData(clientData);
+        psiParam.setServerData(serverData);
         psiParam.setPsiType("difference".equals(task.getQueryType()) ? 1 : 0);
         psiParam.setPsiTag(ALGORITHM_PSI_TAG.getOrDefault(task.getAlgorithm(), 0));
         psiParam.setClientIndex(new Integer[]{0});
@@ -539,6 +561,15 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
         psiParam.setOutputFullFilename("/tmp/primihub/query_result_" + task.getId() + ".csv");
         psiParam.setSyncResultToServer(0);
         return psiParam;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String partyResourceId(Object party) {
+        if (party instanceof Map) {
+            Object rid = ((Map<String, Object>) party).get("resourceId");
+            return rid != null ? rid.toString() : "";
+        }
+        return "";
     }
 
     private void recordLog(Long taskId, String level, String message, Object data) {
