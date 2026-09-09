@@ -154,9 +154,35 @@ export default {
       ]
     }
   },
+  created() {
+    this.loadRemoteCatalog()
+  },
   methods: {
     openAgent(agent) {
       window.open(agent.url, '_blank', 'noopener')
+    },
+    // 动态目录：水利场景由 agent.primihub.com 上的 flood 面板 /api/agents 提供（embed-proxy 带 CORS *），
+    // 按 id 合并进静态清单（远端覆盖同 id、追加新 id）。拉取失败静默保留静态清单，页面不受影响。
+    async loadRemoteCatalog() {
+      try {
+        const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null
+        const timer = ctl && setTimeout(() => ctl.abort(), 8000)
+        const r = await fetch(AGENT_BASE + '/api/embed-proxy/primihub-flood-poc/api/agents', { signal: ctl && ctl.signal })
+        if (timer) clearTimeout(timer)
+        if (!r.ok) return
+        const d = await r.json()
+        const remote = Array.isArray(d && d.agents) ? d.agents : []
+        if (!remote.length) return
+        const byId = {}
+        this.agents.forEach(a => { byId[a.id] = a })
+        remote.forEach(a => {
+          if (a && a.id && a.name && a.url) byId[a.id] = Object.assign({}, byId[a.id] || {}, a)
+        })
+        const order = this.agents.map(a => a.id).concat(remote.map(a => a.id).filter(id => !this.agents.some(a => a.id === id)))
+        this.agents = order.map(id => byId[id])
+      } catch (e) {
+        // 离线/跨域失败：保留静态清单
+      }
     }
   }
 }
