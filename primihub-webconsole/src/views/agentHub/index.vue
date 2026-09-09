@@ -2,7 +2,7 @@
   <div class="agent-hub-container">
     <div class="page-header">
       <h2>智能体</h2>
-      <p class="sub-title">基于平台已登记的农业数据资源与模型产物构建的可交互智能体，点击卡片跳转到 agent.primihub.com 对应技能。</p>
+      <p class="sub-title">基于平台已登记的数据资源与模型产物（农业、水利）构建的可交互智能体，点击卡片跳转到 agent.primihub.com 对应技能。</p>
     </div>
     <el-row :gutter="20">
       <el-col v-for="agent in agents" :key="agent.id" :xs="24" :sm="12" :md="8" :lg="8" :xl="6">
@@ -97,6 +97,28 @@ export default {
           desc: '中国中化 iMAP 模式对标分析——差距评估、定位调整与实施建议。',
           backing: ['SAAI 对标方案'],
           url: AGENT_BASE + '/api/skills/saai-imap-benchmark/ui'
+        },
+        // ── 水利（2026-09-09）：两张卡片经 fragments embed-proxy 打开 .50 常驻 SkillUI，
+        //    计算走 primihub-water-infer 推理服务(.50:9440)，见 pcloud skills/ops/primihub-water-infer
+        {
+          id: 'primihub-flood-poc',
+          name: '超汛限水库智能体',
+          category: '水利',
+          tagType: 'primary',
+          icon: 'el-icon-heavy-rain',
+          desc: '双角色隐私计算：水库管理方(Org0)私有水库表 × 测站监测方(Org1)私有测站表 → PSI 只暴露共有测站 → MPC 差值只揭示给水库方 → 超汛限水库清单。',
+          backing: ['Org0 私有 flood_A_reservoir_*(res32)', 'Org1 私有 flood_B_station_*(res18)', 'water-infer 推理服务'],
+          url: AGENT_BASE + '/api/embed-proxy/primihub-flood-poc'
+        },
+        {
+          id: 'primihub-postgis-poc',
+          name: 'PostGIS 空间分析智能体',
+          category: '水利',
+          tagType: 'primary',
+          icon: 'el-icon-map-location',
+          desc: 'ST_Transform / ST_Simplify / ST_Intersection 经平台联邦分析数据源 SQL 下推执行——地块 × 泛洪区，返回真实 WKT 几何。',
+          backing: ['联邦分析数据源 postgis-poc', 'ST_Transform/Simplify/Intersection 任务', 'water-infer 推理服务'],
+          url: AGENT_BASE + '/api/embed-proxy/primihub-postgis-poc'
         }
       ]
     }
