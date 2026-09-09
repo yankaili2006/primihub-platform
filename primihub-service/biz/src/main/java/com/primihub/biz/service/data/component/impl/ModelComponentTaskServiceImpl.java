@@ -121,12 +121,6 @@ public class ModelComponentTaskServiceImpl extends BaseComponentServiceImpl impl
             taskReq.getDataTask().setTaskErrorMsg("运行失败:无法进行任务执行-任务类型未匹配");
             return BaseResultEntity.success();
         }
-        if (modelTypeEnum == ModelTypeEnum.HFL_IMAGE_PLACEHOLDER){
-            // 图像联邦本轮仅平台编排层（资源可引用/模板可选择/参数可下发）；执行算子依赖 primihub-node 引擎，另行评估
-            taskReq.getDataTask().setTaskState(TaskStateEnum.FAIL.getStateType());
-            taskReq.getDataTask().setTaskErrorMsg("图像联邦模板为编排占位：任务执行依赖 primihub-node 图像联邦算子（尚未提供），本轮仅打通平台编排层");
-            return BaseResultEntity.success();
-        }
         if (modelTypeEnum == ModelTypeEnum.MPC_LR){
             return mpclr(req,taskReq);
         }

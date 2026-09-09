@@ -1255,16 +1255,63 @@
             },
             {
               "key": "10",
-              "val": "图像联邦(占位)",
+              "val": "横向-图像分类(CNN)",
               "param": [
                 {
-                  "is_show": 1,
+                  "is_show": 0,
                   "is_required": 0,
-                  "type_code": "modelArtifactId",
-                  "type_name": "预训练模型产物ID",
-                  "input_type": "text",
+                  "type_code": "arbiterOrgan",
+                  "type_name": "可信第三方选择",
+                  "input_type": "button",
                   "input_value": "",
                   "input_values": []
+                },
+                {
+                  "is_show": 0,
+                  "is_required": 0,
+                  "type_code": "encryption",
+                  "type_name": "加密方式",
+                  "input_type": "select",
+                  "input_value": "Plaintext",
+                  "input_values": [
+                    {
+                      "key": "Plaintext",
+                      "val": "明文"
+                    },
+                    {
+                      "key": "DPSGD",
+                      "val": "DPSGD",
+                      "param": [
+                        {
+                          "is_show": 1,
+                          "is_required": 0,
+                          "type_code": "delta",
+                          "type_name": "Params.Delta",
+                          "input_type": "text",
+                          "input_value": "0.0001",
+                          "input_values": []
+                        },
+                        {
+                          "is_show": 1,
+                          "is_required": 0,
+                          "type_code": "maxGradNorm",
+                          "type_name": "Params.MaxGradNorm",
+                          "input_type": "text",
+                          "input_value": "1.0",
+                          "input_values": []
+                        },
+                        {
+                          "is_show": 1,
+                          "is_required": 0,
+                          "type_code": "noiseMultiplier",
+                          "type_name": "Params.NoiseMultiplier",
+                          "input_type": "text",
+                          "input_value": "2.0",
+                          "input_values": []
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "is_show": 1,
@@ -1277,6 +1324,29 @@
                 },
                 {
                   "is_show": 1,
+                  "is_required": 0,
+                  "type_code": "alpha",
+                  "type_name": "Params.Alpha",
+                  "input_type": "text",
+                  "input_value": "0.0001",
+                  "input_values": []
+                },
+                {
+                  "is_show": 0,
+                  "is_required": 0,
+                  "type_code": "batchSize",
+                  "type_name": "Params.BatchSize",
+                  "input_type": "number",
+                  "input_value": 100,
+                  "input_values": [
+                    {
+                      "key": "min",
+                      "val": 1
+                    }
+                  ]
+                },
+                {
+                  "is_show": 0,
                   "is_required": 0,
                   "type_code": "globalEpoch",
                   "type_name": "Params.GlobalEpoch",
@@ -1292,6 +1362,83 @@
                       "val": 1000
                     }
                   ]
+                },
+                {
+                  "is_show": 0,
+                  "is_required": 0,
+                  "type_code": "localEpoch",
+                  "type_name": "Params.LocalEpoch",
+                  "input_type": "number",
+                  "input_value": 1,
+                  "input_values": [
+                    {
+                      "key": "min",
+                      "val": 1
+                    },
+                    {
+                      "key": "max",
+                      "val": 10
+                    }
+                  ]
+                },
+                {
+                  "is_show": 0,
+                  "is_required": 0,
+                  "type_code": "optimizer",
+                  "type_name": "Params.Optimizer",
+                  "input_type": "select",
+                  "input_value": "adam",
+                  "input_values": [
+                    {
+                      "key": "adadelta",
+                      "val": "adadelta"
+                    },
+                    {
+                      "key": "adagrad",
+                      "val": "adagrad"
+                    },
+                    {
+                      "key": "adam",
+                      "val": "adam"
+                    },
+                    {
+                      "key": "adamw",
+                      "val": "adamw"
+                    },
+                    {
+                      "key": "adamax",
+                      "val": "adamax"
+                    },
+                    {
+                      "key": "asgd",
+                      "val": "asgd"
+                    },
+                    {
+                      "key": "nadam",
+                      "val": "nadam"
+                    },
+                    {
+                      "key": "radam",
+                      "val": "radam"
+                    },
+                    {
+                      "key": "rmsprop",
+                      "val": "rmsprop"
+                    },
+                    {
+                      "key": "sgd",
+                      "val": "sgd"
+                    }
+                  ]
+                },
+                {
+                  "is_show": 1,
+                  "is_required": 0,
+                  "type_code": "modelArtifactId",
+                  "type_name": "预训练模型产物ID",
+                  "input_type": "text",
+                  "input_value": "",
+                  "input_values": []
                 }
               ]
             }
