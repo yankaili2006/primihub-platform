@@ -137,28 +137,26 @@ export default {
       validationRules: {
         statusCodes: ['200'],
         maxDuration: 3000,
-        requiredFields: 'code,data,message'
+        requiredFields: 'code,msg'
       },
-      testHistory: [
-        { timestamp: '2024-01-15 10:30:00', method: 'POST', url: '/api/psi/query', status: 200, duration: 245, validation: '通过' },
-        { timestamp: '2024-01-15 11:20:00', method: 'POST', url: '/api/pir/query', status: 200, duration: 189, validation: '通过' },
-        { timestamp: '2024-01-15 14:15:00', method: 'POST', url: '/api/fl/train', status: 500, duration: 5200, validation: '失败' }
-      ],
+      testHistory: [],
+      // 模板为平台真实端点。健康检查免鉴权；带鉴权接口需在地址后附
+      // ?timestamp=<ms>&nonce=<n>&token=<登录token>（平台信封,见 utils/request.js）
       templates: {
         psi: {
-          apiUrl: '/api/psi/query',
-          method: 'POST',
-          body: '{\n  "datasetId": "dataset001",\n  "queryFields": ["id", "name"],\n  "filters": {}\n}'
+          apiUrl: '/prod-api/share/shareData/healthConnection',
+          method: 'GET',
+          body: ''
         },
         pir: {
-          apiUrl: '/api/pir/query',
-          method: 'POST',
-          body: '{\n  "index": "user_001",\n  "queryType": "single"\n}'
+          apiUrl: '/prod-api/federatedQuery/algorithms',
+          method: 'GET',
+          body: ''
         },
         fl: {
-          apiUrl: '/api/fl/train',
+          apiUrl: '/prod-api/user/login',
           method: 'POST',
-          body: '{\n  "modelType": "LR",\n  "participants": ["party1", "party2"],\n  "rounds": 100\n}'
+          body: 'userAccount=<账号>&userPassword=<密码>'
         }
       }
     }
@@ -173,42 +171,71 @@ export default {
       if (status >= 500) return 'danger'
       return 'info'
     },
-    handleTest() {
+    async handleTest() {
       if (!this.testForm.apiUrl) {
         this.$message.warning('请输入接口地址')
         return
       }
+      // 从当前浏览器会话真实发起请求：同源(/prod-api 等)直通并自带登录态；
+      // 跨域受 CORS 约束时如实报错，不伪造结果
       this.testing = true
+      let headers = {}
+      try { headers = JSON.parse(this.testForm.headers || '{}') } catch (e) {
+        this.$message.error('请求头不是合法 JSON'); this.testing = false; return
+      }
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), (this.testForm.timeout || 10) * 1000)
       const startTime = Date.now()
-      setTimeout(() => {
-        const duration = Date.now() - startTime + Math.floor(Math.random() * 500)
-        const status = Math.random() > 0.1 ? 200 : 500
-        this.response = {
-          status,
-          duration,
-          size: '1.2KB',
-          body: JSON.stringify({
-            code: status === 200 ? 0 : -1,
-            message: status === 200 ? '请求成功' : '服务器错误',
-            data: status === 200 ? { result: 'success', records: 100 } : null
-          }, null, 2)
+      let status = 0
+      let bodyText = ''
+      try {
+        const opts = { method: this.testForm.method, headers, signal: controller.signal }
+        if (!['GET', 'HEAD'].includes(this.testForm.method) && this.testForm.body) {
+          opts.body = this.testForm.body
         }
-        const validation = this.validateResponse(this.response)
-        this.testHistory.unshift({
-          timestamp: new Date().toLocaleString(),
-          method: this.testForm.method,
-          url: this.testForm.apiUrl,
-          status: this.response.status,
-          duration: this.response.duration,
-          validation: validation ? '通过' : '失败'
-        })
-        this.testing = false
-        this.$message.success('测试完成')
-      }, 2000)
+        const resp = await fetch(this.testForm.apiUrl, opts)
+        status = resp.status
+        bodyText = await resp.text()
+      } catch (e) {
+        bodyText = e.name === 'AbortError'
+          ? `请求超时（>${this.testForm.timeout}s）`
+          : `请求失败: ${e.message}（跨域地址受浏览器 CORS 限制）`
+      } finally {
+        clearTimeout(timer)
+      }
+      const duration = Date.now() - startTime
+      this.response = {
+        status,
+        duration,
+        size: `${(new Blob([bodyText]).size / 1024).toFixed(2)}KB`,
+        body: bodyText.length > 5000 ? bodyText.slice(0, 5000) + '\n…(截断)' : bodyText
+      }
+      const validation = this.validateResponse(this.response)
+      this.testHistory.unshift({
+        timestamp: new Date().toLocaleString(),
+        method: this.testForm.method,
+        url: this.testForm.apiUrl,
+        status,
+        duration,
+        validation: validation ? '通过' : '失败'
+      })
+      this.testing = false
+      this.$message[validation ? 'success' : 'warning'](validation ? '测试完成：校验通过' : '测试完成：校验未通过')
     },
     validateResponse(response) {
       if (!this.validationRules.statusCodes.includes(String(response.status))) return false
       if (response.duration > this.validationRules.maxDuration) return false
+      const required = (this.validationRules.requiredFields || '').split(',').map(s => s.trim()).filter(Boolean)
+      if (required.length) {
+        try {
+          const obj = JSON.parse(response.body)
+          for (const f of required) {
+            if (!(f in obj)) return false
+          }
+        } catch (e) {
+          return false // 要求必需字段但响应不是 JSON
+        }
+      }
       return true
     },
     handleClear() {
