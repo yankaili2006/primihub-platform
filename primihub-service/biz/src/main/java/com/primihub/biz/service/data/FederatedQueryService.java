@@ -11,6 +11,7 @@ import java.util.Map;
 
 public interface FederatedQueryService {
 
+
     BaseResultEntity createQuery(Map<String, Object> req, Long userId);
     BaseResultEntity getQueryList(FederatedStatsQueryReq req);
     BaseResultEntity getQueryDetail(Long taskId);

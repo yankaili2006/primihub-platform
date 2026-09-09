@@ -42,20 +42,20 @@
         <el-button style="float: right; padding: 3px 0" type="text" :loading="exporting" @click="handleExport">导出</el-button>
       </div>
       <el-table v-loading="recordsLoading" :data="queryRecords" border :empty-text="recordsLoading ? '加载中...' : '暂无查询记录'">
-        <el-table-column prop="queryId" label="查询ID" width="150" />
-        <el-table-column prop="userId" label="用户ID" width="120" />
-        <el-table-column prop="queryType" label="查询类型" width="120" />
-        <el-table-column prop="totalRecords" label="查询总数" width="100" />
-        <el-table-column prop="hitRecords" label="命中数" width="100">
-          <template slot-scope="scope"><span style="color: #E6A23C; font-weight: bold;">{{ scope.row.hitRecords }}</span></template>
+        <el-table-column prop="taskId" label="任务ID" width="100" />
+        <el-table-column prop="requesterOrganId" label="发起机构" width="150" show-overflow-tooltip />
+        <el-table-column prop="billingType" label="计费类型" width="110" />
+        <el-table-column prop="queryCount" label="查询次数" width="100" />
+        <el-table-column prop="hitCount" label="命中数" width="100">
+          <template slot-scope="scope"><span style="color: #E6A23C; font-weight: bold;">{{ scope.row.hitCount }}</span></template>
         </el-table-column>
         <el-table-column prop="hitRate" label="命中率" width="100">
           <template slot-scope="scope">{{ scope.row.hitRate }}%</template>
         </el-table-column>
         <el-table-column prop="baseFee" label="基础费(元)" width="100" />
         <el-table-column prop="hitFee" label="命中费(元)" width="100" />
-        <el-table-column prop="totalFee" label="总费用(元)" width="120">
-          <template slot-scope="scope"><span style="color: #F56C6C; font-weight: bold;">{{ scope.row.totalFee }}</span></template>
+        <el-table-column prop="totalCharge" label="总费用(元)" width="120">
+          <template slot-scope="scope"><span style="color: #F56C6C; font-weight: bold;">{{ scope.row.totalCharge }}</span></template>
         </el-table-column>
         <el-table-column prop="queryTime" label="查询时间" width="180" />
       </el-table>

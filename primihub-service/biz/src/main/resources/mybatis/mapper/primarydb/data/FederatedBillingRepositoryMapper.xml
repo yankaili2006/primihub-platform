@@ -46,6 +46,11 @@
 
     <resultMap id="ruleMap" type="com.primihub.biz.entity.data.po.FederatedBillingRule">
         <id column="id" property="id"/>
+        <result column="rule_name" property="ruleName"/>
+        <result column="apply_resource_ids" property="applyResourceIds"/>
+        <result column="apply_organ_ids" property="applyOrganIds"/>
+        <result column="base_fee" property="baseFee"/>
+        <result column="min_charge" property="minCharge"/>
         <result column="billing_type" property="billingType"/>
         <result column="is_active" property="isActive"/>
         <result column="effective_from" property="effectiveFrom"/>
@@ -106,7 +111,14 @@
     </insert>
 
     <select id="selectRecordList" resultType="com.primihub.biz.entity.data.po.FederatedBillingRecord">
-        SELECT * FROM federated_billing_record
+        SELECT id, rule_id ruleId, task_type taskType, task_id taskId,
+               requester_organ_id requesterOrganId, provider_organ_id providerOrganId,
+               resource_ids resourceIds, billing_type billingType,
+               query_count queryCount, hit_count hitCount, dedup_key dedupKey,
+               unit_price unitPrice, discount_rate_applied discountRateApplied,
+               total_charge totalCharge, charge_status chargeStatus,
+               billing_time billingTime, settled_at settledAt, remark, created_at createdAt
+        FROM federated_billing_record
         <where>
             <if test="requesterOrganId != null">AND requester_organ_id = #{requesterOrganId}</if>
             <if test="billingType != null">AND billing_type = #{billingType}</if>

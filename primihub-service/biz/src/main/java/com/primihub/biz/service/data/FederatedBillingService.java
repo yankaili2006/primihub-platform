@@ -16,4 +16,7 @@ public interface FederatedBillingService {
     BaseResultEntity getRecordList(BillingRecordQueryReq req);
     BaseResultEntity getRecordStatistics(BillingStatsQueryReq req);
     void exportRecord(BillingExportReq req, HttpServletResponse response);
+
+    /** 联邦查询任务完成后按活动规则入账（无活动规则时静默跳过，不影响任务状态）。 */
+    void recordTaskBilling(com.primihub.biz.entity.data.po.FederatedQueryTask task);
 }

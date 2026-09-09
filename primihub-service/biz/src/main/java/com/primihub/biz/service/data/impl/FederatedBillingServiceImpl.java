@@ -255,6 +255,90 @@ public class FederatedBillingServiceImpl implements FederatedBillingService {
         }
     }
 
+    // ==================== 任务入账 ====================
+
+    @Override
+    public void recordTaskBilling(com.primihub.biz.entity.data.po.FederatedQueryTask task) {
+        try {
+            java.util.List<FederatedBillingRule> rules =
+                    billingRepository.selectActiveRulesByTaskType("federated_query");
+            if (rules == null || rules.isEmpty()) {
+                return; // 未配置计费规则 = 不计费，静默
+            }
+            // 参与方/资源取自任务快照
+            String requester = "", provider = "";
+            java.util.List<String> resourceIds = new java.util.ArrayList<>();
+            try {
+                com.alibaba.fastjson.JSONObject cfg =
+                        com.alibaba.fastjson.JSON.parseObject(task.getSourceConfig());
+                com.alibaba.fastjson.JSONArray parties =
+                        cfg == null ? null : cfg.getJSONArray("parties");
+                if (parties != null) {
+                    if (parties.size() > 0) {
+                        requester = parties.getJSONObject(0).getString("organId");
+                        resourceIds.add(parties.getJSONObject(0).getString("resourceId"));
+                    }
+                    if (parties.size() > 1) {
+                        provider = parties.getJSONObject(1).getString("organId");
+                        resourceIds.add(parties.getJSONObject(1).getString("resourceId"));
+                    }
+                }
+            } catch (Exception ignore) {
+                // 配置解析失败不阻断入账
+            }
+            int hits = task.getResultRowCount() != null ? task.getResultRowCount() : 0;
+            for (FederatedBillingRule rule : rules) {
+                java.math.BigDecimal unit;
+                int queryCount = 0, hitCount = 0;
+                if ("by_hit".equals(rule.getBillingType())) {
+                    unit = nvl(rule.getPricePerHit());
+                    hitCount = hits;
+                } else if ("by_count".equals(rule.getBillingType())) {
+                    unit = nvl(rule.getPricePerQuery());
+                    queryCount = 1;
+                } else {
+                    continue; // 去重/滚动窗口等复杂类型 v1 不自动入账
+                }
+                java.math.BigDecimal total = nvl(rule.getBaseFee())
+                        .add(unit.multiply(java.math.BigDecimal.valueOf(
+                                "by_hit".equals(rule.getBillingType()) ? hitCount : queryCount)));
+                java.math.BigDecimal discount = null;
+                Integer threshold = rule.getDiscountThreshold();
+                int volume = "by_hit".equals(rule.getBillingType()) ? hitCount : queryCount;
+                if (rule.getEnableDiscount() != null && rule.getEnableDiscount() == 1
+                        && threshold != null && volume >= threshold && rule.getDiscountRate() != null) {
+                    discount = rule.getDiscountRate();
+                    total = total.multiply(discount);
+                }
+                if (rule.getMinCharge() != null && total.compareTo(rule.getMinCharge()) < 0) {
+                    total = rule.getMinCharge();
+                }
+                FederatedBillingRecord record = new FederatedBillingRecord();
+                record.setRuleId(rule.getId());
+                record.setTaskType("federated_query");
+                record.setTaskId(task.getId());
+                record.setRequesterOrganId(requester);
+                record.setProviderOrganId(provider);
+                record.setResourceIds(com.alibaba.fastjson.JSON.toJSONString(resourceIds));
+                record.setBillingType(rule.getBillingType());
+                record.setQueryCount(queryCount);
+                record.setHitCount(hitCount);
+                record.setUnitPrice(unit);
+                record.setDiscountRateApplied(discount);
+                record.setTotalCharge(total);
+                record.setChargeStatus(0);
+                record.setBillingTime(new java.util.Date());
+                billingRepository.insertRecord(record);
+            }
+        } catch (Exception e) {
+            log.warn("联邦查询任务入账失败 taskId={}（不影响任务状态）", task.getId(), e);
+        }
+    }
+
+    private java.math.BigDecimal nvl(java.math.BigDecimal v) {
+        return v == null ? java.math.BigDecimal.ZERO : v;
+    }
+
     // ==================== 工具方法 ====================
 
     private FederatedBillingRule toRule(BillingRuleReq req) {

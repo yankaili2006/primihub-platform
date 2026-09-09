@@ -37,6 +37,9 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
     @Autowired
     private FederatedQueryTaskRepository queryTaskRepository;
 
+    @Autowired
+    private com.primihub.biz.service.data.FederatedBillingService billingService;
+
     @Value("${primihub.grpc.address:127.0.0.1}")
     private String grpcAddress;
 
@@ -211,6 +214,7 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
                         ? "查询完成，" + kind + "共 " + rows + " 行"
                         : "查询完成，共匹配 " + kind + " 数据");
                 recordLog(taskId, "INFO", "任务执行成功", taskParam.getTaskContentParam());
+                billingService.recordTaskBilling(task); // 按活动规则入账，无规则静默
             } else {
                 task.setTaskState(3);
                 String err = taskParam.getError();

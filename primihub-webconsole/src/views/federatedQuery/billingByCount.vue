@@ -59,20 +59,20 @@
         </el-form-item>
       </el-form>
       <el-table :data="queryRecords" border>
-        <el-table-column prop="queryId" label="查询ID" width="150" />
-        <el-table-column prop="userId" label="用户ID" width="120" />
-        <el-table-column prop="queryType" label="查询类型" width="120" />
+        <el-table-column prop="taskId" label="任务ID" width="100" />
+        <el-table-column prop="requesterOrganId" label="发起机构" width="150" show-overflow-tooltip />
+        <el-table-column prop="billingType" label="计费类型" width="110" />
         <el-table-column prop="queryCount" label="查询次数" width="100" />
         <el-table-column prop="unitPrice" label="单价(元)" width="100" />
-        <el-table-column prop="totalFee" label="总费用(元)" width="120">
+        <el-table-column prop="totalCharge" label="总费用(元)" width="120">
           <template slot-scope="scope">
-            <span style="color: #F56C6C; font-weight: bold;">{{ scope.row.totalFee }}</span>
+            <span style="color: #F56C6C; font-weight: bold;">{{ scope.row.totalCharge }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="queryTime" label="查询时间" width="180" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="billingTime" label="计费时间" width="170" />
+        <el-table-column prop="chargeStatus" label="状态" width="90">
           <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)" size="small">{{ scope.row.statusText }}</el-tag>
+            <el-tag :type="scope.row.chargeStatus === 1 ? 'success' : 'info'" size="small">{{ scope.row.chargeStatus === 1 ? '已结算' : '未结算' }}</el-tag>
           </template>
         </el-table-column>
       </el-table>
@@ -208,7 +208,15 @@ export default {
     async fetchStats() {
       try {
         const res = await getBillingStatistics()
-        if (res.code === 0) this.statistics = res.result || { totalQueries: 0, totalFee: 0, avgFee: 0, todayQueries: 0 }
+        if (res.code === 0) {
+          const r = res.result || {}
+          this.statistics = {
+            totalQueries: r.total_count ?? 0,
+            totalFee: Number(r.total_charge ?? 0).toFixed(2),
+            avgFee: Number(r.avg_charge ?? 0).toFixed(2),
+            todayQueries: r.today_count ?? '-'
+          }
+        }
       } catch (e) { console.error(e) }
     }
   }
