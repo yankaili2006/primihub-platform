@@ -119,6 +119,37 @@ export default {
           desc: 'ST_Transform / ST_Simplify / ST_Intersection 经平台联邦分析数据源 SQL 下推执行——地块 × 泛洪区，返回真实 WKT 几何。',
           backing: ['联邦分析数据源 postgis-poc', 'ST_Transform/Simplify/Intersection 任务', 'water-infer 推理服务'],
           url: AGENT_BASE + '/api/embed-proxy/primihub-postgis-poc'
+        },
+        // ── 水利 P1 三场景（2026-09-10，真实公开数据：HydroBASINS / OSM 水库 / Open-Meteo 降水 / SPI）
+        {
+          id: 'water-basin-alert',
+          name: '流域级强降水预警智能体',
+          category: '水利',
+          tagType: 'primary',
+          icon: 'el-icon-warning-outline',
+          desc: '水库管理方私有台账+警戒阈值 × 监测方私有近 7 日实测降水 → PSI+MPC 差值只揭示水库方 → 按 HydroBASINS 子流域聚合超阈值座数，应急方只见流域计数。',
+          backing: ['Org0 私有 water_reservoirs_*(res44)', 'Org2 私有 water_precip_daily_*(res13)', 'PostGIS water_basins_lev5', 'water-infer /v1/basin/alert'],
+          url: AGENT_BASE + '/api/embed-proxy/primihub-flood-poc?scene=basin'
+        },
+        {
+          id: 'water-drought-stats',
+          name: '干旱指数联邦统计智能体',
+          category: '水利',
+          tagType: 'primary',
+          icon: 'el-icon-sunny',
+          desc: '三个区域气象局各持私有 SPI-30 表，MPC 联合算全域平均 SPI 与干旱站数，任何一方看不到别家站级值（与明文对照一致）。',
+          backing: ['Org0/1/2 私有 water_drought_party*', 'water-infer /v1/drought/stats (mpc_statistics)'],
+          url: AGENT_BASE + '/api/embed-proxy/primihub-flood-poc?scene=drought'
+        },
+        {
+          id: 'water-pir',
+          name: '水库档案匿踪查询智能体',
+          category: '水利',
+          tagType: 'primary',
+          icon: 'el-icon-search',
+          desc: '应急方按水库编码匿踪查询水库管理方台账（APSI 关键词 PIR），台账仅授权应急方可见，水库方不知道被查的是哪座。',
+          backing: ['Org0 auth=3 water_reservoirs_pir_*(res51)', 'water-infer /v1/pir/query'],
+          url: AGENT_BASE + '/api/embed-proxy/primihub-flood-poc?scene=pir'
         }
       ]
     }
