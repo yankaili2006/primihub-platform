@@ -115,6 +115,35 @@ export const asyncRoutes = [
     }]
   },
   {
+    path: '/server',
+    component: Layout,
+    name: 'ServerMenu',
+    redirect: '/server/list',
+    meta: { title: '服务器管理', icon: 'el-icon-cpu' },
+    children: [
+      {
+        path: 'list',
+        name: 'ServerList',
+        component: () => import('@/views/server/list'),
+        meta: { title: '服务器列表' }
+      },
+      {
+        path: 'create',
+        name: 'ServerCreate',
+        hidden: true,
+        component: () => import('@/views/server/create'),
+        meta: { title: '新增/编辑服务器', activeMenu: '/server/list' }
+      },
+      {
+        path: 'detail/:serverId',
+        name: 'ServerDetail',
+        hidden: true,
+        component: () => import('@/views/server/detail'),
+        meta: { title: '服务器详情', activeMenu: '/server/list' }
+      }
+    ]
+  },
+  {
     path: '/privateSearch',
     component: Layout,
     name: 'PrivateSearch',
