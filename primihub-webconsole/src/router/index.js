@@ -102,6 +102,19 @@ export const constantRoutes = [
 
 export const asyncRoutes = [
   {
+    path: '/agentHub',
+    component: Layout,
+    name: 'AgentHub',
+    redirect: '/agentHub/list',
+    meta: { title: '智能体', icon: 'el-icon-magic-stick' },
+    children: [{
+      path: 'list',
+      name: 'AgentHubList',
+      component: () => import('@/views/agentHub/index'),
+      meta: { title: '智能体', breadcrumb: false }
+    }]
+  },
+  {
     path: '/privateSearch',
     component: Layout,
     name: 'PrivateSearch',
