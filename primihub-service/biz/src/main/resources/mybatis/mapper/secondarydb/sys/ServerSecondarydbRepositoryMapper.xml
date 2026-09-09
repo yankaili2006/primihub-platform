@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.sys.ServerSecondarydbRepository">
+
+    <!-- ===== Server queries ===== -->
+
+    <sql id="serverColumns">
+        s.server_id    serverId,
+        s.server_name  serverName,
+        s.server_desc  serverDesc,
+        s.server_ip    serverIp,
+        s.server_port  serverPort,
+        s.server_type  serverType,
+        s.server_status serverStatus,
+        s.organ_id     organId,
+        s.user_id      userId,
+        s.cpu_cores    cpuCores,
+        s.memory_gb    memoryGb,
+        s.storage_gb   storageGb,
+        s.config,
+        s.last_heartbeat lastHeartbeat,
+        s.create_date  createDate,
+        s.update_date  updateDate
+    </sql>
+
+    <sql id="serverWhere">
+        <if test="serverName != null and serverName != ''">
+            AND s.server_name LIKE CONCAT('%', #{serverName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="serverType != null and serverType != ''">
+            AND s.server_type = #{serverType}
+        </if>
+        <if test="serverStatus != null">
+            AND s.server_status = #{serverStatus}
+        </if>
+    </sql>
+
+    <select id="selectServerList" resultType="com.primihub.biz.entity.sys.vo.ServerVO">
+        SELECT <include refid="serverColumns"/>
+        FROM server s
+        WHERE s.is_del = 0
+        <include refid="serverWhere"/>
+        ORDER BY s.server_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectServerCount" resultType="java.lang.Integer">
+        SELECT COUNT(s.server_id)
+        FROM server s
+        WHERE s.is_del = 0
+        <include refid="serverWhere"/>
+    </select>
+
+    <select id="selectServerById" resultType="com.primihub.biz.entity.sys.po.Server">
+        SELECT
+            server_id    serverId,
+            server_name  serverName,
+            server_desc  serverDesc,
+            server_ip    serverIp,
+            server_port  serverPort,
+            server_type  serverType,
+            server_status serverStatus,
+            organ_id     organId,
+            user_id      userId,
+            cpu_cores    cpuCores,
+            memory_gb    memoryGb,
+            storage_gb   storageGb,
+            config,
+            last_heartbeat lastHeartbeat,
+            is_del       isDel,
+            create_date  createDate,
+            update_date  updateDate
+        FROM server
+        WHERE server_id = #{serverId} AND is_del = 0
+    </select>
+
+    <!-- ===== Agent queries ===== -->
+
+    <sql id="agentColumns">
+        a.agent_id    agentId,
+        a.agent_name  agentName,
+        a.agent_type  agentType,
+        a.agent_desc  agentDesc,
+        a.endpoint,
+        a.status,
+        a.organ_id    organId,
+        a.user_id     userId,
+        a.create_date createDate,
+        a.update_date updateDate
+    </sql>
+
+    <sql id="agentWhere">
+        <if test="agentName != null and agentName != ''">
+            AND a.agent_name LIKE CONCAT('%', #{agentName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="agentType != null and agentType != ''">
+            AND a.agent_type = #{agentType}
+        </if>
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+    </sql>
+
+    <select id="selectAgentList" resultType="com.primihub.biz.entity.sys.vo.AgentVO">
+        SELECT <include refid="agentColumns"/>
+        FROM agent a
+        WHERE a.is_del = 0
+        <include refid="agentWhere"/>
+        ORDER BY a.agent_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectAgentCount" resultType="java.lang.Integer">
+        SELECT COUNT(a.agent_id)
+        FROM agent a
+        WHERE a.is_del = 0
+        <include refid="agentWhere"/>
+    </select>
+
+    <select id="selectAgentById" resultType="com.primihub.biz.entity.sys.po.Agent">
+        SELECT
+            agent_id    agentId,
+            agent_name  agentName,
+            agent_type  agentType,
+            agent_desc  agentDesc,
+            endpoint,
+            status,
+            organ_id    organId,
+            user_id     userId,
+            is_del      isDel,
+            create_date createDate,
+            update_date updateDate
+        FROM agent
+        WHERE agent_id = #{agentId} AND is_del = 0
+    </select>
+
+    <!-- ===== Association queries ===== -->
+
+    <select id="selectResourcesByServerId" resultType="com.primihub.biz.entity.sys.vo.ServerResourceVO">
+        SELECT
+            sr.id,
+            sr.server_id         serverId,
+            sr.resource_id       resourceId,
+            sr.allocation_status allocationStatus,
+            sr.create_date       createDate,
+            dr.resource_name     resourceName,
+            dr.resource_desc     resourceDesc
+        FROM server_resource sr
+        LEFT JOIN data_resource dr ON sr.resource_id = dr.resource_id AND dr.is_del = 0
+        WHERE sr.server_id = #{serverId} AND sr.is_del = 0
+        ORDER BY sr.id DESC
+    </select>
+
+    <select id="selectModelsByServerId" resultType="com.primihub.biz.entity.sys.vo.ServerModelVO">
+        SELECT
+            sm.id,
+            sm.server_id          serverId,
+            sm.model_id           modelId,
+            sm.model_version      modelVersion,
+            sm.deployment_status  deploymentStatus,
+            sm.create_date        createDate,
+            dm.model_name         modelName
+        FROM server_model sm
+        LEFT JOIN data_model dm ON sm.model_id = dm.model_id AND dm.is_del = 0
+        WHERE sm.server_id = #{serverId} AND sm.is_del = 0
+        ORDER BY sm.id DESC
+    </select>
+
+    <select id="selectArtifactsByServerId" resultType="com.primihub.biz.entity.sys.vo.ServerArtifactVO">
+        SELECT
+            sa.id,
+            sa.server_id       serverId,
+            sa.artifact_id     artifactId,
+            sa.artifact_status artifactStatus,
+            sa.create_date     createDate
+        FROM server_artifact sa
+        WHERE sa.server_id = #{serverId} AND sa.is_del = 0
+        ORDER BY sa.id DESC
+    </select>
+
+    <select id="selectNodesByServerId" resultType="com.primihub.biz.entity.sys.vo.ServerNodeVO">
+        SELECT
+            sn.id,
+            sn.server_id        serverId,
+            sn.node_id          nodeId,
+            sn.access_type      accessType,
+            sn.is_primary       isPrimary,
+            sn.create_date      createDate,
+            ncp.organ_name      nodeName,
+            ncp.cooperation_type cooperationType
+        FROM server_node sn
+        LEFT JOIN node_cooperation_party ncp ON sn.node_id = ncp.id AND ncp.is_del = 0
+        WHERE sn.server_id = #{serverId} AND sn.is_del = 0
+        ORDER BY sn.id DESC
+    </select>
+
+    <select id="selectAgentsByServerId" resultType="com.primihub.biz.entity.sys.vo.ServerAgentVO">
+        SELECT
+            sag.id,
+            sag.server_id   serverId,
+            sag.agent_id    agentId,
+            sag.run_status  runStatus,
+            sag.create_date createDate,
+            ag.agent_name   agentName,
+            ag.agent_type   agentType
+        FROM server_agent sag
+        LEFT JOIN agent ag ON sag.agent_id = ag.agent_id AND ag.is_del = 0
+        WHERE sag.server_id = #{serverId} AND sag.is_del = 0
+        ORDER BY sag.id DESC
+    </select>
+
+</mapper>

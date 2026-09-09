@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.ServerPrimarydbRepository">
+
+    <!-- ===== Server ===== -->
+
+    <insert id="insertServer" useGeneratedKeys="true" keyProperty="serverId">
+        INSERT INTO server (
+            server_name, server_desc, server_ip, server_port, server_type,
+            server_status, organ_id, user_id, cpu_cores, memory_gb, storage_gb,
+            config, last_heartbeat, is_del, create_date, update_date
+        ) VALUES (
+            #{serverName}, #{serverDesc}, #{serverIp}, #{serverPort}, #{serverType},
+            COALESCE(#{serverStatus}, 0), #{organId}, #{userId}, #{cpuCores},
+            #{memoryGb}, #{storageGb}, #{config}, #{lastHeartbeat},
+            0, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateServer">
+        UPDATE server
+        <set>
+            <if test="serverName != null and serverName != ''">server_name = #{serverName},</if>
+            <if test="serverDesc != null">server_desc = #{serverDesc},</if>
+            <if test="serverIp != null">server_ip = #{serverIp},</if>
+            <if test="serverPort != null">server_port = #{serverPort},</if>
+            <if test="serverType != null">server_type = #{serverType},</if>
+            <if test="serverStatus != null">server_status = #{serverStatus},</if>
+            <if test="cpuCores != null">cpu_cores = #{cpuCores},</if>
+            <if test="memoryGb != null">memory_gb = #{memoryGb},</if>
+            <if test="storageGb != null">storage_gb = #{storageGb},</if>
+            <if test="config != null">config = #{config},</if>
+            <if test="lastHeartbeat != null">last_heartbeat = #{lastHeartbeat},</if>
+            update_date = NOW()
+        </set>
+        WHERE server_id = #{serverId} AND is_del = 0
+    </update>
+
+    <update id="deleteServerById">
+        UPDATE server SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND is_del = 0
+    </update>
+
+    <!-- ===== Agent ===== -->
+
+    <insert id="insertAgent" useGeneratedKeys="true" keyProperty="agentId">
+        INSERT INTO agent (
+            agent_name, agent_type, agent_desc, endpoint, status,
+            organ_id, user_id, is_del, create_date, update_date
+        ) VALUES (
+            #{agentName}, #{agentType}, #{agentDesc}, #{endpoint},
+            COALESCE(#{status}, 1), #{organId}, #{userId},
+            0, NOW(), NOW()
+        )
+    </insert>
+
+    <update id="updateAgent">
+        UPDATE agent
+        <set>
+            <if test="agentName != null and agentName != ''">agent_name = #{agentName},</if>
+            <if test="agentType != null">agent_type = #{agentType},</if>
+            <if test="agentDesc != null">agent_desc = #{agentDesc},</if>
+            <if test="endpoint != null">endpoint = #{endpoint},</if>
+            <if test="status != null">status = #{status},</if>
+            update_date = NOW()
+        </set>
+        WHERE agent_id = #{agentId} AND is_del = 0
+    </update>
+
+    <update id="deleteAgentById">
+        UPDATE agent SET is_del = 1, update_date = NOW()
+        WHERE agent_id = #{agentId} AND is_del = 0
+    </update>
+
+    <!-- ===== server_resource ===== -->
+
+    <insert id="insertServerResource" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO server_resource (server_id, resource_id, allocation_status, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{resourceId}, COALESCE(#{allocationStatus}, 0), 0, NOW(), NOW())
+    </insert>
+
+    <update id="deleteServerResource">
+        UPDATE server_resource SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND resource_id = #{resourceId} AND is_del = 0
+    </update>
+
+    <!-- ===== server_model ===== -->
+
+    <insert id="insertServerModel" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO server_model (server_id, model_id, model_version, deployment_status, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{modelId}, #{modelVersion}, COALESCE(#{deploymentStatus}, 0), 0, NOW(), NOW())
+    </insert>
+
+    <update id="deleteServerModel">
+        UPDATE server_model SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND model_id = #{modelId} AND is_del = 0
+    </update>
+
+    <!-- ===== server_artifact ===== -->
+
+    <insert id="insertServerArtifact" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO server_artifact (server_id, artifact_id, artifact_status, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{artifactId}, COALESCE(#{artifactStatus}, 0), 0, NOW(), NOW())
+    </insert>
+
+    <update id="deleteServerArtifact">
+        UPDATE server_artifact SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND artifact_id = #{artifactId} AND is_del = 0
+    </update>
+
+    <!-- ===== server_node ===== -->
+
+    <insert id="insertServerNode" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO server_node (server_id, node_id, access_type, is_primary, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{nodeId}, #{accessType}, COALESCE(#{isPrimary}, 0), 0, NOW(), NOW())
+    </insert>
+
+    <update id="deleteServerNode">
+        UPDATE server_node SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND node_id = #{nodeId} AND is_del = 0
+    </update>
+
+    <!-- ===== server_agent ===== -->
+
+    <insert id="insertServerAgent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO server_agent (server_id, agent_id, run_status, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{agentId}, COALESCE(#{runStatus}, 0), 0, NOW(), NOW())
+    </insert>
+
+    <update id="deleteServerAgent">
+        UPDATE server_agent SET is_del = 1, update_date = NOW()
+        WHERE server_id = #{serverId} AND agent_id = #{agentId} AND is_del = 0
+    </update>
+
+</mapper>
