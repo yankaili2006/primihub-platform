@@ -16,6 +16,9 @@ public class ServerResourceVO {
     private Integer allocationStatus;
     private Date createDate;
 
+    /** 定位URI */
+    private String uri;
+
     /** 资源名称（JOIN data_resource） */
     private String resourceName;
     /** 资源描述 */

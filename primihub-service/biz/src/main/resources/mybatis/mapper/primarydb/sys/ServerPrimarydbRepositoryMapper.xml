@@ -8,12 +8,12 @@
         INSERT INTO server (
             server_name, server_desc, server_ip, server_port, server_type,
             server_status, organ_id, user_id, cpu_cores, memory_gb, storage_gb,
-            config, last_heartbeat, is_del, create_date, update_date
+            config, last_heartbeat, server_url, is_del, create_date, update_date
         ) VALUES (
             #{serverName}, #{serverDesc}, #{serverIp}, #{serverPort}, #{serverType},
             COALESCE(#{serverStatus}, 0), #{organId}, #{userId}, #{cpuCores},
             #{memoryGb}, #{storageGb}, #{config}, #{lastHeartbeat},
-            0, NOW(), NOW()
+            #{serverUrl}, 0, NOW(), NOW()
         )
     </insert>
 
@@ -75,8 +75,8 @@
     <!-- ===== server_resource ===== -->
 
     <insert id="insertServerResource" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO server_resource (server_id, resource_id, allocation_status, is_del, create_date, update_date)
-        VALUES (#{serverId}, #{resourceId}, COALESCE(#{allocationStatus}, 0), 0, NOW(), NOW())
+        INSERT INTO server_resource (server_id, resource_id, allocation_status, uri, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{resourceId}, COALESCE(#{allocationStatus}, 0), #{uri}, 0, NOW(), NOW())
     </insert>
 
     <update id="deleteServerResource">
@@ -87,8 +87,8 @@
     <!-- ===== server_model ===== -->
 
     <insert id="insertServerModel" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO server_model (server_id, model_id, model_version, deployment_status, is_del, create_date, update_date)
-        VALUES (#{serverId}, #{modelId}, #{modelVersion}, COALESCE(#{deploymentStatus}, 0), 0, NOW(), NOW())
+        INSERT INTO server_model (server_id, model_id, model_version, deployment_status, uri, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{modelId}, #{modelVersion}, COALESCE(#{deploymentStatus}, 0), #{uri}, 0, NOW(), NOW())
     </insert>
 
     <update id="deleteServerModel">
@@ -99,8 +99,8 @@
     <!-- ===== server_artifact ===== -->
 
     <insert id="insertServerArtifact" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO server_artifact (server_id, artifact_id, artifact_status, is_del, create_date, update_date)
-        VALUES (#{serverId}, #{artifactId}, COALESCE(#{artifactStatus}, 0), 0, NOW(), NOW())
+        INSERT INTO server_artifact (server_id, artifact_id, artifact_status, uri, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{artifactId}, COALESCE(#{artifactStatus}, 0), #{uri}, 0, NOW(), NOW())
     </insert>
 
     <update id="deleteServerArtifact">
@@ -111,8 +111,8 @@
     <!-- ===== server_node ===== -->
 
     <insert id="insertServerNode" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO server_node (server_id, node_id, access_type, is_primary, is_del, create_date, update_date)
-        VALUES (#{serverId}, #{nodeId}, #{accessType}, COALESCE(#{isPrimary}, 0), 0, NOW(), NOW())
+        INSERT INTO server_node (server_id, node_id, access_type, is_primary, uri, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{nodeId}, #{accessType}, COALESCE(#{isPrimary}, 0), #{uri}, 0, NOW(), NOW())
     </insert>
 
     <update id="deleteServerNode">
@@ -123,8 +123,8 @@
     <!-- ===== server_agent ===== -->
 
     <insert id="insertServerAgent" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO server_agent (server_id, agent_id, run_status, is_del, create_date, update_date)
-        VALUES (#{serverId}, #{agentId}, COALESCE(#{runStatus}, 0), 0, NOW(), NOW())
+        INSERT INTO server_agent (server_id, agent_id, run_status, uri, is_del, create_date, update_date)
+        VALUES (#{serverId}, #{agentId}, COALESCE(#{runStatus}, 0), #{uri}, 0, NOW(), NOW())
     </insert>
 
     <update id="deleteServerAgent">

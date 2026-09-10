@@ -16,6 +16,8 @@ public class ServerAgent {
     private Long agentId;
     /** 运行状态: 0停止 1运行中 */
     private Integer runStatus;
+    /** 定位URI */
+    private String uri;
     /** 是否删除: 0否 1是 */
     private Integer isDel;
     private Date createDate;

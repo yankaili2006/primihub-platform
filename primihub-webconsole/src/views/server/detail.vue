@@ -18,6 +18,7 @@
         <el-descriptions-item label="内存(GB)">{{ server.memoryGb }}</el-descriptions-item>
         <el-descriptions-item label="存储(GB)">{{ server.storageGb }}</el-descriptions-item>
         <el-descriptions-item label="描述" :span="3">{{ server.serverDesc }}</el-descriptions-item>
+        <el-descriptions-item label="定位URL" :span="3">{{ server.serverUrl }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
 
@@ -30,6 +31,7 @@
             <el-table-column label="资源ID" prop="resourceId" width="90" align="center" />
             <el-table-column label="资源名称" prop="resourceName" min-width="160" />
             <el-table-column label="描述" prop="resourceDesc" min-width="160" show-overflow-tooltip />
+            <el-table-column label="定位URI" prop="uri" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template slot-scope="{ row }">
                 <el-button type="text" class="danger-text" @click="doUnbind('resource', row)">移除</el-button>
@@ -45,6 +47,7 @@
             <el-table-column label="模型ID" prop="modelId" width="90" align="center" />
             <el-table-column label="模型名称" prop="modelName" min-width="160" />
             <el-table-column label="版本" prop="modelVersion" width="120" />
+            <el-table-column label="定位URI" prop="uri" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template slot-scope="{ row }">
                 <el-button type="text" class="danger-text" @click="doUnbind('model', row)">移除</el-button>
@@ -59,6 +62,7 @@
           <el-table :data="server.artifacts || []" border style="margin-top: 10px;">
             <el-table-column label="产物ID" prop="artifactId" width="90" align="center" />
             <el-table-column label="产物名称" prop="artifactName" min-width="160" />
+            <el-table-column label="定位URI" prop="uri" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template slot-scope="{ row }">
                 <el-button type="text" class="danger-text" @click="doUnbind('artifact', row)">移除</el-button>
@@ -77,6 +81,7 @@
             <el-table-column label="主节点" width="80" align="center">
               <template slot-scope="{ row }">{{ row.isPrimary === 1 ? '是' : '否' }}</template>
             </el-table-column>
+            <el-table-column label="定位URI" prop="uri" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template slot-scope="{ row }">
                 <el-button type="text" class="danger-text" @click="doUnbind('node', row)">移除</el-button>
@@ -92,6 +97,7 @@
             <el-table-column label="智能体ID" prop="agentId" width="90" align="center" />
             <el-table-column label="名称" prop="agentName" min-width="140" />
             <el-table-column label="类型" prop="agentType" width="130" />
+            <el-table-column label="定位URI" prop="uri" min-width="220" show-overflow-tooltip />
             <el-table-column label="操作" width="100" align="center">
               <template slot-scope="{ row }">
                 <el-button type="text" class="danger-text" @click="doUnbind('agent', row)">移除</el-button>

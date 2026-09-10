@@ -16,6 +16,9 @@ public class ServerAgentVO {
     private Integer runStatus;
     private Date createDate;
 
+    /** 定位URI */
+    private String uri;
+
     /** 智能体名称 */
     private String agentName;
     /** 智能体类型 */
