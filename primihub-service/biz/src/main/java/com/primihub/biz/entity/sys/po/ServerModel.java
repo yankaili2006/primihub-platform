@@ -18,6 +18,8 @@ public class ServerModel {
     private String modelVersion;
     /** 部署状态: 0待部署 1已部署 2运行中 3已停止 */
     private Integer deploymentStatus;
+    /** 定位URI */
+    private String uri;
     /** 是否删除: 0否 1是 */
     private Integer isDel;
     private Date createDate;

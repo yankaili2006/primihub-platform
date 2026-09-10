@@ -19,6 +19,7 @@
         s.storage_gb   storageGb,
         s.config,
         s.last_heartbeat lastHeartbeat,
+        s.server_url   serverUrl,
         s.create_date  createDate,
         s.update_date  updateDate
     </sql>
@@ -67,6 +68,7 @@
             storage_gb   storageGb,
             config,
             last_heartbeat lastHeartbeat,
+            server_url   serverUrl,
             is_del       isDel,
             create_date  createDate,
             update_date  updateDate
@@ -142,6 +144,7 @@
             sr.server_id         serverId,
             sr.resource_id       resourceId,
             sr.allocation_status allocationStatus,
+            sr.uri               uri,
             sr.create_date       createDate,
             dr.resource_name     resourceName,
             dr.resource_desc     resourceDesc
@@ -158,6 +161,7 @@
             sm.model_id           modelId,
             sm.model_version      modelVersion,
             sm.deployment_status  deploymentStatus,
+            sm.uri                uri,
             sm.create_date        createDate,
             dm.model_name         modelName
         FROM server_model sm
@@ -172,6 +176,7 @@
             sa.server_id       serverId,
             sa.artifact_id     artifactId,
             sa.artifact_status artifactStatus,
+            sa.uri             uri,
             sa.create_date     createDate
         FROM server_artifact sa
         WHERE sa.server_id = #{serverId} AND sa.is_del = 0
@@ -185,6 +190,7 @@
             sn.node_id          nodeId,
             sn.access_type      accessType,
             sn.is_primary       isPrimary,
+            sn.uri              uri,
             sn.create_date      createDate,
             ncp.organ_name      nodeName,
             ncp.cooperation_type cooperationType
@@ -200,6 +206,7 @@
             sag.server_id   serverId,
             sag.agent_id    agentId,
             sag.run_status  runStatus,
+            sag.uri         uri,
             sag.create_date createDate,
             ag.agent_name   agentName,
             ag.agent_type   agentType

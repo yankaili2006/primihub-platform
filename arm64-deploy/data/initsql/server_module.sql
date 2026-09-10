@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `server` (
   `storage_gb`      BIGINT(20)    DEFAULT NULL                            COMMENT '存储(GB)',
   `config`          TEXT          DEFAULT NULL                            COMMENT '扩展配置JSON',
   `last_heartbeat`  DATETIME      DEFAULT NULL                            COMMENT '最后心跳时间',
+  `server_url`      VARCHAR(255)  DEFAULT NULL                            COMMENT '定位URL',
   `is_del`          TINYINT(4)    DEFAULT 0                               COMMENT '是否删除: 0否 1是',
   `create_date`     DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3)           COMMENT '创建时间',
   `update_date`     DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS `server_resource` (
   `server_id`         BIGINT(20)  NOT NULL                                COMMENT '服务器ID',
   `resource_id`       BIGINT(20)  NOT NULL                                COMMENT '数据资源ID(data_resource.resource_id)',
   `allocation_status` TINYINT(4)  DEFAULT 0                               COMMENT '分配状态: 0待分配 1已分配 2已卸载',
+  `uri`               VARCHAR(512) DEFAULT NULL                           COMMENT '定位URI',
   `is_del`            TINYINT(4)  DEFAULT 0                               COMMENT '是否删除: 0否 1是',
   `create_date`       DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)           COMMENT '创建时间',
   `update_date`       DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -82,6 +84,7 @@ CREATE TABLE IF NOT EXISTS `server_model` (
   `model_id`          BIGINT(20)    NOT NULL                              COMMENT '模型ID(data_model.model_id)',
   `model_version`     VARCHAR(50)   DEFAULT NULL                          COMMENT '部署模型版本',
   `deployment_status` TINYINT(4)    DEFAULT 0                             COMMENT '部署状态: 0待部署 1已部署 2运行中 3已停止',
+  `uri`               VARCHAR(512)  DEFAULT NULL                          COMMENT '定位URI',
   `is_del`            TINYINT(4)    DEFAULT 0                             COMMENT '是否删除: 0否 1是',
   `create_date`       DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3)         COMMENT '创建时间',
   `update_date`       DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -100,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `server_artifact` (
   `server_id`       BIGINT(20)  NOT NULL                                  COMMENT '服务器ID',
   `artifact_id`     BIGINT(20)  NOT NULL                                  COMMENT '模型产物ID(data_model_artifact.artifact_id)',
   `artifact_status` TINYINT(4)  DEFAULT 0                                 COMMENT '产物状态: 0未部署 1已部署 2运行中',
+  `uri`             VARCHAR(512) DEFAULT NULL                             COMMENT '定位URI',
   `is_del`          TINYINT(4)  DEFAULT 0                                 COMMENT '是否删除: 0否 1是',
   `create_date`     DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)             COMMENT '创建时间',
   `update_date`     DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -119,6 +123,7 @@ CREATE TABLE IF NOT EXISTS `server_node` (
   `node_id`     BIGINT(20)    NOT NULL                                    COMMENT '节点ID(node_cooperation_party.id)',
   `access_type` VARCHAR(50)   DEFAULT NULL                                COMMENT '接入类型: project/compute/data_exchange',
   `is_primary`  TINYINT(4)    DEFAULT 0                                   COMMENT '是否主节点: 0否 1是',
+  `uri`         VARCHAR(512)  DEFAULT NULL                                COMMENT '定位URI',
   `is_del`      TINYINT(4)    DEFAULT 0                                   COMMENT '是否删除: 0否 1是',
   `create_date` DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3)               COMMENT '创建时间',
   `update_date` DATETIME(3)   DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -137,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `server_agent` (
   `server_id`   BIGINT(20)  NOT NULL                                      COMMENT '服务器ID',
   `agent_id`    BIGINT(20)  NOT NULL                                      COMMENT '智能体ID(agent.agent_id)',
   `run_status`  TINYINT(4)  DEFAULT 0                                     COMMENT '运行状态: 0停止 1运行中',
+  `uri`         VARCHAR(512) DEFAULT NULL                                 COMMENT '定位URI',
   `is_del`      TINYINT(4)  DEFAULT 0                                     COMMENT '是否删除: 0否 1是',
   `create_date` DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)                 COMMENT '创建时间',
   `update_date` DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '修改时间',
@@ -160,3 +166,94 @@ INSERT IGNORE INTO `sys_auth`
 
 INSERT IGNORE INTO `sys_ra` (`role_id`,`auth_id`,`is_del`) VALUES
   (1,9801,0),(1,9802,0),(1,9803,0),(1,9804,0);
+
+--
+-- 幂等 ALTER：为既有库补加新列（若列已存在则跳过，避免重复执行报错）
+-- 以及对既有行的回填 UPDATE
+--
+
+DROP PROCEDURE IF EXISTS `add_server_uri_columns`;
+DELIMITER //
+CREATE PROCEDURE `add_server_uri_columns`()
+BEGIN
+    -- server.server_url
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server' AND COLUMN_NAME = 'server_url'
+    ) THEN
+        ALTER TABLE `server` ADD COLUMN `server_url` VARCHAR(255) DEFAULT NULL COMMENT '定位URL';
+    END IF;
+
+    -- server_resource.uri
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server_resource' AND COLUMN_NAME = 'uri'
+    ) THEN
+        ALTER TABLE `server_resource` ADD COLUMN `uri` VARCHAR(512) DEFAULT NULL COMMENT '定位URI';
+    END IF;
+
+    -- server_model.uri
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server_model' AND COLUMN_NAME = 'uri'
+    ) THEN
+        ALTER TABLE `server_model` ADD COLUMN `uri` VARCHAR(512) DEFAULT NULL COMMENT '定位URI';
+    END IF;
+
+    -- server_artifact.uri
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server_artifact' AND COLUMN_NAME = 'uri'
+    ) THEN
+        ALTER TABLE `server_artifact` ADD COLUMN `uri` VARCHAR(512) DEFAULT NULL COMMENT '定位URI';
+    END IF;
+
+    -- server_node.uri
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server_node' AND COLUMN_NAME = 'uri'
+    ) THEN
+        ALTER TABLE `server_node` ADD COLUMN `uri` VARCHAR(512) DEFAULT NULL COMMENT '定位URI';
+    END IF;
+
+    -- server_agent.uri
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'server_agent' AND COLUMN_NAME = 'uri'
+    ) THEN
+        ALTER TABLE `server_agent` ADD COLUMN `uri` VARCHAR(512) DEFAULT NULL COMMENT '定位URI';
+    END IF;
+END //
+DELIMITER ;
+CALL `add_server_uri_columns`();
+DROP PROCEDURE IF EXISTS `add_server_uri_columns`;
+
+-- 回填既有行
+UPDATE `server`
+SET `server_url` = CONCAT('https://primihub.com/', `server_name`)
+WHERE `server_url` IS NULL AND `is_del` = 0;
+
+UPDATE `server_resource` sr
+JOIN `server` s ON s.server_id = sr.server_id AND s.is_del = 0
+SET sr.`uri` = CONCAT(s.`server_url`, '/resource/', sr.`resource_id`)
+WHERE sr.`uri` IS NULL AND sr.`is_del` = 0;
+
+UPDATE `server_model` sm
+JOIN `server` s ON s.server_id = sm.server_id AND s.is_del = 0
+SET sm.`uri` = CONCAT(s.`server_url`, '/model/', sm.`model_id`)
+WHERE sm.`uri` IS NULL AND sm.`is_del` = 0;
+
+UPDATE `server_artifact` sa
+JOIN `server` s ON s.server_id = sa.server_id AND s.is_del = 0
+SET sa.`uri` = CONCAT(s.`server_url`, '/artifact/', sa.`artifact_id`)
+WHERE sa.`uri` IS NULL AND sa.`is_del` = 0;
+
+UPDATE `server_node` sn
+JOIN `server` s ON s.server_id = sn.server_id AND s.is_del = 0
+SET sn.`uri` = CONCAT(s.`server_url`, '/node/', sn.`node_id`)
+WHERE sn.`uri` IS NULL AND sn.`is_del` = 0;
+
+UPDATE `server_agent` sag
+JOIN `server` s ON s.server_id = sag.server_id AND s.is_del = 0
+SET sag.`uri` = CONCAT(s.`server_url`, '/agent/', sag.`agent_id`)
+WHERE sag.`uri` IS NULL AND sag.`is_del` = 0;

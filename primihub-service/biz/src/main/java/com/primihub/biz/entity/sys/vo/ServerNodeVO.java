@@ -18,6 +18,9 @@ public class ServerNodeVO {
     private Integer isPrimary;
     private Date createDate;
 
+    /** 定位URI */
+    private String uri;
+
     /** 节点名称 */
     private String nodeName;
     /** 节点类型 */

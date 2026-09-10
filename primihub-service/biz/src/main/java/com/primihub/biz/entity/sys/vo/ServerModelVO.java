@@ -17,6 +17,9 @@ public class ServerModelVO {
     private Integer deploymentStatus;
     private Date createDate;
 
+    /** 定位URI */
+    private String uri;
+
     /** 模型名称（JOIN data_model） */
     private String modelName;
 }

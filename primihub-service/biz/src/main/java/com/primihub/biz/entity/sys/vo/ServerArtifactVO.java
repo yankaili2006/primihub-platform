@@ -16,6 +16,9 @@ public class ServerArtifactVO {
     private Integer artifactStatus;
     private Date createDate;
 
+    /** 定位URI */
+    private String uri;
+
     /** 产物名称 */
     private String artifactName;
 }
