@@ -50,11 +50,14 @@ const CATALOG_SOURCES = [
   '/api/embed-proxy/primihub-agri-agents/api/agents'
 ]
 
+import { getTrustedSpaces } from '@/api/resource'
+
 export default {
   name: 'AgentHubList',
   data() {
     return {
       // 数据空间 = 数据资源「可信空间」的主标签集合（与 resource/list.vue trustedSpaceList 对齐）
+      // 初值兜底；created 时经 getTrustedSpaces 用平台标签表实际引用的空间覆盖（与资源列表同源）
       spaceList: ['水利', '新能源车', '农业', 'PrimiHub'],
       spaceFilter: '',
       agents: [
@@ -193,8 +196,21 @@ export default {
   },
   created() {
     this.loadRemoteCatalog()
+    this.loadSpaces()
   },
   methods: {
+    async loadSpaces() {
+      try {
+        const { code, result } = await getTrustedSpaces()
+        if (code === 0 && Array.isArray(result) && result.length) {
+          // 卡片可能标了尚无资源引用的空间，合并进候选以免筛不到
+          const extra = this.agents.map(a => a.space || 'PrimiHub').filter(s => !result.includes(s))
+          this.spaceList = result.concat(Array.from(new Set(extra)))
+        }
+      } catch (e) {
+        // 接口不可用：保留常量
+      }
+    },
     // 与 resource/list.vue spaceTagType 同一映射，颜色只做区分
     spaceTagType(name) {
       return { '水利': 'primary', '新能源车': 'success', '农业': 'warning' }[name || 'PrimiHub'] || 'info'

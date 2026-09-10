@@ -179,7 +179,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { getResourceList, getResourceTags, deleteResource, resourceStatusChange } from '@/api/resource'
+import { getResourceList, getResourceTags, getTrustedSpaces, deleteResource, resourceStatusChange } from '@/api/resource'
 import Pagination from '@/components/Pagination'
 import TagsSelect from '@/components/TagsSelect'
 
@@ -192,6 +192,7 @@ export default {
       },
       tags: [],
       // 可信空间（主标签）候选；与 pcloud primihub-meta-resource SPACE_RULES 对齐，未知统一为 PrimiHub
+      // 初值兜底；created 时经 getTrustedSpaces 用平台标签表实际引用的空间覆盖
       trustedSpaceList: ['水利', '新能源车', '农业', 'PrimiHub'],
       resourceSourceList: [{
         label: '文件上传',
@@ -247,6 +248,7 @@ export default {
   async created() {
     await this.fetchData()
     await this.getResourceTags()
+    this.loadTrustedSpaces()
   },
   methods: {
     // 可信空间 = 主标签（水利/新能源车/农业/…，未知=PrimiHub），颜色只做区分
@@ -280,6 +282,14 @@ export default {
           this.resourceList[posIndex].resourceState = resourceState
         }
       })
+    },
+    async loadTrustedSpaces() {
+      try {
+        const { code, result } = await getTrustedSpaces()
+        if (code === 0 && Array.isArray(result) && result.length) this.trustedSpaceList = result
+      } catch (e) {
+        // 接口不可用（旧后端）：保留常量
+      }
     },
     async getResourceTags() {
       const { result } = await getResourceTags()

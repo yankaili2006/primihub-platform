@@ -48,6 +48,11 @@ public class ResourceController {
         return dataResourceService.getResourceTags();
     }
 
+    @GetMapping("getTrustedSpaces")
+    public BaseResultEntity getTrustedSpaces(){
+        return dataResourceService.getTrustedSpaces();
+    }
+
     /**
      * 资源概览列表信息接口
      * @param userId    用户id
