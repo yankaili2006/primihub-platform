@@ -181,7 +181,7 @@ export default {
       this.loading = true
       getServerDetail(this.serverId)
         .then(res => {
-          this.server = res.data || {}
+          this.server = res.result || {}
         })
         .finally(() => {
           this.loading = false
@@ -193,7 +193,7 @@ export default {
       this.bindDialog = true
       if (kind === 'agent') {
         findAgentPage({ pageNo: 1, pageSize: 100 }).then(res => {
-          const d = res.data || {}
+          const d = res.result || {}
           this.agentOptions = d.list || []
         })
       }

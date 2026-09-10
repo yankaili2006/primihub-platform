@@ -92,7 +92,7 @@ export default {
       this.loading = true
       findServerPage(this.query)
         .then(res => {
-          const data = res.data || {}
+          const data = res.result || {}
           this.list = data.list || []
           this.total = data.pageParam ? Number(data.pageParam.itemTotalCount || 0) : 0
         })
