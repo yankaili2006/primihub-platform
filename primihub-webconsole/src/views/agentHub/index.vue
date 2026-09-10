@@ -47,7 +47,8 @@ const AGENT_BASE = 'https://agent.primihub.com'
 // 动态目录源（相对 AGENT_BASE）：水利 = flood 面板；农业 = .66 SAAI 服务目录面板（含智农助手）
 const CATALOG_SOURCES = [
   '/api/embed-proxy/primihub-flood-poc/api/agents',
-  '/api/embed-proxy/primihub-agri-agents/api/agents'
+  '/api/embed-proxy/primihub-agri-agents/api/agents',
+  '/api/embed-proxy/knowledge-base/api/agents'   // 分层知识库：每个 collection 一张卡，space=collection 可信空间
 ]
 
 import { getTrustedSpaces } from '@/api/resource'
