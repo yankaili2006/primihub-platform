@@ -188,8 +188,11 @@ public class DataResourceService {
                     dataFileFieldList.add(DataResourceConvert.DataFileFieldReqConvertPo(field, 0L, dataResource.getResourceId()));
                 }
             }
-            if (!blobKind) {
-                // 非表格资源不注册进节点数据集（CSV accessInfo 语义不适用）
+            boolean imageFederated = dataResource.getResourceKind()!=null && dataResource.getResourceKind()==1
+                    && dataResource.getFileSuffix()!=null && "zip".equalsIgnoreCase(dataResource.getFileSuffix());
+            if (!blobKind || imageFederated) {
+                // 表格资源: 常规注册; 图像联邦资源(zip+kind=1): 走 image driver + annotations 注册到节点数据集;
+                // 其它 blob(模型产物引用等)仍跳过(CSV accessInfo 语义不适用)。
                 TaskParam taskParam = resourceSynGRPCDataSet(dataSource, dataResource, dataFileFieldList);
                 if (!taskParam.getSuccess()) {
                     return BaseResultEntity.failure(BaseResultEnum.DATA_SAVE_FAIL, "无法将资源注册到数据集中:" + taskParam.getError());
@@ -753,6 +756,18 @@ public class DataResourceService {
 
     public TaskParam resourceSynGRPCDataSet(DataSource dataSource, DataResource dataResource, List<DataFileField> fieldList) {
         if (dataResource.getResourceSource() != 2) {
+            // 图像联邦资源(resourceKind=1 且 zip 图像目录): 以 image driver + JSON accessInfo 注册到 meta 服务,
+            // 携带 image_dir(zip, 引擎自动解压) 与同名 _annotations.csv 标注文件(列 file_name,y), 供 HFL_CNN 等图像算子解析。
+            if (dataResource.getResourceKind()!=null && dataResource.getResourceKind()==1
+                    && dataResource.getFileSuffix()!=null && "zip".equalsIgnoreCase(dataResource.getFileSuffix())) {
+                String imageDir = dataResource.getUrl();
+                String annotationsFile = imageDir.replaceAll("(?i)\\.zip$", "_annotations.csv");
+                Map<String, Object> imgMap = new HashMap<>();
+                imgMap.put("type", "image");
+                imgMap.put("image_dir", imageDir);
+                imgMap.put("annotations_file", annotationsFile);
+                return resourceSynGRPCDataSet("image", dataResource.getResourceFusionId(), JSONObject.toJSONString(imgMap), fieldList);
+            }
             return resourceSynGRPCDataSet(dataResource.getFileSuffix(), dataResource.getResourceFusionId(), dataResource.getUrl(), fieldList);
         }
         Map<String, Object> map = new HashMap<>();

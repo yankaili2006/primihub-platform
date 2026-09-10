@@ -72,6 +72,10 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
             List<String> modelResourceIds = resourceList.stream()
                     .filter(vo -> vo.getResourceKind() == null || vo.getResourceKind() == 0)
                     .map(ModelProjectResourceVo::getResourceId).collect(Collectors.toList());
+            if (modelResourceIds.isEmpty()) {
+                // 纯图像/全 blob 资源: 无表格联邦资源需校验, 置空 fusion 列表, 交由 runTask 图像分支透传
+                taskReq.setFusionResourceList(new java.util.ArrayList<>());
+            } else {
             BaseResultEntity baseResult = otherBusinessesService.getResourceListById(modelResourceIds);
             if (baseResult.getCode()!=0) {
                 return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"联邦资源查询失败:"+baseResult.getMsg());
@@ -99,6 +103,7 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
                     return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL,"模型需要三个数据集");
                 }
             }
+            }
         }catch (Exception e){
             e.printStackTrace();
             log.info("modelId:{} Failed to convert JSON :{}",taskReq.getDataModel().getModelId(),e.getMessage());
@@ -114,7 +119,14 @@ public class DataSetComponentTaskServiceImpl extends BaseComponentServiceImpl im
         for (int i = 0; i < resourceList.size(); i++) {
             ModelProjectResourceVo modelProjectResourceVo = resourceList.get(i);
             if (modelProjectResourceVo.getResourceKind()!=null && modelProjectResourceVo.getResourceKind()!=0){
-                // 非表格资源不占据 label/guest 数据集槽位，仅登记引用关系并以 aux 键透传
+                // 图像等非表格资源: 按参与方身份进入 label/guest 数据集槽位(供 HFL_CNN 等图像横向联邦算子消费),
+                // 不做表格列(calculation_field)处理; 同时保留 aux_resource 透传与引用登记。
+                if (modelProjectResourceVo.getParticipationIdentity()!=null && modelProjectResourceVo.getParticipationIdentity()==1){
+                    taskReq.getFreemarkerMap().put(DataConstant.PYTHON_LABEL_DATASET, modelProjectResourceVo.getResourceId());
+                    dataModelPrRepository.updateDataModel(taskReq.getDataModel());
+                } else {
+                    taskReq.getFreemarkerMap().put(DataConstant.PYTHON_GUEST_DATASET, modelProjectResourceVo.getResourceId());
+                }
                 taskReq.getFreemarkerMap().put("aux_resource_"+i, modelProjectResourceVo.getResourceId());
                 DataModelResource auxModelResource = new DataModelResource(taskReq.getDataModel().getModelId());
                 auxModelResource.setTaskId(taskReq.getDataTask().getTaskId());
