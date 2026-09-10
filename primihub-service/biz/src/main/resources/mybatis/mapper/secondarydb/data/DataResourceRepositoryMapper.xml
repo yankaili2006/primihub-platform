@@ -75,6 +75,16 @@
         <if test="resourceKind!=null">
             and resource_kind = #{resourceKind}
         </if>
+        <if test="trustedSpaceName!=null and trustedSpaceName!=''">
+            <choose>
+                <when test="trustedSpaceName=='PrimiHub'">
+                    and (trusted_space is null or trusted_space in (select tag_id from data_resource_tag where tag_name = 'PrimiHub' and is_del = 0))
+                </when>
+                <otherwise>
+                    and trusted_space in (select tag_id from data_resource_tag where tag_name = #{trustedSpaceName} and is_del = 0)
+                </otherwise>
+            </choose>
+        </if>
         <choose>
             <when test="fileContainsY!=null and fileContainsY==1">
                 and file_contains_y = 1

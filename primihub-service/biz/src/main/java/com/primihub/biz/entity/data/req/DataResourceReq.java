@@ -63,5 +63,9 @@ public class DataResourceReq extends PageReq{
      * 资源形态 0表格 1图像/blob目录 2模型产物引用；查询时 null=不过滤，保存时 null 按 0 处理
      */
     private Integer resourceKind;
+    /**
+     * 可信空间名过滤（水利/新能源车/农业/PrimiHub）；PrimiHub 同时命中未设置(NULL)的资源
+     */
+    private String trustedSpaceName;
 
 }

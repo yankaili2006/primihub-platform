@@ -22,6 +22,11 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="可信空间">
+          <el-select v-model="query.trustedSpaceName" size="small" placeholder="全部" clearable>
+            <el-option v-for="s in trustedSpaceList" :key="s" :label="s" :value="s" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="Y值">
           <el-select v-model="query.fileContainsY" size="small" placeholder="请选择" clearable>
             <el-option
@@ -183,9 +188,11 @@ export default {
   data() {
     return {
       query: {
-        fileContainsY: '', resourceId: '', resourceName: '', tag: null, userName: '', resourceSource: '', selectTag: 0, resourceAuthType: ''
+        fileContainsY: '', resourceId: '', resourceName: '', tag: null, userName: '', resourceSource: '', selectTag: 0, resourceAuthType: '', trustedSpaceName: ''
       },
       tags: [],
+      // 可信空间（主标签）候选；与 pcloud primihub-meta-resource SPACE_RULES 对齐，未知统一为 PrimiHub
+      trustedSpaceList: ['水利', '新能源车', '农业', 'PrimiHub'],
       resourceSourceList: [{
         label: '文件上传',
         value: 1
@@ -351,7 +358,7 @@ export default {
     },
     async fetchData() {
       this.resourceList = []
-      const { resourceName, tag, userName, resourceSource, selectTag, resourceAuthType, fileContainsY } = this.query
+      const { resourceName, tag, userName, resourceSource, selectTag, resourceAuthType, fileContainsY, trustedSpaceName } = this.query
       const resourceId = Number(this.query.resourceId)
       if (resourceId !== '' && isNaN(resourceId)) {
         this.$message({
@@ -371,7 +378,8 @@ export default {
         selectTag,
         derivation: 0,
         resourceAuthType,
-        fileContainsY
+        fileContainsY,
+        trustedSpaceName
       }
       const res = await getResourceList(params)
       if (res.code === 0) {
