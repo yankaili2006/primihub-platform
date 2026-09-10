@@ -27,6 +27,7 @@
           <el-descriptions-item label="对象存储Key">{{ resource.objectKey }}</el-descriptions-item>
           <el-descriptions-item label="文件Hash">{{ resource.resourceHashCode }}</el-descriptions-item>
         </template>
+        <el-descriptions-item label="可信空间">{{ resource.trustedSpaceName || 'PrimiHub' }}</el-descriptions-item>
         <el-descriptions-item label="数据来源">{{ resource.resourceSource | sourceFilter }}</el-descriptions-item>
         <el-descriptions-item v-if="resource.resourceSource === 1" label="数据大小">{{ resource.fileSize | fileSizeFilter }}</el-descriptions-item>
       </el-descriptions>

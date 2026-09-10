@@ -126,6 +126,8 @@ public class DataResourceConvert {
         vo.setResourceFusionId(po.getResourceFusionId());
         vo.setResourceKind(po.getResourceKind()==null?0:po.getResourceKind());
         vo.setObjectKey(po.getObjectKey());
+        vo.setTrustedSpace(po.getTrustedSpace());
+        vo.setTrustedSpaceName(po.getTrustedSpaceName() == null || po.getTrustedSpaceName().isEmpty() ? "PrimiHub" : po.getTrustedSpaceName());
         return vo;
     }
 
@@ -159,6 +161,8 @@ public class DataResourceConvert {
         vo.setResourceFusionId(po.getResourceFusionId());
         vo.setResourceKind(po.getResourceKind()==null?0:po.getResourceKind());
         vo.setObjectKey(po.getObjectKey());
+        vo.setTrustedSpace(po.getTrustedSpace());
+        vo.setTrustedSpaceName(po.getTrustedSpaceName() == null || po.getTrustedSpaceName().isEmpty() ? "PrimiHub" : po.getTrustedSpaceName());
         return vo;
     }
     public static DataFileFieldVo DataFileFieldPoConvertVo(DataFileField fileField){
