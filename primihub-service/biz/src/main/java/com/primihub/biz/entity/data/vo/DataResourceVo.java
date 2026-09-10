@@ -134,4 +134,12 @@ public class DataResourceVo {
      * 对象存储key预留（本轮存本地相对路径）
      */
     private String objectKey;
+    /**
+     * 可信空间（主标签 tag_id）
+     */
+    private Long trustedSpace;
+    /**
+     * 可信空间名；空 = PrimiHub
+     */
+    private String trustedSpaceName;
 }
