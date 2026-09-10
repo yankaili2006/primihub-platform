@@ -74,7 +74,7 @@ jobs:
         run: |
           EXP=$(wc -c < config/logo-primihub.png | tr -d ' ')
           for p in 30811 30812 30813; do
-            got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
+            got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-primihub.png" | wc -c | tr -d ' '); [ "${got:-0}" -gt 0 ] || got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
             echo ":$p logo bytes=$got (expect $EXP)"
             [ "$got" = "$EXP" ] || { echo "::error::logo not replaced on $p"; exit 1; }
           done
