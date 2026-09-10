@@ -23,6 +23,8 @@
         resource_state as resourceState,
         resource_kind as resourceKind,
         object_key as objectKey,
+        trusted_space as trustedSpace,
+        (select t.tag_name from data_resource_tag t where t.tag_id = trusted_space and t.is_del = 0) as trustedSpaceName,
         resource_hash_code as resourceHashCode,
         db_id as dbId,
         user_id as userId,

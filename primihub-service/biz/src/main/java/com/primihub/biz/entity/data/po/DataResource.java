@@ -117,6 +117,14 @@ public class DataResource {
      */
     private String objectKey;
     /**
+     * 可信空间 = 主标签 tag_id（data_resource_tag）：水利/新能源车/农业/…，未知=PrimiHub。由 pcloud skill 维护
+     */
+    private Long trustedSpace;
+    /**
+     * 可信空间名（查询时由 tag_id 解析，非持久列）
+     */
+    private String trustedSpaceName;
+    /**
      * 是否删除
      */
     private Integer isDel;

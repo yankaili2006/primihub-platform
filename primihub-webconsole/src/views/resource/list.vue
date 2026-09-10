@@ -112,6 +112,16 @@
           </template>
         </el-table-column>
         <el-table-column
+          prop="trustedSpaceName"
+          label="可信空间"
+          align="center"
+          width="100"
+        >
+          <template slot-scope="{row}">
+            <el-tag size="mini" :type="spaceTagType(row.trustedSpaceName)">{{ row.trustedSpaceName || 'PrimiHub' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="resourceSource"
           label="资源类型"
           align="center"
@@ -232,6 +242,10 @@ export default {
     await this.getResourceTags()
   },
   methods: {
+    // 可信空间 = 主标签（水利/新能源车/农业/…，未知=PrimiHub），颜色只做区分
+    spaceTagType(name) {
+      return { '水利': 'primary', '新能源车': 'success', '农业': 'warning' }[name] || 'info'
+    },
     reset() {
       this.isReset = true
       for (const key in this.query) {
