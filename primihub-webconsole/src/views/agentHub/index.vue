@@ -32,6 +32,11 @@
 // 智能体清单：与 agent.primihub.com /api/skills 实际路由对齐（2026-09-09 实测）。
 // 每个 url 均为可匿名访问的技能 Web UI；backing 标注平台内真实登记的资源/产物。
 const AGENT_BASE = 'https://agent.primihub.com'
+// 动态目录源（相对 AGENT_BASE）：水利 = flood 面板；农业 = .66 SAAI 服务目录面板（含智农助手）
+const CATALOG_SOURCES = [
+  '/api/embed-proxy/primihub-flood-poc/api/agents',
+  '/api/embed-proxy/primihub-agri-agents/api/agents'
+]
 
 export default {
   name: 'AgentHubList',
@@ -161,13 +166,17 @@ export default {
     openAgent(agent) {
       window.open(agent.url, '_blank', 'noopener')
     },
-    // 动态目录：水利场景由 agent.primihub.com 上的 flood 面板 /api/agents 提供（embed-proxy 带 CORS *），
-    // 按 id 合并进静态清单（远端覆盖同 id、追加新 id）。拉取失败静默保留静态清单，页面不受影响。
+    // 动态目录：每个领域的智能体卡片由 agent.primihub.com 上对应面板的 /api/agents 提供
+    // （embed-proxy 带 CORS *），按 id 合并进静态清单（远端覆盖同 id、追加新 id）。
+    // 各源独立拉取、互不阻塞；某源离线只是少一批卡片，页面不受影响。
     async loadRemoteCatalog() {
+      await Promise.all(CATALOG_SOURCES.map(src => this.mergeCatalog(src)))
+    },
+    async mergeCatalog(src) {
       try {
         const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null
         const timer = ctl && setTimeout(() => ctl.abort(), 8000)
-        const r = await fetch(AGENT_BASE + '/api/embed-proxy/primihub-flood-poc/api/agents', { signal: ctl && ctl.signal })
+        const r = await fetch(AGENT_BASE + src, { signal: ctl && ctl.signal })
         if (timer) clearTimeout(timer)
         if (!r.ok) return
         const d = await r.json()
@@ -181,7 +190,7 @@ export default {
         const order = this.agents.map(a => a.id).concat(remote.map(a => a.id).filter(id => !this.agents.some(a => a.id === id)))
         this.agents = order.map(id => byId[id])
       } catch (e) {
-        // 离线/跨域失败：保留静态清单
+        // 离线/跨域失败：保留已有清单
       }
     }
   }
