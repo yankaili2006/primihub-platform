@@ -89,7 +89,7 @@ export default {
     const id = this.$route.query.serverId
     if (id) {
       getServerDetail(id).then(res => {
-        const d = res.data || {}
+        const d = res.result || {}
         Object.keys(this.form).forEach(k => {
           if (d[k] !== undefined && d[k] !== null) this.form[k] = d[k]
         })
