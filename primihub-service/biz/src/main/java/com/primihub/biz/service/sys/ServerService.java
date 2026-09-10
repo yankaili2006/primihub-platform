@@ -86,6 +86,7 @@ public class ServerService {
 
     public BaseResultEntity createServer(Server server) {
         try {
+            server.setServerUrl("https://primihub.com/" + server.getServerName());
             serverPrimarydbRepository.insertServer(server);
             return BaseResultEntity.success(server.getServerId());
         } catch (Exception e) {
@@ -198,6 +199,10 @@ public class ServerService {
             ServerResource sr = new ServerResource();
             sr.setServerId(serverId);
             sr.setResourceId(resourceId);
+            Server server = serverSecondarydbRepository.selectServerById(serverId);
+            if (server != null && server.getServerUrl() != null) {
+                sr.setUri(server.getServerUrl() + "/resource/" + resourceId);
+            }
             serverPrimarydbRepository.insertServerResource(sr);
             return BaseResultEntity.success(null);
         } catch (Exception e) {
@@ -222,6 +227,10 @@ public class ServerService {
             sm.setServerId(serverId);
             sm.setModelId(modelId);
             sm.setModelVersion(modelVersion);
+            Server server = serverSecondarydbRepository.selectServerById(serverId);
+            if (server != null && server.getServerUrl() != null) {
+                sm.setUri(server.getServerUrl() + "/model/" + modelId);
+            }
             serverPrimarydbRepository.insertServerModel(sm);
             return BaseResultEntity.success(null);
         } catch (Exception e) {
@@ -245,6 +254,10 @@ public class ServerService {
             ServerArtifact sa = new ServerArtifact();
             sa.setServerId(serverId);
             sa.setArtifactId(artifactId);
+            Server server = serverSecondarydbRepository.selectServerById(serverId);
+            if (server != null && server.getServerUrl() != null) {
+                sa.setUri(server.getServerUrl() + "/artifact/" + artifactId);
+            }
             serverPrimarydbRepository.insertServerArtifact(sa);
             return BaseResultEntity.success(null);
         } catch (Exception e) {
@@ -270,6 +283,10 @@ public class ServerService {
             sn.setNodeId(nodeId);
             sn.setAccessType(accessType);
             sn.setIsPrimary(isPrimary == null ? 0 : isPrimary);
+            Server server = serverSecondarydbRepository.selectServerById(serverId);
+            if (server != null && server.getServerUrl() != null) {
+                sn.setUri(server.getServerUrl() + "/node/" + nodeId);
+            }
             serverPrimarydbRepository.insertServerNode(sn);
             return BaseResultEntity.success(null);
         } catch (Exception e) {
@@ -293,6 +310,10 @@ public class ServerService {
             ServerAgent sa = new ServerAgent();
             sa.setServerId(serverId);
             sa.setAgentId(agentId);
+            Server server = serverSecondarydbRepository.selectServerById(serverId);
+            if (server != null && server.getServerUrl() != null) {
+                sa.setUri(server.getServerUrl() + "/agent/" + agentId);
+            }
             serverPrimarydbRepository.insertServerAgent(sa);
             return BaseResultEntity.success(null);
         } catch (Exception e) {

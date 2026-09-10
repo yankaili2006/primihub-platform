@@ -16,6 +16,8 @@ public class ServerArtifact {
     private Long artifactId;
     /** 产物状态: 0未部署 1已部署 2运行中 */
     private Integer artifactStatus;
+    /** 定位URI */
+    private String uri;
     /** 是否删除: 0否 1是 */
     private Integer isDel;
     private Date createDate;

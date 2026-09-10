@@ -24,6 +24,7 @@ public class ServerVO {
     private Long storageGb;
     private String config;
     private Date lastHeartbeat;
+    private String serverUrl;
     private Date createDate;
     private Date updateDate;
 

@@ -18,6 +18,8 @@ public class ServerNode {
     private String accessType;
     /** 是否主节点: 0否 1是 */
     private Integer isPrimary;
+    /** 定位URI */
+    private String uri;
     /** 是否删除: 0否 1是 */
     private Integer isDel;
     private Date createDate;

@@ -37,6 +37,8 @@ public class Server {
     private String config;
     /** 最后心跳时间 */
     private Date lastHeartbeat;
+    /** 定位URL */
+    private String serverUrl;
     /** 是否删除: 0否 1是 */
     private Integer isDel;
     /** 创建时间 */

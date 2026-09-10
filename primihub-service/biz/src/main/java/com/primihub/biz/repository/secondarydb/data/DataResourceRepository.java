@@ -21,6 +21,11 @@ public interface DataResourceRepository {
      */
     List<String> queryAllResourceTag();
 
+    /**
+     * 被资源实际引用的可信空间（主标签）名，去重
+     */
+    List<String> queryTrustedSpaceNames();
+
     List<DataResource> queryDataResource(Map<String,Object> paramMap);
 
     Integer queryDataResourceCount(Map<String,Object> paramMap);

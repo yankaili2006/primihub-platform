@@ -143,6 +143,14 @@ export function resourceFilePreview(params) {
   })
 }
 
+// 可信空间/数据空间候选（被资源引用的主标签 + PrimiHub）
+export function getTrustedSpaces() {
+  return request({
+    url: '/data/resource/getTrustedSpaces',
+    method: 'get'
+  })
+}
+
 export function getResourceTags(params) {
   return request({
     url: '/data/resource/getResourceTags',

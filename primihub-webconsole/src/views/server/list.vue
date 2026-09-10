@@ -27,6 +27,7 @@
     <el-table v-loading="loading" :data="list" border fit style="width: 100%;">
       <el-table-column label="ID" prop="serverId" width="70" align="center" />
       <el-table-column label="名称" prop="serverName" min-width="140" show-overflow-tooltip />
+      <el-table-column label="定位URL" prop="serverUrl" min-width="200" show-overflow-tooltip />
       <el-table-column label="IP" prop="serverIp" width="140" />
       <el-table-column label="端口" prop="serverPort" width="80" align="center" />
       <el-table-column label="类型" prop="serverType" width="110" align="center" />
@@ -92,7 +93,7 @@ export default {
       this.loading = true
       findServerPage(this.query)
         .then(res => {
-          const data = res.data || {}
+          const data = res.result || {}
           this.list = data.list || []
           this.total = data.pageParam ? Number(data.pageParam.itemTotalCount || 0) : 0
         })

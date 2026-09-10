@@ -80,7 +80,7 @@ done
 grn "== 5. 校验 logo 已替换为 PrimiHub =="
 EXP=$(wc -c < config/logo-primihub.png | tr -d ' ')
 for p in $PORTS; do
-  got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
+  got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-primihub.png" | wc -c | tr -d ' '); [ "${got:-0}" -gt 0 ] || got=$(curl -s -m8 "http://127.0.0.1:$p/images/logo-DataItem.png" | wc -c | tr -d ' ')
   if [ "$got" = "$EXP" ]; then grn "  端口 $p logo OK ($got bytes)"; else ylw "  端口 $p logo 未生效 ($got != $EXP), 可 docker compose up -d 重建 nginx*"; allpass=0; fi
 done
 

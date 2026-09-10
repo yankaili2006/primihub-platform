@@ -3,15 +3,27 @@
     <div class="page-header">
       <h2>智能体</h2>
       <p class="sub-title">基于平台已登记的数据资源与模型产物（农业、水利）构建的可交互智能体，点击卡片跳转到 agent.primihub.com 对应技能。</p>
+      <div class="space-filter">
+        <span class="filter-label">数据空间</span>
+        <el-select v-model="spaceFilter" size="small" placeholder="全部" clearable style="width: 160px">
+          <el-option v-for="sp in spaceList" :key="sp" :label="sp" :value="sp" />
+        </el-select>
+        <span class="filter-hint">与数据资源「可信空间」同一套取值；未标注的智能体归 PrimiHub</span>
+      </div>
     </div>
     <el-row :gutter="20">
-      <el-col v-for="agent in agents" :key="agent.id" :xs="24" :sm="12" :md="8" :lg="8" :xl="6">
+      <el-col v-for="agent in visibleAgents" :key="agent.id" :xs="24" :sm="12" :md="8" :lg="8" :xl="6">
         <el-card class="agent-card" shadow="hover" @click.native="openAgent(agent)">
           <div class="agent-card-header">
             <i :class="agent.icon" class="agent-icon" />
             <div class="agent-title">
               <span class="agent-name">{{ agent.name }}</span>
-              <el-tag size="mini" :type="agent.tagType">{{ agent.category }}</el-tag>
+              <div class="agent-tags">
+                <el-tag size="mini" :type="agent.tagType">{{ agent.category }}</el-tag>
+                <el-tag size="mini" :type="spaceTagType(agent.space)" effect="plain" class="space-tag">
+                  数据空间 · {{ agent.space || 'PrimiHub' }}
+                </el-tag>
+              </div>
             </div>
           </div>
           <p class="agent-desc">{{ agent.desc }}</p>
@@ -32,14 +44,26 @@
 // 智能体清单：与 agent.primihub.com /api/skills 实际路由对齐（2026-09-09 实测）。
 // 每个 url 均为可匿名访问的技能 Web UI；backing 标注平台内真实登记的资源/产物。
 const AGENT_BASE = 'https://agent.primihub.com'
+// 动态目录源（相对 AGENT_BASE）：水利 = flood 面板；农业 = .66 SAAI 服务目录面板（含智农助手）
+const CATALOG_SOURCES = [
+  '/api/embed-proxy/primihub-flood-poc/api/agents',
+  '/api/embed-proxy/primihub-agri-agents/api/agents'
+]
+
+import { getTrustedSpaces } from '@/api/resource'
 
 export default {
   name: 'AgentHubList',
   data() {
     return {
+      // 数据空间 = 数据资源「可信空间」的主标签集合（与 resource/list.vue trustedSpaceList 对齐）
+      // 初值兜底；created 时经 getTrustedSpaces 用平台标签表实际引用的空间覆盖（与资源列表同源）
+      spaceList: ['水利', '新能源车', '农业', 'PrimiHub'],
+      spaceFilter: '',
       agents: [
         {
           id: 'agriculture-datasets',
+          space: '农业',
           name: '农业数据集智能体',
           category: '农业数据',
           tagType: 'success',
@@ -50,6 +74,7 @@ export default {
         },
         {
           id: 'saai-crop-algorithm',
+          space: '农业',
           name: '作物算法智能体',
           category: '算法',
           tagType: 'primary',
@@ -60,6 +85,7 @@ export default {
         },
         {
           id: 'saai-data-asset',
+          space: '农业',
           name: '农业数据资产智能体',
           category: '农业数据',
           tagType: 'success',
@@ -70,6 +96,7 @@ export default {
         },
         {
           id: 'eo-learn',
+          space: '农业',
           name: '遥感分析智能体',
           category: '遥感',
           tagType: 'warning',
@@ -80,6 +107,7 @@ export default {
         },
         {
           id: 'label-collector',
+          space: '农业',
           name: '田间标注采集智能体',
           category: '采集',
           tagType: 'danger',
@@ -90,6 +118,7 @@ export default {
         },
         {
           id: 'saai-imap-benchmark',
+          space: '农业',
           name: 'iMAP 对标智能体',
           category: '分析',
           tagType: 'info',
@@ -102,6 +131,7 @@ export default {
         //    计算走 primihub-water-infer 推理服务(.50:9440)，见 pcloud skills/ops/primihub-water-infer
         {
           id: 'primihub-flood-poc',
+          space: '水利',
           name: '超汛限水库智能体',
           category: '水利',
           tagType: 'primary',
@@ -112,6 +142,7 @@ export default {
         },
         {
           id: 'primihub-postgis-poc',
+          space: '水利',
           name: 'PostGIS 空间分析智能体',
           category: '水利',
           tagType: 'primary',
@@ -123,6 +154,7 @@ export default {
         // ── 水利 P1 三场景（2026-09-10，真实公开数据：HydroBASINS / OSM 水库 / Open-Meteo 降水 / SPI）
         {
           id: 'water-basin-alert',
+          space: '水利',
           name: '流域级强降水预警智能体',
           category: '水利',
           tagType: 'primary',
@@ -133,6 +165,7 @@ export default {
         },
         {
           id: 'water-drought-stats',
+          space: '水利',
           name: '干旱指数联邦统计智能体',
           category: '水利',
           tagType: 'primary',
@@ -143,6 +176,7 @@ export default {
         },
         {
           id: 'water-pir',
+          space: '水利',
           name: '水库档案匿踪查询智能体',
           category: '水利',
           tagType: 'primary',
@@ -154,20 +188,47 @@ export default {
       ]
     }
   },
+  computed: {
+    visibleAgents() {
+      if (!this.spaceFilter) return this.agents
+      return this.agents.filter(a => (a.space || 'PrimiHub') === this.spaceFilter)
+    }
+  },
   created() {
     this.loadRemoteCatalog()
+    this.loadSpaces()
   },
   methods: {
+    async loadSpaces() {
+      try {
+        const { code, result } = await getTrustedSpaces()
+        if (code === 0 && Array.isArray(result) && result.length) {
+          // 卡片可能标了尚无资源引用的空间，合并进候选以免筛不到
+          const extra = this.agents.map(a => a.space || 'PrimiHub').filter(s => !result.includes(s))
+          this.spaceList = result.concat(Array.from(new Set(extra)))
+        }
+      } catch (e) {
+        // 接口不可用：保留常量
+      }
+    },
+    // 与 resource/list.vue spaceTagType 同一映射，颜色只做区分
+    spaceTagType(name) {
+      return { '水利': 'primary', '新能源车': 'success', '农业': 'warning' }[name || 'PrimiHub'] || 'info'
+    },
     openAgent(agent) {
       window.open(agent.url, '_blank', 'noopener')
     },
-    // 动态目录：水利场景由 agent.primihub.com 上的 flood 面板 /api/agents 提供（embed-proxy 带 CORS *），
-    // 按 id 合并进静态清单（远端覆盖同 id、追加新 id）。拉取失败静默保留静态清单，页面不受影响。
+    // 动态目录：每个领域的智能体卡片由 agent.primihub.com 上对应面板的 /api/agents 提供
+    // （embed-proxy 带 CORS *），按 id 合并进静态清单（远端覆盖同 id、追加新 id）。
+    // 各源独立拉取、互不阻塞；某源离线只是少一批卡片，页面不受影响。
     async loadRemoteCatalog() {
+      await Promise.all(CATALOG_SOURCES.map(src => this.mergeCatalog(src)))
+    },
+    async mergeCatalog(src) {
       try {
         const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null
         const timer = ctl && setTimeout(() => ctl.abort(), 8000)
-        const r = await fetch(AGENT_BASE + '/api/embed-proxy/primihub-flood-poc/api/agents', { signal: ctl && ctl.signal })
+        const r = await fetch(AGENT_BASE + src, { signal: ctl && ctl.signal })
         if (timer) clearTimeout(timer)
         if (!r.ok) return
         const d = await r.json()
@@ -181,7 +242,7 @@ export default {
         const order = this.agents.map(a => a.id).concat(remote.map(a => a.id).filter(id => !this.agents.some(a => a.id === id)))
         this.agents = order.map(id => byId[id])
       } catch (e) {
-        // 离线/跨域失败：保留静态清单
+        // 离线/跨域失败：保留已有清单
       }
     }
   }
@@ -195,6 +256,14 @@ export default {
     margin-bottom: 20px;
     h2 { margin: 0 0 6px; font-size: 20px; }
     .sub-title { margin: 0; color: #909399; font-size: 13px; }
+    .space-filter {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      .filter-label { font-size: 13px; color: #606266; }
+      .filter-hint { font-size: 12px; color: #C0C4CC; }
+    }
   }
   .agent-card {
     margin-bottom: 20px;
@@ -208,6 +277,7 @@ export default {
         display: flex;
         flex-direction: column;
         .agent-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .agent-tags { display: flex; flex-wrap: wrap; gap: 4px; }
       }
     }
     .agent-desc {

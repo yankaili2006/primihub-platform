@@ -531,6 +531,17 @@ public class DataResourceService {
         return BaseResultEntity.success(dataResourceRepository.queryAllResourceTag());
     }
 
+    /**
+     * 可信空间候选：被资源实际引用的主标签名 + 缺省 PrimiHub（未设置的资源归它）。
+     * 资源列表筛选与智能体页「数据空间」共用，不再各写一份常量。
+     */
+    public BaseResultEntity getTrustedSpaces() {
+        List<String> names = new ArrayList<>(dataResourceRepository.queryTrustedSpaceNames());
+        names.remove("PrimiHub");
+        names.add("PrimiHub");
+        return BaseResultEntity.success(names);
+    }
+
     public Object findFusionCopyResourceList(Long startOffset, Long endOffset) {
         log.info("本方机构：{}, 查找fusionCopy的， startOffset :{}, endOffset:{}", organConfiguration.getSysLocalOrganName(), startOffset, endOffset);
         List<DataResource> resourceList = dataResourceRepository.findCopyResourceList(startOffset, endOffset);
