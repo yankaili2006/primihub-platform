@@ -145,3 +145,18 @@ CREATE TABLE IF NOT EXISTS `server_agent` (
   KEY `idx_server_id` (`server_id`),
   KEY `idx_agent_id` (`agent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务器-智能体关联表';
+
+--
+-- 服务器管理菜单权限（sys_auth 菜单项 + sys_ra 授予超级管理员角色 role_id=1）
+-- 幂等：INSERT IGNORE，重复执行不报错；auth_id 9801-9804 为本模块预留段。
+-- 说明：多节点共享 Redis 时 sys_auth:bfs_list 缓存需失效一次（重启 application 或删该键）后菜单方可见。
+--
+INSERT IGNORE INTO `sys_auth`
+  (`auth_id`,`auth_name`,`auth_code`,`auth_type`,`p_auth_id`,`r_auth_id`,`full_path`,`auth_url`,`data_auth_code`,`auth_index`,`auth_depth`,`is_show`,`is_editable`,`is_del`) VALUES
+  (9801,'服务器管理','ServerMenu',1,0,9801,'9801','','own',22,0,1,1,0),
+  (9802,'服务器列表','ServerList',2,9801,9801,'9801,9802','/server/findServerPage','own',1,1,1,1,0),
+  (9803,'新增编辑服务器','ServerCreate',2,9801,9801,'9801,9803','/server/addServer','own',2,1,1,1,0),
+  (9804,'服务器详情','ServerDetail',2,9801,9801,'9801,9804','/server/getServerDetail','own',3,1,1,1,0);
+
+INSERT IGNORE INTO `sys_ra` (`role_id`,`auth_id`,`is_del`) VALUES
+  (1,9801,0),(1,9802,0),(1,9803,0),(1,9804,0);
