@@ -49,6 +49,7 @@ public class SysCommonService {
     }
 
     public BaseResultEntity getCollectList() {
+        if (!SysConstant.SYS_COLLECT_ENABLED) { return BaseResultEntity.success(); }  // 中性化：不拉厂商节点目录
         try {
             ResponseEntity<JSONObject> collectList = restTemplate.getForEntity(SysConstant.SYS_QUERY_COLLECT_URL, JSONObject.class);
 //        log.info("getCollectList json:{}",JSONObject.toJSONString(collectList));

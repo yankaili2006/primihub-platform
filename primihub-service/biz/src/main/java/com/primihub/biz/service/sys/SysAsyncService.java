@@ -44,6 +44,7 @@ public class SysAsyncService {
     @Async
     public void collectBaseData() {
         try {
+            if (!SysConstant.SYS_COLLECT_ENABLED) { return; }  // 中性化：不向厂商回传
             SysLocalOrganInfo sysLocalOrganInfo = organConfiguration.getSysLocalOrganInfo();
             if (sysLocalOrganInfo==null){
                 return;
