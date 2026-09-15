@@ -1,9 +1,16 @@
 <template>
   <div class="container">
+    <el-row :gutter="16" class="stat-cards">
+      <el-col :span="6"><div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">需求总数</div></div></el-col>
+      <el-col :span="6"><div class="stat-card"><div class="stat-num warn">{{ stats.pending }}</div><div class="stat-label">待处理</div></div></el-col>
+      <el-col :span="6"><div class="stat-card"><div class="stat-num prog">{{ stats.inProgress }}</div><div class="stat-label">进行中</div></div></el-col>
+      <el-col :span="6"><div class="stat-card"><div class="stat-num done">{{ stats.completed }}</div><div class="stat-label">已完成</div></div></el-col>
+    </el-row>
     <div class="search-area">
       <el-button type="primary" class="upload-button" @click="handleCreate">
         <i class="el-icon-plus" /> 添加需求
       </el-button>
+      <el-button class="upload-button" icon="el-icon-download" @click="exportCsv">导出CSV</el-button>
       <el-form :model="query" label-width="100px" :inline="true" @keyup.enter.native="search">
         <el-form-item label="需求名称">
           <el-input v-model="query.demandName" size="small" placeholder="请输入需求名称" />
@@ -145,7 +152,7 @@
 <script>
 import Pagination from '@/components/Pagination'
 import { parseTime } from '@/utils'
-import { getDemandList, createDemand, updateDemand, deleteDemand } from '@/api/dataProduct'
+import { getDemandList, createDemand, updateDemand, deleteDemand, getDemandStats } from '@/api/dataProduct'
 
 export default {
   name: 'DataProductDemand',
@@ -157,6 +164,7 @@ export default {
         demandType: '',
         status: ''
       },
+      stats: { total: 0, pending: 0, inProgress: 0, completed: 0 },
       demandList: [],
       pageNo: 1,
       pageSize: 10,
@@ -175,6 +183,7 @@ export default {
   },
   mounted() {
     this.loadDemandList()
+    this.loadStats()
   },
   methods: {
     getDefaultFormData() {
@@ -203,8 +212,59 @@ export default {
         this.demandList = r.list || []
         this.total = r.total || 0
         this.pageCount = Math.ceil(this.total / this.pageSize)
+        this.loadStats()
       } catch (error) {
         this.$message.error('加载数据失败')
+      }
+    },
+    buildQuery() {
+      const p = {}
+      if (this.query.demandName) p.demandName = this.query.demandName
+      if (this.query.demandType) p.demandType = this.query.demandType
+      if (this.query.status) p.status = this.query.status
+      return p
+    },
+    async loadStats() {
+      try {
+        const res = await getDemandStats()
+        this.stats = { ...this.stats, ...((res && res.result) || {}) }
+      } catch (e) { /* ignore */ }
+    },
+    async exportCsv() {
+      try {
+        const cols = [['id','ID'],['demandName','需求名称'],['demandDesc','需求描述'],['demandType','需求类型'],['status','状态'],['priority','优先级'],['budget','预算'],['expectedDelivery','期望交付时间'],['contactPerson','联系人'],['contactInfo','联系方式'],['techRequirements','技术要求'],['source','来源'],['createdAt','创建时间'],['remark','备注']]
+        const rows = []
+        let page = 1
+        for (;;) {
+          const params = { pageNum: page, pageSize: 100, ...this.buildQuery() }
+          const res = await getDemandList(params)
+          const r = (res && res.result) || {}
+          const list = r.list || []
+          rows.push(...list)
+          if (rows.length >= (r.total || 0) || list.length === 0) break
+          page++
+        }
+        if (!rows.length) { this.$message.info('暂无可导出的数据'); return }
+        const esc = v => {
+          const s = (v === null || v === undefined) ? '' : String(v)
+          return '"' + s.replace(/"/g, '""') + '"'
+        }
+        const cell = (row, key) => (key === 'createdAt' && row[key]) ? parseTime(new Date(row[key])) : row[key]
+        const header = cols.map(c => esc(c[1])).join(',')
+        const body = rows.map(row => cols.map(c => esc(cell(row, c[0]))).join(',')).join('\n')
+        const csv = '\uFEFF' + header + '\n' + body
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = '数据产品需求_' + parseTime(new Date(), '{y}{m}{d}_{h}{i}{s}') + '.csv'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        this.$message.success('已导出 ' + rows.length + ' 条')
+      } catch (e) {
+        this.$message.error('导出失败')
       }
     },
     fmtTime(row, column, value) {
@@ -290,6 +350,31 @@ export default {
 <style scoped>
 .container {
   padding: 20px;
+}
+
+.stat-cards {
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: white;
+  border-radius: 4px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.stat-card .stat-num {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.2;
+}
+.stat-card .stat-num.warn { color: #e6a23c; }
+.stat-card .stat-num.prog { color: #409eff; }
+.stat-card .stat-num.done { color: #67c23a; }
+.stat-card .stat-label {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #909399;
 }
 
 .search-area {
