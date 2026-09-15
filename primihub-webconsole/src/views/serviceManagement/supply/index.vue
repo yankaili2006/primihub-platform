@@ -62,7 +62,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="contactPerson" label="联系人" width="120" />
-        <el-table-column prop="createdAt" label="创建时间" width="160" />
+        <el-table-column prop="createdAt" label="创建时间" width="160" :formatter="fmtTime" />
         <el-table-column label="操作" fixed="right" width="180" align="center">
           <template slot-scope="{row}">
             <el-button type="text" @click="handleView(row)">查看</el-button>
@@ -84,7 +84,7 @@
 
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="900px" @close="handleDialogClose">
-      <el-form ref="supplyForm" :model="formData" :rules="formRules" label-width="120px">
+      <el-form ref="supplyForm" :model="formData" :rules="formRules" :disabled="dialogMode === 'view'" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="产品名称" prop="productName">
@@ -175,7 +175,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button v-if="dialogMode !== 'view'" type="primary" @click="handleSubmit">确定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -183,6 +183,8 @@
 
 <script>
 import Pagination from '@/components/Pagination'
+import { parseTime } from '@/utils'
+import { getSupplyList, createSupply, updateSupply, deleteSupply } from '@/api/dataProduct'
 
 export default {
   name: 'DataProductSupply',
@@ -234,20 +236,21 @@ export default {
     },
     async loadSupplyList() {
       try {
-        // TODO: 实际API调用
-        // const res = await getSupplyList({ ...this.query, pageNo: this.pageNo, pageSize: this.pageSize })
-        // this.supplyList = res.data.list
-        // this.total = res.data.total
-        // this.pageCount = Math.ceil(this.total / this.pageSize)
-
-        // 临时模拟数据
-        this.supplyList = []
-        this.total = 0
-        this.pageCount = 0
-        this.$message.info('数据产品供给功能开发中，请等待后端API完成')
+        const params = { pageNum: this.pageNo, pageSize: this.pageSize }
+        if (this.query.productName) params.productName = this.query.productName
+        if (this.query.serviceCategory) params.serviceCategory = this.query.serviceCategory
+        if (this.query.status) params.status = this.query.status
+        const res = await getSupplyList(params)
+        const r = (res && res.result) || {}
+        this.supplyList = r.list || []
+        this.total = r.total || 0
+        this.pageCount = Math.ceil(this.total / this.pageSize)
       } catch (error) {
         this.$message.error('加载数据失败')
       }
+    },
+    fmtTime(row, column, value) {
+      return value ? parseTime(new Date(value)) : ''
     },
     search() {
       this.pageNo = 1
@@ -271,7 +274,10 @@ export default {
       this.dialogVisible = true
     },
     handleView(row) {
-      this.$message.info('查看详情功能开发中')
+      this.dialogMode = 'view'
+      this.dialogTitle = '查看产品'
+      this.formData = { ...row }
+      this.dialogVisible = true
     },
     handleEdit(row) {
       this.dialogMode = 'edit'
@@ -284,15 +290,29 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        this.$message.success('删除功能开发中')
+      }).then(async() => {
+        await deleteSupply(row.id)
+        this.$message.success('删除成功')
+        this.loadSupplyList()
       }).catch(() => {})
     },
     handleSubmit() {
-      this.$refs.supplyForm.validate(valid => {
-        if (valid) {
-          this.$message.success('提交功能开发中，请等待后端API完成')
+      this.$refs.supplyForm.validate(async valid => {
+        if (!valid) return
+        const payload = {}
+        Object.keys(this.getDefaultFormData()).forEach(k => { payload[k] = this.formData[k] })
+        try {
+          if (this.dialogMode === 'edit') {
+            await updateSupply(this.formData.id, payload)
+            this.$message.success('更新成功')
+          } else {
+            await createSupply(payload)
+            this.$message.success('创建成功')
+          }
           this.dialogVisible = false
+          this.loadSupplyList()
+        } catch (e) {
+          // 错误提示由 request 拦截器统一处理
         }
       })
     },

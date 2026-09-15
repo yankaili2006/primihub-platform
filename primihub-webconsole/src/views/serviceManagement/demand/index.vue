@@ -62,7 +62,7 @@
         </el-table-column>
         <el-table-column prop="budget" label="预算" width="120" />
         <el-table-column prop="contactPerson" label="联系人" width="120" />
-        <el-table-column prop="createdAt" label="创建时间" width="160" />
+        <el-table-column prop="createdAt" label="创建时间" width="160" :formatter="fmtTime" />
         <el-table-column label="操作" fixed="right" width="180" align="center">
           <template slot-scope="{row}">
             <el-button type="text" @click="handleView(row)">查看</el-button>
@@ -84,7 +84,7 @@
 
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="800px" @close="handleDialogClose">
-      <el-form ref="demandForm" :model="formData" :rules="formRules" label-width="120px">
+      <el-form ref="demandForm" :model="formData" :rules="formRules" :disabled="dialogMode === 'view'" label-width="120px">
         <el-form-item label="需求名称" prop="demandName">
           <el-input v-model="formData.demandName" placeholder="请输入需求名称" />
         </el-form-item>
@@ -136,7 +136,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button v-if="dialogMode !== 'view'" type="primary" @click="handleSubmit">确定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -144,6 +144,8 @@
 
 <script>
 import Pagination from '@/components/Pagination'
+import { parseTime } from '@/utils'
+import { getDemandList, createDemand, updateDemand, deleteDemand } from '@/api/dataProduct'
 
 export default {
   name: 'DataProductDemand',
@@ -192,20 +194,21 @@ export default {
     },
     async loadDemandList() {
       try {
-        // TODO: 实际API调用
-        // const res = await getDemandList({ ...this.query, pageNo: this.pageNo, pageSize: this.pageSize })
-        // this.demandList = res.data.list
-        // this.total = res.data.total
-        // this.pageCount = Math.ceil(this.total / this.pageSize)
-
-        // 临时模拟数据
-        this.demandList = []
-        this.total = 0
-        this.pageCount = 0
-        this.$message.info('数据产品需求功能开发中，请等待后端API完成')
+        const params = { pageNum: this.pageNo, pageSize: this.pageSize }
+        if (this.query.demandName) params.demandName = this.query.demandName
+        if (this.query.demandType) params.demandType = this.query.demandType
+        if (this.query.status) params.status = this.query.status
+        const res = await getDemandList(params)
+        const r = (res && res.result) || {}
+        this.demandList = r.list || []
+        this.total = r.total || 0
+        this.pageCount = Math.ceil(this.total / this.pageSize)
       } catch (error) {
         this.$message.error('加载数据失败')
       }
+    },
+    fmtTime(row, column, value) {
+      return value ? parseTime(new Date(value)) : ''
     },
     search() {
       this.pageNo = 1
@@ -229,12 +232,20 @@ export default {
       this.dialogVisible = true
     },
     handleView(row) {
-      this.$message.info('查看详情功能开发中')
+      this.dialogMode = 'view'
+      this.dialogTitle = '查看需求'
+      this.formData = this.normalizeRow(row)
+      this.dialogVisible = true
+    },
+    normalizeRow(row) {
+      const data = { ...row }
+      data.expectedDelivery = row.expectedDelivery ? parseTime(new Date(row.expectedDelivery), '{y}-{m}-{d}') : ''
+      return data
     },
     handleEdit(row) {
       this.dialogMode = 'edit'
       this.dialogTitle = '编辑需求'
-      this.formData = { ...row }
+      this.formData = this.normalizeRow(row)
       this.dialogVisible = true
     },
     handleDelete(row) {
@@ -242,15 +253,30 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        this.$message.success('删除功能开发中')
+      }).then(async() => {
+        await deleteDemand(row.id)
+        this.$message.success('删除成功')
+        this.loadDemandList()
       }).catch(() => {})
     },
     handleSubmit() {
-      this.$refs.demandForm.validate(valid => {
-        if (valid) {
-          this.$message.success('提交功能开发中，请等待后端API完成')
+      this.$refs.demandForm.validate(async valid => {
+        if (!valid) return
+        // 只提交表单字段，剥离 createdAt/organId 等回读字段（日期回传会触发反序列化失败）
+        const payload = {}
+        Object.keys(this.getDefaultFormData()).forEach(k => { payload[k] = this.formData[k] })
+        try {
+          if (this.dialogMode === 'edit') {
+            await updateDemand(this.formData.id, payload)
+            this.$message.success('更新成功')
+          } else {
+            await createDemand(payload)
+            this.$message.success('创建成功')
+          }
           this.dialogVisible = false
+          this.loadDemandList()
+        } catch (e) {
+          // 错误提示由 request 拦截器统一处理
         }
       })
     },
