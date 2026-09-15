@@ -102,27 +102,6 @@ export const constantRoutes = [
 
 export const asyncRoutes = [
   {
-    path: '/serviceManagement',
-    component: Layout,
-    name: 'ServiceManagement',
-    redirect: '/serviceManagement/demand',
-    meta: { title: '服务管理', icon: 'el-icon-s-cooperation' },
-    children: [
-      {
-        path: 'demand',
-        name: 'DataProductDemand',
-        component: () => import('@/views/serviceManagement/demand/index'),
-        meta: { title: '数据产品需求' }
-      },
-      {
-        path: 'supply',
-        name: 'DataProductSupply',
-        component: () => import('@/views/serviceManagement/supply/index'),
-        meta: { title: '数据产品供给' }
-      }
-    ]
-  },
-  {
     path: '/agentHub',
     component: Layout,
     name: 'AgentHub',
@@ -1313,6 +1292,18 @@ export const asyncRoutes = [
         name: 'ModelReasoningList',
         component: () => import('@/views/reasoning/list'),
         meta: { title: '服务管理', breadcrumb: false }
+      },
+      {
+        path: 'demand',
+        name: 'DataProductDemand',
+        component: () => import('@/views/serviceManagement/demand/index'),
+        meta: { title: '数据产品需求' }
+      },
+      {
+        path: 'supply',
+        name: 'DataProductSupply',
+        component: () => import('@/views/serviceManagement/supply/index'),
+        meta: { title: '数据产品供给' }
       },
       {
         path: 'task',
