@@ -11,6 +11,7 @@
         <i class="el-icon-plus" /> 添加产品
       </el-button>
       <el-button class="upload-button" icon="el-icon-download" @click="exportCsv">导出CSV</el-button>
+      <el-button class="upload-button" type="danger" icon="el-icon-delete" :disabled="!selectedRows.length" @click="handleBatchDelete">批量删除{{ selectedRows.length ? '(' + selectedRows.length + ')' : '' }}</el-button>
       <el-form :model="query" label-width="100px" :inline="true" @keyup.enter.native="search">
         <el-form-item label="产品名称">
           <el-input v-model="query.productName" size="small" placeholder="请输入产品名称" />
@@ -35,7 +36,8 @@
     </div>
 
     <div class="resource">
-      <el-table :data="supplyList" empty-text="暂无数据" border>
+      <el-table :data="supplyList" empty-text="暂无数据" border @selection-change="onSelectionChange">
+        <el-table-column type="selection" width="45" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="productName" label="产品名称" min-width="150" />
         <el-table-column prop="productDesc" label="产品描述" min-width="200" show-overflow-tooltip />
@@ -225,6 +227,7 @@ export default {
       stats: { total: 0, online: 0, maintenance: 0, offline: 0 },
       typeOptions: [],
       supplyList: [],
+      selectedRows: [],
       pageNo: 1,
       pageSize: 10,
       pageCount: 0,
@@ -418,6 +421,27 @@ export default {
       }).then(async() => {
         await deleteSupply(row.id)
         this.$message.success('删除成功')
+        this.loadSupplyList()
+      }).catch(() => {})
+    },
+    onSelectionChange(rows) {
+      this.selectedRows = rows
+    },
+    handleBatchDelete() {
+      const ids = this.selectedRows.map(r => r.id)
+      if (!ids.length) return
+      this.$confirm(`确认删除选中的 ${ids.length} 条产品吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async() => {
+        let ok = 0, failed = 0
+        for (const id of ids) {
+          try { await deleteSupply(id); ok++ } catch (e) { failed++ }
+        }
+        if (failed) this.$message.warning(`删除完成：成功 ${ok} 条，失败 ${failed} 条`)
+        else this.$message.success(`已删除 ${ok} 条`)
+        this.selectedRows = []
         this.loadSupplyList()
       }).catch(() => {})
     },
