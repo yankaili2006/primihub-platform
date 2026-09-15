@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataProductSupplyPrimarydbRepository">
+
+    <!-- 数据产品供给结果映射 -->
+    <resultMap id="DataProductSupplyMap" type="com.primihub.biz.entity.data.po.DataProductSupply">
+        <id column="id" property="id"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_desc" property="productDesc"/>
+        <result column="product_type" property="productType"/>
+        <result column="organ_id" property="organId"/>
+        <result column="node_id" property="nodeId"/>
+        <result column="service_category" property="serviceCategory"/>
+        <result column="pricing_model" property="pricingModel"/>
+        <result column="price_range" property="priceRange"/>
+        <result column="capabilities" property="capabilities"/>
+        <result column="tech_stack" property="techStack"/>
+        <result column="api_endpoint" property="apiEndpoint"/>
+        <result column="documentation_url" property="documentationUrl"/>
+        <result column="demo_url" property="demoUrl"/>
+        <result column="status" property="status"/>
+        <result column="quality_level" property="qualityLevel"/>
+        <result column="sla" property="sla"/>
+        <result column="contact_person" property="contactPerson"/>
+        <result column="contact_info" property="contactInfo"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 插入数据产品供给 -->
+    <insert id="insertDataProductSupply" parameterType="com.primihub.biz.entity.data.po.DataProductSupply"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO data_product_supply (
+            product_name, product_desc, product_type, organ_id, node_id,
+            service_category, pricing_model, price_range, capabilities, tech_stack,
+            api_endpoint, documentation_url, demo_url, status, quality_level,
+            sla, contact_person, contact_info, created_by, remark
+        ) VALUES (
+            #{productName}, #{productDesc}, #{productType}, #{organId}, #{nodeId},
+            #{serviceCategory}, #{pricingModel}, #{priceRange}, #{capabilities}, #{techStack},
+            #{apiEndpoint}, #{documentationUrl}, #{demoUrl}, #{status}, #{qualityLevel},
+            #{sla}, #{contactPerson}, #{contactInfo}, #{createdBy}, #{remark}
+        )
+    </insert>
+
+    <!-- 更新数据产品供给 -->
+    <update id="updateDataProductSupply" parameterType="com.primihub.biz.entity.data.po.DataProductSupply">
+        UPDATE data_product_supply
+        <set>
+            <if test="productName != null">product_name = #{productName},</if>
+            <if test="productDesc != null">product_desc = #{productDesc},</if>
+            <if test="productType != null">product_type = #{productType},</if>
+            <if test="organId != null">organ_id = #{organId},</if>
+            <if test="nodeId != null">node_id = #{nodeId},</if>
+            <if test="serviceCategory != null">service_category = #{serviceCategory},</if>
+            <if test="pricingModel != null">pricing_model = #{pricingModel},</if>
+            <if test="priceRange != null">price_range = #{priceRange},</if>
+            <if test="capabilities != null">capabilities = #{capabilities},</if>
+            <if test="techStack != null">tech_stack = #{techStack},</if>
+            <if test="apiEndpoint != null">api_endpoint = #{apiEndpoint},</if>
+            <if test="documentationUrl != null">documentation_url = #{documentationUrl},</if>
+            <if test="demoUrl != null">demo_url = #{demoUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="qualityLevel != null">quality_level = #{qualityLevel},</if>
+            <if test="sla != null">sla = #{sla},</if>
+            <if test="contactPerson != null">contact_person = #{contactPerson},</if>
+            <if test="contactInfo != null">contact_info = #{contactInfo},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除数据产品供给 -->
+    <delete id="deleteDataProductSupply">
+        DELETE FROM data_product_supply WHERE id = #{id}
+    </delete>
+
+    <!-- 根据ID查询数据产品供给 -->
+    <select id="selectDataProductSupplyById" resultMap="DataProductSupplyMap">
+        SELECT * FROM data_product_supply WHERE id = #{id}
+    </select>
+
+    <!-- 查询数据产品供给列表 -->
+    <select id="selectDataProductSupplyList" resultMap="DataProductSupplyMap" parameterType="map">
+        SELECT * FROM data_product_supply
+        <where>
+            <if test="productName != null and productName != ''">
+                AND product_name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="serviceCategory != null and serviceCategory != ''">
+                AND service_category = #{serviceCategory}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+            <if test="nodeId != null">
+                AND node_id = #{nodeId}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="pageNo != null and pageSize != null">
+            LIMIT #{pageNo}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询数据产品供给总数 -->
+    <select id="selectDataProductSupplyCount" resultType="int" parameterType="map">
+        SELECT COUNT(*) FROM data_product_supply
+        <where>
+            <if test="productName != null and productName != ''">
+                AND product_name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="serviceCategory != null and serviceCategory != ''">
+                AND service_category = #{serviceCategory}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据机构ID查询 -->
+    <select id="selectDataProductSupplyByOrganId" resultMap="DataProductSupplyMap">
+        SELECT * FROM data_product_supply
+        WHERE organ_id = #{organId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 根据节点ID查询 -->
+    <select id="selectDataProductSupplyByNodeId" resultMap="DataProductSupplyMap">
+        SELECT * FROM data_product_supply
+        WHERE node_id = #{nodeId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsertDataProductSupply">
+        INSERT INTO data_product_supply (
+            product_name, product_desc, product_type, organ_id, node_id,
+            service_category, pricing_model, price_range, capabilities, tech_stack,
+            api_endpoint, documentation_url, demo_url, status, quality_level,
+            sla, contact_person, contact_info, created_by, remark
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.productName}, #{item.productDesc}, #{item.productType}, #{item.organId}, #{item.nodeId},
+                #{item.serviceCategory}, #{item.pricingModel}, #{item.priceRange}, #{item.capabilities}, #{item.techStack},
+                #{item.apiEndpoint}, #{item.documentationUrl}, #{item.demoUrl}, #{item.status}, #{item.qualityLevel},
+                #{item.sla}, #{item.contactPerson}, #{item.contactInfo}, #{item.createdBy}, #{item.remark}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

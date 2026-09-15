@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataProductDemandPrimarydbRepository">
+
+    <!-- 数据产品需求结果映射 -->
+    <resultMap id="DataProductDemandMap" type="com.primihub.biz.entity.data.po.DataProductDemand">
+        <id column="id" property="id"/>
+        <result column="demand_name" property="demandName"/>
+        <result column="demand_desc" property="demandDesc"/>
+        <result column="demand_type" property="demandType"/>
+        <result column="organ_id" property="organId"/>
+        <result column="contact_person" property="contactPerson"/>
+        <result column="contact_info" property="contactInfo"/>
+        <result column="budget" property="budget"/>
+        <result column="expected_delivery" property="expectedDelivery"/>
+        <result column="tech_requirements" property="techRequirements"/>
+        <result column="status" property="status"/>
+        <result column="priority" property="priority"/>
+        <result column="source" property="source"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 插入数据产品需求 -->
+    <insert id="insertDataProductDemand" parameterType="com.primihub.biz.entity.data.po.DataProductDemand"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO data_product_demand (
+            demand_name, demand_desc, demand_type, organ_id,
+            contact_person, contact_info, budget, expected_delivery,
+            tech_requirements, status, priority, source,
+            created_by, remark
+        ) VALUES (
+            #{demandName}, #{demandDesc}, #{demandType}, #{organId},
+            #{contactPerson}, #{contactInfo}, #{budget}, #{expectedDelivery},
+            #{techRequirements}, #{status}, #{priority}, #{source},
+            #{createdBy}, #{remark}
+        )
+    </insert>
+
+    <!-- 更新数据产品需求 -->
+    <update id="updateDataProductDemand" parameterType="com.primihub.biz.entity.data.po.DataProductDemand">
+        UPDATE data_product_demand
+        <set>
+            <if test="demandName != null">demand_name = #{demandName},</if>
+            <if test="demandDesc != null">demand_desc = #{demandDesc},</if>
+            <if test="demandType != null">demand_type = #{demandType},</if>
+            <if test="organId != null">organ_id = #{organId},</if>
+            <if test="contactPerson != null">contact_person = #{contactPerson},</if>
+            <if test="contactInfo != null">contact_info = #{contactInfo},</if>
+            <if test="budget != null">budget = #{budget},</if>
+            <if test="expectedDelivery != null">expected_delivery = #{expectedDelivery},</if>
+            <if test="techRequirements != null">tech_requirements = #{techRequirements},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="source != null">source = #{source},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除数据产品需求 -->
+    <delete id="deleteDataProductDemand">
+        DELETE FROM data_product_demand WHERE id = #{id}
+    </delete>
+
+    <!-- 根据ID查询数据产品需求 -->
+    <select id="selectDataProductDemandById" resultMap="DataProductDemandMap">
+        SELECT * FROM data_product_demand WHERE id = #{id}
+    </select>
+
+    <!-- 查询数据产品需求列表 -->
+    <select id="selectDataProductDemandList" resultMap="DataProductDemandMap" parameterType="map">
+        SELECT * FROM data_product_demand
+        <where>
+            <if test="demandName != null and demandName != ''">
+                AND demand_name LIKE CONCAT('%', #{demandName}, '%')
+            </if>
+            <if test="demandType != null and demandType != ''">
+                AND demand_type = #{demandType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+            <if test="priority != null and priority != ''">
+                AND priority = #{priority}
+            </if>
+        </where>
+        ORDER BY created_at DESC
+        <if test="pageNo != null and pageSize != null">
+            LIMIT #{pageNo}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 查询数据产品需求总数 -->
+    <select id="selectDataProductDemandCount" resultType="int" parameterType="map">
+        SELECT COUNT(*) FROM data_product_demand
+        <where>
+            <if test="demandName != null and demandName != ''">
+                AND demand_name LIKE CONCAT('%', #{demandName}, '%')
+            </if>
+            <if test="demandType != null and demandType != ''">
+                AND demand_type = #{demandType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="organId != null">
+                AND organ_id = #{organId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 批量插入 -->
+    <insert id="batchInsertDataProductDemand">
+        INSERT INTO data_product_demand (
+            demand_name, demand_desc, demand_type, organ_id,
+            contact_person, contact_info, budget, expected_delivery,
+            tech_requirements, status, priority, source,
+            created_by, remark
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.demandName}, #{item.demandDesc}, #{item.demandType}, #{item.organId},
+                #{item.contactPerson}, #{item.contactInfo}, #{item.budget}, #{item.expectedDelivery},
+                #{item.techRequirements}, #{item.status}, #{item.priority}, #{item.source},
+                #{item.createdBy}, #{item.remark}
+            )
+        </foreach>
+    </insert>
+
+</mapper>
