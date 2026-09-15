@@ -1,10 +1,10 @@
 <template>
   <div class="container">
     <el-row :gutter="16" class="stat-cards">
-      <el-col :span="6"><div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">产品总数</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num done">{{ stats.online }}</div><div class="stat-label">上架</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num warn">{{ stats.maintenance }}</div><div class="stat-label">维护中</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num">{{ stats.offline }}</div><div class="stat-label">下架</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: !query.status }" @click="filterByStatus('')"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">产品总数</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '上架' }" @click="filterByStatus('上架')"><div class="stat-num done">{{ stats.online }}</div><div class="stat-label">上架</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '维护中' }" @click="filterByStatus('维护中')"><div class="stat-num warn">{{ stats.maintenance }}</div><div class="stat-label">维护中</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '下架' }" @click="filterByStatus('下架')"><div class="stat-num">{{ stats.offline }}</div><div class="stat-label">下架</div></div></el-col>
     </el-row>
     <div class="search-area">
       <el-button type="primary" class="upload-button" @click="handleCreate">
@@ -378,6 +378,11 @@ export default {
       this.pageNo = 1
       this.loadSupplyList()
     },
+    filterByStatus(s) {
+      this.query.status = s
+      this.pageNo = 1
+      this.loadSupplyList()
+    },
     reset() {
       this.query = {
         productName: '',
@@ -457,6 +462,16 @@ export default {
   padding: 18px 20px;
   text-align: center;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.stat-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+.stat-card.active {
+  border-color: #409eff;
+  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.25);
 }
 .stat-card .stat-num {
   font-size: 28px;

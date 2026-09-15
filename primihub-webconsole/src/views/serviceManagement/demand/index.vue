@@ -1,10 +1,10 @@
 <template>
   <div class="container">
     <el-row :gutter="16" class="stat-cards">
-      <el-col :span="6"><div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">需求总数</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num warn">{{ stats.pending }}</div><div class="stat-label">待处理</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num prog">{{ stats.inProgress }}</div><div class="stat-label">进行中</div></div></el-col>
-      <el-col :span="6"><div class="stat-card"><div class="stat-num done">{{ stats.completed }}</div><div class="stat-label">已完成</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: !query.status }" @click="filterByStatus('')"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">需求总数</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '待处理' }" @click="filterByStatus('待处理')"><div class="stat-num warn">{{ stats.pending }}</div><div class="stat-label">待处理</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '进行中' }" @click="filterByStatus('进行中')"><div class="stat-num prog">{{ stats.inProgress }}</div><div class="stat-label">进行中</div></div></el-col>
+      <el-col :span="6"><div class="stat-card" :class="{ active: query.status === '已完成' }" @click="filterByStatus('已完成')"><div class="stat-num done">{{ stats.completed }}</div><div class="stat-label">已完成</div></div></el-col>
     </el-row>
     <div class="search-area">
       <el-button type="primary" class="upload-button" @click="handleCreate">
@@ -334,6 +334,11 @@ export default {
       this.pageNo = 1
       this.loadDemandList()
     },
+    filterByStatus(s) {
+      this.query.status = s
+      this.pageNo = 1
+      this.loadDemandList()
+    },
     reset() {
       this.query = {
         demandName: '',
@@ -419,6 +424,16 @@ export default {
   padding: 18px 20px;
   text-align: center;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.stat-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+.stat-card.active {
+  border-color: #409eff;
+  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.25);
 }
 .stat-card .stat-num {
   font-size: 28px;
