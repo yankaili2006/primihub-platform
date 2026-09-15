@@ -89,6 +89,35 @@
       />
     </div>
 
+    <!-- 详情对话框 -->
+    <el-dialog title="需求详情" :visible.sync="detailVisible" width="760px">
+      <el-descriptions v-if="detailRow" :column="2" border size="medium">
+        <el-descriptions-item label="需求名称" :span="2">{{ detailRow.demandName }}</el-descriptions-item>
+        <el-descriptions-item label="需求类型"><el-tag size="small">{{ detailRow.demandType || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="状态"><el-tag size="small" :type="statusTagType(detailRow.status)">{{ detailRow.status || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="优先级"><el-tag size="small" :type="priorityTagType(detailRow.priority)">{{ detailRow.priority || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="预算">{{ detailRow.budget || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="期望交付">{{ fmtDate(detailRow.expectedDelivery) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ fmtDateTime(detailRow.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item label="联系人">{{ detailRow.contactPerson || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="联系方式">{{ detailRow.contactInfo || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="来源" :span="2">{{ detailRow.source || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="需求描述" :span="2"><span class="pre-wrap">{{ detailRow.demandDesc || '—' }}</span></el-descriptions-item>
+        <el-descriptions-item label="技术要求" :span="2"><span class="pre-wrap">{{ detailRow.techRequirements || '—' }}</span></el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">
+          <template v-if="extractUrls(detailRow.remark).length">
+            <div v-if="stripUrls(detailRow.remark)" class="pre-wrap">{{ stripUrls(detailRow.remark) }}</div>
+            <div v-for="(u, i) in extractUrls(detailRow.remark)" :key="i"><el-link type="primary" :href="u" target="_blank">{{ u }}</el-link></div>
+          </template>
+          <span v-else class="pre-wrap">{{ detailRow.remark || '—' }}</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="editFromDetail">编辑</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="800px" @close="handleDialogClose">
       <el-form ref="demandForm" :model="formData" :rules="formRules" :disabled="dialogMode === 'view'" label-width="120px">
@@ -170,6 +199,8 @@ export default {
       pageSize: 10,
       pageCount: 0,
       total: 0,
+      detailVisible: false,
+      detailRow: null,
       dialogVisible: false,
       dialogTitle: '',
       dialogMode: 'create',
@@ -270,6 +301,36 @@ export default {
     fmtTime(row, column, value) {
       return value ? parseTime(new Date(value)) : ''
     },
+    statusTagType(s) {
+      if (s === '已完成' || s === '上架') return 'success'
+      if (s === '进行中' || s === '维护中') return 'warning'
+      if (s === '已关闭' || s === '下架') return 'info'
+      return ''
+    },
+    priorityTagType(p) {
+      return p === '紧急' ? 'danger' : p === '高' ? 'warning' : ''
+    },
+    qualityTagType(q) {
+      return q === '高级' ? 'danger' : q === '标准' ? 'warning' : ''
+    },
+    fmtDate(v) {
+      return v ? parseTime(new Date(v), '{y}-{m}-{d}') : '—'
+    },
+    fmtDateTime(v) {
+      return v ? parseTime(new Date(v)) : '—'
+    },
+    extractUrls(s) {
+      if (!s) return []
+      return String(s).match(/https?:\/\/[^\s;，,、（）()]+/g) || []
+    },
+    stripUrls(s) {
+      if (!s) return ''
+      return String(s).replace(/https?:\/\/[^\s;，,、（）()]+/g, '').replace(/链接[:：]\s*/g, '').replace(/\s*;\s*/g, ' ').trim()
+    },
+    editFromDetail() {
+      this.detailVisible = false
+      this.handleEdit(this.detailRow)
+    },
     search() {
       this.pageNo = 1
       this.loadDemandList()
@@ -292,10 +353,8 @@ export default {
       this.dialogVisible = true
     },
     handleView(row) {
-      this.dialogMode = 'view'
-      this.dialogTitle = '查看需求'
-      this.formData = this.normalizeRow(row)
-      this.dialogVisible = true
+      this.detailRow = this.normalizeRow(row)
+      this.detailVisible = true
     },
     normalizeRow(row) {
       const data = { ...row }
@@ -392,5 +451,10 @@ export default {
   background: white;
   padding: 20px;
   border-radius: 4px;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

@@ -89,6 +89,37 @@
       />
     </div>
 
+    <!-- 详情对话框 -->
+    <el-dialog title="产品详情" :visible.sync="detailVisible" width="820px">
+      <el-descriptions v-if="detailRow" :column="2" border size="medium">
+        <el-descriptions-item label="产品名称" :span="2">{{ detailRow.productName }}</el-descriptions-item>
+        <el-descriptions-item label="服务分类"><el-tag size="small">{{ detailRow.serviceCategory || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="产品类型">{{ detailRow.productType || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="状态"><el-tag size="small" :type="statusTagType(detailRow.status)">{{ detailRow.status || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="质量等级"><el-tag size="small" :type="qualityTagType(detailRow.qualityLevel)">{{ detailRow.qualityLevel || '—' }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="定价模式">{{ detailRow.pricingModel || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="价格区间">{{ detailRow.priceRange || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="联系人">{{ detailRow.contactPerson || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="联系方式">{{ detailRow.contactInfo || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间" :span="2">{{ fmtDateTime(detailRow.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item label="产品描述" :span="2"><span class="pre-wrap">{{ detailRow.productDesc || '—' }}</span></el-descriptions-item>
+        <el-descriptions-item label="能力说明" :span="2"><span class="pre-wrap">{{ detailRow.capabilities || '—' }}</span></el-descriptions-item>
+        <el-descriptions-item label="API端点" :span="2"><el-link v-if="detailRow.apiEndpoint" type="primary" :href="detailRow.apiEndpoint" target="_blank">{{ detailRow.apiEndpoint }}</el-link><span v-else>—</span></el-descriptions-item>
+        <el-descriptions-item label="文档链接" :span="2"><el-link v-if="detailRow.documentationUrl" type="primary" :href="detailRow.documentationUrl" target="_blank">{{ detailRow.documentationUrl }}</el-link><span v-else>—</span></el-descriptions-item>
+        <el-descriptions-item label="备注" :span="2">
+          <template v-if="extractUrls(detailRow.remark).length">
+            <div v-if="stripUrls(detailRow.remark)" class="pre-wrap">{{ stripUrls(detailRow.remark) }}</div>
+            <div v-for="(u, i) in extractUrls(detailRow.remark)" :key="i"><el-link type="primary" :href="u" target="_blank">{{ u }}</el-link></div>
+          </template>
+          <span v-else class="pre-wrap">{{ detailRow.remark || '—' }}</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="detailVisible = false">关闭</el-button>
+        <el-button type="primary" @click="editFromDetail">编辑</el-button>
+      </div>
+    </el-dialog>
+
     <!-- 新增/编辑对话框 -->
     <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="900px" @close="handleDialogClose">
       <el-form ref="supplyForm" :model="formData" :rules="formRules" :disabled="dialogMode === 'view'" label-width="120px">
@@ -209,6 +240,8 @@ export default {
       pageSize: 10,
       pageCount: 0,
       total: 0,
+      detailVisible: false,
+      detailRow: null,
       dialogVisible: false,
       dialogTitle: '',
       dialogMode: 'create',
@@ -312,6 +345,36 @@ export default {
     fmtTime(row, column, value) {
       return value ? parseTime(new Date(value)) : ''
     },
+    statusTagType(s) {
+      if (s === '已完成' || s === '上架') return 'success'
+      if (s === '进行中' || s === '维护中') return 'warning'
+      if (s === '已关闭' || s === '下架') return 'info'
+      return ''
+    },
+    priorityTagType(p) {
+      return p === '紧急' ? 'danger' : p === '高' ? 'warning' : ''
+    },
+    qualityTagType(q) {
+      return q === '高级' ? 'danger' : q === '标准' ? 'warning' : ''
+    },
+    fmtDate(v) {
+      return v ? parseTime(new Date(v), '{y}-{m}-{d}') : '—'
+    },
+    fmtDateTime(v) {
+      return v ? parseTime(new Date(v)) : '—'
+    },
+    extractUrls(s) {
+      if (!s) return []
+      return String(s).match(/https?:\/\/[^\s;，,、（）()]+/g) || []
+    },
+    stripUrls(s) {
+      if (!s) return ''
+      return String(s).replace(/https?:\/\/[^\s;，,、（）()]+/g, '').replace(/链接[:：]\s*/g, '').replace(/\s*;\s*/g, ' ').trim()
+    },
+    editFromDetail() {
+      this.detailVisible = false
+      this.handleEdit(this.detailRow)
+    },
     search() {
       this.pageNo = 1
       this.loadSupplyList()
@@ -334,10 +397,8 @@ export default {
       this.dialogVisible = true
     },
     handleView(row) {
-      this.dialogMode = 'view'
-      this.dialogTitle = '查看产品'
-      this.formData = { ...row }
-      this.dialogVisible = true
+      this.detailRow = { ...row }
+      this.detailVisible = true
     },
     handleEdit(row) {
       this.dialogMode = 'edit'
@@ -428,5 +489,10 @@ export default {
   background: white;
   padding: 20px;
   border-radius: 4px;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
