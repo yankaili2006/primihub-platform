@@ -16,14 +16,8 @@
           <el-input v-model="query.demandName" size="small" placeholder="请输入需求名称" />
         </el-form-item>
         <el-form-item label="需求类型">
-          <el-select v-model="query.demandType" size="small" placeholder="请选择" clearable>
-            <el-option label="数据采集" value="数据采集" />
-            <el-option label="数据清洗" value="数据清洗" />
-            <el-option label="数据标注" value="数据标注" />
-            <el-option label="数据分析" value="数据分析" />
-            <el-option label="数据可视化" value="数据可视化" />
-            <el-option label="API服务" value="API服务" />
-            <el-option label="其他" value="其他" />
+          <el-select v-model="query.demandType" size="small" placeholder="请选择" clearable filterable>
+            <el-option v-for="t in typeOptions" :key="t" :label="t" :value="t" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -128,14 +122,8 @@
           <el-input v-model="formData.demandDesc" type="textarea" :rows="3" placeholder="请输入需求描述" />
         </el-form-item>
         <el-form-item label="需求类型" prop="demandType">
-          <el-select v-model="formData.demandType" placeholder="请选择需求类型">
-            <el-option label="数据采集" value="数据采集" />
-            <el-option label="数据清洗" value="数据清洗" />
-            <el-option label="数据标注" value="数据标注" />
-            <el-option label="数据分析" value="数据分析" />
-            <el-option label="数据可视化" value="数据可视化" />
-            <el-option label="API服务" value="API服务" />
-            <el-option label="其他" value="其他" />
+          <el-select v-model="formData.demandType" placeholder="请选择需求类型" filterable allow-create default-first-option>
+            <el-option v-for="t in typeOptions" :key="t" :label="t" :value="t" />
           </el-select>
         </el-form-item>
         <el-form-item label="预算" prop="budget">
@@ -194,6 +182,7 @@ export default {
         status: ''
       },
       stats: { total: 0, pending: 0, inProgress: 0, completed: 0 },
+      typeOptions: [],
       demandList: [],
       pageNo: 1,
       pageSize: 10,
@@ -215,6 +204,7 @@ export default {
   mounted() {
     this.loadDemandList()
     this.loadStats()
+    this.loadFilterOptions()
   },
   methods: {
     getDefaultFormData() {
@@ -260,6 +250,15 @@ export default {
         const res = await getDemandStats()
         this.stats = { ...this.stats, ...((res && res.result) || {}) }
       } catch (e) { /* ignore */ }
+    },
+    async loadFilterOptions() {
+      const set = new Set(['数据采集', '数据清洗', '数据标注', '数据分析', '数据可视化', 'API服务', '其他'])
+      try {
+        const res = await getDemandList({ pageNum: 1, pageSize: 500 })
+        const list = ((res && res.result) || {}).list || []
+        list.forEach(r => { if (r.demandType) set.add(r.demandType) })
+      } catch (e) { /* ignore */ }
+      this.typeOptions = Array.from(set)
     },
     async exportCsv() {
       try {

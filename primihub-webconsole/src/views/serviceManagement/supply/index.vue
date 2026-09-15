@@ -16,14 +16,8 @@
           <el-input v-model="query.productName" size="small" placeholder="请输入产品名称" />
         </el-form-item>
         <el-form-item label="服务分类">
-          <el-select v-model="query.serviceCategory" size="small" placeholder="请选择" clearable>
-            <el-option label="数据采集" value="数据采集" />
-            <el-option label="数据清洗" value="数据清洗" />
-            <el-option label="数据标注" value="数据标注" />
-            <el-option label="数据分析" value="数据分析" />
-            <el-option label="数据可视化" value="数据可视化" />
-            <el-option label="API服务" value="API服务" />
-            <el-option label="其他" value="其他" />
+          <el-select v-model="query.serviceCategory" size="small" placeholder="请选择" clearable filterable>
+            <el-option v-for="t in typeOptions" :key="t" :label="t" :value="t" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -141,14 +135,8 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="服务分类" prop="serviceCategory">
-              <el-select v-model="formData.serviceCategory" placeholder="请选择服务分类" style="width: 100%">
-                <el-option label="数据采集" value="数据采集" />
-                <el-option label="数据清洗" value="数据清洗" />
-                <el-option label="数据标注" value="数据标注" />
-                <el-option label="数据分析" value="数据分析" />
-                <el-option label="数据可视化" value="数据可视化" />
-                <el-option label="API服务" value="API服务" />
-                <el-option label="其他" value="其他" />
+              <el-select v-model="formData.serviceCategory" placeholder="请选择服务分类" style="width: 100%" filterable allow-create default-first-option>
+                <el-option v-for="t in typeOptions" :key="t" :label="t" :value="t" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -235,6 +223,7 @@ export default {
         status: ''
       },
       stats: { total: 0, online: 0, maintenance: 0, offline: 0 },
+      typeOptions: [],
       supplyList: [],
       pageNo: 1,
       pageSize: 10,
@@ -256,6 +245,7 @@ export default {
   mounted() {
     this.loadSupplyList()
     this.loadStats()
+    this.loadFilterOptions()
   },
   methods: {
     getDefaultFormData() {
@@ -304,6 +294,15 @@ export default {
         const res = await getSupplyStats()
         this.stats = { ...this.stats, ...((res && res.result) || {}) }
       } catch (e) { /* ignore */ }
+    },
+    async loadFilterOptions() {
+      const set = new Set(['数据采集', '数据清洗', '数据标注', '数据分析', '数据可视化', 'API服务', '其他'])
+      try {
+        const res = await getSupplyList({ pageNum: 1, pageSize: 500 })
+        const list = ((res && res.result) || {}).list || []
+        list.forEach(r => { if (r.serviceCategory) set.add(r.serviceCategory) })
+      } catch (e) { /* ignore */ }
+      this.typeOptions = Array.from(set)
     },
     async exportCsv() {
       try {
