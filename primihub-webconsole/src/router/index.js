@@ -1514,6 +1514,21 @@ export const asyncRoutes = [
         name: 'OrganManage',
         component: () => import('@/views/setting/organ'),
         meta: { title: '机构管理' }
+      },
+      {
+        // 从原一级菜单「租户管理」下移至「系统设置」二级菜单；用绝对路径保持 /tenant/list
+        // 不变，避免既有深链/activeMenu 失效。侧栏层级由 router 嵌套决定(见 permission.js getRoutes)。
+        path: '/tenant/list',
+        name: 'TenantList',
+        component: () => import('@/views/tenant/list'),
+        meta: { title: '租户列表', icon: 'el-icon-office-building' }
+      },
+      {
+        // 从原一级菜单「监控管理」下移至「系统设置」二级菜单；绝对路径保持 /monitor/index。
+        path: '/monitor/index',
+        name: 'MonitorIndex',
+        component: () => import('@/views/monitor/index'),
+        meta: { title: '监控管理', icon: 'el-icon-data-line' }
       }
     ]
   },
@@ -1551,12 +1566,6 @@ export const asyncRoutes = [
     redirect: '/tenant/list',
     meta: { title: '租户管理', icon: 'el-icon-office-building' },
     children: [
-      {
-        path: 'list',
-        name: 'TenantList',
-        component: () => import('@/views/tenant/list'),
-        meta: { title: '租户列表' }
-      },
       {
         path: 'resource/:id',
         name: 'TenantResource',
@@ -1627,12 +1636,6 @@ export const asyncRoutes = [
     redirect: '/monitor/index',
     meta: { title: '监控管理', icon: 'el-icon-data-line' },
     children: [
-      {
-        path: 'index',
-        name: 'MonitorIndex',
-        component: () => import('@/views/monitor/index'),
-        meta: { title: '监控管理', breadcrumb: false }
-      },
       {
         path: 'os',
         name: 'MonitorOs',
