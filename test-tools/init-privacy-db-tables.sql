@@ -760,7 +760,7 @@ CREATE TABLE `data_requirement_match` (
   `resource_id` varchar(64) DEFAULT NULL,
   `match_score` decimal(5,2) DEFAULT NULL,
   `match_status` int(11) DEFAULT '0',
-  `match_type` int(11) DEFAULT NULL,
+  `match_type` varchar(32) DEFAULT NULL COMMENT '匹配类型(自动匹配/手动匹配)',
   `match_details` text,
   `confirm_user_id` bigint(20) DEFAULT NULL,
   `confirm_user_name` varchar(64) DEFAULT NULL,

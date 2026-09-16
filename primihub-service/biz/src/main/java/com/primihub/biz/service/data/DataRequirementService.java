@@ -337,6 +337,10 @@ public class DataRequirementService {
             // 3. 查询所有可用资源
             Map<String, Object> resourceParams = new HashMap<>();
             resourceParams.put("isDel", 0);
+            // queryDataResource mapper 无条件带 LIMIT #{offset},#{pageSize}，撮合需查全量资源，
+            // 必须显式给分页参数，否则渲染成 LIMIT null,null 触发 SQL 语法错误（撮合失败根因）
+            resourceParams.put("offset", 0);
+            resourceParams.put("pageSize", 100000);
             List<DataResource> resources = dataResourceRepository.queryDataResource(resourceParams);
 
             // 4. 删除旧的匹配记录
@@ -466,9 +470,10 @@ public class DataRequirementService {
                 return BigDecimal.ZERO;
             }
 
-            // 解析JSON字段列表
-            JSONArray requiredFields = JSON.parseArray(requirementFieldsJson);
-            JSONArray resourceFields = JSON.parseArray(resourceFieldsJson);
+            // 解析字段列表（兼容两种存储：JSON 数组 ["a","b"] 与逗号/顿号分隔的纯文本 a,b、a；
+            // data_resource.file_handle_field 实际以逗号分隔明文入库，直接 JSON.parseArray 会抛异常导致字段分永远为 0）
+            List<String> requiredFields = parseFieldNames(requirementFieldsJson);
+            List<String> resourceFields = parseFieldNames(resourceFieldsJson);
 
             if (requiredFields.isEmpty()) {
                 return new BigDecimal(50);
@@ -476,10 +481,8 @@ public class DataRequirementService {
 
             // 计算匹配字段数量
             int matchCount = 0;
-            for (int i = 0; i < requiredFields.size(); i++) {
-                String requiredField = requiredFields.getString(i);
-                for (int j = 0; j < resourceFields.size(); j++) {
-                    String resourceField = resourceFields.getString(j);
+            for (String requiredField : requiredFields) {
+                for (String resourceField : resourceFields) {
                     if (requiredField.equalsIgnoreCase(resourceField)) {
                         matchCount++;
                         break;
@@ -497,6 +500,41 @@ public class DataRequirementService {
             log.error("计算字段匹配得分失败", e);
             return BigDecimal.ZERO;
         }
+    }
+
+    /**
+     * 兼容解析字段名列表：优先按 JSON 数组解析，失败则按逗号/顿号/分号/空白分隔的纯文本切分。
+     * data_resource.file_handle_field 以逗号分隔明文入库，requirement.data_fields 前端存 JSON 数组。
+     */
+    private List<String> parseFieldNames(String raw) {
+        List<String> result = new ArrayList<>();
+        if (raw == null) {
+            return result;
+        }
+        String text = raw.trim();
+        if (text.isEmpty()) {
+            return result;
+        }
+        if (text.startsWith("[")) {
+            try {
+                JSONArray arr = JSON.parseArray(text);
+                for (int i = 0; i < arr.size(); i++) {
+                    String v = arr.getString(i);
+                    if (v != null && !v.trim().isEmpty()) {
+                        result.add(v.trim());
+                    }
+                }
+                return result;
+            } catch (Exception ignore) {
+                // 非合法 JSON，落到分隔符切分
+            }
+        }
+        for (String part : text.split("[,，、;；\\s]+")) {
+            if (!part.trim().isEmpty()) {
+                result.add(part.trim());
+            }
+        }
+        return result;
     }
 
     /**

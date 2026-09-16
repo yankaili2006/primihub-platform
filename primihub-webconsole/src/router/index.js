@@ -1417,8 +1417,9 @@ export const asyncRoutes = [
       {
         path: 'requirementMatch',
         name: 'DataRequirementMatch',
+        hidden: true,
         component: () => import('@/views/resource/requirementMatch'),
-        meta: { title: '匹配数据需求所需数据' }
+        meta: { title: '匹配数据需求所需数据', activeMenu: '/resource/requirementList' }
       },
       {
         path: 'sharedDatasetList',
