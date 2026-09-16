@@ -243,16 +243,26 @@ export default {
     handleExport() {
       this.$message.info('正在导出...')
       const params = {
-        keyword: this.query.keyword || '',
-        startTime: this.query.createDate && this.query.createDate[0] || '',
-        endTime: this.query.createDate && this.query.createDate[1] || ''
+        accessIp: this.searchForm.accessIp,
+        accessUrl: this.searchForm.accessUrl,
+        accessResult: this.searchForm.accessResult,
+        startTime: this.dateRange && this.dateRange.length > 0 ? this.dateRange[0] : '',
+        endTime: this.dateRange && this.dateRange.length > 1 ? this.dateRange[1] : '',
+        pageNum: 1,
+        pageSize: 99999
       }
-      getWhitelistAccessLogPage({ ...params, pageNo: 1, pageSize: 99999 }).then(res => {
+      getWhitelistAccessLogPage(params).then(res => {
         const list = (res && res.result && (res.result.list || res.result.data)) || []
-        const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json;charset=utf-8' })
+        const headers = ['访问IP', '访问URL', '请求方法', '访问结果', '失败原因', '用户ID', '响应码', '响应时间(ms)', '访问时间']
+        const keys = ['accessIp', 'accessUrl', 'requestMethod', 'accessResult', 'failReason', 'userId', 'responseCode', 'responseTime', 'accessTime']
+        const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'
+        const rows = list.map(item => keys.map(k => esc(item[k])).join(','))
+        const csv = '\uFEFF' + [headers.map(esc).join(',')].concat(rows).join('\n')
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
-        link.href = url; link.download = `白名单访问日志_${new Date().getTime()}.json`
+        link.href = url
+        link.download = `白名单访问日志_${new Date().getTime()}.csv`
         link.click(); window.URL.revokeObjectURL(url)
         this.$message.success(`导出成功，共 ${list.length} 条记录`)
       }).catch(() => this.$message.error('导出失败'))
