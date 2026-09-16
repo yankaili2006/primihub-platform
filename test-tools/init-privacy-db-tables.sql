@@ -736,7 +736,7 @@ CREATE TABLE `data_requirement` (
   `requirement_code` varchar(64) DEFAULT NULL,
   `requirement_name` varchar(255) DEFAULT NULL,
   `requirement_desc` text,
-  `requirement_type` int(11) DEFAULT NULL,
+  `requirement_type` varchar(32) DEFAULT NULL COMMENT '需求类型',
   `data_fields` text,
   `data_volume` bigint(20) DEFAULT NULL,
   `data_format` varchar(64) DEFAULT NULL,
