@@ -692,26 +692,42 @@ CREATE TABLE `tenant` (
 -- Table: tenant_isolation_config
 CREATE TABLE `tenant_isolation_config` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `tenant_id` bigint(20) DEFAULT NULL,
-  `config_type` varchar(64) DEFAULT NULL,
-  `config_value` text,
+  `tenant_id` bigint(20) NOT NULL,
+  `cpu_quota` int(11) DEFAULT NULL,
+  `memory_quota` bigint(20) DEFAULT NULL,
+  `storage_quota` bigint(20) DEFAULT NULL,
+  `dataset_limit` int(11) DEFAULT NULL,
+  `model_limit` int(11) DEFAULT NULL,
+  `concurrent_tasks` int(11) DEFAULT NULL,
+  `network_isolation` tinyint(4) DEFAULT '0',
+  `namespace` varchar(128) DEFAULT NULL,
   `is_del` tinyint(4) DEFAULT '0',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 
 -- Table: tenant_resource_allocation
 CREATE TABLE `tenant_resource_allocation` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `tenant_id` bigint(20) DEFAULT NULL,
+  `tenant_id` bigint(20) NOT NULL,
+  `resource_id` varchar(64) DEFAULT NULL,
+  `resource_name` varchar(255) DEFAULT NULL,
   `resource_type` varchar(64) DEFAULT NULL,
-  `resource_quota` int(11) DEFAULT '0',
-  `resource_used` int(11) DEFAULT '0',
+  `permission_level` varchar(32) DEFAULT NULL,
+  `quota_amount` bigint(20) DEFAULT '0',
+  `quota_unit` varchar(32) DEFAULT NULL,
+  `used_amount` bigint(20) DEFAULT '0',
+  `status` int(11) DEFAULT '1',
+  `effective_time` datetime DEFAULT NULL,
+  `expiry_time` datetime DEFAULT NULL,
+  `remark` varchar(500) DEFAULT NULL,
   `is_del` tinyint(4) DEFAULT '0',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 
 -- Table: data_requirement
