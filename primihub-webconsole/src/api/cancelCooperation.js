@@ -16,12 +16,12 @@ export function findCancelCooperationHistory(params) {
 /**
  * 批量取消合作
  */
-export function batchCancelCooperation(ids, reason) {
+export function batchCancelCooperation(ids, reason, operatorName) {
   return request({
     url: '/node/cooperation/batchCancel',
     method: 'post',
     data: ids,
-    params: { reason }
+    params: { reason, operatorName }
   })
 }
 

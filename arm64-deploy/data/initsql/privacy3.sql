@@ -5884,3 +5884,53 @@ UNLOCK TABLES;
 -- Dump completed on 2026-07-16  2:20:40
 SET FOREIGN_KEY_CHECKS=1;
 GRANT ALL ON *.* TO 'primihub'@'%';
+
+-- CancelCooperation backend gap fix (2026-09-17): the 取消合作记录 (cancel history) tab had no
+-- backing table — cancelCooperation() only soft-deleted the party, recording nothing. This table
+-- stores a snapshot per cancellation so /node/cooperation/findCancelHistory returns real rows.
+-- Idempotent (CREATE TABLE IF NOT EXISTS). Run per privacy0/1/2. Canonical copy also added to
+-- arm64-deploy/data/initsql/privacy{1,2,3}.sql.
+CREATE TABLE IF NOT EXISTS `node_cooperation_cancel_record` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `cooperation_id` bigint(20) DEFAULT NULL COMMENT '原合作方记录ID',
+  `organ_id` varchar(64) DEFAULT NULL COMMENT '合作方节点ID',
+  `organ_name` varchar(255) DEFAULT NULL COMMENT '合作方节点名称',
+  `organ_gateway` varchar(255) DEFAULT NULL COMMENT '合作方网关地址',
+  `cooperation_type` varchar(32) DEFAULT NULL COMMENT '原合作类型',
+  `start_date` datetime DEFAULT NULL COMMENT '原合作开始时间',
+  `end_date` datetime DEFAULT NULL COMMENT '原合作结束时间',
+  `cancel_reason` varchar(1000) DEFAULT NULL COMMENT '取消原因',
+  `cooperation_duration` varchar(64) DEFAULT NULL COMMENT '合作时长',
+  `cancel_user_id` bigint(20) DEFAULT NULL COMMENT '操作人ID',
+  `cancel_user_name` varchar(64) DEFAULT NULL COMMENT '操作人',
+  `cancel_date` datetime DEFAULT current_timestamp() COMMENT '取消时间',
+  `is_del` tinyint(4) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_organ` (`organ_id`),
+  KEY `idx_cancel_date` (`cancel_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='节点取消合作历史记录';
+
+-- ===== CancelCooperation menu binding (2026-09-17) =====
+-- Surface the 取消合作 (CancelCooperation) menu under 系统设置 (Setting, auth_id=1029).
+-- Mirrors 机构管理/OrganManage (9827): URL-style full_path, auth_type=2, r_auth_id=0.
+-- Backend gap (4 /node/cooperation/* endpoints + cancel-history table) delivered in the same MR;
+-- the page was previously unreachable (route existed, no menu binding). Idempotent — safe to re-run.
+-- Run per privacy0/1/2, then flush redis sys_auth:bfs_list and re-login.
+
+INSERT INTO sys_auth
+  (auth_id, auth_name, auth_code, auth_type, p_auth_id, r_auth_id, full_path, auth_url, data_auth_code, auth_index, auth_depth, is_show, is_editable, is_del)
+VALUES
+  (9829, '取消合作', 'CancelCooperation', 2, 1029, 0, '/setting/cancelCooperation', '', '', 38, 1, 1, 1, 0)
+ON DUPLICATE KEY UPDATE
+  auth_name=VALUES(auth_name), auth_code=VALUES(auth_code), auth_type=VALUES(auth_type),
+  p_auth_id=VALUES(p_auth_id), r_auth_id=VALUES(r_auth_id), full_path=VALUES(full_path),
+  auth_url=VALUES(auth_url), data_auth_code=VALUES(data_auth_code), auth_index=VALUES(auth_index),
+  auth_depth=VALUES(auth_depth), is_show=VALUES(is_show), is_editable=VALUES(is_editable), is_del=0;
+
+-- Grant to superadmin role (role_id=1). Guarded so a re-run inserts nothing.
+INSERT INTO sys_ra (id, role_id, auth_id, is_del)
+SELECT nid, 1, 9829, 0 FROM (
+  SELECT COALESCE(MAX(id),0)+1 AS nid,
+         SUM(CASE WHEN role_id=1 AND auth_id=9829 AND is_del=0 THEN 1 ELSE 0 END) AS existing
+  FROM sys_ra
+) t WHERE t.existing = 0;

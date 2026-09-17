@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+
 import java.util.Date;
 import java.util.List;
 
@@ -168,8 +170,53 @@ public class NodeEnhancedController {
 
     @ApiOperation(value = "取消合作关系")
     @PostMapping("/cooperation/cancel")
-    public BaseResultEntity cancelCooperation(@RequestParam Long id, @RequestParam(required = false) String reason) {
-        return cooperationService.cancelCooperation(id, reason);
+    public BaseResultEntity cancelCooperation(@RequestParam Long id, @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String operatorName) {
+        return cooperationService.cancelCooperation(id, reason, operatorName);
+    }
+
+    @ApiOperation(value = "查询取消合作历史记录分页列表")
+    @GetMapping("/cooperation/findCancelHistory")
+    public BaseResultEntity findCancelHistory(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) List<String> dateRange,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        if ((startTime == null || startTime.isEmpty()) && dateRange != null && dateRange.size() == 2) {
+            startTime = dateRange.get(0);
+            endTime = dateRange.get(1);
+        }
+        return cooperationService.findCancelHistory(keyword, startTime, endTime, pageNum, pageSize);
+    }
+
+    @ApiOperation(value = "批量取消合作")
+    @PostMapping("/cooperation/batchCancel")
+    public BaseResultEntity batchCancel(@RequestBody List<Long> ids,
+            @RequestParam(required = false) String reason,
+            @RequestParam(required = false) String operatorName) {
+        return cooperationService.batchCancel(ids, reason, operatorName);
+    }
+
+    @ApiOperation(value = "根据ID获取取消记录详情")
+    @GetMapping("/cooperation/getCancelRecordById")
+    public BaseResultEntity getCancelRecordById(@RequestParam Long id) {
+        return cooperationService.getCancelRecordById(id);
+    }
+
+    @ApiOperation(value = "导出取消合作记录")
+    @GetMapping("/cooperation/exportCancelRecords")
+    public void exportCancelRecords(HttpServletResponse response,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime,
+            @RequestParam(required = false) List<String> dateRange) {
+        if ((startTime == null || startTime.isEmpty()) && dateRange != null && dateRange.size() == 2) {
+            startTime = dateRange.get(0);
+            endTime = dateRange.get(1);
+        }
+        cooperationService.exportCancelRecords(response, keyword, startTime, endTime);
     }
 
     @ApiOperation(value = "终止合作")

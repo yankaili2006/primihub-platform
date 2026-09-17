@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.sys.NodeCooperationCancelRecordPrimarydbRepository">
+
+    <resultMap id="BaseResultMap" type="com.primihub.biz.entity.sys.po.NodeCooperationCancelRecord">
+        <id column="id" property="id"/>
+        <result column="cooperation_id" property="cooperationId"/>
+        <result column="organ_id" property="organId"/>
+        <result column="organ_name" property="organName"/>
+        <result column="organ_gateway" property="organGateway"/>
+        <result column="cooperation_type" property="cooperationType"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="cooperation_duration" property="cooperationDuration"/>
+        <result column="cancel_user_id" property="cancelUserId"/>
+        <result column="cancel_user_name" property="cancelUserName"/>
+        <result column="cancel_date" property="cancelDate"/>
+        <result column="is_del" property="isDel"/>
+    </resultMap>
+
+    <insert id="insertCancelRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO node_cooperation_cancel_record (
+            cooperation_id, organ_id, organ_name, organ_gateway, cooperation_type, start_date, end_date,
+            cancel_reason, cooperation_duration, cancel_user_id, cancel_user_name, cancel_date, is_del
+        ) VALUES (
+            #{cooperationId}, #{organId}, #{organName}, #{organGateway}, #{cooperationType}, #{startDate}, #{endDate},
+            #{cancelReason}, #{cooperationDuration}, #{cancelUserId}, #{cancelUserName}, COALESCE(#{cancelDate}, NOW()), 0
+        )
+    </insert>
+
+    <select id="selectCancelRecordList" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_cancel_record
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND cancel_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND cancel_date &lt;= CONCAT(#{endTime}, ' 23:59:59')
+        </if>
+        ORDER BY cancel_date DESC
+        <if test="pageSize != null and offset != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectCancelRecordCount" resultType="int">
+        SELECT COUNT(*) FROM node_cooperation_cancel_record
+        WHERE is_del = 0
+        <if test="keyword != null and keyword != ''">
+            AND (organ_name LIKE CONCAT('%', #{keyword}, '%') OR organ_id LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="startTime != null and startTime != ''">
+            AND cancel_date &gt;= #{startTime}
+        </if>
+        <if test="endTime != null and endTime != ''">
+            AND cancel_date &lt;= CONCAT(#{endTime}, ' 23:59:59')
+        </if>
+    </select>
+
+    <select id="selectCancelRecordById" resultMap="BaseResultMap">
+        SELECT * FROM node_cooperation_cancel_record WHERE id = #{id} AND is_del = 0
+    </select>
+
+</mapper>

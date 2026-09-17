@@ -193,11 +193,11 @@ export function updateCooperationParty(data) {
 /**
  * 取消合作关系
  */
-export function cancelCooperation(id, reason) {
+export function cancelCooperation(id, reason, operatorName) {
   return request({
     url: '/node/cooperation/cancel',
     method: 'post',
-    params: { id, reason }
+    params: { id, reason, operatorName }
   })
 }
 

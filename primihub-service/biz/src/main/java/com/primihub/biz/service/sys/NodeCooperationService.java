@@ -4,6 +4,14 @@ import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
 import com.primihub.biz.entity.sys.po.NodeCooperationParty;
+import com.primihub.biz.entity.sys.po.NodeCooperationCancelRecord;
+import com.primihub.biz.repository.primarydb.sys.NodeCooperationCancelRecordPrimarydbRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import javax.servlet.http.HttpServletResponse;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import com.primihub.biz.repository.primarydb.sys.NodeCooperationPartyPrimarydbRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +33,9 @@ public class NodeCooperationService {
 
     @Autowired
     private NodeApprovalWorkflowService approvalWorkflowService;
+
+    @Autowired
+    private NodeCooperationCancelRecordPrimarydbRepository cancelRecordRepository;
 
     // ========== 合作方 CRUD ==========
 
@@ -146,7 +157,7 @@ public class NodeCooperationService {
      * 取消合作关系
      */
     @Transactional(rollbackFor = Exception.class)
-    public BaseResultEntity cancelCooperation(Long id, String reason) {
+    public BaseResultEntity cancelCooperation(Long id, String reason, String operatorName) {
         try {
             NodeCooperationParty cooperationParty = nodeCooperationPartyRepository.selectNodeCooperationPartyById(id);
             if (cooperationParty == null) {
@@ -155,6 +166,7 @@ public class NodeCooperationService {
 
             // 软删除
             nodeCooperationPartyRepository.deleteNodeCooperationParty(id);
+            insertCancelHistory(cooperationParty, reason, operatorName);
 
             log.info("取消合作关系，id={}, organId={}, reason={}", id, cooperationParty.getOrganId(), reason);
             return BaseResultEntity.success("取消合作成功");
@@ -356,5 +368,169 @@ public class NodeCooperationService {
             log.error("批量删除合作方失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "批量删除失败");
         }
+    }
+
+    // ========== 取消合作历史记录 ==========
+
+    /**
+     * 分页查询取消合作历史记录
+     */
+    public BaseResultEntity findCancelHistory(String keyword, String startTime, String endTime,
+                                              Integer pageNum, Integer pageSize) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("keyword", keyword);
+            params.put("startTime", startTime);
+            params.put("endTime", endTime);
+
+            int total = cancelRecordRepository.selectCancelRecordCount(params);
+
+            PageParam pageParam = new PageParam(pageNum == null ? 1 : pageNum, pageSize == null ? 10 : pageSize);
+            pageParam.initItemTotalCount((long) total);
+            params.put("offset", pageParam.getPageIndex());
+            params.put("pageSize", pageParam.getPageSize());
+
+            List<NodeCooperationCancelRecord> list = cancelRecordRepository.selectCancelRecordList(params);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("list", list);
+            result.put("pageParam", pageParam);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("查询取消合作历史失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 批量取消合作
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public BaseResultEntity batchCancel(List<Long> ids, String reason, String operatorName) {
+        try {
+            if (ids == null || ids.isEmpty()) {
+                return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "ID列表不能为空");
+            }
+            int success = 0;
+            for (Long id : ids) {
+                NodeCooperationParty party = nodeCooperationPartyRepository.selectNodeCooperationPartyById(id);
+                if (party == null) {
+                    continue;
+                }
+                nodeCooperationPartyRepository.deleteNodeCooperationParty(id);
+                insertCancelHistory(party, reason, operatorName);
+                success++;
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("total", ids.size());
+            result.put("successCount", success);
+            log.info("批量取消合作，请求{}条，成功{}条", ids.size(), success);
+            return BaseResultEntity.success(result);
+        } catch (Exception e) {
+            log.error("批量取消合作失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "批量取消失败");
+        }
+    }
+
+    /**
+     * 根据ID查询取消记录详情
+     */
+    public BaseResultEntity getCancelRecordById(Long id) {
+        try {
+            NodeCooperationCancelRecord record = cancelRecordRepository.selectCancelRecordById(id);
+            if (record == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "取消记录不存在");
+            }
+            return BaseResultEntity.success(record);
+        } catch (Exception e) {
+            log.error("查询取消记录详情失败，id={}", id, e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "查询失败");
+        }
+    }
+
+    /**
+     * 导出取消合作记录(Excel)
+     */
+    public void exportCancelRecords(HttpServletResponse response, String keyword, String startTime, String endTime) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("keyword", keyword);
+            params.put("startTime", startTime);
+            params.put("endTime", endTime);
+            List<NodeCooperationCancelRecord> list = cancelRecordRepository.selectCancelRecordList(params);
+            if (list == null || list.isEmpty()) {
+                writeExportError(response, "暂无数据可导出");
+                return;
+            }
+
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("取消合作记录");
+            String[] headers = {"ID", "节点ID", "节点名称", "网关地址", "原合作类型", "取消原因",
+                                "合作时长", "操作人", "取消时间"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                headerRow.createCell(i).setCellValue(headers[i]);
+            }
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            int rowNum = 1;
+            for (NodeCooperationCancelRecord r : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(r.getId() != null ? r.getId() : 0);
+                row.createCell(1).setCellValue(r.getOrganId());
+                row.createCell(2).setCellValue(r.getOrganName());
+                row.createCell(3).setCellValue(r.getOrganGateway());
+                row.createCell(4).setCellValue(r.getCooperationType());
+                row.createCell(5).setCellValue(r.getCancelReason());
+                row.createCell(6).setCellValue(r.getCooperationDuration());
+                row.createCell(7).setCellValue(r.getCancelUserName());
+                row.createCell(8).setCellValue(r.getCancelDate() != null ? sdf.format(r.getCancelDate()) : "");
+            }
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode("取消合作记录.xlsx", "UTF-8"));
+            OutputStream out = response.getOutputStream();
+            workbook.write(out);
+            out.flush();
+            out.close();
+            workbook.close();
+        } catch (Exception e) {
+            log.error("导出取消合作记录失败", e);
+            writeExportError(response, "导出失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 写入一条取消合作历史(内部,失败不影响主流程)
+     */
+    private void insertCancelHistory(NodeCooperationParty party, String reason, String operatorName) {
+        try {
+            NodeCooperationCancelRecord record = new NodeCooperationCancelRecord();
+            record.setCooperationId(party.getId());
+            record.setOrganId(party.getOrganId());
+            record.setOrganName(party.getOrganName());
+            record.setOrganGateway(party.getOrganGateway());
+            record.setCooperationType(party.getCooperationType());
+            record.setStartDate(party.getStartDate());
+            record.setEndDate(party.getEndDate());
+            record.setCancelReason(reason);
+            record.setCancelUserName(operatorName);
+            record.setCancelDate(new Date());
+            Date base = party.getStartDate() != null ? party.getStartDate() : party.getCreateDate();
+            if (base != null) {
+                long days = (System.currentTimeMillis() - base.getTime()) / 86400000L;
+                record.setCooperationDuration(days + "天");
+            }
+            cancelRecordRepository.insertCancelRecord(record);
+        } catch (Exception e) {
+            log.warn("记录取消合作历史失败，id={}", party.getId(), e);
+        }
+    }
+
+    private void writeExportError(HttpServletResponse response, String msg) {
+        try {
+            response.reset();
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":-1,\"msg\":\"" + msg + "\"}");
+            response.getWriter().flush();
+        } catch (Exception ignore) {}
     }
 }

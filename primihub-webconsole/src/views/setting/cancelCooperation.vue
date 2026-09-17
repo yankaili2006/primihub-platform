@@ -44,9 +44,9 @@
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="55" />
-          <el-table-column prop="partnerOrganId" label="节点ID" width="150" />
-          <el-table-column prop="partnerOrganName" label="节点名称" width="150" />
-          <el-table-column prop="partnerGateway" label="网关地址" width="180" />
+          <el-table-column prop="organId" label="节点ID" width="150" />
+          <el-table-column prop="organName" label="节点名称" width="150" />
+          <el-table-column prop="organGateway" label="网关地址" width="180" />
           <el-table-column prop="cooperationType" label="合作类型" width="120">
             <template slot-scope="scope">
               {{ getCooperationTypeLabel(scope.row.cooperationType) }}
@@ -117,8 +117,8 @@
           :data="historyTableData"
           border
         >
-          <el-table-column prop="partnerOrganId" label="节点ID" width="150" />
-          <el-table-column prop="partnerOrganName" label="节点名称" width="150" />
+          <el-table-column prop="organId" label="节点ID" width="150" />
+          <el-table-column prop="organName" label="节点名称" width="150" />
           <el-table-column prop="cooperationType" label="原合作类型" width="120">
             <template slot-scope="scope">
               {{ getCooperationTypeLabel(scope.row.cooperationType) }}
@@ -165,8 +165,8 @@
       <el-form ref="cancelForm" :model="cancelForm" :rules="cancelFormRules" label-width="100px">
         <el-form-item label="节点信息">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="节点ID">{{ cancelForm.partnerOrganId }}</el-descriptions-item>
-            <el-descriptions-item label="节点名称">{{ cancelForm.partnerOrganName }}</el-descriptions-item>
+            <el-descriptions-item label="节点ID">{{ cancelForm.organId }}</el-descriptions-item>
+            <el-descriptions-item label="节点名称">{{ cancelForm.organName }}</el-descriptions-item>
             <el-descriptions-item label="合作类型">{{ getCooperationTypeLabel(cancelForm.cooperationType) }}</el-descriptions-item>
             <el-descriptions-item label="合作开始时间">{{ cancelForm.startDate }}</el-descriptions-item>
           </el-descriptions>
@@ -205,8 +205,8 @@
         style="margin-bottom: 20px;"
       />
       <el-table :data="selectedRows" border max-height="300">
-        <el-table-column prop="partnerOrganId" label="节点ID" width="150" />
-        <el-table-column prop="partnerOrganName" label="节点名称" />
+        <el-table-column prop="organId" label="节点ID" width="150" />
+        <el-table-column prop="organName" label="节点名称" />
         <el-table-column prop="cooperationType" label="合作类型" width="120">
           <template slot-scope="scope">
             {{ getCooperationTypeLabel(scope.row.cooperationType) }}
@@ -276,8 +276,8 @@ export default {
       cancelDialogVisible: false,
       cancelForm: {
         id: null,
-        partnerOrganId: '',
-        partnerOrganName: '',
+        organId: '',
+        organName: '',
         cooperationType: '',
         startDate: '',
         cancelReason: '',
@@ -337,9 +337,9 @@ export default {
       return [
         {
           id: 1,
-          partnerOrganId: 'ORG-001',
-          partnerOrganName: '机构A',
-          partnerGateway: 'http://192.168.1.101:8080',
+          organId: 'ORG-001',
+          organName: '机构A',
+          organGateway: 'http://192.168.1.101:8080',
           cooperationType: 'DATA_SHARE',
           cooperationStatus: 1,
           startDate: '2024-01-01 10:00:00',
@@ -348,9 +348,9 @@ export default {
         },
         {
           id: 2,
-          partnerOrganId: 'ORG-002',
-          partnerOrganName: '机构B',
-          partnerGateway: 'http://192.168.1.102:8080',
+          organId: 'ORG-002',
+          organName: '机构B',
+          organGateway: 'http://192.168.1.102:8080',
           cooperationType: 'JOINT_COMPUTE',
           cooperationStatus: 1,
           startDate: '2024-02-15 14:30:00',
@@ -359,9 +359,9 @@ export default {
         },
         {
           id: 3,
-          partnerOrganId: 'ORG-003',
-          partnerOrganName: '机构C',
-          partnerGateway: 'http://192.168.1.103:8080',
+          organId: 'ORG-003',
+          organName: '机构C',
+          organGateway: 'http://192.168.1.103:8080',
           cooperationType: 'MODEL_TRAINING',
           cooperationStatus: 2,
           startDate: '2024-03-01 09:00:00',
@@ -370,9 +370,9 @@ export default {
         },
         {
           id: 4,
-          partnerOrganId: 'ORG-004',
-          partnerOrganName: '机构D',
-          partnerGateway: 'http://192.168.1.104:8080',
+          organId: 'ORG-004',
+          organName: '机构D',
+          organGateway: 'http://192.168.1.104:8080',
           cooperationType: 'DATA_SHARE',
           cooperationStatus: 1,
           startDate: '2024-01-20 11:00:00',
@@ -381,9 +381,9 @@ export default {
         },
         {
           id: 5,
-          partnerOrganId: 'ORG-005',
-          partnerOrganName: '机构E',
-          partnerGateway: 'http://192.168.1.105:8080',
+          organId: 'ORG-005',
+          organName: '机构E',
+          organGateway: 'http://192.168.1.105:8080',
           cooperationType: 'OTHER',
           cooperationStatus: 2,
           startDate: '2024-04-10 16:00:00',
@@ -415,8 +415,8 @@ export default {
       return [
         {
           id: 101,
-          partnerOrganId: 'ORG-010',
-          partnerOrganName: '机构X',
+          organId: 'ORG-010',
+          organName: '机构X',
           cooperationType: 'DATA_SHARE',
           cancelReason: '合作期满，双方协商一致终止合作关系',
           cancelUserName: 'admin',
@@ -425,8 +425,8 @@ export default {
         },
         {
           id: 102,
-          partnerOrganId: 'ORG-011',
-          partnerOrganName: '机构Y',
+          organId: 'ORG-011',
+          organName: '机构Y',
           cooperationType: 'JOINT_COMPUTE',
           cancelReason: '对方节点长期无响应，通信异常，主动取消合作',
           cancelUserName: 'admin',
@@ -435,8 +435,8 @@ export default {
         },
         {
           id: 103,
-          partnerOrganId: 'ORG-012',
-          partnerOrganName: '机构Z',
+          organId: 'ORG-012',
+          organName: '机构Z',
           cooperationType: 'MODEL_TRAINING',
           cancelReason: '项目需求变更，不再需要与该节点进行模型训练合作',
           cancelUserName: 'admin',
@@ -499,8 +499,8 @@ export default {
     handleCancel(row) {
       this.cancelForm = {
         id: row.id,
-        partnerOrganId: row.partnerOrganId,
-        partnerOrganName: row.partnerOrganName,
+        organId: row.organId,
+        organName: row.organName,
         cooperationType: row.cooperationType,
         startDate: row.startDate,
         cancelReason: '',
@@ -511,7 +511,7 @@ export default {
     handleCancelSubmit() {
       this.$refs.cancelForm.validate((valid) => {
         if (valid) {
-          cancelCooperation(this.cancelForm.id, this.cancelForm.cancelReason).then(res => {
+          cancelCooperation(this.cancelForm.id, this.cancelForm.cancelReason, this.userName).then(res => {
             if (res.code === 0) {
               this.$message.success('取消合作成功')
               this.cancelDialogVisible = false
@@ -536,7 +536,7 @@ export default {
       this.$refs.batchCancelForm.validate((valid) => {
         if (valid) {
           const ids = this.selectedRows.map(row => row.id)
-          batchCancelCooperation(ids, this.batchCancelForm.cancelReason).then(res => {
+          batchCancelCooperation(ids, this.batchCancelForm.cancelReason, this.userName).then(res => {
             if (res.code === 0) {
               this.$message.success('批量取消合作成功')
               this.batchCancelDialogVisible = false
@@ -552,14 +552,14 @@ export default {
       })
     },
     handleReestablish(row) {
-      this.$confirm(`确认重新建立与 ${row.partnerOrganName} 的合作关系吗?`, '提示', {
+      this.$confirm(`确认重新建立与 ${row.organName} 的合作关系吗?`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'info'
       }).then(() => {
         const data = {
-          partnerOrganId: row.partnerOrganId,
-          partnerOrganName: row.partnerOrganName,
+          organId: row.organId,
+          organName: row.organName,
           cooperationType: row.cooperationType
         }
         establishCooperation(data).then(res => {
