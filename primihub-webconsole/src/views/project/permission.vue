@@ -273,6 +273,9 @@ import {
   updatePermissionTemplate,
   deletePermissionTemplate
 } from '@/api/projectPermission'
+import { getProjectList } from '@/api/project'
+import { getOrgans } from '@/api/organ'
+import { getResourceList } from '@/api/resource'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -402,24 +405,33 @@ export default {
         }
       ]
     },
+    pickList(res) {
+      const r = res && res.result
+      if (Array.isArray(r)) return r
+      if (r && Array.isArray(r.list)) return r.list
+      if (r && Array.isArray(r.data)) return r.data
+      if (r && Array.isArray(r.records)) return r.records
+      return []
+    },
     loadOptions() {
-      // TODO: 从后端加载项目和机构列表
-      this.projectOptions = [
-        { id: 'PRJ-001', projectName: '联合风控建模项目' },
-        { id: 'PRJ-002', projectName: '用户画像分析项目' },
-        { id: 'PRJ-003', projectName: '隐私求交测试项目' }
-      ]
-      this.organOptions = [
-        { organId: 'ORG-001', organName: '机构A' },
-        { organId: 'ORG-002', organName: '机构B' },
-        { organId: 'ORG-003', organName: '机构C' },
-        { organId: 'ORG-004', organName: '机构D' }
-      ]
-      this.resourceOptions = [
-        { resourceId: 1, resourceName: '用户数据资源' },
-        { resourceId: 2, resourceName: '交易数据资源' },
-        { resourceId: 3, resourceName: '用户画像数据' }
-      ]
+      // 项目列表
+      getProjectList({ pageNum: 1, pageSize: 1000 }).then(res => {
+        if (res.code === 0) {
+          this.projectOptions = this.pickList(res).map(p => ({ id: p.projectId, projectName: p.projectName }))
+        }
+      }).catch(() => {})
+      // 授权机构列表
+      getOrgans({ pageNum: 1, pageSize: 1000 }).then(res => {
+        if (res.code === 0) {
+          this.organOptions = this.pickList(res).map(o => ({ organId: o.organId, organName: o.organName }))
+        }
+      }).catch(() => {})
+      // 数据资源列表
+      getResourceList({ pageNum: 1, pageSize: 1000 }).then(res => {
+        if (res.code === 0) {
+          this.resourceOptions = this.pickList(res).map(r => ({ resourceId: r.resourceId, resourceName: r.resourceName }))
+        }
+      }).catch(() => {})
     },
     loadTemplates() {
       findPermissionTemplates().then(res => {
