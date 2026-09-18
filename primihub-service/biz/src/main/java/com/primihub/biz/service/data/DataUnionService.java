@@ -123,6 +123,7 @@ public class DataUnionService {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("task", task);
             result.put("dataUnion", dataUnion);
+            dataAsyncService.enrichUnionDetailFlat(result, task, dataUnion);
             if (StringUtils.isNotEmpty(task.getFilePath())) {
                 result.put("dataList", FileUtil.getCsvData(task.getFilePath(), 50));
             }

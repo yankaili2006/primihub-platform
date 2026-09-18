@@ -124,6 +124,7 @@ public class DataDifferenceService {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("task", task);
             result.put("dataDifference", dataDifference);
+            dataAsyncService.enrichDifferenceDetailFlat(result, task, dataDifference);
             if (StringUtils.isNotEmpty(task.getFilePath())) {
                 result.put("dataList", FileUtil.getCsvData(task.getFilePath(), 50));
             }

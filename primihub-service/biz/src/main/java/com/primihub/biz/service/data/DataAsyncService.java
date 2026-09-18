@@ -22,6 +22,7 @@ import com.primihub.biz.entity.data.req.*;
 import com.primihub.biz.entity.data.vo.ModelProjectResourceVo;
 import com.primihub.biz.entity.data.vo.ShareModelVo;
 import com.primihub.biz.entity.sys.po.SysUser;
+import com.primihub.biz.entity.sys.po.SysOrgan;
 import com.primihub.biz.repository.primarydb.data.*;
 import com.primihub.biz.repository.primaryredis.data.DataRedisRepository;
 import com.primihub.biz.repository.secondarydb.data.DataModelRepository;
@@ -792,6 +793,95 @@ public class DataAsyncService implements ApplicationContextAware {
     /**
      * 资源解析：本地 fusionId → 本地数值 id → fusion 中心兜底(跨机构公开资源可能未同步进本地库)。
      */
+
+    /** 联邦求差 detail 平铺补全：前端 detail.vue 读平铺 taskData.taskState 等字段。 */
+    public void enrichDifferenceDetailFlat(Map<String, Object> result, DataDifferenceTask task, DataDifference dd) {
+        result.put("taskState", task.getTaskState());
+        result.put("taskId", task.getTaskId());
+        result.put("taskName", dd.getResultName());
+        result.put("resultName", dd.getResultName());
+        result.put("differenceDirection", dd.getDifferenceDirection());
+        result.put("tag", dd.getTag());
+        result.put("ownOrganId", dd.getOwnOrganId());
+        result.put("otherOrganId", dd.getOtherOrganId());
+        result.put("ownResourceId", dd.getOwnResourceId());
+        result.put("otherResourceId", dd.getOtherResourceId());
+        result.put("ownKeyword", dd.getOwnKeyword());
+        result.put("otherKeyword", dd.getOtherKeyword());
+        result.put("teeOrganId", dd.getTeeOrganId());
+        result.put("remarks", dd.getRemarks());
+        result.put("createDate", task.getCreateDate());
+        result.put("fileRows", task.getFileRows());
+        fillOrganNames(result, dd.getOwnOrganId(), dd.getOtherOrganId(), dd.getTeeOrganId());
+        fillResourceNames(result, dd.getOwnResourceId(), dd.getOtherResourceId());
+    }
+
+    /** 联邦求并 detail 平铺补全（无 differenceDirection）。 */
+    public void enrichUnionDetailFlat(Map<String, Object> result, DataUnionTask task, DataUnion du) {
+        result.put("taskState", task.getTaskState());
+        result.put("taskId", task.getTaskId());
+        result.put("taskName", du.getResultName());
+        result.put("resultName", du.getResultName());
+        result.put("tag", du.getTag());
+        result.put("ownOrganId", du.getOwnOrganId());
+        result.put("otherOrganId", du.getOtherOrganId());
+        result.put("ownResourceId", du.getOwnResourceId());
+        result.put("otherResourceId", du.getOtherResourceId());
+        result.put("ownKeyword", du.getOwnKeyword());
+        result.put("otherKeyword", du.getOtherKeyword());
+        result.put("teeOrganId", du.getTeeOrganId());
+        result.put("remarks", du.getRemarks());
+        result.put("createDate", task.getCreateDate());
+        result.put("fileRows", task.getFileRows());
+        fillOrganNames(result, du.getOwnOrganId(), du.getOtherOrganId(), du.getTeeOrganId());
+        fillResourceNames(result, du.getOwnResourceId(), du.getOtherResourceId());
+    }
+
+    private void fillOrganNames(Map<String, Object> result, String ownOrganId, String otherOrganId, String teeOrganId) {
+        try {
+            List<String> ids = new ArrayList<>();
+            if (StringUtils.isNotBlank(ownOrganId)) ids.add(ownOrganId);
+            if (StringUtils.isNotBlank(otherOrganId)) ids.add(otherOrganId);
+            if (StringUtils.isNotBlank(teeOrganId)) ids.add(teeOrganId);
+            Map<String, SysOrgan> organMap = ids.isEmpty() ? new HashMap<>() : otherBusinessesService.getOrganListMap(ids);
+            result.put("ownOrganName", organName(organMap, ownOrganId));
+            result.put("otherOrganName", organName(organMap, otherOrganId));
+            result.put("teeOrganName", StringUtils.isBlank(teeOrganId) ? null : organName(organMap, teeOrganId));
+        } catch (Exception e) {
+            log.warn("resolve organ names failed", e);
+            result.put("ownOrganName", ownOrganId);
+            result.put("otherOrganName", otherOrganId);
+        }
+    }
+
+    private String organName(Map<String, SysOrgan> m, String id) {
+        if (StringUtils.isBlank(id)) return null;
+        SysOrgan o = m.get(id);
+        return o != null && StringUtils.isNotBlank(o.getOrganName()) ? o.getOrganName() : id;
+    }
+
+    private void fillResourceNames(Map<String, Object> result, String ownResourceId, String otherResourceId) {
+        try {
+            List<String> ids = new ArrayList<>();
+            if (StringUtils.isNotBlank(ownResourceId)) ids.add(ownResourceId);
+            if (StringUtils.isNotBlank(otherResourceId)) ids.add(otherResourceId);
+            Map<String, Map> resMap = ids.isEmpty() ? new HashMap<>() : otherBusinessesService.getResourceListMap(ids);
+            result.put("ownResourceName", resourceName(resMap, ownResourceId));
+            result.put("otherResourceName", resourceName(resMap, otherResourceId));
+        } catch (Exception e) {
+            log.warn("resolve resource names failed", e);
+            result.put("ownResourceName", ownResourceId);
+            result.put("otherResourceName", otherResourceId);
+        }
+    }
+
+    private String resourceName(Map<String, Map> m, String id) {
+        if (StringUtils.isBlank(id)) return null;
+        Map r = m.get(id);
+        Object n = r == null ? null : r.get("resourceName");
+        return n != null ? n.toString() : id;
+    }
+
     private DataResource resolveResourceWithFusionFallback(String resourceId) {
         if (StringUtils.isBlank(resourceId)) {
             return null;
