@@ -1,31 +1,46 @@
 #!/usr/bin/env python3
-import json
-import sys
-import numpy as np
+"""单方特征分箱。前端字段: binMethod(EQUAL_FREQ/EQUAL_WIDTH/CHI_SQUARE/CUSTOM), binFields[], binCount."""
 import pandas as pd
+from _common import load_params, read_dataset, pick_fields, save, emit, fail
 
-def feature_binning(params):
-    task_id = params['task_id']
-    selected_features = params.get('selected_features', '').split(',')
-    algorithm_params = json.loads(params.get('algorithm_params', '{}'))
-    n_bins = algorithm_params.get('n_bins', 5)
 
-    n_samples = 1000
-    data = {feat: np.random.randn(n_samples) for feat in selected_features if feat}
-    df = pd.DataFrame(data)
+def main():
+    params = load_params()
+    df = read_dataset(params)
+    method = (params.get("binMethod") or "EQUAL_WIDTH").upper()
+    cols = pick_fields(df, params.get("binFields"), numeric=True)
+    bins = int(params.get("binCount") or 5)
+    if bins < 2:
+        fail("分箱数须 >= 2")
 
-    for col in df.columns:
-        df[col + '_binned'] = pd.cut(df[col], bins=n_bins, labels=False)
+    if method == "EQUAL_FREQ":
+        for c in cols:
+            df[c + "_bin"] = pd.qcut(df[c], q=bins, duplicates="drop").astype(str)
+        summary = "等频分箱 %d 个字段(%d 箱)" % (len(cols), bins)
+    elif method in ("EQUAL_WIDTH", "CUSTOM"):
+        for c in cols:
+            df[c + "_bin"] = pd.cut(df[c], bins=bins).astype(str)
+        summary = "等宽分箱 %d 个字段(%d 箱)" % (len(cols), bins)
+    elif method == "CHI_SQUARE":
+        label = params.get("labelField") or ("label" if "label" in df.columns else None)
+        if not label or label not in df.columns:
+            fail("卡方分箱需要标签列：数据集无 label 列且未指定 labelField")
+        from sklearn.tree import DecisionTreeClassifier
+        # 以单特征决策树近似卡方最优切分（监督分箱的常用等价实现）
+        for c in cols:
+            sub = df[[c, label]].dropna()
+            tree = DecisionTreeClassifier(max_leaf_nodes=bins, min_samples_leaf=max(1, len(sub) // 50))
+            tree.fit(sub[[c]], sub[label])
+            th = sorted(t for t, f in zip(tree.tree_.threshold, tree.tree_.feature) if f == 0)
+            edges = [float("-inf")] + th + [float("inf")]
+            df[c + "_bin"] = pd.cut(df[c], bins=edges).astype(str)
+        summary = "卡方(监督)分箱 %d 个字段(≤%d 箱，标签=%s)" % (len(cols), bins, label)
+    else:
+        fail("不支持的分箱方法: %s" % method)
 
-    result_path = f'/opt/primihub/results/sp_binning_{task_id}.csv'
-    df.to_csv(result_path, index=False)
+    p = save(df, params)
+    emit(params, p, len(df), summary)
 
-    print(json.dumps({
-        'status': 'success',
-        'result_path': result_path,
-        'result_rows': len(df)
-    }))
 
-if __name__ == '__main__':
-    params = json.loads(sys.argv[1])
-    feature_binning(params)
+if __name__ == "__main__":
+    main()

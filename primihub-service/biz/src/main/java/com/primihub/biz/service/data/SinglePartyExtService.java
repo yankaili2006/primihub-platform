@@ -4,16 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
+import com.primihub.biz.entity.data.po.DataResource;
 import com.primihub.biz.repository.primarydb.data.SinglePartyExtRepository;
+import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 单方作业「预处理 / 脚本 / 学习日志」Service（补齐原缺失子模块；MAIN 任务另有 SinglePartyService）。
@@ -27,7 +33,34 @@ public class SinglePartyExtService {
     @Autowired
     private SinglePartyExtRepository repository;
 
+    @Autowired
+    private DataResourceRepository dataResourceRepository;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** 算法脚本目录（烘进后端镜像的固定路径），结果目录（/data bind mount，recreate 后仍在）。 */
+    private static final String ALGO_DIR =
+            System.getenv().getOrDefault("SP_ALGO_DIR", "/opt/python-algorithms/single_party");
+    private static final String RESULT_BASE = "/data/singleParty";
+    private static final long SCRIPT_TIMEOUT_SECONDS = 120;
+
+    /** subType(=前端 preprocessType/scriptType) → 真实计算脚本。PREPROCESS/SCRIPT 两 category 共用。 */
+    private static final Map<String, String> SUBTYPE_SCRIPT;
+    static {
+        Map<String, String> m = new HashMap<>();
+        m.put("DATA_STATS", "statistics.py");
+        m.put("DATA_CLEANING", "cleaning.py");
+        m.put("DATA_SCALING", "scaling.py");
+        m.put("FEATURE_ENCODE", "encoding.py");
+        m.put("FEATURE_BIN", "binning.py");
+        m.put("FEATURE_SELECT", "selection.py");
+        m.put("FEATURE_DERIVE", "derivation.py");
+        m.put("LR_ALGORITHM", "lr.py");
+        m.put("XGB_ALGORITHM", "xgboost.py");
+        m.put("PYTHON_SCRIPT", "script.py");
+        m.put("SQL_PROCESS", "sql_process.py");
+        SUBTYPE_SCRIPT = Collections.unmodifiableMap(m);
+    }
 
     // ===== 预处理 =====
     @Transactional(rollbackFor = Exception.class)
@@ -35,7 +68,7 @@ public class SinglePartyExtService {
         return createInternal("PREPROCESS", data, userId, userName);
     }
     public BaseResultEntity listPreprocess(Map<String, Object> query) { return pageTasks("PREPROCESS", query); }
-    @Transactional(rollbackFor = Exception.class)
+    // run* 不加事务：真实脚本执行最长 120s，不能占着 DB 连接/事务
     public BaseResultEntity runPreprocess(Map<String, Object> data) { return runTask(taskId(data)); }
     @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity deletePreprocess(Map<String, Object> data) { return deleteTask(taskId(data)); }
@@ -47,7 +80,6 @@ public class SinglePartyExtService {
         return createInternal("SCRIPT", data, userId, userName);
     }
     public BaseResultEntity listScript(Map<String, Object> query) { return pageTasks("SCRIPT", query); }
-    @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity runScript(Map<String, Object> data) { return runTask(taskId(data)); }
     @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity deleteScript(Map<String, Object> data) { return deleteTask(taskId(data)); }
@@ -63,7 +95,6 @@ public class SinglePartyExtService {
         if (q.get("subType") == null && q.get("preprocessType") != null) q.put("subType", q.get("preprocessType"));
         return pageTasks("FLPRE", q);
     }
-    @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity runFlPre(Map<String, Object> data) { return runTask(taskId(data)); }
     @Transactional(rollbackFor = Exception.class)
     public BaseResultEntity deleteFlPre(Map<String, Object> data) { return deleteTask(taskId(data)); }
@@ -157,21 +188,162 @@ public class SinglePartyExtService {
             if (taskId == null) return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "taskId 不能为空");
             Map<String, Object> t = repository.selectTaskByTaskId(taskId);
             if (t == null) return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "任务不存在");
+            String category = str(t.get("taskCategory"));
+            String subType = str(t.get("subType"));
+            String script = subType == null ? null : SUBTYPE_SCRIPT.get(subType);
+            if (script != null && ("PREPROCESS".equals(category) || "SCRIPT".equals(category))) {
+                return runReal(t, taskId, script);
+            }
+            // 无脚本映射的类别（FLPRE/FLMODEL 等）保留登记式流转；成功态=1（前端词汇 1=已完成）
             Map<String, Object> upd = new HashMap<>();
             upd.put("taskId", taskId);
-            upd.put("taskState", 2);
+            upd.put("taskState", 1);
             upd.put("progress", 100);
             upd.put("startTime", new Date());
             upd.put("endTime", new Date());
             upd.put("resultContent", buildResultCsv(t));
-            upd.put("resultPath", "/data/singleParty/" + taskId + "/result.csv");
             repository.updateTaskState(upd);
-            writeLog(taskId, str(t.get("taskName")), str(t.get("taskCategory")), "INFO", "任务执行成功");
+            writeLog(taskId, str(t.get("taskName")), category, "INFO", "任务执行成功");
             return BaseResultEntity.success("任务已提交执行");
         } catch (Exception e) {
             log.error("运行单方任务失败, taskId={}", taskId, e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "执行失败");
         }
+    }
+
+    /** 真实执行：解析数据集路径 → 调 python 脚本 → 回写结果/失败原因。 */
+    private BaseResultEntity runReal(Map<String, Object> t, String taskId, String script) throws Exception {
+        Date start = new Date();
+        String taskName = str(t.get("taskName"));
+        String category = str(t.get("taskCategory"));
+
+        Map<String, Object> params;
+        try {
+            String pj = str(t.get("params"));
+            params = pj == null || pj.isEmpty() ? new HashMap<>() : objectMapper.readValue(pj, Map.class);
+        } catch (Exception e) {
+            params = new HashMap<>();
+        }
+        String resourceId = str(firstNonNull(t.get("resourceId"), params.get("resourceId")));
+        DataResource res = resolveResource(resourceId);
+        if (res == null) {
+            return failTask(t, taskId, start, "数据资源不存在: " + resourceId);
+        }
+        if (StringUtils.isBlank(res.getUrl())) {
+            return failTask(t, taskId, start, "该资源无本地数据文件（db 型资源暂不支持单方算法）: " + resourceId);
+        }
+        File dataset = new File(res.getUrl());
+        if (!dataset.exists() || !dataset.isFile()) {
+            return failTask(t, taskId, start, "数据集文件不存在: " + res.getUrl());
+        }
+
+        File resultDir = new File(RESULT_BASE, taskId);
+        if (!resultDir.exists() && !resultDir.mkdirs()) {
+            return failTask(t, taskId, start, "结果目录创建失败: " + resultDir);
+        }
+        params.put("dataset_path", res.getUrl());
+        params.put("task_id", taskId);
+        params.put("result_dir", resultDir.getAbsolutePath());
+        params.put("sub_type", str(t.get("subType")));
+        // 参数经文件传递（UTF-8 显式编码，避开 argv 编码/长度问题）
+        File paramFile = new File(resultDir, "params.json");
+        Files.write(paramFile.toPath(), objectMapper.writeValueAsString(params).getBytes(StandardCharsets.UTF_8));
+
+        File scriptFile = new File(ALGO_DIR, script);
+        if (!scriptFile.exists()) {
+            return failTask(t, taskId, start, "算法脚本缺失(镜像未含 python 运行时?): " + scriptFile);
+        }
+        File outFile = new File(resultDir, "stdout.log");
+        File errFile = new File(resultDir, "stderr.log");
+        ProcessBuilder pb = new ProcessBuilder("python3", scriptFile.getAbsolutePath(), paramFile.getAbsolutePath());
+        pb.redirectOutput(outFile);
+        pb.redirectError(errFile);
+        Process p = pb.start();
+        if (!p.waitFor(SCRIPT_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            p.destroyForcibly();
+            return failTask(t, taskId, start, "脚本执行超时(" + SCRIPT_TIMEOUT_SECONDS + "s): " + script);
+        }
+        int code = p.exitValue();
+        String stderr = readFileTail(errFile, 1500);
+        if (code != 0) {
+            return failTask(t, taskId, start, "脚本执行失败 exit=" + code + ": " + stderr);
+        }
+
+        // stdout 末行 JSON: {task_id, result_path, result_rows, summary}
+        Map<String, Object> r = new HashMap<>();
+        try {
+            String stdout = new String(Files.readAllBytes(outFile.toPath()), StandardCharsets.UTF_8);
+            String[] lines = stdout.trim().split("\n");
+            for (int i = lines.length - 1; i >= 0; i--) {
+                String line = lines[i].trim();
+                if (line.startsWith("{")) { r = objectMapper.readValue(line, Map.class); break; }
+            }
+        } catch (Exception e) {
+            log.warn("解析脚本输出失败, taskId={}", taskId, e);
+        }
+        String resultPath = str(firstNonNull(r.get("result_path"), new File(resultDir, "result.csv").getAbsolutePath()));
+        Object rows = firstNonNull(r.get("result_rows"), "");
+        String summary = str(firstNonNull(r.get("summary"), ""));
+
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("taskId", taskId);
+        upd.put("taskState", 1);
+        upd.put("progress", 100);
+        upd.put("startTime", start);
+        upd.put("endTime", new Date());
+        upd.put("resultPath", resultPath);
+        upd.put("resultContent", buildRealResultCsv(t, resultPath, rows, summary));
+        upd.put("errorMsg", "");
+        repository.updateTaskState(upd);
+        writeLog(taskId, taskName, category, "INFO",
+                "任务执行成功，结果行数=" + rows + (summary.isEmpty() ? "" : "，" + summary));
+        return BaseResultEntity.success("任务执行成功");
+    }
+
+    private BaseResultEntity failTask(Map<String, Object> t, String taskId, Date start, String reason) {
+        String msg = reason.length() > 1800 ? reason.substring(0, 1800) : reason;
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("taskId", taskId);
+        upd.put("taskState", 3);
+        upd.put("progress", 100);
+        upd.put("startTime", start);
+        upd.put("endTime", new Date());
+        upd.put("errorMsg", msg);
+        repository.updateTaskState(upd);
+        writeLog(taskId, str(t.get("taskName")), str(t.get("taskCategory")), "ERROR", "任务执行失败：" + msg);
+        log.error("单方任务执行失败, taskId={}, reason={}", taskId, msg);
+        return BaseResultEntity.failure(BaseResultEnum.FAILURE, msg);
+    }
+
+    private DataResource resolveResource(String resourceId) {
+        if (StringUtils.isBlank(resourceId)) return null;
+        DataResource res = dataResourceRepository.queryDataResourceByResourceFusionId(resourceId);
+        if (res == null && StringUtils.isNumeric(resourceId)) {
+            res = dataResourceRepository.queryDataResourceById(Long.parseLong(resourceId));
+        }
+        return res;
+    }
+
+    private String readFileTail(File f, int maxChars) {
+        try {
+            String s = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8).trim();
+            return s.length() > maxChars ? s.substring(s.length() - maxChars) : s;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String buildRealResultCsv(Map<String, Object> t, String resultPath, Object rows, String summary) {
+        StringBuilder sb = new StringBuilder("字段,值\r\n");
+        append(sb, "任务ID", t.get("taskId"));
+        append(sb, "任务名称", t.get("taskName"));
+        append(sb, "算法", t.get("subType"));
+        append(sb, "数据资源", firstNonNull(t.get("resourceName"), t.get("resourceId")));
+        append(sb, "结果行数", rows);
+        append(sb, "摘要", summary);
+        append(sb, "结果文件", resultPath);
+        append(sb, "状态", "执行成功");
+        return sb.toString();
     }
 
     private BaseResultEntity deleteTask(String taskId) {
@@ -190,12 +362,23 @@ public class SinglePartyExtService {
         try {
             Map<String, Object> t = taskId == null ? null : repository.selectTaskByTaskId(taskId);
             if (t == null) { writeJsonError(response, "任务不存在"); return; }
-            if (!"2".equals(String.valueOf(t.get("taskState")))) { writeJsonError(response, "任务未执行成功，暂无结果可下载"); return; }
-            String content = str(t.get("resultContent"));
-            if (content == null || content.isEmpty()) content = buildResultCsv(t);
+            String state = String.valueOf(t.get("taskState"));
+            if (!"1".equals(state) && !"2".equals(state)) { writeJsonError(response, "任务未执行成功，暂无结果可下载"); return; }
             String fn = safeName(str(t.get("taskName"))) + "_结果.csv";
             response.setContentType("text/csv;charset=UTF-8");
             response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fn, StandardCharsets.UTF_8.name()));
+            // 优先返回脚本产出的真实结果文件（限定在结果根目录内），回退到摘要 CSV
+            String resultPath = str(t.get("resultPath"));
+            if (resultPath != null && resultPath.startsWith(RESULT_BASE + "/")) {
+                File rf = new File(resultPath);
+                if (rf.exists() && rf.isFile()) {
+                    Files.copy(rf.toPath(), response.getOutputStream());
+                    response.getOutputStream().flush();
+                    return;
+                }
+            }
+            String content = str(t.get("resultContent"));
+            if (content == null || content.isEmpty()) content = buildResultCsv(t);
             response.getOutputStream().write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
             response.getOutputStream().write(content.getBytes(StandardCharsets.UTF_8));
             response.getOutputStream().flush();
