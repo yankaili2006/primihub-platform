@@ -33,6 +33,8 @@ public class DataDifferenceService {
     private DataDifferencePrRepository dataDifferencePrRepository;
     @Autowired
     private LogManagementService logManagementService;
+    @Autowired
+    private DataAsyncService dataAsyncService;
 
     public BaseResultEntity saveDataDifference(DataDifferenceReq req, Long userId) {
         try {
@@ -69,6 +71,8 @@ public class DataDifferenceService {
             dataDifferencePrRepository.saveDataDifferenceTask(task);
 
             recordComputeLog(task.getTaskId(), req.getResultName(), "联邦求差", userId, null, 0);
+
+            dataAsyncService.differenceGrpcRun(task, dataDifference);
 
             Map<String, Object> map = new HashMap<>();
             map.put("dataDifference", dataDifference);
@@ -206,6 +210,41 @@ public class DataDifferenceService {
             log.error("取消联邦求差任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "取消失败");
         }
+    }
+
+    public BaseResultEntity retryDifferenceTask(Long taskId) {
+        try {
+            DataDifferenceTask task = dataDifferenceRepository.selectTaskById(taskId);
+            if (task == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "未查询到任务信息");
+            }
+            if (task.getTaskState() == 1 || task.getTaskState() == 2) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL, "运行中或完成");
+            }
+            DataDifference dataDifference = dataDifferenceRepository.selectById(task.getDifferenceId());
+            if (dataDifference == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "未查询到求差信息");
+            }
+            task.setTaskState(2);
+            dataDifferencePrRepository.updateDataDifferenceTask(task);
+            dataAsyncService.differenceGrpcRun(task, dataDifference);
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("重试联邦求差任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "重试失败");
+        }
+    }
+
+    public void exportDifferenceLog(HttpServletResponse response, Long taskId) {
+        String taskIdName = null;
+        if (taskId != null && taskId > 0) {
+            DataDifferenceTask task = dataDifferenceRepository.selectTaskById(taskId);
+            if (task != null) {
+                taskIdName = task.getTaskId();
+            }
+        }
+        logManagementService.exportComputeLog(response, "COMPUTE_DIFFERENCE", taskIdName,
+                null, null, null, null, null, null, null);
     }
 
     private void recordComputeLog(String taskId, String taskName, String computeType,

@@ -30,6 +30,7 @@ import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
 import com.primihub.biz.repository.secondarydb.data.DataTaskRepository;
 import com.primihub.biz.repository.secondarydb.sys.SysUserSecondarydbRepository;
 import com.primihub.biz.service.data.component.ComponentTaskService;
+import com.primihub.biz.service.sys.LogManagementService;
 import com.primihub.biz.service.sys.SysEmailService;
 import com.primihub.biz.util.CsvUtil;
 import com.primihub.biz.util.DataUtil;
@@ -113,6 +114,12 @@ public class DataAsyncService implements ApplicationContextAware {
     private DataRedisRepository dataRedisRepository;
     @Autowired
     private TaskHelper taskHelper;
+    @Autowired
+    private DataDifferencePrRepository dataDifferencePrRepository;
+    @Autowired
+    private DataUnionPrRepository dataUnionPrRepository;
+    @Autowired
+    private LogManagementService logManagementService;
 
     public TaskHelper getTaskHelper(){
         return taskHelper;
@@ -629,5 +636,326 @@ public class DataAsyncService implements ApplicationContextAware {
         dataTask.setTaskEndTime(System.currentTimeMillis());
         dataTaskPrRepository.updateDataTask(dataTask);
         dataReasoningPrRepository.updateDataReasoning(dataReasoning);
+    }
+
+    // ==================== 联邦求差 / 联邦求并 执行层 ====================
+    // 复用 PSI 引擎链路(psiType=1 即差集，语义 = client − server，与 DataPsi.outputContent 一致)。
+    // 求并没有引擎原生算子，由「本方 keyword 全量 ∪ (对方 − 本方)」组合而成 —— 求并结果本就要
+    // 揭示两方元素给结果方，该组合不产生额外信息泄露。
+
+    /**
+     * 联邦求差：direction 0 = 本方−对方(A−B，client=本方)，1 = 对方−本方(B−A，client=对方)。
+     * 任务状态约定同 data_psi_task：0未开始 1成功 2运行中 3失败 4取消。
+     */
+    @Async
+    public void differenceGrpcRun(DataDifferenceTask diffTask, DataDifference dataDifference) {
+        DataTask dataTask = new DataTask();
+        dataTask.setTaskIdName(diffTask.getTaskId());
+        dataTask.setTaskName(dataDifference.getResultName());
+        dataTask.setTaskState(TaskStateEnum.IN_OPERATION.getStateType());
+        dataTask.setTaskType(TaskTypeEnum.DIFFERENCE.getTaskType());
+        dataTask.setTaskStartTime(System.currentTimeMillis());
+        dataTaskPrRepository.saveDataTask(dataTask);
+        diffTask.setTaskState(TaskStateEnum.IN_OPERATION.getStateType());
+        dataDifferencePrRepository.updateDataDifferenceTask(diffTask);
+        String errorMsg = null;
+        try {
+            DataResource own = resolveResourceWithFusionFallback(dataDifference.getOwnResourceId());
+            DataResource other = resolveResourceWithFusionFallback(dataDifference.getOtherResourceId());
+            if (own == null) {
+                errorMsg = "本方资源查询失败:" + dataDifference.getOwnResourceId();
+            } else if (other == null) {
+                errorMsg = "对方资源查询失败:" + dataDifference.getOtherResourceId();
+            }
+            String teeResourceId = "";
+            if (errorMsg == null && Integer.valueOf(2).equals(dataDifference.getTag())) {
+                teeResourceId = resolveTeeResourceId(dataDifference.getTeeOrganId());
+                if (teeResourceId == null) {
+                    errorMsg = "TEE 机构资源查询失败:" + dataDifference.getTeeOrganId();
+                }
+            }
+            if (errorMsg == null) {
+                String outputPath = new StringBuilder().append(baseConfiguration.getResultUrlDirPrefix())
+                        .append(DateUtil.formatDate(new Date(), DateUtil.DateStyle.HOUR_FORMAT_SHORT.getFormat()))
+                        .append("/").append(diffTask.getTaskId()).append(".csv").toString();
+                diffTask.setFilePath(outputPath);
+                boolean reverse = Integer.valueOf(1).equals(dataDifference.getDifferenceDirection());
+                if (reverse) {
+                    errorMsg = runEnginePsiDifference(diffTask.getTaskId(), dataDifference.getTag(), teeResourceId,
+                            engineResourceId(other), dataDifference.getOtherKeyword(), other.getFileHandleField(),
+                            engineResourceId(own), dataDifference.getOwnKeyword(), own.getFileHandleField(), outputPath);
+                } else {
+                    errorMsg = runEnginePsiDifference(diffTask.getTaskId(), dataDifference.getTag(), teeResourceId,
+                            engineResourceId(own), dataDifference.getOwnKeyword(), own.getFileHandleField(),
+                            engineResourceId(other), dataDifference.getOtherKeyword(), other.getFileHandleField(), outputPath);
+                }
+            }
+        } catch (Exception e) {
+            log.error("differenceGrpcRun taskId:{}", diffTask.getTaskId(), e);
+            errorMsg = "执行异常:" + e.getMessage();
+        }
+        if (errorMsg == null) {
+            dataTask.setTaskState(TaskStateEnum.SUCCESS.getStateType());
+            diffTask.setTaskState(TaskStateEnum.SUCCESS.getStateType());
+            String fileContent = FileUtil.getFileContent(diffTask.getFilePath());
+            if (fileContent != null) {
+                diffTask.setFileContent(fileContent);
+                diffTask.setFileRows(countNonEmptyLines(fileContent));
+            }
+        } else {
+            dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+            dataTask.setTaskErrorMsg(errorMsg);
+            diffTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+        }
+        dataDifferencePrRepository.updateDataDifferenceTask(diffTask);
+        dataTask.setTaskEndTime(System.currentTimeMillis());
+        updateTaskState(dataTask);
+        logManagementService.finishComputeLogByTaskId(diffTask.getTaskId(), errorMsg == null ? 1 : 2, errorMsg);
+    }
+
+    /**
+     * 联邦求并：A ∪ B = 本方 keyword 全量 ∪ (对方 − 本方)。
+     * 先经引擎跑 (对方 − 本方) 差集，再与本方 keyword 列本地合并去重。
+     */
+    @Async
+    public void unionGrpcRun(DataUnionTask unionTask, DataUnion dataUnion) {
+        DataTask dataTask = new DataTask();
+        dataTask.setTaskIdName(unionTask.getTaskId());
+        dataTask.setTaskName(dataUnion.getResultName());
+        dataTask.setTaskState(TaskStateEnum.IN_OPERATION.getStateType());
+        dataTask.setTaskType(TaskTypeEnum.UNION.getTaskType());
+        dataTask.setTaskStartTime(System.currentTimeMillis());
+        dataTaskPrRepository.saveDataTask(dataTask);
+        unionTask.setTaskState(TaskStateEnum.IN_OPERATION.getStateType());
+        dataUnionPrRepository.updateDataUnionTask(unionTask);
+        String errorMsg = null;
+        String diffPath = null;
+        try {
+            DataResource own = resolveResourceWithFusionFallback(dataUnion.getOwnResourceId());
+            DataResource other = resolveResourceWithFusionFallback(dataUnion.getOtherResourceId());
+            if (own == null) {
+                errorMsg = "本方资源查询失败:" + dataUnion.getOwnResourceId();
+            } else if (other == null) {
+                errorMsg = "对方资源查询失败:" + dataUnion.getOtherResourceId();
+            } else if (StringUtils.isBlank(own.getUrl())) {
+                errorMsg = "本方资源文件路径为空，无法合并求并结果";
+            }
+            String teeResourceId = "";
+            if (errorMsg == null && Integer.valueOf(2).equals(dataUnion.getTag())) {
+                teeResourceId = resolveTeeResourceId(dataUnion.getTeeOrganId());
+                if (teeResourceId == null) {
+                    errorMsg = "TEE 机构资源查询失败:" + dataUnion.getTeeOrganId();
+                }
+            }
+            if (errorMsg == null) {
+                String dir = new StringBuilder().append(baseConfiguration.getResultUrlDirPrefix())
+                        .append(DateUtil.formatDate(new Date(), DateUtil.DateStyle.HOUR_FORMAT_SHORT.getFormat()))
+                        .append("/").toString();
+                diffPath = dir + unionTask.getTaskId() + "-diff.csv";
+                String outputPath = dir + unionTask.getTaskId() + ".csv";
+                unionTask.setFilePath(outputPath);
+                // 引擎跑 (对方 − 本方)：client=对方，server=本方，psiType=1
+                errorMsg = runEnginePsiDifference(unionTask.getTaskId(), dataUnion.getTag(), teeResourceId,
+                        engineResourceId(other), dataUnion.getOtherKeyword(), other.getFileHandleField(),
+                        engineResourceId(own), dataUnion.getOwnKeyword(), own.getFileHandleField(), diffPath);
+                if (errorMsg == null) {
+                    errorMsg = buildUnionResult(own, dataUnion.getOwnKeyword(), diffPath, outputPath);
+                }
+            }
+        } catch (Exception e) {
+            log.error("unionGrpcRun taskId:{}", unionTask.getTaskId(), e);
+            errorMsg = "执行异常:" + e.getMessage();
+        } finally {
+            if (diffPath != null) {
+                try { Files.deleteIfExists(Paths.get(diffPath)); } catch (Exception ignore) { }
+            }
+        }
+        if (errorMsg == null) {
+            dataTask.setTaskState(TaskStateEnum.SUCCESS.getStateType());
+            unionTask.setTaskState(TaskStateEnum.SUCCESS.getStateType());
+            String fileContent = FileUtil.getFileContent(unionTask.getFilePath());
+            if (fileContent != null) {
+                unionTask.setFileContent(fileContent);
+                unionTask.setFileRows(countNonEmptyLines(fileContent));
+            }
+        } else {
+            dataTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+            dataTask.setTaskErrorMsg(errorMsg);
+            unionTask.setTaskState(TaskStateEnum.FAIL.getStateType());
+        }
+        dataUnionPrRepository.updateDataUnionTask(unionTask);
+        dataTask.setTaskEndTime(System.currentTimeMillis());
+        updateTaskState(dataTask);
+        logManagementService.finishComputeLogByTaskId(unionTask.getTaskId(), errorMsg == null ? 1 : 2, errorMsg);
+    }
+
+    /**
+     * 资源解析：本地 fusionId → 本地数值 id → fusion 中心兜底(跨机构公开资源可能未同步进本地库)。
+     */
+    private DataResource resolveResourceWithFusionFallback(String resourceId) {
+        if (StringUtils.isBlank(resourceId)) {
+            return null;
+        }
+        DataResource res = dataResourceRepository.queryDataResourceByResourceFusionId(resourceId);
+        if (res == null && StringUtils.isNumeric(resourceId)) {
+            res = dataResourceRepository.queryDataResourceById(Long.parseLong(resourceId));
+        }
+        if (res == null) {
+            try {
+                BaseResultEntity fusionRes = otherBusinessesService.getDataResource(resourceId);
+                if (fusionRes != null && fusionRes.getCode() == 0 && fusionRes.getResult() != null) {
+                    DataResourceCopyVo copyVo = JSONObject.parseObject(JSON.toJSONString(fusionRes.getResult()), DataResourceCopyVo.class);
+                    if (copyVo != null && StringUtils.isNotBlank(copyVo.getResourceColumnNameList())) {
+                        res = new DataResource();
+                        res.setResourceFusionId(StringUtils.isNotBlank(copyVo.getResourceId()) ? copyVo.getResourceId() : resourceId);
+                        res.setFileHandleField(copyVo.getResourceColumnNameList());
+                        res.setResourceState(copyVo.getResourceState() == null ? 0 : copyVo.getResourceState());
+                        log.info("Resolved resource via fusion center: {}", resourceId);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("fusion center resource lookup failed: {}", resourceId, e);
+            }
+        }
+        return res;
+    }
+
+    private String engineResourceId(DataResource resource) {
+        return StringUtils.isNotBlank(resource.getResourceFusionId())
+                ? resource.getResourceFusionId() : String.valueOf(resource.getResourceId());
+    }
+
+    /** TEE 模式下取可信机构首个资源 id，失败返回 null(同 psiGrpcRun 的 TEE 分支)。 */
+    private String resolveTeeResourceId(String teeOrganId) {
+        try {
+            DataFResourceReq fresourceReq = new DataFResourceReq();
+            fresourceReq.setOrganId(teeOrganId);
+            BaseResultEntity resourceList = otherBusinessesService.getResourceList(fresourceReq);
+            if (resourceList.getCode() != 0) {
+                return null;
+            }
+            LinkedHashMap<String, Object> data = (LinkedHashMap<String, Object>) resourceList.getResult();
+            List<LinkedHashMap<String, Object>> resourceDataList = (List<LinkedHashMap<String, Object>>) data.get("data");
+            if (resourceDataList == null || resourceDataList.isEmpty()) {
+                return null;
+            }
+            return resourceDataList.get(0).get("resourceId").toString();
+        } catch (Exception e) {
+            log.error("resolveTeeResourceId failed: {}", teeOrganId, e);
+            return null;
+        }
+    }
+
+    /**
+     * 经引擎跑一轮 PSI 差集(client − server)，结果写 outputPath。返回 null=成功，否则为错误信息。
+     */
+    private String runEnginePsiDifference(String taskIdName, Integer psiTag, String teeResourceId,
+                                          String clientDataId, String clientKeyword, String clientColumns,
+                                          String serverDataId, String serverKeyword, String serverColumns,
+                                          String outputPath) {
+        try {
+            TaskPSIParam psiParam = new TaskPSIParam();
+            psiParam.setPsiTag(psiTag == null ? 0 : psiTag);
+            psiParam.setPsiType(1);
+            psiParam.setClientData(clientDataId);
+            List<String> clientFields = Arrays.asList(clientColumns.split(","));
+            Integer[] clientIndex = Arrays.stream(clientKeyword.split(",")).map(clientFields::indexOf).toArray(Integer[]::new);
+            if (Arrays.asList(clientIndex).contains(-1)) {
+                return "关键字段不在资源列中:" + clientKeyword;
+            }
+            psiParam.setClientIndex(clientIndex);
+            psiParam.setServerData(serverDataId);
+            List<String> serverFields = Arrays.asList(serverColumns.split(","));
+            Integer[] serverIndex = Arrays.stream(serverKeyword.split(",")).map(serverFields::indexOf).toArray(Integer[]::new);
+            if (Arrays.asList(serverIndex).contains(-1)) {
+                return "关键字段不在资源列中:" + serverKeyword;
+            }
+            psiParam.setServerIndex(serverIndex);
+            psiParam.setTeeData(teeResourceId == null ? "" : teeResourceId);
+            psiParam.setOutputFullFilename(outputPath);
+            TaskParam taskParam = new TaskParam();
+            taskParam.setTaskId(taskIdName);
+            taskParam.setTaskContentParam(psiParam);
+            taskHelper.submit(taskParam);
+            if (!taskParam.getSuccess()) {
+                return StringUtils.isBlank(taskParam.getError()) ? "引擎执行失败" : taskParam.getError();
+            }
+            if (!FileUtil.isFileExists(outputPath)) {
+                return "引擎结果文件未生成";
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("runEnginePsiDifference taskId:{}", taskIdName, e);
+            return "引擎执行异常:" + e.getMessage();
+        }
+    }
+
+    /**
+     * 合并求并结果：本方 keyword 列全量(读本方资源文件) ∪ 引擎差集(对方−本方)，去重后写 outputPath。
+     * 两侧 CSV 首行均为表头；引擎输出带 UTF-8 BOM，合并前剥掉。
+     */
+    private String buildUnionResult(DataResource own, String ownKeyword, String diffPath, String outputPath) {
+        try {
+            List<String> header = Arrays.asList(own.getFileHandleField().split(","));
+            List<String> keys = Arrays.asList(ownKeyword.split(","));
+            int[] idx = keys.stream().mapToInt(header::indexOf).toArray();
+            String ownContent = FileUtil.getFileContent(own.getUrl());
+            if (ownContent == null) {
+                return "本方资源文件读取失败:" + own.getUrl();
+            }
+            Set<String> rows = new LinkedHashSet<>();
+            String[] ownLines = stripBom(ownContent).split("\n");
+            for (int i = 1; i < ownLines.length; i++) {
+                String line = ownLines[i].trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String[] vals = line.split(",", -1);
+                StringBuilder sb = new StringBuilder();
+                for (int k = 0; k < idx.length; k++) {
+                    if (k > 0) {
+                        sb.append(",");
+                    }
+                    sb.append(idx[k] >= 0 && idx[k] < vals.length ? vals[idx[k]].trim() : "");
+                }
+                rows.add(sb.toString());
+            }
+            String diffContent = FileUtil.getFileContent(diffPath);
+            if (diffContent != null) {
+                String[] diffLines = stripBom(diffContent).split("\n");
+                for (int i = 1; i < diffLines.length; i++) {
+                    String line = diffLines[i].trim();
+                    if (!line.isEmpty()) {
+                        rows.add(line);
+                    }
+                }
+            }
+            List<String> out = new ArrayList<>();
+            out.add(String.join(",", keys));
+            out.addAll(rows);
+            java.io.File outFile = new java.io.File(outputPath);
+            if (outFile.getParentFile() != null) {
+                outFile.getParentFile().mkdirs();
+            }
+            Files.write(Paths.get(outputPath), String.join("\n", out).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return null;
+        } catch (Exception e) {
+            log.error("buildUnionResult failed diffPath:{}", diffPath, e);
+            return "合并求并结果失败:" + e.getMessage();
+        }
+    }
+
+    private String stripBom(String content) {
+        return content.startsWith("\uFEFF") ? content.substring(1) : content;
+    }
+
+    private int countNonEmptyLines(String fileContent) {
+        int rowCount = 0;
+        for (String line : fileContent.split("\n")) {
+            if (!line.trim().isEmpty()) {
+                rowCount++;
+            }
+        }
+        return rowCount;
     }
 }

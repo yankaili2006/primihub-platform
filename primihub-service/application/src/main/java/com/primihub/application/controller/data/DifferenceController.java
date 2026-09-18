@@ -132,16 +132,21 @@ public class DifferenceController {
         return dataDifferenceService.cancelDifferenceTask(taskId);
     }
 
+    /**
+     * 重试联邦求差任务
+     */
+    @ApiOperation(value = "重试联邦求差任务")
+    @GetMapping("retryDifferenceTask")
+    public BaseResultEntity retryDifferenceTask(@RequestParam Long taskId) {
+        if (taskId == null || taskId == 0L) {
+            return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM, "taskId");
+        }
+        return dataDifferenceService.retryDifferenceTask(taskId);
+    }
+
     @ApiOperation(value = "导出联邦求差日志")
     @GetMapping("exportDifferenceLog")
     public void exportDifferenceLog(HttpServletResponse response, @RequestParam(required = false) Long taskId) {
-        try {
-            response.setContentType("text/plain;charset=UTF-8");
-            response.setHeader("Content-Disposition", "attachment;filename=" +
-                java.net.URLEncoder.encode("difference_log.txt", "UTF-8"));
-            response.getOutputStream().write(("联邦求差日志 - 任务ID: " + taskId).getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            log.error("导出联邦求差日志失败", e);
-        }
+        dataDifferenceService.exportDifferenceLog(response, taskId);
     }
 }

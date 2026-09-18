@@ -33,6 +33,8 @@ public class DataUnionService {
     private DataUnionPrRepository dataUnionPrRepository;
     @Autowired
     private LogManagementService logManagementService;
+    @Autowired
+    private DataAsyncService dataAsyncService;
 
     public BaseResultEntity saveDataUnion(DataUnionReq req, Long userId) {
         try {
@@ -68,6 +70,8 @@ public class DataUnionService {
             dataUnionPrRepository.saveDataUnionTask(task);
 
             recordComputeLog(task.getTaskId(), req.getResultName(), "联邦求并", userId, null, 0);
+
+            dataAsyncService.unionGrpcRun(task, dataUnion);
 
             Map<String, Object> map = new HashMap<>();
             map.put("dataUnion", dataUnion);
@@ -205,6 +209,41 @@ public class DataUnionService {
             log.error("取消联邦求并任务失败", e);
             return BaseResultEntity.failure(BaseResultEnum.FAILURE, "取消失败");
         }
+    }
+
+    public BaseResultEntity retryUnionTask(Long taskId) {
+        try {
+            DataUnionTask task = dataUnionRepository.selectTaskById(taskId);
+            if (task == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "未查询到任务信息");
+            }
+            if (task.getTaskState() == 1 || task.getTaskState() == 2) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_RUN_TASK_FAIL, "运行中或完成");
+            }
+            DataUnion dataUnion = dataUnionRepository.selectById(task.getUnionId());
+            if (dataUnion == null) {
+                return BaseResultEntity.failure(BaseResultEnum.DATA_QUERY_NULL, "未查询到求并信息");
+            }
+            task.setTaskState(2);
+            dataUnionPrRepository.updateDataUnionTask(task);
+            dataAsyncService.unionGrpcRun(task, dataUnion);
+            return BaseResultEntity.success();
+        } catch (Exception e) {
+            log.error("重试联邦求并任务失败", e);
+            return BaseResultEntity.failure(BaseResultEnum.FAILURE, "重试失败");
+        }
+    }
+
+    public void exportUnionLog(HttpServletResponse response, Long taskId) {
+        String taskIdName = null;
+        if (taskId != null && taskId > 0) {
+            DataUnionTask task = dataUnionRepository.selectTaskById(taskId);
+            if (task != null) {
+                taskIdName = task.getTaskId();
+            }
+        }
+        logManagementService.exportComputeLog(response, "COMPUTE_UNION", taskIdName,
+                null, null, null, null, null, null, null);
     }
 
     private void recordComputeLog(String taskId, String taskName, String computeType,

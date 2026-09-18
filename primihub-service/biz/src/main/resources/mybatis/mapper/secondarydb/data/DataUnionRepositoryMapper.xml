@@ -8,6 +8,7 @@
             du.result_name AS resultName,
             du.other_organ_id as otherOrganId,
             du.tag as unionTag,
+            du.tag as tag,
             dut.id as taskId,
             dut.task_id as taskIdName,
             dt.task_name as taskName,
@@ -47,7 +48,7 @@
 
     <select id="selectTaskById" resultType="com.primihub.biz.entity.data.po.DataUnionTask">
         SELECT
-            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_rows as fileRows,file_path filePath,file_content fileContent,create_date createDate
         FROM
             data_union_task
         WHERE
@@ -55,7 +56,7 @@
     </select>
     <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.DataUnionTask">
         SELECT
-            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_path filePath,file_content fileContent,create_date createDate
+            id,union_id as unionId,task_id as taskId,task_state as taskState,ascription,ascription_type as ascriptionType,file_rows as fileRows,file_path filePath,file_content fileContent,create_date createDate
         FROM
             data_union_task
         WHERE

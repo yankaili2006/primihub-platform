@@ -518,6 +518,31 @@ public class LogManagementService {
         }
     }
 
+    /**
+     * 按 taskId 收尾计算日志：置终态 status(1成功/2失败)、endTime、耗时与错误信息。
+     * 供异步计算(联邦求差/求并等)在任务结束时回写创建时落的那条日志。
+     */
+    public void finishComputeLogByTaskId(String taskId, Integer status, String errorMsg) {
+        try {
+            ComputeLog computeLog = logManagementRepository.selectComputeLogByTaskId(taskId);
+            if (computeLog == null) {
+                return;
+            }
+            Date endTime = new Date();
+            computeLog.setStatus(status);
+            computeLog.setEndTime(endTime);
+            if (computeLog.getStartTime() != null) {
+                computeLog.setExecutionTime(endTime.getTime() - computeLog.getStartTime().getTime());
+            }
+            if (errorMsg != null) {
+                computeLog.setErrorMsg(errorMsg);
+            }
+            logManagementRepository.updateComputeLog(computeLog);
+        } catch (Exception e) {
+            log.error("收尾计算日志失败 taskId:{}", taskId, e);
+        }
+    }
+
     // ========== 日志导出 ==========
 
     /**
