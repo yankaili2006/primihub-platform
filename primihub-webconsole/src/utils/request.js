@@ -145,6 +145,9 @@ service.interceptors.response.use(
     const { data } = response
     const { code, msg, result } = data
     if (code !== 0) {
+      // 后端错误字段是 msg，而多数视图读 res.message（尤其 code=-1 静默返回的分支，
+      // 如单方算法 run 失败）——统一补别名，具体失败原因才能到达视图的 toast。
+      if (msg && data.message === undefined) data.message = msg
       if (code === -1 || code === 1001 || code === 1007 || code === 1013) {
         return data
       } else if (code === 100) {
