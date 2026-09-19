@@ -45,6 +45,8 @@ public class FederatedLearningService {
     private DataModelService dataModelService;
     @Autowired
     private DataResourceRepository dataResourceRepository;
+    @Autowired
+    private com.primihub.biz.repository.secondarydb.data.DataModelRepository dataModelRepository;
 
     // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
@@ -65,15 +67,22 @@ public class FederatedLearningService {
         } catch (Exception e) { log.warn("解析资源失败 {}: {}", idOrFusion, e.getMessage()); return null; }
     }
 
-    /** 按 FederatedLearningReq 的 own/participant 资源动态构造 dataSet.selectData; 信息不足返回 null(回退模板) */
+    /**
+     * 按 FederatedLearningReq 的 own/participant 资源动态构造 dataSet.selectData。
+     * 关键: 协作方资源在对端机构, 本机 data_resource 无此行, 不能要求本地可解析——否则前端选择被静默
+     * 丢弃、始终回退成模板演示数据(hfl_a/hfl_b), 用户以为在训自己的数据其实没有。这里协作方条目直接
+     * 用前端传入的 fusionId+organId 构造, 由 DAG check 的 getResourceListById(fusion 目录) + 项目授权
+     * 校验其真实可用; 未在共享项目中授权则 check 显式失败(诚实), 而非假成功。
+     * 仅当本方资源都无法解析时返回 null(回退模板)。
+     */
     private String buildSelectData(FederatedLearningReq req) {
         String ownRes = req.getOwnResourceId();
         String partRes = req.getParticipantResourceIds();
-        if (ownRes == null || partRes == null || partRes.isEmpty()) return null;
+        if (ownRes == null || ownRes.isEmpty() || partRes == null || partRes.isEmpty()) return null;
         String firstPart = partRes.split(",")[0].trim();
         DataResource own = resolveResource(ownRes);
-        DataResource part = resolveResource(firstPart);
-        if (own == null || part == null) return null;
+        if (own == null) return null;                 // 本方资源必须在本机可解析
+        boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;
         List<Map<String, Object>> arr = new ArrayList<>();
         Map<String, Object> a = new LinkedHashMap<>();
         a.put("organId", req.getOwnOrganId());
@@ -84,15 +93,16 @@ public class FederatedLearningService {
         a.put("derivation", 0);
         a.put("resourceContainsY", (req.getIsLabelOwner() != null ? req.getIsLabelOwner() : (own.getFileContainsY() != null ? own.getFileContainsY() : 1)));
         arr.add(a);
+        // 协作方: 优先本地解析(同机构多方演示时可取名), 否则直接以前端 fusionId 构造
+        DataResource part = resolveResource(firstPart);
         Map<String, Object> b = new LinkedHashMap<>();
         b.put("organId", req.getParticipantOrganIds() != null ? req.getParticipantOrganIds().split(",")[0].trim() : null);
-        b.put("resourceId", part.getResourceFusionId());
-        b.put("resourceName", part.getResourceName());
+        b.put("resourceId", part != null ? part.getResourceFusionId() : firstPart);
+        b.put("resourceName", part != null ? part.getResourceName() : firstPart);
         b.put("auditStatus", 1);
         b.put("participationIdentity", 2);            // 参与方
         b.put("derivation", 0);
         // 横向:两方都有标签(各自样本带 y);纵向:仅发起方有标签
-        boolean horizontal = req.getFederatedType() != null && req.getFederatedType() == 1;
         b.put("resourceContainsY", horizontal ? 1 : 0);
         arr.add(b);
         return JSON.toJSONString(arr);
@@ -134,7 +144,22 @@ public class FederatedLearningService {
             // ===== 桥接真实 FL =====
             Long templateModelId = DEFAULT_TEMPLATE_MODEL_ID;
             try { if (req.getModelId() != null && req.getModelId().matches("\\d+")) templateModelId = Long.valueOf(req.getModelId()); } catch (Exception ignore) {}
-            Long projectId = (req.getProjectId() != null && req.getProjectId() != 0L) ? req.getProjectId() : DEFAULT_PROJECT_ID;
+            // 项目解析: 前端选了就用; 没选则回退到模板模型自身所属项目(必然存在且已授权其演示资源),
+            // 而非硬编码 DEFAULT_PROJECT_ID=2(某些部署此项目根本不存在 -> saveModelAndComponent
+            // "编辑失败:找不到项目", 联邦训练页整条走不通)。
+            Long projectId;
+            if (req.getProjectId() != null && req.getProjectId() != 0L) {
+                projectId = req.getProjectId();
+            } else {
+                Long tmplProject = null;
+                try {
+                    com.primihub.biz.entity.data.po.DataModel tmplModel = dataModelRepository.queryDataModelById(templateModelId);
+                    if (tmplModel != null && tmplModel.getProjectId() != null && tmplModel.getProjectId() != 0L) {
+                        tmplProject = tmplModel.getProjectId();
+                    }
+                } catch (Exception ignore) {}
+                projectId = tmplProject != null ? tmplProject : DEFAULT_PROJECT_ID;
+            }
 
             DataModelAndComponentReq mr = dataModelService.getModelComponentReq(templateModelId, userId, projectId);
             if (mr == null || mr.getModelComponents() == null || mr.getModelComponents().isEmpty()) {
