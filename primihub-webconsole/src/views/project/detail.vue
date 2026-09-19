@@ -66,6 +66,14 @@
           <!-- 项目上下文注入：只看/只建本项目的联邦学习任务（整合 P2） -->
           <FlTaskList v-if="tabName === 'federatedLearning'" :project-id="id" />
         </el-tab-pane>
+        <el-tab-pane label="联邦分析" name="federatedAnalysis">
+          <!-- 单一真源 FaCenter，项目上下文注入（双胞胎归并） -->
+          <FaCenter v-if="tabName === 'federatedAnalysis'" :project-id="id" />
+        </el-tab-pane>
+        <el-tab-pane label="联邦统计" name="federatedStatistics">
+          <!-- 单一真源 FsCenter，项目上下文注入（双胞胎归并） -->
+          <FsCenter v-if="tabName === 'federatedStatistics'" :project-id="id" />
+        </el-tab-pane>
       </el-tabs>
     </section>
 
@@ -110,6 +118,8 @@ import ResourceTable from '@/components/ResourceTable'
 import ResourcePreviewDialog from '@/components/ResourcePreviewDialog'
 import ModelTaskList from '@/components/ModelTaskList'
 import FlTaskList from '@/components/FederatedLearning/FlTaskList'
+import FaCenter from '@/components/FederatedAnalysis/FaCenter'
+import FsCenter from '@/components/FederatedStatistics/FsCenter'
 import ProjectAudit from '@/components/ProjectAudit'
 import DerivedDataTable from '@/components/DerivedDataTable'
 import EditInput from '@/components/editInput'
@@ -117,6 +127,8 @@ import EditInput from '@/components/editInput'
 export default {
   components: {
     FlTaskList,
+    FaCenter,
+    FsCenter,
     ProjectResourceDialog,
     ProviderOrganDialog,
     ResourceTable,
