@@ -25,6 +25,13 @@ export const constantRoutes = [
     meta: { title: '授权页' }
   },
   {
+    // 旧大写「联邦模型管理」树已并入 /federatedLearning（整合 P3）；
+    // 存量书签/外链的大写 URL 在此参数化 redirect 到新位置。
+    path: '/FederatedLearning/:sub?',
+    redirect: to => '/federatedLearning/' + (to.params.sub || 'list'),
+    hidden: true
+  },
+  {
     path: '/register',
     component: () => import('@/views/register/index'),
     hidden: true,
@@ -394,45 +401,6 @@ export const asyncRoutes = [
     ]
   },
   {
-    path: '/FederatedLearning',
-    component: Layout,
-    name: 'FederatedLearning',
-    redirect: '/FederatedLearning/list',
-    meta: { title: '联邦模型管理', icon: 'el-icon-data-analysis' },
-    children: [
-      {
-        path: 'list',
-        name: 'FederatedLearningList',
-        component: () => import('@/views/federatedLearning/list'),
-        meta: { title: '模型列表', breadcrumb: false }
-      },
-      {
-        path: 'modelPreview',
-        name: 'FederatedModelPreview',
-        component: () => import('@/views/federatedLearning/modelPreview'),
-        meta: { title: '联邦学习模型预览' }
-      },
-      {
-        path: 'modelImport',
-        name: 'FederatedModelImport',
-        component: () => import('@/views/federatedLearning/modelImport'),
-        meta: { title: '联邦学习模型导入' }
-      },
-      {
-        path: 'modelExport',
-        name: 'FederatedModelExport',
-        component: () => import('@/views/federatedLearning/modelExport'),
-        meta: { title: '联邦学习模型导出' }
-      },
-      {
-        path: 'modelingWorkbench',
-        name: 'FederatedModelingWorkbench',
-        component: () => import('@/views/federatedLearning/modelingWorkbench'),
-        meta: { title: '联邦建模工作台' }
-      }
-    ]
-  },
-  {
     path: '/project',
     name: 'Project',
     component: Layout,
@@ -688,6 +656,39 @@ export const asyncRoutes = [
         name: 'FLVerticalXGBoostPredict',
         component: () => import('@/views/federatedLearning/verticalXGBoostPredict'),
         meta: { title: 'XGBoost预测（纵向）' }
+      },
+      // ── 原大写 /FederatedLearning「联邦模型管理」树并入（2026-09-19 整合 P3）。
+      // route name = 授权 authCode，全部保留 → sys_menu/sys_auth 零迁移；
+      // 旧大写 URL 由 constantRoutes 里的参数化 redirect 兜底。
+      {
+        path: 'list',
+        name: 'FederatedLearningList',
+        component: () => import('@/views/federatedLearning/list'),
+        meta: { title: '联邦模型列表' }
+      },
+      {
+        path: 'modelPreview',
+        name: 'FederatedModelPreview',
+        component: () => import('@/views/federatedLearning/modelPreview'),
+        meta: { title: '联邦学习模型预览' }
+      },
+      {
+        path: 'modelImport',
+        name: 'FederatedModelImport',
+        component: () => import('@/views/federatedLearning/modelImport'),
+        meta: { title: '联邦学习模型导入' }
+      },
+      {
+        path: 'modelExport',
+        name: 'FederatedModelExport',
+        component: () => import('@/views/federatedLearning/modelExport'),
+        meta: { title: '联邦学习模型导出' }
+      },
+      {
+        path: 'modelingWorkbench',
+        name: 'FederatedModelingWorkbench',
+        component: () => import('@/views/federatedLearning/modelingWorkbench'),
+        meta: { title: '联邦建模工作台' }
       }
     ]
   },

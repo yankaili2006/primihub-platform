@@ -19,7 +19,7 @@
           联邦建模工作台（数据集选择 / 特征配置 / 模型配置 / 工作流编排）已有独立的真实页面，
           请在其中完成建模配置并发起训练。
         </p>
-        <el-button type="primary" icon="el-icon-right" @click="$router.push('/FederatedLearning/modelingWorkbench')">前往联邦建模工作台</el-button>
+        <el-button type="primary" icon="el-icon-right" @click="$router.push('/federatedLearning/modelingWorkbench')">前往联邦建模工作台</el-button>
       </el-card>
     </div>
 
