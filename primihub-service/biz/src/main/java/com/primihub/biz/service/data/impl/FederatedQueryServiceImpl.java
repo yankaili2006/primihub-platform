@@ -90,6 +90,10 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
             task.setAlgorithm(algorithm);
             task.setQueryMode(mode);
             task.setQueryType(queryType);
+            Object pidObj = req.get("projectId");
+            if (pidObj != null && !pidObj.toString().isEmpty()) {
+                try { task.setProjectId(Long.valueOf(pidObj.toString())); } catch (NumberFormatException ignore) {}
+            }
             task.setTaskState(0);
             task.setSourceConfig(JSON.toJSONString(sourceConfig));
             task.setCreatedBy(userId);
@@ -119,6 +123,7 @@ public class FederatedQueryServiceImpl implements FederatedQueryService {
             params.put("taskState", req.getTaskState());
             params.put("startDate", req.getStartDate());
             params.put("endDate", req.getEndDate());
+            params.put("projectId", req.getProjectId());
             if (req.getPageNo() == null) req.setPageNo(1);
             if (req.getPageSize() == null) req.setPageSize(10);
 

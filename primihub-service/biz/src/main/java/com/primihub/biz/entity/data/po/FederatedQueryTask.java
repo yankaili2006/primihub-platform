@@ -10,6 +10,7 @@ public class FederatedQueryTask {
     private String algorithm;
     private String queryMode;
     private String queryType;
+    private Long projectId;
     private Integer taskState;
     private String sourceConfig;
     private String resultSummary;

@@ -74,6 +74,10 @@
           <!-- 单一真源 FsCenter，项目上下文注入（双胞胎归并） -->
           <FsCenter v-if="tabName === 'federatedStatistics'" :project-id="id" />
         </el-tab-pane>
+        <el-tab-pane label="联邦查询" name="federatedQuery">
+          <!-- 单一真源 FqCenter，项目上下文注入（后端 project_id 端到端过滤） -->
+          <FqCenter v-if="tabName === 'federatedQuery'" :project-id="id" />
+        </el-tab-pane>
       </el-tabs>
     </section>
 
@@ -120,6 +124,7 @@ import ModelTaskList from '@/components/ModelTaskList'
 import FlTaskList from '@/components/FederatedLearning/FlTaskList'
 import FaCenter from '@/components/FederatedAnalysis/FaCenter'
 import FsCenter from '@/components/FederatedStatistics/FsCenter'
+import FqCenter from '@/components/FederatedQuery/FqCenter'
 import ProjectAudit from '@/components/ProjectAudit'
 import DerivedDataTable from '@/components/DerivedDataTable'
 import EditInput from '@/components/editInput'
@@ -129,6 +134,7 @@ export default {
     FlTaskList,
     FaCenter,
     FsCenter,
+    FqCenter,
     ProjectResourceDialog,
     ProviderOrganDialog,
     ResourceTable,
