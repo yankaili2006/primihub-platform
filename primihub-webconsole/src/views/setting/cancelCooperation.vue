@@ -323,74 +323,15 @@ export default {
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
           // 使用测试数据
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
         }
       }).catch(() => {
         this.loading = false
         // 使用测试数据
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
       })
-    },
-    getMockData() {
-      return [
-        {
-          id: 1,
-          organId: 'ORG-001',
-          organName: '机构A',
-          organGateway: 'http://192.168.1.101:8080',
-          cooperationType: 'DATA_SHARE',
-          cooperationStatus: 1,
-          startDate: '2024-01-01 10:00:00',
-          endDate: '2024-12-31 23:59:59',
-          healthScore: 95
-        },
-        {
-          id: 2,
-          organId: 'ORG-002',
-          organName: '机构B',
-          organGateway: 'http://192.168.1.102:8080',
-          cooperationType: 'JOINT_COMPUTE',
-          cooperationStatus: 1,
-          startDate: '2024-02-15 14:30:00',
-          endDate: '2024-08-15 14:30:00',
-          healthScore: 88
-        },
-        {
-          id: 3,
-          organId: 'ORG-003',
-          organName: '机构C',
-          organGateway: 'http://192.168.1.103:8080',
-          cooperationType: 'MODEL_TRAINING',
-          cooperationStatus: 2,
-          startDate: '2024-03-01 09:00:00',
-          endDate: '2024-09-01 09:00:00',
-          healthScore: 72
-        },
-        {
-          id: 4,
-          organId: 'ORG-004',
-          organName: '机构D',
-          organGateway: 'http://192.168.1.104:8080',
-          cooperationType: 'DATA_SHARE',
-          cooperationStatus: 1,
-          startDate: '2024-01-20 11:00:00',
-          endDate: '2025-01-20 11:00:00',
-          healthScore: 91
-        },
-        {
-          id: 5,
-          organId: 'ORG-005',
-          organName: '机构E',
-          organGateway: 'http://192.168.1.105:8080',
-          cooperationType: 'OTHER',
-          cooperationStatus: 2,
-          startDate: '2024-04-10 16:00:00',
-          endDate: '2024-10-10 16:00:00',
-          healthScore: 65
-        }
-      ]
     },
     fetchHistoryData() {
       this.historyLoading = true
@@ -401,49 +342,15 @@ export default {
           this.historyTotal = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
           // 使用测试数据
-          this.historyTableData = this.getMockHistoryData()
+          this.historyTableData = []  // 不造假：接口失败/无数据即空
           this.historyTotal = this.historyTableData.length
         }
       }).catch(() => {
         this.historyLoading = false
         // 使用测试数据
-        this.historyTableData = this.getMockHistoryData()
+        this.historyTableData = []  // 不造假：接口失败/无数据即空
         this.historyTotal = this.historyTableData.length
       })
-    },
-    getMockHistoryData() {
-      return [
-        {
-          id: 101,
-          organId: 'ORG-010',
-          organName: '机构X',
-          cooperationType: 'DATA_SHARE',
-          cancelReason: '合作期满，双方协商一致终止合作关系',
-          cancelUserName: 'admin',
-          cancelDate: '2024-01-05 10:30:00',
-          cooperationDuration: '6个月'
-        },
-        {
-          id: 102,
-          organId: 'ORG-011',
-          organName: '机构Y',
-          cooperationType: 'JOINT_COMPUTE',
-          cancelReason: '对方节点长期无响应，通信异常，主动取消合作',
-          cancelUserName: 'admin',
-          cancelDate: '2024-01-08 15:20:00',
-          cooperationDuration: '3个月'
-        },
-        {
-          id: 103,
-          organId: 'ORG-012',
-          organName: '机构Z',
-          cooperationType: 'MODEL_TRAINING',
-          cancelReason: '项目需求变更，不再需要与该节点进行模型训练合作',
-          cancelUserName: 'admin',
-          cancelDate: '2024-01-10 09:15:00',
-          cooperationDuration: '2个月'
-        }
-      ]
     },
     handleTabClick(tab) {
       if (tab.name === 'cancelHistory') {

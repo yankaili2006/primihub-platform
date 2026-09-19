@@ -284,93 +284,14 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
         }
       }).catch(() => {
         this.loading = false
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
       })
-    },
-    getMockData() {
-      return [
-        {
-          id: 1,
-          projectName: '联合风控建模项目',
-          taskName: 'XGBoost模型训练',
-          taskId: 'TASK-001',
-          resultType: 'MODEL',
-          resultName: 'xgboost_model_20240115.pkl',
-          saveStatus: 1,
-          fileSize: 15728640,
-          createDate: '2024-01-15 10:30:00',
-          saveDate: '2024-01-15 10:35:00',
-          savePath: '/data/models/xgboost_model_20240115.pkl',
-          fileMd5: 'a1b2c3d4e5f6g7h8',
-          resultDesc: 'XGBoost联合训练模型，AUC=0.85'
-        },
-        {
-          id: 2,
-          projectName: '用户画像分析项目',
-          taskName: '特征工程计算',
-          taskId: 'TASK-002',
-          resultType: 'COMPUTE',
-          resultName: 'feature_result_20240115.csv',
-          saveStatus: 1,
-          fileSize: 52428800,
-          createDate: '2024-01-15 11:00:00',
-          saveDate: '2024-01-15 11:05:00',
-          savePath: '/data/results/feature_result_20240115.csv',
-          fileMd5: 'b2c3d4e5f6g7h8i9',
-          resultDesc: '用户特征计算结果，包含100个特征'
-        },
-        {
-          id: 3,
-          projectName: '隐私求交测试项目',
-          taskName: 'PSI任务',
-          taskId: 'TASK-003',
-          resultType: 'COMPUTE',
-          resultName: 'psi_intersection_20240115.csv',
-          saveStatus: 0,
-          fileSize: 1048576,
-          createDate: '2024-01-15 14:00:00',
-          saveDate: null,
-          savePath: null,
-          fileMd5: null,
-          resultDesc: 'PSI求交结果'
-        },
-        {
-          id: 4,
-          projectName: '联合风控建模项目',
-          taskName: '模型评估报告',
-          taskId: 'TASK-004',
-          resultType: 'REPORT',
-          resultName: 'model_evaluation_report.html',
-          saveStatus: 2,
-          fileSize: 524288,
-          createDate: '2024-01-15 15:00:00',
-          saveDate: null,
-          savePath: null,
-          fileMd5: null,
-          resultDesc: '模型评估报告，保存失败：磁盘空间不足'
-        },
-        {
-          id: 5,
-          projectName: '用户画像分析项目',
-          taskName: '中间结果缓存',
-          taskId: 'TASK-005',
-          resultType: 'INTERMEDIATE',
-          resultName: 'intermediate_data_cache.parquet',
-          saveStatus: 0,
-          fileSize: 104857600,
-          createDate: '2024-01-15 16:00:00',
-          saveDate: null,
-          savePath: null,
-          fileMd5: null,
-          resultDesc: '中间计算结果缓存'
-        }
-      ]
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -454,7 +375,7 @@ export default {
             this.$message.error(res.msg || '批量保存失败')
           }
         }).catch(() => {
-          this.$message.success('批量保存成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
           this.selectedRows.forEach(row => {
             row.saveStatus = 1
             row.saveDate = new Date().toLocaleString()
@@ -499,7 +420,7 @@ export default {
             this.$message.error(res.msg || '删除失败')
           }
         }).catch(() => {
-          this.$message.success('删除成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
           this.tableData = this.tableData.filter(item => item.id !== row.id)
         })
       }).catch(() => {})
@@ -519,7 +440,7 @@ export default {
             this.$message.error(res.msg || '批量删除失败')
           }
         }).catch(() => {
-          this.$message.success('批量删除成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
           this.tableData = this.tableData.filter(item => !ids.includes(item.id))
           this.selectedRows = []
         })
@@ -542,7 +463,7 @@ export default {
           this.$message.error(res.msg || '配置保存失败')
         }
       }).catch(() => {
-        this.$message.success('配置保存成功')
+        this.$message.error('操作失败: ' + '接口未成功返回')
         this.configDialogVisible = false
       })
     },

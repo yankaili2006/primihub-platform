@@ -162,91 +162,15 @@ export default {
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
           // 使用测试数据
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
         }
       }).catch(() => {
         this.loading = false
         // 使用测试数据
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
       })
-    },
-    getMockData() {
-      return [
-        {
-          id: 1,
-          configKey: 'match.field.weight',
-          configValue: '40',
-          configDesc: '字段匹配在总分中的权重百分比，用于计算数据需求与资源的匹配程度',
-          configType: '评分权重',
-          isEnabled: 1,
-          createDate: '2024-01-10 10:00:00'
-        },
-        {
-          id: 2,
-          configKey: 'match.volume.weight',
-          configValue: '25',
-          configDesc: '数据量匹配在总分中的权重百分比',
-          configType: '评分权重',
-          isEnabled: 1,
-          createDate: '2024-01-10 10:00:00'
-        },
-        {
-          id: 3,
-          configKey: 'match.format.weight',
-          configValue: '20',
-          configDesc: '数据格式匹配在总分中的权重百分比',
-          configType: '评分权重',
-          isEnabled: 1,
-          createDate: '2024-01-10 10:00:00'
-        },
-        {
-          id: 4,
-          configKey: 'match.type.weight',
-          configValue: '15',
-          configDesc: '需求类型匹配在总分中的权重百分比',
-          configType: '评分权重',
-          isEnabled: 1,
-          createDate: '2024-01-10 10:00:00'
-        },
-        {
-          id: 5,
-          configKey: 'match.score.threshold',
-          configValue: '60',
-          configDesc: '匹配得分阈值，低于此分数的资源不会被推荐',
-          configType: '匹配规则',
-          isEnabled: 1,
-          createDate: '2024-01-11 14:30:00'
-        },
-        {
-          id: 6,
-          configKey: 'match.max.results',
-          configValue: '10',
-          configDesc: '单次匹配返回的最大资源数量',
-          configType: '匹配规则',
-          isEnabled: 1,
-          createDate: '2024-01-11 14:30:00'
-        },
-        {
-          id: 7,
-          configKey: 'auto.match.enabled',
-          configValue: 'true',
-          configDesc: '是否启用自动匹配功能，新建需求时自动执行匹配',
-          configType: '系统配置',
-          isEnabled: 0,
-          createDate: '2024-01-12 09:15:00'
-        },
-        {
-          id: 8,
-          configKey: 'notification.match.complete',
-          configValue: 'true',
-          configDesc: '匹配完成后是否发送通知给需求创建者',
-          configType: '系统配置',
-          isEnabled: 1,
-          createDate: '2024-01-12 09:15:00'
-        }
-      ]
     },
     handleQuery() {
       this.queryForm.pageNum = 1

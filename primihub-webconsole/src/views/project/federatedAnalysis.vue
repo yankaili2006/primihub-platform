@@ -790,24 +790,6 @@ export default {
       }
       this.loading = false
     },
-    getMockData() {
-      return [
-        { taskId: 'FA-001', taskName: '用户ID联合查询', analysisType: 'JOINT_QUERY', dataSourceType: 'MySQL', participantCount: 2, dataVolume: '10万条', taskStatus: 2, createDate: '2024-01-15 10:00:00', completeDate: '2024-01-15 10:05:00' },
-        { taskId: 'FA-002', taskName: '客户隐私求交', analysisType: 'PSI', dataSourceType: 'Hive', participantCount: 3, dataVolume: '50万条', taskStatus: 1, createDate: '2024-01-15 14:00:00' },
-        { taskId: 'FA-003', taskName: '销售数据安全聚合', analysisType: 'SECURE_AGG', dataSourceType: '阿里云OSS', participantCount: 4, dataVolume: '100万条', taskStatus: 0, createDate: '2024-01-15 16:00:00' },
-        { taskId: 'FA-004', taskName: '多方联合计算', analysisType: 'MPC', dataSourceType: 'PostgreSQL', participantCount: 3, dataVolume: '20万条', taskStatus: 2, createDate: '2024-01-14 09:00:00', completeDate: '2024-01-14 09:30:00' }
-      ]
-    },
-    getMockLogs() {
-      return [
-        { logId: 'L001', taskId: 'FA-001', taskName: '用户ID联合查询', logType: 'INFO', content: '任务开始执行，连接数据源 MySQL', createTime: '2024-01-15 10:00:00' },
-        { logId: 'L002', taskId: 'FA-001', taskName: '用户ID联合查询', logType: 'INFO', content: '数据源连接成功，开始加载数据', createTime: '2024-01-15 10:00:30' },
-        { logId: 'L003', taskId: 'FA-001', taskName: '用户ID联合查询', logType: 'INFO', content: '联合查询执行完成，共匹配 8,523 条记录', createTime: '2024-01-15 10:05:00' },
-        { logId: 'L004', taskId: 'FA-002', taskName: '客户隐私求交', logType: 'INFO', content: '连接 Hive 集群成功', createTime: '2024-01-15 14:00:00' },
-        { logId: 'L005', taskId: 'FA-002', taskName: '客户隐私求交', logType: 'WARN', content: '参与方B数据量较大，预计耗时较长', createTime: '2024-01-15 14:05:00' },
-        { logId: 'L006', taskId: 'FA-003', taskName: '销售数据安全聚合', logType: 'ERROR', content: '阿里云OSS连接失败：Access Denied', createTime: '2024-01-15 16:01:00', stackTrace: 'com.aliyun.oss.OSSException: Access Denied\n\tat com.aliyun.oss.OSSClient.getObject()' }
-      ]
-    },
     // Data source mock data
     async fetchRdbmsList() {
       // 原实现是纯 mock（生产环境MySQL 192.168.1.100 等硬编码假数据），从不调接口。
@@ -941,7 +923,7 @@ export default {
               })
             }
           } catch (error) {
-            this.$message.success('联邦分析任务创建成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.createDialogVisible = false
             this.tableData.unshift({
               taskId: `FA-${Date.now()}`,
@@ -985,7 +967,7 @@ export default {
           }
         } catch (error) {
           row.taskStatus = 1
-          this.$message.success('任务已启动')
+          this.$message.error('操作失败: ' + (error.message || error))
         }
       } catch (e) {
         // cancelled
@@ -1055,7 +1037,7 @@ export default {
         row.status = 'connected'
         this.$message.success('连接测试成功')
       } catch (error) {
-        this.$message.success('连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
         row.status = 'connected'
       }
     },
@@ -1065,7 +1047,7 @@ export default {
         await testRdbmsConnection(this.rdbmsFormData)
         this.$message.success('数据库连接测试成功')
       } catch (error) {
-        this.$message.success('数据库连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
       }
       this.testLoading = false
     },
@@ -1083,7 +1065,7 @@ export default {
             this.rdbmsDialogVisible = false
             this.fetchRdbmsList()
           } catch (error) {
-            this.$message.success('保存成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.rdbmsDialogVisible = false
             if (!this.rdbmsFormData.id) {
               this.rdbmsList.push({
@@ -1106,7 +1088,7 @@ export default {
           this.$message.success('删除成功')
           this.fetchRdbmsList()
         } catch (error) {
-          this.$message.success('删除成功')
+          this.$message.error('操作失败: ' + (error.message || error))
           this.rdbmsList = this.rdbmsList.filter(r => r.id !== row.id)
         }
       } catch (e) {
@@ -1145,7 +1127,7 @@ export default {
         row.status = 'connected'
         this.$message.success('连接测试成功')
       } catch (error) {
-        this.$message.success('连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
         row.status = 'connected'
       }
     },
@@ -1155,7 +1137,7 @@ export default {
         await testBigDataConnection(this.bigDataFormData)
         this.$message.success('大数据平台连接测试成功')
       } catch (error) {
-        this.$message.success('大数据平台连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
       }
       this.testLoading = false
     },
@@ -1173,7 +1155,7 @@ export default {
             this.bigDataDialogVisible = false
             this.fetchBigDataList()
           } catch (error) {
-            this.$message.success('保存成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.bigDataDialogVisible = false
             if (!this.bigDataFormData.id) {
               this.bigDataList.push({
@@ -1196,7 +1178,7 @@ export default {
           this.$message.success('删除成功')
           this.fetchBigDataList()
         } catch (error) {
-          this.$message.success('删除成功')
+          this.$message.error('操作失败: ' + (error.message || error))
           this.bigDataList = this.bigDataList.filter(r => r.id !== row.id)
         }
       } catch (e) {
@@ -1283,7 +1265,7 @@ export default {
         row.status = 'connected'
         this.$message.success('连接测试成功')
       } catch (error) {
-        this.$message.success('连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
         row.status = 'connected'
       }
     },
@@ -1293,7 +1275,7 @@ export default {
         await testCloudConnection(this.cloudFormData)
         this.$message.success('云平台连接测试成功')
       } catch (error) {
-        this.$message.success('云平台连接测试成功')
+        this.$message.error('操作失败: ' + (error.message || error))
       }
       this.testLoading = false
     },
@@ -1311,7 +1293,7 @@ export default {
             this.cloudDialogVisible = false
             this.fetchCloudList()
           } catch (error) {
-            this.$message.success('保存成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.cloudDialogVisible = false
             if (!this.cloudFormData.id) {
               this.cloudList.push({
@@ -1334,7 +1316,7 @@ export default {
           this.$message.success('删除成功')
           this.fetchCloudList()
         } catch (error) {
-          this.$message.success('删除成功')
+          this.$message.error('操作失败: ' + (error.message || error))
           this.cloudList = this.cloudList.filter(r => r.id !== row.id)
         }
       } catch (e) {
@@ -1431,7 +1413,7 @@ export default {
         this.$message.success('日志导出成功')
         this.logExportDialogVisible = false
       } catch (error) {
-        this.$message.success('日志导出成功')
+        this.$message.error('操作失败: ' + (error.message || error))
         this.logExportDialogVisible = false
       }
       this.logExportLoading = false
@@ -1441,7 +1423,7 @@ export default {
         await exportFederatedAnalysisLogs({ taskId: this.taskLogData.taskId })
         this.$message.success('任务日志导出成功')
       } catch (error) {
-        this.$message.success('任务日志导出成功')
+        this.$message.error('操作失败: ' + (error.message || error))
       }
     },
     // Helpers

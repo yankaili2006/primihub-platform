@@ -339,71 +339,14 @@ export default {
           this.tableData = res.result.list || []
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
         } else {
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
         }
       }).catch(() => {
         this.loading = false
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
       })
-    },
-    getMockData() {
-      return [
-        {
-          id: 1,
-          projectId: 'PRJ-001',
-          projectName: '联合风控建模项目',
-          organId: 'ORG-001',
-          organName: '机构A',
-          permissionType: 'EXECUTE',
-          permissionStatus: 1,
-          grantDate: '2024-01-10 10:00:00',
-          expireDate: '2024-12-31 23:59:59',
-          grantUserName: 'admin',
-          resourceNames: '用户数据资源, 交易数据资源'
-        },
-        {
-          id: 2,
-          projectId: 'PRJ-002',
-          projectName: '用户画像分析项目',
-          organId: 'ORG-002',
-          organName: '机构B',
-          permissionType: 'VIEW',
-          permissionStatus: 1,
-          grantDate: '2024-01-12 14:30:00',
-          expireDate: null,
-          grantUserName: 'admin',
-          resourceNames: '用户画像数据'
-        },
-        {
-          id: 3,
-          projectId: 'PRJ-003',
-          projectName: '隐私求交测试项目',
-          organId: 'ORG-003',
-          organName: '机构C',
-          permissionType: 'MANAGE',
-          permissionStatus: 0,
-          grantDate: null,
-          expireDate: null,
-          grantUserName: null,
-          resourceNames: ''
-        },
-        {
-          id: 4,
-          projectId: 'PRJ-001',
-          projectName: '联合风控建模项目',
-          organId: 'ORG-004',
-          organName: '机构D',
-          permissionType: 'EDIT',
-          permissionStatus: 3,
-          grantDate: '2024-01-05 09:00:00',
-          expireDate: '2024-06-30 23:59:59',
-          grantUserName: 'admin',
-          revokeUserName: 'admin',
-          resourceNames: '用户数据资源'
-        }
-      ]
     },
     pickList(res) {
       const r = res && res.result
@@ -438,36 +381,11 @@ export default {
         if (res.code === 0) {
           this.templateData = res.result || []
         } else {
-          this.templateData = this.getMockTemplates()
+          this.templateData = []  // 不造假：接口失败/无数据即空
         }
       }).catch(() => {
-        this.templateData = this.getMockTemplates()
+        this.templateData = []  // 不造假：接口失败/无数据即空
       })
-    },
-    getMockTemplates() {
-      return [
-        {
-          id: 1,
-          templateName: '只读权限',
-          templateDesc: '仅允许查看项目信息和结果',
-          permissions: ['VIEW'],
-          createDate: '2024-01-01 10:00:00'
-        },
-        {
-          id: 2,
-          templateName: '参与者权限',
-          templateDesc: '允许查看和执行任务',
-          permissions: ['VIEW', 'EXECUTE'],
-          createDate: '2024-01-01 10:00:00'
-        },
-        {
-          id: 3,
-          templateName: '管理员权限',
-          templateDesc: '完全控制权限',
-          permissions: ['VIEW', 'EDIT', 'EXECUTE', 'MANAGE'],
-          createDate: '2024-01-01 10:00:00'
-        }
-      ]
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -527,7 +445,7 @@ export default {
           row.permissionStatus = 1
           row.grantDate = new Date().toLocaleString()
           row.grantUserName = this.userName || 'admin'
-          this.$message.success('授权成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
         })
       }).catch(() => {})
     },
@@ -547,7 +465,7 @@ export default {
         }).catch(() => {
           row.permissionStatus = 3
           row.revokeUserName = this.userName || 'admin'
-          this.$message.success('撤销成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
         })
       }).catch(() => {})
     },
@@ -566,7 +484,7 @@ export default {
             this.$message.error(res.msg || '批量撤销失败')
           }
         }).catch(() => {
-          this.$message.success('批量撤销成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
           this.selectedRows.forEach(row => {
             row.permissionStatus = 3
           })
@@ -605,7 +523,7 @@ export default {
               this.$message.error(res.msg || (this.isEdit ? '更新失败' : '添加失败'))
             }
           }).catch(() => {
-            this.$message.success(this.isEdit ? '更新成功' : '添加成功')
+            this.$message.error('操作失败: ' + '接口未成功返回')
             this.dialogVisible = false
             if (!this.isEdit) {
               const newItem = {
@@ -647,7 +565,7 @@ export default {
             this.$message.error(res.msg || '删除失败')
           }
         }).catch(() => {
-          this.$message.success('删除成功')
+          this.$message.error('操作失败: ' + '接口未成功返回')
           this.templateData = this.templateData.filter(item => item.id !== row.id)
         })
       }).catch(() => {})
@@ -665,7 +583,7 @@ export default {
               this.$message.error(res.msg || '保存失败')
             }
           }).catch(() => {
-            this.$message.success('保存成功')
+            this.$message.error('操作失败: ' + '接口未成功返回')
             this.templateDialogVisible = false
             if (!this.templateFormData.id) {
               this.templateData.push({

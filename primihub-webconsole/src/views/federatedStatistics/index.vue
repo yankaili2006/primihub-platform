@@ -492,37 +492,15 @@ export default {
           this.total = res.result.total || 0
         } else {
           this.$message.warning('联邦统计接口暂未就绪，显示示例数据')
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
         }
       } catch (error) {
         this.$message.warning('加载远程数据失败，显示示例数据: ' + (error.message || ''))
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
       }
       this.loading = false
-    },
-    getMockData() {
-      return [
-        { taskId: 'FS-001', taskName: '销售额联合求和', statisticsType: 'SUM', participantCount: 3, dataVolume: '100万条', taskStatus: 2, resultSaved: true, createDate: '2024-01-15 10:00:00', resultData: [{ field: '总销售额', value: '1,234,567元', participants: '机构A,B,C' }] },
-        { taskId: 'FS-002', taskName: '用户年龄均值统计', statisticsType: 'AVG', participantCount: 2, dataVolume: '50万条', taskStatus: 2, resultSaved: false, createDate: '2024-01-15 14:00:00', resultData: [{ field: '平均年龄', value: '32.5岁', participants: '机构A,B' }] },
-        { taskId: 'FS-003', taskName: '订单数量统计', statisticsType: 'COUNT', participantCount: 4, dataVolume: '200万条', taskStatus: 1, resultSaved: false, createDate: '2024-01-15 16:00:00' },
-        { taskId: 'FS-004', taskName: '收入最值统计', statisticsType: 'MIN_MAX', participantCount: 3, dataVolume: '80万条', taskStatus: 0, resultSaved: false, createDate: '2024-01-14 09:00:00' },
-        { taskId: 'FS-005', taskName: '交易额方差分析', statisticsType: 'VARIANCE', participantCount: 2, dataVolume: '60万条', taskStatus: 3, resultSaved: false, createDate: '2024-01-13 11:00:00' }
-      ]
-    },
-    getMockLogs() {
-      return [
-        { logId: 'L001', taskId: 'FS-001', taskName: '销售额联合求和', logType: 'INFO', content: '任务开始执行，初始化联邦统计环境', createTime: '2024-01-15 10:00:00' },
-        { logId: 'L002', taskId: 'FS-001', taskName: '销售额联合求和', logType: 'INFO', content: '数据加载完成，共100万条记录', createTime: '2024-01-15 10:01:00' },
-        { logId: 'L003', taskId: 'FS-001', taskName: '销售额联合求和', logType: 'INFO', content: '开始安全聚合计算', createTime: '2024-01-15 10:02:00' },
-        { logId: 'L004', taskId: 'FS-001', taskName: '销售额联合求和', logType: 'INFO', content: '联邦统计计算完成，结果已生成', createTime: '2024-01-15 10:05:00' },
-        { logId: 'L005', taskId: 'FS-002', taskName: '用户年龄均值统计', logType: 'INFO', content: '任务开始执行', createTime: '2024-01-15 14:00:00' },
-        { logId: 'L006', taskId: 'FS-002', taskName: '用户年龄均值统计', logType: 'WARN', content: '参与方B响应延迟，正在重试', createTime: '2024-01-15 14:02:00' },
-        { logId: 'L007', taskId: 'FS-002', taskName: '用户年龄均值统计', logType: 'INFO', content: '计算完成', createTime: '2024-01-15 14:10:00' },
-        { logId: 'L008', taskId: 'FS-003', taskName: '订单数量统计', logType: 'ERROR', content: '连接参与方C超时，任务暂停', createTime: '2024-01-15 16:05:00', stackTrace: 'java.net.ConnectException: Connection timed out\n\tat sun.nio.ch.Net.connect0(Native Method)\n\tat sun.nio.ch.Net.connect(Net.java:454)' },
-        { logId: 'L009', taskId: 'FS-005', taskName: '交易额方差分析', logType: 'ERROR', content: '数据格式不兼容，任务失败', createTime: '2024-01-13 11:30:00', stackTrace: 'java.lang.IllegalArgumentException: Data format mismatch' }
-      ]
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -581,7 +559,7 @@ export default {
               })
             }
           } catch (error) {
-            this.$message.success('联邦统计任务创建成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.createDialogVisible = false
             this.tableData.unshift({
               taskId: `FS-${Date.now()}`,
@@ -610,7 +588,7 @@ export default {
           }
         } catch (error) {
           row.taskStatus = 1
-          this.$message.success('任务已启动')
+          this.$message.error('操作失败: ' + (error.message || error))
         }
       } catch (e) {
         // cancelled
@@ -673,7 +651,7 @@ export default {
             this.saveDialogVisible = false
           } catch (error) {
             // Mock success
-            this.$message.success('结果存储成功')
+            this.$message.error('操作失败: ' + (error.message || error))
             this.saveTaskIds.forEach(id => {
               const task = this.tableData.find(t => t.taskId === id)
               if (task) task.resultSaved = true
@@ -723,7 +701,7 @@ export default {
             this.exportDialogVisible = false
           } catch (error) {
             // Mock download
-            this.$message.success(`导出 ${this.exportTaskIds.length} 个任务结果成功`)
+            this.$message.error('操作失败: ' + (error.message || error))
             this.exportDialogVisible = false
           }
           this.exportLoading = false
@@ -754,11 +732,11 @@ export default {
           this.logData = res.result.list || []
           this.logTotal = res.result.total || 0
         } else {
-          this.logData = this.getMockLogs()
+          this.logData = []  // 不造假：接口失败/无数据即空
           this.logTotal = this.logData.length
         }
       } catch (error) {
-        this.logData = this.getMockLogs()
+        this.logData = []  // 不造假：接口失败/无数据即空
         this.logTotal = this.logData.length
       }
     },
@@ -805,14 +783,14 @@ export default {
           this.taskLogData = {
             taskId: row.taskId,
             taskName: row.taskName,
-            logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+            logs: []
           }
         }
       } catch (error) {
         this.taskLogData = {
           taskId: row.taskId,
           taskName: row.taskName,
-          logs: this.getMockLogs().filter(l => l.taskId === row.taskId)
+          logs: []
         }
       }
       this.taskLogDialogVisible = true
@@ -869,7 +847,7 @@ export default {
         this.$message.success('日志导出成功')
         this.logExportDialogVisible = false
       } catch (error) {
-        this.$message.success('日志导出成功')
+        this.$message.error('操作失败: ' + (error.message || error))
         this.logExportDialogVisible = false
       }
       this.logExportLoading = false
@@ -879,7 +857,7 @@ export default {
         await exportFederatedStatisticsLogs({ taskId: this.taskLogData.taskId })
         this.$message.success('任务日志导出成功')
       } catch (error) {
-        this.$message.success('任务日志导出成功')
+        this.$message.error('操作失败: ' + (error.message || error))
       }
     },
     downloadFile(data, filename) {

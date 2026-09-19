@@ -368,145 +368,27 @@ export default {
           this.total = res.result.pageParam ? res.result.pageParam.itemTotalCount : 0
           this.summaryData = res.result.summary || this.summaryData
         } else {
-          this.tableData = this.getMockData()
+          this.tableData = []  // 不造假：接口失败/无数据即空
           this.total = this.tableData.length
           this.summaryData = { totalProjects: 5, runningProjects: 2, completedProjects: 2, totalTasks: 25 }
         }
       }).catch(() => {
         this.loading = false
-        this.tableData = this.getMockData()
+        this.tableData = []  // 不造假：接口失败/无数据即空
         this.total = this.tableData.length
         this.summaryData = { totalProjects: 5, runningProjects: 2, completedProjects: 2, totalTasks: 25 }
       })
-    },
-    getMockData() {
-      return [
-        {
-          id: 1,
-          projectId: 'PRJ-001',
-          projectName: '联合风控建模项目',
-          projectStatus: 1,
-          taskCount: 8,
-          completedTaskCount: 5,
-          participantCount: 3,
-          resourceCount: 6,
-          createDate: '2024-01-01 10:00:00',
-          updateDate: '2024-01-15 14:30:00',
-          projectDesc: '多方联合进行风控模型训练',
-          participantOrgans: '机构A, 机构B, 机构C',
-          usedResources: '用户数据, 交易数据, 行为数据',
-          projectOwner: 'admin'
-        },
-        {
-          id: 2,
-          projectId: 'PRJ-002',
-          projectName: '用户画像分析项目',
-          projectStatus: 2,
-          taskCount: 5,
-          completedTaskCount: 5,
-          participantCount: 2,
-          resourceCount: 4,
-          createDate: '2024-01-05 09:00:00',
-          updateDate: '2024-01-12 16:00:00',
-          projectDesc: '用户画像特征分析',
-          participantOrgans: '机构A, 机构D',
-          usedResources: '用户画像数据, 消费数据',
-          projectOwner: 'admin'
-        },
-        {
-          id: 3,
-          projectId: 'PRJ-003',
-          projectName: '隐私求交测试项目',
-          projectStatus: 1,
-          taskCount: 3,
-          completedTaskCount: 2,
-          participantCount: 2,
-          resourceCount: 2,
-          createDate: '2024-01-08 11:00:00',
-          updateDate: '2024-01-14 10:00:00',
-          projectDesc: 'PSI隐私求交功能测试',
-          participantOrgans: '机构A, 机构B',
-          usedResources: '用户ID数据',
-          projectOwner: 'admin'
-        },
-        {
-          id: 4,
-          projectId: 'PRJ-004',
-          projectName: '金融反欺诈项目',
-          projectStatus: 3,
-          taskCount: 6,
-          completedTaskCount: 3,
-          participantCount: 4,
-          resourceCount: 8,
-          createDate: '2023-12-20 14:00:00',
-          updateDate: '2024-01-10 09:00:00',
-          projectDesc: '金融欺诈识别模型训练',
-          participantOrgans: '机构A, 机构B, 机构C, 机构E',
-          usedResources: '交易数据, 用户数据, 设备数据',
-          projectOwner: 'admin'
-        },
-        {
-          id: 5,
-          projectId: 'PRJ-005',
-          projectName: '医疗数据分析项目',
-          projectStatus: 2,
-          taskCount: 3,
-          completedTaskCount: 3,
-          participantCount: 2,
-          resourceCount: 3,
-          createDate: '2023-12-15 10:00:00',
-          updateDate: '2024-01-05 15:00:00',
-          projectDesc: '医疗健康数据联合分析',
-          participantOrgans: '机构A, 机构F',
-          usedResources: '医疗数据, 健康数据',
-          projectOwner: 'admin'
-        }
-      ]
     },
     loadExportHistory() {
       getExportHistory().then(res => {
         if (res.code === 0) {
           this.exportHistoryData = res.result || []
         } else {
-          this.exportHistoryData = this.getMockExportHistory()
+          this.exportHistoryData = []  // 不造假：接口失败/无数据即空
         }
       }).catch(() => {
-        this.exportHistoryData = this.getMockExportHistory()
+        this.exportHistoryData = []  // 不造假：接口失败/无数据即空
       })
-    },
-    getMockExportHistory() {
-      return [
-        {
-          exportId: 'EXP-001',
-          exportType: 'SINGLE',
-          exportFormat: 'XLSX',
-          projectCount: 1,
-          exportStatus: 1,
-          exportUserName: 'admin',
-          exportDate: '2024-01-15 10:30:00',
-          filePath: '/exports/ledger_20240115.xlsx'
-        },
-        {
-          exportId: 'EXP-002',
-          exportType: 'BATCH',
-          exportFormat: 'PDF',
-          projectCount: 3,
-          exportStatus: 1,
-          exportUserName: 'admin',
-          exportDate: '2024-01-14 15:00:00',
-          filePath: '/exports/ledger_batch_20240114.pdf'
-        },
-        {
-          exportId: 'EXP-003',
-          exportType: 'ALL',
-          exportFormat: 'XLSX',
-          projectCount: 5,
-          exportStatus: 0,
-          exportUserName: 'admin',
-          exportDate: '2024-01-15 11:00:00',
-          filePath: null
-        }
-      ]
     },
     handleQuery() {
       this.queryForm.pageNum = 1
@@ -538,32 +420,13 @@ export default {
         if (res.code === 0) {
           this.detailData = res.result
         } else {
-          this.detailData = this.getMockDetailData(row)
+          this.detailData = {}  // 不造假：接口失败/无数据即空
         }
       }).catch(() => {
-        this.detailData = this.getMockDetailData(row)
+        this.detailData = {}  // 不造假：接口失败/无数据即空
       })
       this.detailTab = 'basic'
       this.detailDialogVisible = true
-    },
-    getMockDetailData(row) {
-      return {
-        ...row,
-        participants: [
-          { organId: 'ORG-001', organName: '机构A', role: '发起方', joinDate: '2024-01-01', resourceCount: 3 },
-          { organId: 'ORG-002', organName: '机构B', role: '参与方', joinDate: '2024-01-02', resourceCount: 2 },
-          { organId: 'ORG-003', organName: '机构C', role: '参与方', joinDate: '2024-01-03', resourceCount: 1 }
-        ],
-        tasks: [
-          { taskId: 'TASK-001', taskName: '数据预处理', taskType: '数据处理', taskStatus: 3, createDate: '2024-01-02', completeDate: '2024-01-03' },
-          { taskId: 'TASK-002', taskName: '特征工程', taskType: '特征计算', taskStatus: 3, createDate: '2024-01-03', completeDate: '2024-01-05' },
-          { taskId: 'TASK-003', taskName: '模型训练', taskType: '联邦学习', taskStatus: 2, createDate: '2024-01-06', completeDate: null }
-        ],
-        resources: [
-          { resourceId: 'RES-001', resourceName: '用户数据', resourceType: 'CSV', providerOrgan: '机构A', usageCount: 5, lastUsedDate: '2024-01-15' },
-          { resourceId: 'RES-002', resourceName: '交易数据', resourceType: 'CSV', providerOrgan: '机构B', usageCount: 3, lastUsedDate: '2024-01-14' }
-        ]
-      }
     },
     handleExportSingle(row) {
       this.exportFormData = {
@@ -644,7 +507,7 @@ export default {
         link.click()
         URL.revokeObjectURL(link.href)
       }).catch(() => {
-        this.$message.success('开始下载: ' + row.filePath.split('/').pop())
+        this.$message.error('操作失败: ' + '接口未成功返回')
       })
     },
     handleRetryExport(row) {
@@ -657,7 +520,7 @@ export default {
         }
       }).catch(() => {
         row.exportStatus = 0
-        this.$message.success('重试任务已提交')
+        this.$message.error('操作失败: ' + '接口未成功返回')
       })
     }
   }
