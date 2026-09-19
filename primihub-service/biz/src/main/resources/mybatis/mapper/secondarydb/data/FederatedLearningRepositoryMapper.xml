@@ -76,13 +76,55 @@
         </if>
     </select>
 
+    <!-- 显式 snake_case→camelCase 别名：live 配置未开 mapUnderscoreToCamelCase，
+         SELECT * 只会填上 id、其余字段全 null（getTaskDetails/getTrainingProgress 曾因此回空壳）。
+         同仓 FederatedAnalysisRepositoryMapper 已有同款说明，改动列时保持别名齐全。 -->
     <select id="selectTaskByTaskId" resultType="com.primihub.biz.entity.data.po.FederatedLearningTask">
-        SELECT * FROM federated_learning_task
+        SELECT
+            id,
+            fl_id AS flId,
+            task_id AS taskId,
+            task_state AS taskState,
+            current_round AS currentRound,
+            total_rounds AS totalRounds,
+            accuracy,
+            loss,
+            metrics,
+            result_rows AS resultRows,
+            result_file_path AS resultFilePath,
+            execution_log AS executionLog,
+            is_del AS isDel,
+            create_date AS createDate,
+            update_date AS updateDate
+        FROM federated_learning_task
         WHERE task_id = #{taskId} AND is_del = 0
     </select>
 
     <select id="selectById" resultType="com.primihub.biz.entity.data.po.FederatedLearning">
-        SELECT * FROM federated_learning WHERE id = #{id}
+        SELECT
+            id,
+            task_type AS taskType,
+            algorithm_type AS algorithmType,
+            federated_type AS federatedType,
+            task_name AS taskName,
+            project_id AS projectId,
+            own_organ_id AS ownOrganId,
+            own_resource_id AS ownResourceId,
+            own_features AS ownFeatures,
+            label_feature AS labelFeature,
+            is_label_owner AS isLabelOwner,
+            participant_organ_ids AS participantOrganIds,
+            participant_resource_ids AS participantResourceIds,
+            training_params AS trainingParams,
+            model_id AS modelId,
+            model_path AS modelPath,
+            result_path AS resultPath,
+            remarks,
+            user_id AS userId,
+            is_del AS isDel,
+            create_date AS createDate,
+            update_date AS updateDate
+        FROM federated_learning WHERE id = #{id}
     </select>
 
     <select id="selectModelList" resultType="java.util.HashMap">

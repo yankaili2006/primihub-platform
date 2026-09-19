@@ -47,6 +47,8 @@ public class FederatedLearningService {
     private DataResourceRepository dataResourceRepository;
     @Autowired
     private com.primihub.biz.repository.secondarydb.data.DataModelRepository dataModelRepository;
+    @Autowired
+    private com.primihub.biz.repository.secondarydb.data.DataTaskRepository dataTaskRepository;
 
     // 默认模板模型(纵向LR DAG: start->dataSet->dataAlign->model)与其项目; 可被 req 覆盖。
     private static final Long DEFAULT_TEMPLATE_MODEL_ID = 1L;
@@ -315,6 +317,7 @@ public class FederatedLearningService {
             if (task == null) {
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE, "任务不存在");
             }
+            syncTaskStateFromModel(task);
             FederatedLearning fl = federatedLearningRepository.selectById(task.getFlId());
 
             Map<String, Object> result = new HashMap<>();
@@ -423,6 +426,37 @@ public class FederatedLearningService {
     }
 
     /**
+     * 懒同步：真实 FL 桥提交后 fl_task 停在 2(运行中)，完成态在 data_task 侧——
+     * 按 execution_log 里记的 modelId 找该模型最新 data_task，终态(1/3/4)回写 fl_task。
+     * best-effort：任何一步失败都不影响读接口本身。
+     */
+    private void syncTaskStateFromModel(FederatedLearningTask task) {
+        if (task == null || task.getTaskState() == null || task.getTaskState() != 2) return;
+        try {
+            String logJson = task.getExecutionLog();
+            if (logJson == null || !logJson.contains("modelId")) return;
+            Object modelIdObj = JSON.parseObject(logJson).get("modelId");
+            if (modelIdObj == null) return;
+            Map<String, Object> q = new HashMap<>();
+            q.put("modelId", Long.valueOf(modelIdObj.toString()));
+            q.put("offset", 0);
+            q.put("pageSize", 1);
+            List<com.primihub.biz.entity.data.po.DataModelTask> mts = dataModelRepository.queryModelTaskByModelId(q);
+            if (mts == null || mts.isEmpty()) return;
+            com.primihub.biz.entity.data.po.DataTask dt = dataTaskRepository.selectDataTaskByTaskId(mts.get(0).getTaskId());
+            if (dt == null || dt.getTaskState() == null) return;
+            int st = dt.getTaskState();
+            if (st == 1 || st == 3 || st == 4) {
+                task.setTaskState(st);
+                if (st == 3 && dt.getTaskErrorMsg() != null) task.setExecutionLog(logJson + " | " + dt.getTaskErrorMsg());
+                try { federatedLearningPrRepository.updateFederatedLearningTask(task); } catch (Exception ignore) {}
+            }
+        } catch (Exception e) {
+            log.warn("同步 FL 任务状态失败(不影响读取), taskId={}: {}", task.getTaskId(), e.getMessage());
+        }
+    }
+
+    /**
      * 获取训练进度
      */
     public BaseResultEntity getTrainingProgress(String taskId) {
@@ -431,6 +465,7 @@ public class FederatedLearningService {
             if (task == null) {
                 return BaseResultEntity.failure(BaseResultEnum.FAILURE, "任务不存在");
             }
+            syncTaskStateFromModel(task);
 
             Map<String, Object> progress = new HashMap<>();
             progress.put("currentRound", task.getCurrentRound());
