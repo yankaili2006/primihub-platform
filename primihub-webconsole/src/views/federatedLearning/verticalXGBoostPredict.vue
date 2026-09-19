@@ -1,45 +1,41 @@
 <template>
   <div class="app-container">
-    <el-page-header content="联邦学习XGBoost预测（纵向）" style="margin-bottom: 20px;" @back="$router.back()" />
+    <el-page-header content="纵向联邦XGBoost预测" style="margin-bottom: 20px;" @back="$router.back()" />
 
     <el-row :gutter="20">
       <el-col :span="12">
         <el-card>
-          <div slot="header"><span>创建纵向XGBoost预测任务</span></div>
+          <div slot="header"><span>创建XGBoost预测任务（真实联邦推理）</span></div>
           <el-form ref="taskForm" :model="formData" :rules="formRules" label-width="130px">
-            <el-form-item label="任务名称" prop="taskName">
-              <el-input v-model="formData.taskName" placeholder="请输入任务名称" />
+            <el-form-item label="任务名称" prop="reasoningName">
+              <el-input v-model="formData.reasoningName" placeholder="请输入预测任务名称" />
             </el-form-item>
-            <el-form-item label="参与方" prop="participants">
-              <el-select v-model="formData.participants" multiple placeholder="请选择参与方" style="width:100%;">
-                <el-option label="机构A" value="ORG_A" />
-                <el-option label="机构B" value="ORG_B" />
-                <el-option label="机构C" value="ORG_C" />
+            <el-form-item label="训练好的模型" prop="taskId">
+              <el-select v-model="formData.taskId" filterable placeholder="请选择训练成功的XGBoost模型" style="width:100%;">
+                <el-option v-for="m in modelTaskList" :key="m.taskId" :label="modelLabel(m)" :value="m.taskId" />
+              </el-select>
+              <div class="form-tip">仅列出训练成功的模型任务；没有可选项时请先完成一次XGBoost训练</div>
+            </el-form-item>
+            <el-form-item label="协作方" prop="otherOrganId">
+              <el-select v-model="formData.otherOrganId" placeholder="请选择协作方机构" style="width:100%;" @change="onOtherOrganChange">
+                <el-option v-for="o in organList" :key="o.globalId" :label="o.globalName" :value="o.globalId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="数据资源" prop="dataResources">
-              <el-select v-model="formData.dataResources" multiple placeholder="请选择数据资源" style="width:100%;">
-                <el-option v-for="item in dataResourceList" :key="item.value" :label="item.label" :value="item.value" />
+            <el-form-item label="发起方预测数据" prop="createdResourceId">
+              <el-select v-model="formData.createdResourceId" filterable placeholder="请选择本方预测数据集" style="width:100%;">
+                <el-option v-for="r in ownResourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="使用模型" prop="modelId">
-              <el-select v-model="formData.modelId" placeholder="请选择已训练的XGBoost模型" style="width:100%;">
-                <el-option v-for="item in modelList" :key="item.modelId" :label="item.modelName" :value="item.modelId" />
+            <el-form-item label="协作方预测数据" prop="providerResourceId">
+              <el-select v-model="formData.providerResourceId" filterable placeholder="请先选择协作方，再选其数据集" style="width:100%;">
+                <el-option v-for="r in otherResourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
-            </el-form-item>
-            <el-form-item label="预测数据集" prop="predictDataset">
-              <el-select v-model="formData.predictDataset" placeholder="请选择预测数据集" style="width:100%;">
-                <el-option v-for="item in dataResourceList" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="输出得分列名" prop="outputColumn">
-              <el-input v-model="formData.outputColumn" placeholder="如: pred_score" />
             </el-form-item>
             <el-form-item label="备注">
-              <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
+              <el-input v-model="formData.reasoningDesc" type="textarea" :rows="2" placeholder="请输入备注" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="submitting" @click="handleSubmit">提交任务</el-button>
+              <el-button type="primary" :loading="submitting" @click="handleSubmit">提交预测</el-button>
               <el-button @click="resetForm">重置</el-button>
             </el-form-item>
           </el-form>
@@ -49,25 +45,20 @@
       <el-col :span="12">
         <el-card>
           <div slot="header">
-            <span>任务列表</span>
+            <span>预测任务列表</span>
             <el-button size="mini" style="float:right;" icon="el-icon-refresh" @click="loadList">刷新</el-button>
           </div>
           <el-table :data="taskList" border size="small" v-loading="listLoading">
-            <el-table-column prop="taskId" label="任务ID" width="80" />
-            <el-table-column prop="taskName" label="任务名称" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="participantCount" label="参与方数" width="80" align="center" />
-            <el-table-column label="任务状态" width="90" align="center">
+            <el-table-column prop="reasoningName" label="任务名称" min-width="110" show-overflow-tooltip />
+            <el-table-column label="状态" width="90" align="center">
               <template slot-scope="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="statusTagType(row.reasoningState)" size="small">{{ statusLabel(row.reasoningState) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="140" />
-            <el-table-column label="操作" width="160" fixed="right">
+            <el-table-column prop="releaseDate" label="创建时间" width="140" show-overflow-tooltip />
+            <el-table-column label="操作" width="100" fixed="right">
               <template slot-scope="{ row }">
-                <el-button type="text" size="mini" @click="handleView(row)">查看</el-button>
-                <el-button type="text" size="mini" @click="handleRun(row)">执行</el-button>
-                <el-button type="text" size="mini" @click="handleDownload(row)">下载</el-button>
-                <el-button type="text" size="mini" style="color:#F56C6C;" @click="handleDelete(row)">删除</el-button>
+                <el-button type="text" size="mini" @click="handleView(row)">详情</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -75,14 +66,12 @@
       </el-col>
     </el-row>
 
-    <el-dialog title="任务详情" :visible.sync="detailVisible" width="600px">
+    <el-dialog title="预测任务详情" :visible.sync="detailVisible" width="700px">
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="任务ID">{{ currentTask.taskId }}</el-descriptions-item>
-        <el-descriptions-item label="任务名称">{{ currentTask.taskName }}</el-descriptions-item>
-        <el-descriptions-item label="使用模型">{{ currentTask.modelId }}</el-descriptions-item>
-        <el-descriptions-item label="输出列名">{{ currentTask.outputColumn }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ currentTask.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="备注">{{ currentTask.remark }}</el-descriptions-item>
+        <el-descriptions-item label="任务名称">{{ currentTask.reasoningName }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ statusLabel(currentTask.reasoningState) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ currentTask.releaseDate }}</el-descriptions-item>
+        <el-descriptions-item label="备注">{{ currentTask.reasoningDesc }}</el-descriptions-item>
       </el-descriptions>
       <span slot="footer"><el-button @click="detailVisible = false">关闭</el-button></span>
     </el-dialog>
@@ -90,42 +79,36 @@
 </template>
 
 <script>
-import {
-  getFLPreprocessList,
-  createFLPreprocess,
-  runFLPreprocess,
-  deleteFLPreprocess,
-  downloadFLPreprocessResult,
-  getModelList
-} from '@/api/federatedLearning'
-import { getResourceList } from '@/api/resource'
+import { getModelTaskSuccessList } from '@/api/model'
+import { saveReasoning, getReasoningList } from '@/api/reasoning'
+import { getResourceList } from '@/api/fusionResource'
+import { getAvailableOrganList } from '@/api/center'
 
-const PREPROCESS_TYPE = 'VFL_XGBOOST_PREDICT'
+const MODEL_TYPE = 2
 
 export default {
   name: 'FLVerticalXGBoostPredict',
   data() {
     return {
       formData: {
-        taskName: '',
-        participants: [],
-        dataResources: [],
-        modelId: '',
-        predictDataset: '',
-        outputColumn: 'pred_score',
-        remark: ''
+        reasoningName: '',
+        taskId: '',
+        otherOrganId: '',
+        createdResourceId: '',
+        providerResourceId: '',
+        reasoningDesc: ''
       },
       formRules: {
-        taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-        participants: [{ required: true, message: '请选择参与方', trigger: 'change' }],
-        dataResources: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
-        modelId: [{ required: true, message: '请选择使用模型', trigger: 'change' }],
-        predictDataset: [{ required: true, message: '请选择预测数据集', trigger: 'change' }],
-        outputColumn: [{ required: true, message: '请输入输出得分列名', trigger: 'blur' }]
+        reasoningName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
+        taskId: [{ required: true, message: '请选择训练好的模型', trigger: 'change' }],
+        otherOrganId: [{ required: true, message: '请选择协作方', trigger: 'change' }],
+        createdResourceId: [{ required: true, message: '请选择发起方预测数据', trigger: 'change' }],
+        providerResourceId: [{ required: true, message: '请选择协作方预测数据', trigger: 'change' }]
       },
-      // 缺陷整改：数据资源/模型下拉改从真实接口加载（原写死 mock）
-      dataResourceList: [],
-      modelList: [],
+      modelTaskList: [],
+      organList: [],
+      ownResourceList: [],
+      otherResourceList: [],
       taskList: [],
       listLoading: false,
       submitting: false,
@@ -135,33 +118,38 @@ export default {
   },
   created() {
     this.loadList()
-    this.loadDataResources()
-    this.loadModels()
+    this.loadOptions()
   },
   methods: {
-    // 缺陷整改：数据资源下拉改真实接口
-    loadDataResources() {
-      getResourceList({ pageNo: 1, pageSize: 100 }).then(res => {
-        const list = (res && res.result && (res.result.list || res.result.data || res.result)) || []
-        this.dataResourceList = (Array.isArray(list) ? list : []).map(r => ({
-          value: r.resourceId || r.id || r.value,
-          label: r.resourceName || r.name || r.label
-        }))
-      }).catch(() => { this.dataResourceList = [] })
+    modelLabel(m) {
+      return `${m.modelName || '模型'} (任务#${m.taskId})`
     },
-    // 缺陷整改：模型下拉改真实接口
-    loadModels() {
-      getModelList({ pageNo: 1, pageSize: 100 }).then(res => {
-        const r = (res && res.result) || {}
-        const list = r.list || r.data || (Array.isArray(r) ? r : [])
-        this.modelList = Array.isArray(list) ? list : []
-      }).catch(() => { this.modelList = [] })
+    async loadOptions() {
+      try {
+        const [orgRes, modelRes, resRes] = await Promise.all([
+          getAvailableOrganList(),
+          getModelTaskSuccessList({ modelType: MODEL_TYPE }),
+          getResourceList({ pageNo: 1, pageSize: 100, organId: this.$store.getters.userOrganId })
+        ])
+        if (orgRes.code === 0) this.organList = orgRes.result || []
+        if (modelRes.code === 0) this.modelTaskList = modelRes.result?.data || modelRes.result?.list || modelRes.result || []
+        if (resRes.code === 0) this.ownResourceList = resRes.result?.data || []
+      } catch (e) { console.error(e) }
+    },
+    async onOtherOrganChange(organId) {
+      this.formData.providerResourceId = ''
+      this.otherResourceList = []
+      if (!organId) return
+      try {
+        const res = await getResourceList({ pageNo: 1, pageSize: 100, organId })
+        if (res.code === 0) this.otherResourceList = res.result?.data || []
+      } catch (e) { console.error(e) }
     },
     async loadList() {
       this.listLoading = true
       try {
-        const res = await getFLPreprocessList({ preprocessType: PREPROCESS_TYPE })
-        this.taskList = res.data || []
+        const res = await getReasoningList({ pageNo: 1, pageSize: 50 })
+        this.taskList = res.result?.data || res.result?.list || []
       } catch (e) {
         this.taskList = []
       } finally {
@@ -173,10 +161,21 @@ export default {
         if (!valid) return
         this.submitting = true
         try {
-          await createFLPreprocess({ ...this.formData, preprocessType: PREPROCESS_TYPE })
-          this.$message.success('任务创建成功')
-          this.resetForm()
-          this.loadList()
+          const res = await saveReasoning({
+            taskId: this.formData.taskId,
+            reasoningName: this.formData.reasoningName,
+            reasoningDesc: this.formData.reasoningDesc,
+            resourceList: [
+              { participationIdentity: 1, resourceId: this.formData.createdResourceId },
+              { participationIdentity: 2, resourceId: this.formData.providerResourceId }
+            ]
+          })
+          if (res.code === 0) {
+            this.$message.success('联邦预测任务已提交，推理在隐私计算节点真实执行')
+            this.loadList()
+          } else {
+            this.$message.error(res.message || '任务创建失败')
+          }
         } catch (e) {
           this.$message.error('任务创建失败')
         } finally {
@@ -184,51 +183,20 @@ export default {
         }
       })
     },
-    async handleRun(row) {
-      try {
-        await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
-        this.$message.success('任务已提交执行')
-        this.loadList()
-      } catch (e) {
-        this.$message.error('执行失败')
-      }
-    },
-    async handleDownload(row) {
-      try {
-        const res = await downloadFLPreprocessResult({ taskId: row.taskId })
-        const url = URL.createObjectURL(new Blob([res]))
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `vfl_xgboost_predict_${row.taskId}.csv`
-        a.click()
-        URL.revokeObjectURL(url)
-      } catch (e) {
-        this.$message.error('下载失败')
-      }
-    },
-    async handleDelete(row) {
-      try {
-        await this.$confirm('确定删除该任务？', '提示', { type: 'warning' })
-        await deleteFLPreprocess({ taskId: row.taskId })
-        this.$message.success('删除成功')
-        this.loadList()
-      } catch (e) {
-        if (e !== 'cancel') this.$message.error('删除失败')
-      }
-    },
     handleView(row) {
       this.currentTask = row
       this.detailVisible = true
     },
     resetForm() {
       this.$refs.taskForm.resetFields()
+      this.otherResourceList = []
     },
     statusTagType(status) {
       const map = { 0: 'info', 1: 'success', 2: 'warning', 3: 'danger' }
       return map[status] || 'info'
     },
     statusLabel(status) {
-      const map = { 0: '待执行', 1: '已完成', 2: '执行中', 3: '执行失败' }
+      const map = { 0: '待执行', 1: '预测成功', 2: '预测中', 3: '预测失败' }
       return map[status] || '未知'
     }
   }
@@ -237,4 +205,5 @@ export default {
 
 <style scoped>
 .app-container { padding: 20px; }
+.form-tip { font-size: 12px; color: #909399; margin-top: 4px; }
 </style>

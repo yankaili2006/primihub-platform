@@ -1,6 +1,7 @@
 <template>
   <div class="app-container">
     <el-page-header content="联邦学习特征相似度分析" style="margin-bottom: 20px;" @back="$router.back()" />
+    <el-alert title="该功能依赖平台联邦引擎的多方相似度组件，当前版本尚未接通：任务可登记但执行会明确失败，不会返回模拟结果。" type="warning" show-icon :closable="false" style="margin-bottom:20px;" />
 
     <el-row :gutter="20">
       <el-col :span="12">

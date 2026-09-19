@@ -1,64 +1,62 @@
 <template>
   <div class="app-container">
-    <el-page-header content="联邦学习XGBoost建模（纵向）" style="margin-bottom: 20px;" @back="$router.back()" />
+    <el-page-header content="纵向联邦XGBoost训练" style="margin-bottom: 20px;" @back="$router.back()" />
 
     <el-row :gutter="20">
       <el-col :span="12">
         <el-card>
-          <div slot="header"><span>创建纵向XGBoost训练任务</span></div>
+          <div slot="header"><span>创建XGBoost训练任务（真实联邦训练）</span></div>
           <el-form ref="taskForm" :model="formData" :rules="formRules" label-width="130px">
             <el-form-item label="任务名称" prop="taskName">
               <el-input v-model="formData.taskName" placeholder="请输入任务名称" />
             </el-form-item>
-            <el-form-item label="参与方" prop="participants">
-              <el-select v-model="formData.participants" multiple placeholder="请选择参与方" style="width:100%;">
-                <el-option label="机构A" value="ORG_A" />
-                <el-option label="机构B" value="ORG_B" />
-                <el-option label="机构C" value="ORG_C" />
+            <el-form-item label="所属项目">
+              <el-select v-model="formData.projectId" clearable filterable placeholder="不选则使用平台默认项目" style="width:100%;">
+                <el-option v-for="p in projectList" :key="p.id || p.projectId" :label="p.projectName" :value="p.id || p.projectId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="数据资源" prop="dataResources">
-              <el-select v-model="formData.dataResources" multiple placeholder="请选择数据资源" style="width:100%;">
-                <el-option v-for="item in dataResourceList" :key="item.value" :label="item.label" :value="item.value" />
+            <el-form-item label="协作方" prop="participantOrganIds">
+              <el-select v-model="formData.participantOrganIds" placeholder="请选择协作方机构" style="width:100%;" @change="onOtherOrganChange">
+                <el-option v-for="o in organList" :key="o.globalId" :label="o.globalName" :value="o.globalId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="目标变量" prop="targetVariable">
-              <el-select v-model="formData.targetVariable" placeholder="请选择目标变量" style="width:100%;">
-                <el-option v-for="item in targetFieldList" :key="item" :label="item" :value="item" />
+            <el-form-item label="本方数据集" prop="ownResourceId">
+              <el-select v-model="formData.ownResourceId" filterable placeholder="请选择本方数据集（含标签方）" style="width:100%;" @change="onOwnResourceChange">
+                <el-option v-for="r in ownResourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="特征变量" prop="featureVariables">
-              <el-select v-model="formData.featureVariables" multiple placeholder="请选择特征变量" style="width:100%;">
-                <el-option v-for="item in featureFieldList" :key="item" :label="item" :value="item" />
+            <el-form-item label="协作方数据集" prop="participantResourceIds">
+              <el-select v-model="formData.participantResourceIds" filterable placeholder="请先选择协作方，再选其数据集" style="width:100%;">
+                <el-option v-for="r in otherResourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
-            <el-form-item label="任务类型" prop="objective">
-              <el-select v-model="formData.objective" placeholder="请选择任务类型" style="width:100%;">
-                <el-option label="二分类（binary:logistic）" value="binary:logistic" />
-                <el-option label="多分类（multi:softmax）" value="multi:softmax" />
-                <el-option label="回归（reg:squarederror）" value="reg:squarederror" />
+            <el-form-item label="目标变量（标签）" prop="labelFeature">
+              <el-select v-model="formData.labelFeature" filterable placeholder="请选择本方数据中的标签字段" style="width:100%;">
+                <el-option v-for="f in ownFieldList" :key="f.fieldName" :label="f.fieldName" :value="f.fieldName" />
               </el-select>
             </el-form-item>
-            <el-form-item label="树的数量（n_estimators）" prop="nEstimators">
-              <el-input-number v-model="formData.nEstimators" :min="10" :max="1000" :step="10" style="width:100%;" />
+            <el-form-item label="本方特征变量" prop="ownFeatures">
+              <el-select v-model="formData.ownFeatures" multiple filterable placeholder="请选择本方参与训练的特征" style="width:100%;">
+                <el-option v-for="f in ownFieldList" :key="f.fieldName" :label="f.fieldName" :value="f.fieldName" />
+              </el-select>
             </el-form-item>
-            <el-form-item label="学习率（eta）" prop="eta">
-              <el-input-number v-model="formData.eta" :min="0.01" :max="1" :step="0.01" :precision="2" style="width:100%;" />
+            <el-form-item label="树的数量（numTrees）">
+              <el-input-number v-model="formData.numTrees" :min="1" :max="1000" :step="10" style="width:100%;" />
             </el-form-item>
-            <el-form-item label="最大深度（max_depth）" prop="maxDepth">
+            <el-form-item label="最大深度（maxDepth）">
               <el-input-number v-model="formData.maxDepth" :min="1" :max="20" :step="1" style="width:100%;" />
             </el-form-item>
-            <el-form-item label="子样本比例（subsample）" prop="subsample">
-              <el-input-number v-model="formData.subsample" :min="0.1" :max="1" :step="0.1" :precision="1" style="width:100%;" />
+            <el-form-item label="学习率（eta）">
+              <el-input-number v-model="formData.learningRate" :min="0.01" :max="1" :step="0.01" :precision="2" style="width:100%;" />
             </el-form-item>
-            <el-form-item label="列采样比例（colsample_bytree）" prop="colsampleBytree">
-              <el-input-number v-model="formData.colsampleBytree" :min="0.1" :max="1" :step="0.1" :precision="1" style="width:100%;" />
+            <el-form-item label="正则化系数">
+              <el-input-number v-model="formData.regularization" :min="0" :max="10" :step="0.001" :precision="4" style="width:100%;" />
             </el-form-item>
             <el-form-item label="备注">
               <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="请输入备注" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="submitting" @click="handleSubmit">提交任务</el-button>
+              <el-button type="primary" :loading="submitting" @click="handleSubmit">提交训练</el-button>
               <el-button @click="resetForm">重置</el-button>
             </el-form-item>
           </el-form>
@@ -68,24 +66,24 @@
       <el-col :span="12">
         <el-card>
           <div slot="header">
-            <span>任务列表</span>
+            <span>训练任务列表</span>
             <el-button size="mini" style="float:right;" icon="el-icon-refresh" @click="loadList">刷新</el-button>
           </div>
           <el-table :data="taskList" border size="small" v-loading="listLoading">
-            <el-table-column prop="taskId" label="任务ID" width="80" />
-            <el-table-column prop="taskName" label="任务名称" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="participantCount" label="参与方数" width="80" align="center" />
-            <el-table-column label="任务状态" width="90" align="center">
+            <el-table-column prop="taskName" label="任务名称" min-width="110" show-overflow-tooltip />
+            <el-table-column label="进度" width="90" align="center">
+              <template slot-scope="{ row }">{{ row.currentRound || 0 }}/{{ row.totalRounds || '-' }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="90" align="center">
               <template slot-scope="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="statusTagType(row.taskState)" size="small">{{ statusLabel(row.taskState) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" label="创建时间" width="140" />
-            <el-table-column label="操作" width="160" fixed="right">
+            <el-table-column prop="createDate" label="创建时间" width="140" show-overflow-tooltip />
+            <el-table-column label="操作" width="150" fixed="right">
               <template slot-scope="{ row }">
-                <el-button type="text" size="mini" @click="handleView(row)">查看</el-button>
-                <el-button type="text" size="mini" @click="handleRun(row)">执行</el-button>
-                <el-button type="text" size="mini" @click="handleDownload(row)">下载</el-button>
+                <el-button v-if="row.taskState === 1" type="text" size="mini" @click="handleDownload(row)">结果</el-button>
+                <el-button v-if="row.taskState === 2" type="text" size="mini" @click="handleCancel(row)">取消</el-button>
                 <el-button type="text" size="mini" style="color:#F56C6C;" @click="handleDelete(row)">删除</el-button>
               </template>
             </el-table-column>
@@ -93,34 +91,16 @@
         </el-card>
       </el-col>
     </el-row>
-
-    <el-dialog title="任务详情" :visible.sync="detailVisible" width="600px">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="任务ID">{{ currentTask.taskId }}</el-descriptions-item>
-        <el-descriptions-item label="任务名称">{{ currentTask.taskName }}</el-descriptions-item>
-        <el-descriptions-item label="目标变量">{{ currentTask.targetVariable }}</el-descriptions-item>
-        <el-descriptions-item label="任务类型">{{ currentTask.objective }}</el-descriptions-item>
-        <el-descriptions-item label="树的数量">{{ currentTask.nEstimators }}</el-descriptions-item>
-        <el-descriptions-item label="学习率">{{ currentTask.eta }}</el-descriptions-item>
-        <el-descriptions-item label="最大深度">{{ currentTask.maxDepth }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ currentTask.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="备注">{{ currentTask.remark }}</el-descriptions-item>
-      </el-descriptions>
-      <span slot="footer"><el-button @click="detailVisible = false">关闭</el-button></span>
-    </el-dialog>
   </div>
 </template>
 
 <script>
-import {
-  getFLPreprocessList,
-  createFLPreprocess,
-  runFLPreprocess,
-  deleteFLPreprocess,
-  downloadFLPreprocessResult
-} from '@/api/federatedLearning'
+import { createTask, getTaskList, downloadResult, deleteTask, cancelTask } from '@/api/federatedLearning'
+import { getResourceList } from '@/api/fusionResource'
+import { getAvailableOrganList } from '@/api/center'
+import { getProjectList } from '@/api/project'
 
-const PREPROCESS_TYPE = 'VFL_XGBOOST_TRAIN'
+const ALGORITHM_TYPE = 2
 
 export default {
   name: 'FLVerticalXGBoostTrain',
@@ -128,49 +108,73 @@ export default {
     return {
       formData: {
         taskName: '',
-        participants: [],
-        dataResources: [],
-        targetVariable: '',
-        featureVariables: [],
-        objective: 'binary:logistic',
-        nEstimators: 100,
-        eta: 0.1,
+        projectId: null,
+        participantOrganIds: '',
+        ownResourceId: '',
+        participantResourceIds: '',
+        labelFeature: '',
+        ownFeatures: [],
+        numTrees: 100,
         maxDepth: 6,
-        subsample: 0.8,
-        colsampleBytree: 0.8,
+        learningRate: 0.1,
+        regularization: 0.01,
         remark: ''
       },
       formRules: {
         taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-        participants: [{ required: true, message: '请选择参与方', trigger: 'change' }],
-        dataResources: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
-        targetVariable: [{ required: true, message: '请选择目标变量', trigger: 'change' }],
-        featureVariables: [{ required: true, message: '请选择特征变量', trigger: 'change' }],
-        objective: [{ required: true, message: '请选择任务类型', trigger: 'change' }]
+        participantOrganIds: [{ required: true, message: '请选择协作方', trigger: 'change' }],
+        ownResourceId: [{ required: true, message: '请选择本方数据集', trigger: 'change' }],
+        participantResourceIds: [{ required: true, message: '请选择协作方数据集', trigger: 'change' }],
+        labelFeature: [{ required: true, message: '请选择目标变量', trigger: 'change' }],
+        ownFeatures: [{ required: true, type: 'array', min: 1, message: '请选择特征变量', trigger: 'change' }]
       },
-      dataResourceList: [
-        { label: '用户行为数据集', value: 'user_behavior_dataset' },
-        { label: '风险特征数据集', value: 'risk_feature_dataset' },
-        { label: '标签数据集', value: 'label_dataset' }
-      ],
-      targetFieldList: ['label', 'churn', 'default', 'fraud', 'price', 'score'],
-      featureFieldList: ['age', 'income', 'tenure', 'balance', 'region', 'gender', 'category', 'amount'],
+      projectList: [],
+      organList: [],
+      ownResourceList: [],
+      otherResourceList: [],
+      ownFieldList: [],
       taskList: [],
       listLoading: false,
-      submitting: false,
-      detailVisible: false,
-      currentTask: {}
+      submitting: false
     }
   },
   created() {
     this.loadList()
+    this.loadOptions()
   },
   methods: {
+    async loadOptions() {
+      try {
+        const [orgRes, projRes, resRes] = await Promise.all([
+          getAvailableOrganList(),
+          getProjectList({ pageNo: 1, pageSize: 100 }),
+          getResourceList({ pageNo: 1, pageSize: 100, organId: this.$store.getters.userOrganId })
+        ])
+        if (orgRes.code === 0) this.organList = orgRes.result || []
+        if (projRes.code === 0) this.projectList = projRes.result?.data || projRes.result?.list || []
+        if (resRes.code === 0) this.ownResourceList = resRes.result?.data || []
+      } catch (e) { console.error(e) }
+    },
+    async onOtherOrganChange(organId) {
+      this.formData.participantResourceIds = ''
+      this.otherResourceList = []
+      if (!organId) return
+      try {
+        const res = await getResourceList({ pageNo: 1, pageSize: 100, organId })
+        if (res.code === 0) this.otherResourceList = res.result?.data || []
+      } catch (e) { console.error(e) }
+    },
+    onOwnResourceChange(id) {
+      const r = this.ownResourceList.find(x => x.resourceId === id)
+      this.ownFieldList = (r && r.fieldList) || []
+      this.formData.labelFeature = ''
+      this.formData.ownFeatures = []
+    },
     async loadList() {
       this.listLoading = true
       try {
-        const res = await getFLPreprocessList({ preprocessType: PREPROCESS_TYPE })
-        this.taskList = res.data || []
+        const res = await getTaskList({ taskType: 1, algorithmType: ALGORITHM_TYPE, pageNo: 1, pageSize: 50 })
+        this.taskList = res.result?.data || res.result?.list || []
       } catch (e) {
         this.taskList = []
       } finally {
@@ -182,10 +186,33 @@ export default {
         if (!valid) return
         this.submitting = true
         try {
-          await createFLPreprocess({ ...this.formData, preprocessType: PREPROCESS_TYPE })
-          this.$message.success('任务创建成功')
-          this.resetForm()
-          this.loadList()
+          const res = await createTask({
+            taskType: 1,
+            algorithmType: ALGORITHM_TYPE,
+            federatedType: 2,
+            taskName: this.formData.taskName,
+            projectId: this.formData.projectId || undefined,
+            ownOrganId: this.$store.getters.userOrganId,
+            ownResourceId: this.formData.ownResourceId,
+            ownFeatures: this.formData.ownFeatures.join(','),
+            labelFeature: this.formData.labelFeature,
+            isLabelOwner: 1,
+            participantOrganIds: this.formData.participantOrganIds,
+            participantResourceIds: this.formData.participantResourceIds,
+            remarks: this.formData.remark,
+            trainingParams: {
+              numTrees: this.formData.numTrees,
+              maxDepth: this.formData.maxDepth,
+              learningRate: this.formData.learningRate,
+              regularization: this.formData.regularization
+            }
+          })
+          if (res.code === 0) {
+            this.$message.success('联邦训练任务已提交，训练在隐私计算节点真实执行')
+            this.loadList()
+          } else {
+            this.$message.error(res.message || '任务创建失败')
+          }
         } catch (e) {
           this.$message.error('任务创建失败')
         } finally {
@@ -193,22 +220,21 @@ export default {
         }
       })
     },
-    async handleRun(row) {
+    async handleCancel(row) {
       try {
-        await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
-        this.$message.success('任务已提交执行')
+        const res = await cancelTask({ taskId: row.taskId })
+        if (res.code === 0) this.$message.success('已取消')
+        else this.$message.error(res.message || '取消失败')
         this.loadList()
-      } catch (e) {
-        this.$message.error('执行失败')
-      }
+      } catch (e) { this.$message.error('取消失败') }
     },
     async handleDownload(row) {
       try {
-        const res = await downloadFLPreprocessResult({ taskId: row.taskId })
+        const res = await downloadResult({ taskId: row.taskId })
         const url = URL.createObjectURL(new Blob([res]))
         const a = document.createElement('a')
         a.href = url
-        a.download = `vfl_xgboost_train_${row.taskId}.zip`
+        a.download = `vfl_xgboost_train_${row.taskId}.csv`
         a.click()
         URL.revokeObjectURL(url)
       } catch (e) {
@@ -218,26 +244,25 @@ export default {
     async handleDelete(row) {
       try {
         await this.$confirm('确定删除该任务？', '提示', { type: 'warning' })
-        await deleteFLPreprocess({ taskId: row.taskId })
-        this.$message.success('删除成功')
+        const res = await deleteTask({ taskId: row.taskId })
+        if (res.code === 0) this.$message.success('删除成功')
+        else this.$message.error(res.message || '删除失败')
         this.loadList()
       } catch (e) {
         if (e !== 'cancel') this.$message.error('删除失败')
       }
     },
-    handleView(row) {
-      this.currentTask = row
-      this.detailVisible = true
-    },
     resetForm() {
       this.$refs.taskForm.resetFields()
+      this.ownFieldList = []
+      this.otherResourceList = []
     },
     statusTagType(status) {
-      const map = { 0: 'info', 1: 'success', 2: 'warning', 3: 'danger' }
+      const map = { 0: 'info', 1: 'success', 2: 'warning', 3: 'danger', 4: 'info' }
       return map[status] || 'info'
     },
     statusLabel(status) {
-      const map = { 0: '待执行', 1: '已完成', 2: '执行中', 3: '执行失败' }
+      const map = { 0: '待执行', 1: '训练成功', 2: '训练中', 3: '训练失败', 4: '已取消' }
       return map[status] || '未知'
     }
   }
