@@ -44,7 +44,7 @@ public class SinglePartyExtService {
     private static final String RESULT_BASE = "/data/singleParty";
     private static final long SCRIPT_TIMEOUT_SECONDS = 120;
 
-    /** subType(=前端 preprocessType/scriptType) → 真实计算脚本。PREPROCESS/SCRIPT 两 category 共用。 */
+    /** subType(=前端 preprocessType/scriptType) → 真实计算脚本。PREPROCESS/SCRIPT/FLPRE 三 category 共用。 */
     private static final Map<String, String> SUBTYPE_SCRIPT;
     static {
         Map<String, String> m = new HashMap<>();
@@ -59,8 +59,23 @@ public class SinglePartyExtService {
         m.put("XGB_ALGORITHM", "xgboost.py");
         m.put("PYTHON_SCRIPT", "script.py");
         m.put("SQL_PROCESS", "sql_process.py");
+        // FLPRE 中可诚实本地计算的 8 类（多方类另走真实联邦引擎，不在此表）
+        m.put("DATA_SPLIT", "fl_data_split.py");
+        m.put("DATA_TRANSFORM", "fl_data_transform.py");
+        m.put("FEATURE_FILL", "fl_feature_fill.py");
+        m.put("FEATURE_WAREHOUSE", "fl_feature_warehouse.py");
+        m.put("FL_FEATURE_ENCODE", "fl_feature_encode.py");
+        m.put("SAMPLE_EXPAND", "fl_sample_expand.py");
+        m.put("SAMPLE_WEIGHT", "fl_sample_weight.py");
+        m.put("METRIC_MODELING", "fl_metric_modeling.py");
         SUBTYPE_SCRIPT = Collections.unmodifiableMap(m);
     }
+
+    /** FLPRE 中的天然多方算法：本地无法诚实计算，未接通真实联邦引擎前显式失败。 */
+    private static final Set<String> MULTI_PARTY_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "FEATURE_ALIGN", "FEATURE_SHARE", "FEATURE_SIMILARITY", "DATA_FUSION", "DATA_MERGE",
+            "VFL_LINEAR_TRAIN", "VFL_LINEAR_PREDICT", "VFL_LOGISTIC_TRAIN", "VFL_LOGISTIC_PREDICT",
+            "VFL_XGBOOST_TRAIN", "VFL_XGBOOST_PREDICT")));
 
     // ===== 预处理 =====
     @Transactional(rollbackFor = Exception.class)
@@ -191,10 +206,16 @@ public class SinglePartyExtService {
             String category = str(t.get("taskCategory"));
             String subType = str(t.get("subType"));
             String script = subType == null ? null : SUBTYPE_SCRIPT.get(subType);
-            if (script != null && ("PREPROCESS".equals(category) || "SCRIPT".equals(category))) {
+            if (script != null && ("PREPROCESS".equals(category) || "SCRIPT".equals(category) || "FLPRE".equals(category))) {
                 return runReal(t, taskId, script);
             }
-            // 无脚本映射的类别（FLPRE/FLMODEL 等）保留登记式流转；成功态=1（前端词汇 1=已完成）
+            // FLPRE 的天然多方类（PSI 对齐/秘密共享/VFL 训练预测）本地脚本无法诚实实现，
+            // 在接通真实联邦引擎之前显式失败，绝不返回假成功
+            if ("FLPRE".equals(category) && MULTI_PARTY_SUBTYPES.contains(subType)) {
+                return failTask(t, taskId, new Date(),
+                        "该算法为多方联邦任务(" + subType + ")，需经真实联邦引擎执行；当前版本尚未接通，拒绝模拟执行");
+            }
+            // 无脚本映射的类别（FLMODEL 等）保留登记式流转；成功态=1（前端词汇 1=已完成）
             Map<String, Object> upd = new HashMap<>();
             upd.put("taskId", taskId);
             upd.put("taskState", 1);
@@ -245,6 +266,15 @@ public class SinglePartyExtService {
         params.put("task_id", taskId);
         params.put("result_dir", resultDir.getAbsolutePath());
         params.put("sub_type", str(t.get("subType")));
+        // 样本扩充需要第二份数据集：expandSource 传的是资源ID，这里解析成本地文件路径
+        String expandSource = str(params.get("expandSource"));
+        if (StringUtils.isNotBlank(expandSource)) {
+            DataResource expandRes = resolveResource(expandSource);
+            if (expandRes == null || StringUtils.isBlank(expandRes.getUrl())) {
+                return failTask(t, taskId, start, "扩充数据来源资源不存在或无本地数据文件: " + expandSource);
+            }
+            params.put("expand_source_path", expandRes.getUrl());
+        }
         // 参数经文件传递（UTF-8 显式编码，避开 argv 编码/长度问题）
         File paramFile = new File(resultDir, "params.json");
         Files.write(paramFile.toPath(), objectMapper.writeValueAsString(params).getBytes(StandardCharsets.UTF_8));

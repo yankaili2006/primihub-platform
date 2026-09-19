@@ -10,16 +10,9 @@
             <el-form-item label="任务名称" prop="taskName">
               <el-input v-model="formData.taskName" placeholder="请输入任务名称" />
             </el-form-item>
-            <el-form-item label="参与方" prop="participants">
-              <el-select v-model="formData.participants" multiple placeholder="请选择参与方" style="width:100%;">
-                <el-option label="机构A" value="ORG_A" />
-                <el-option label="机构B" value="ORG_B" />
-                <el-option label="机构C" value="ORG_C" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="数据资源" prop="dataResources">
-              <el-select v-model="formData.dataResources" multiple placeholder="请选择数据资源" style="width:100%;">
-                <el-option v-for="item in dataResourceList" :key="item.value" :label="item.label" :value="item.value" />
+            <el-form-item label="数据资源" prop="resourceId">
+              <el-select v-model="formData.resourceId" filterable placeholder="请选择数据资源" style="width:100%;">
+                <el-option v-for="r in resourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
             <el-form-item label="填充方式" prop="fillMethod">
@@ -27,7 +20,6 @@
                 <el-option label="均值" value="MEAN" />
                 <el-option label="中位数" value="MEDIAN" />
                 <el-option label="众数" value="MODE" />
-                <el-option label="联邦均值" value="FEDERATED_MEAN" />
                 <el-option label="模型预测" value="MODEL_PREDICT" />
               </el-select>
             </el-form-item>
@@ -60,10 +52,10 @@
           <el-table :data="taskList" border size="small" v-loading="listLoading">
             <el-table-column prop="taskId" label="任务ID" width="80" />
             <el-table-column prop="taskName" label="任务名称" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="participantCount" label="参与方数" width="80" align="center" />
+            <el-table-column prop="resourceName" label="数据资源" width="110" show-overflow-tooltip />
             <el-table-column label="任务状态" width="90" align="center">
               <template slot-scope="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="statusTagType(row.taskState)" size="small">{{ statusLabel(row.taskState) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="createTime" label="创建时间" width="140" />
@@ -102,6 +94,7 @@ import {
   deleteFLPreprocess,
   downloadFLPreprocessResult
 } from '@/api/federatedLearning'
+import { getResourceList } from '@/api/resource'
 
 const PREPROCESS_TYPE = 'FEATURE_FILL'
 
@@ -111,8 +104,7 @@ export default {
     return {
       formData: {
         taskName: '',
-        participants: [],
-        dataResources: [],
+        resourceId: '',
         fillMethod: 'MEAN',
         fillFields: [],
         missingRateThreshold: 0.3,
@@ -120,16 +112,11 @@ export default {
       },
       formRules: {
         taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-        participants: [{ required: true, message: '请选择参与方', trigger: 'change' }],
-        dataResources: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
+        resourceId: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
         fillMethod: [{ required: true, message: '请选择填充方式', trigger: 'change' }],
         fillFields: [{ required: true, message: '请选择需填充字段', trigger: 'change' }]
       },
-      dataResourceList: [
-        { label: '销售数据集', value: 'sales_dataset' },
-        { label: '用户特征集', value: 'user_feature_dataset' },
-        { label: '商品数据集', value: 'product_dataset' }
-      ],
+      resourceList: [],
       fieldList: ['age', 'income', 'score', 'amount', 'weight', 'height', 'count'],
       taskList: [],
       listLoading: false,
@@ -140,13 +127,22 @@ export default {
   },
   created() {
     this.loadList()
+    this.loadResources()
   },
   methods: {
+    async loadResources() {
+      try {
+        const res = await getResourceList({ pageNo: 1, pageSize: 100 })
+        this.resourceList = res.result?.data || []
+      } catch (e) {
+        this.resourceList = []
+      }
+    },
     async loadList() {
       this.listLoading = true
       try {
         const res = await getFLPreprocessList({ preprocessType: PREPROCESS_TYPE })
-        this.taskList = res.data || []
+        this.taskList = res.result?.data || res.result?.list || []
       } catch (e) {
         this.taskList = []
       } finally {
@@ -158,10 +154,19 @@ export default {
         if (!valid) return
         this.submitting = true
         try {
-          await createFLPreprocess({ ...this.formData, preprocessType: PREPROCESS_TYPE })
-          this.$message.success('任务创建成功')
-          this.resetForm()
-          this.loadList()
+          const resource = this.resourceList.find(r => r.resourceId === this.formData.resourceId)
+          const res = await createFLPreprocess({
+            ...this.formData,
+            resourceName: resource ? resource.resourceName : '',
+            preprocessType: PREPROCESS_TYPE
+          })
+          if (res.code === 0) {
+            this.$message.success('任务创建成功')
+            this.resetForm()
+            this.loadList()
+          } else {
+            this.$message.error(res.message || '任务创建失败')
+          }
         } catch (e) {
           this.$message.error('任务创建失败')
         } finally {
@@ -171,8 +176,12 @@ export default {
     },
     async handleRun(row) {
       try {
-        await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
-        this.$message.success('任务已提交执行')
+        const res = await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
+        if (res.code === 0) {
+          this.$message.success('任务执行成功')
+        } else {
+          this.$message.error(res.message || '执行失败')
+        }
         this.loadList()
       } catch (e) {
         this.$message.error('执行失败')

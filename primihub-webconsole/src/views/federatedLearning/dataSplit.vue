@@ -10,16 +10,9 @@
             <el-form-item label="任务名称" prop="taskName">
               <el-input v-model="formData.taskName" placeholder="请输入任务名称" />
             </el-form-item>
-            <el-form-item label="参与方" prop="participants">
-              <el-select v-model="formData.participants" multiple placeholder="请选择参与方" style="width:100%;">
-                <el-option label="机构A" value="ORG_A" />
-                <el-option label="机构B" value="ORG_B" />
-                <el-option label="机构C" value="ORG_C" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="数据资源" prop="dataResources">
-              <el-select v-model="formData.dataResources" multiple placeholder="请选择数据资源" style="width:100%;">
-                <el-option v-for="item in dataResourceList" :key="item.value" :label="item.label" :value="item.value" />
+            <el-form-item label="数据资源" prop="resourceId">
+              <el-select v-model="formData.resourceId" filterable placeholder="请选择数据资源" style="width:100%;">
+                <el-option v-for="r in resourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
             <el-form-item label="分割方式" prop="splitMethod">
@@ -28,6 +21,12 @@
                 <el-option label="按时间分割" value="TIME_BASED" />
                 <el-option label="分层分割" value="STRATIFIED" />
               </el-select>
+            </el-form-item>
+            <el-form-item v-if="formData.splitMethod === 'TIME_BASED'" label="时间字段" prop="timeField">
+              <el-input v-model="formData.timeField" placeholder="请输入时间字段名（需存在于数据集中）" />
+            </el-form-item>
+            <el-form-item v-if="formData.splitMethod === 'STRATIFIED'" label="分层字段" prop="stratifyField">
+              <el-input v-model="formData.stratifyField" placeholder="请输入分层字段名（需存在于数据集中）" />
             </el-form-item>
             <el-form-item label="训练集比例" prop="trainRatio">
               <el-slider
@@ -68,10 +67,10 @@
           <el-table :data="taskList" border size="small" v-loading="listLoading">
             <el-table-column prop="taskId" label="任务ID" width="80" />
             <el-table-column prop="taskName" label="任务名称" min-width="100" show-overflow-tooltip />
-            <el-table-column prop="participantCount" label="参与方数" width="80" align="center" />
+            <el-table-column prop="resourceName" label="数据资源" width="110" show-overflow-tooltip />
             <el-table-column label="任务状态" width="90" align="center">
               <template slot-scope="{ row }">
-                <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
+                <el-tag :type="statusTagType(row.taskState)" size="small">{{ statusLabel(row.taskState) }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="createTime" label="创建时间" width="140" />
@@ -110,6 +109,7 @@ import {
   deleteFLPreprocess,
   downloadFLPreprocessResult
 } from '@/api/federatedLearning'
+import { getResourceList } from '@/api/resource'
 
 const PREPROCESS_TYPE = 'DATA_SPLIT'
 
@@ -119,24 +119,22 @@ export default {
     return {
       formData: {
         taskName: '',
-        participants: [],
-        dataResources: [],
+        resourceId: '',
         trainRatio: 80,
         splitMethod: 'RANDOM',
+        timeField: '',
+        stratifyField: '',
         randomSeed: 42,
         remark: ''
       },
       formRules: {
         taskName: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
-        participants: [{ required: true, message: '请选择参与方', trigger: 'change' }],
-        dataResources: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
-        splitMethod: [{ required: true, message: '请选择分割方式', trigger: 'change' }]
+        resourceId: [{ required: true, message: '请选择数据资源', trigger: 'change' }],
+        splitMethod: [{ required: true, message: '请选择分割方式', trigger: 'change' }],
+        timeField: [{ required: true, message: '请输入时间字段', trigger: 'blur' }],
+        stratifyField: [{ required: true, message: '请输入分层字段', trigger: 'blur' }]
       },
-      dataResourceList: [
-        { label: '销售数据集', value: 'sales_dataset' },
-        { label: '用户特征集', value: 'user_feature_dataset' },
-        { label: '风险数据集', value: 'risk_dataset' }
-      ],
+      resourceList: [],
       taskList: [],
       listLoading: false,
       submitting: false,
@@ -151,14 +149,23 @@ export default {
   },
   created() {
     this.loadList()
+    this.loadResources()
   },
   methods: {
     updateValidRatio() {},
+    async loadResources() {
+      try {
+        const res = await getResourceList({ pageNo: 1, pageSize: 100 })
+        this.resourceList = res.result?.data || []
+      } catch (e) {
+        this.resourceList = []
+      }
+    },
     async loadList() {
       this.listLoading = true
       try {
         const res = await getFLPreprocessList({ preprocessType: PREPROCESS_TYPE })
-        this.taskList = res.data || []
+        this.taskList = res.result?.data || res.result?.list || []
       } catch (e) {
         this.taskList = []
       } finally {
@@ -170,10 +177,19 @@ export default {
         if (!valid) return
         this.submitting = true
         try {
-          await createFLPreprocess({ ...this.formData, preprocessType: PREPROCESS_TYPE })
-          this.$message.success('任务创建成功')
-          this.resetForm()
-          this.loadList()
+          const resource = this.resourceList.find(r => r.resourceId === this.formData.resourceId)
+          const res = await createFLPreprocess({
+            ...this.formData,
+            resourceName: resource ? resource.resourceName : '',
+            preprocessType: PREPROCESS_TYPE
+          })
+          if (res.code === 0) {
+            this.$message.success('任务创建成功')
+            this.resetForm()
+            this.loadList()
+          } else {
+            this.$message.error(res.message || '任务创建失败')
+          }
         } catch (e) {
           this.$message.error('任务创建失败')
         } finally {
@@ -183,8 +199,12 @@ export default {
     },
     async handleRun(row) {
       try {
-        await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
-        this.$message.success('任务已提交执行')
+        const res = await runFLPreprocess({ taskId: row.taskId, preprocessType: PREPROCESS_TYPE })
+        if (res.code === 0) {
+          this.$message.success('任务执行成功')
+        } else {
+          this.$message.error(res.message || '执行失败')
+        }
         this.loadList()
       } catch (e) {
         this.$message.error('执行失败')
@@ -196,7 +216,7 @@ export default {
         const url = URL.createObjectURL(new Blob([res]))
         const a = document.createElement('a')
         a.href = url
-        a.download = `data_split_${row.taskId}.zip`
+        a.download = `data_split_${row.taskId}.csv`
         a.click()
         URL.revokeObjectURL(url)
       } catch (e) {
