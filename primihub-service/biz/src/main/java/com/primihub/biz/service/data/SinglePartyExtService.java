@@ -5,8 +5,11 @@ import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.entity.base.BaseResultEnum;
 import com.primihub.biz.entity.base.PageParam;
 import com.primihub.biz.entity.data.po.DataResource;
+import com.primihub.biz.entity.data.po.DataUnionTask;
+import com.primihub.biz.entity.data.req.DataUnionReq;
 import com.primihub.biz.repository.primarydb.data.SinglePartyExtRepository;
 import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
+import com.primihub.biz.repository.secondarydb.data.DataUnionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +38,12 @@ public class SinglePartyExtService {
 
     @Autowired
     private DataResourceRepository dataResourceRepository;
+
+    @Autowired
+    private DataUnionService dataUnionService;
+
+    @Autowired
+    private DataUnionRepository dataUnionRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -68,14 +77,18 @@ public class SinglePartyExtService {
         m.put("SAMPLE_EXPAND", "fl_sample_expand.py");
         m.put("SAMPLE_WEIGHT", "fl_sample_weight.py");
         m.put("METRIC_MODELING", "fl_metric_modeling.py");
+        m.put("DATA_MERGE", "fl_data_merge.py"); // 单方本地合并（多本地数据源 concat/join）
         SUBTYPE_SCRIPT = Collections.unmodifiableMap(m);
     }
 
     /** FLPRE 中的天然多方算法：本地无法诚实计算，未接通真实联邦引擎前显式失败。 */
     private static final Set<String> MULTI_PARTY_SUBTYPES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-            "FEATURE_ALIGN", "FEATURE_SHARE", "FEATURE_SIMILARITY", "DATA_FUSION", "DATA_MERGE",
+            "FEATURE_ALIGN", "FEATURE_SHARE", "FEATURE_SIMILARITY",
             "VFL_LINEAR_TRAIN", "VFL_LINEAR_PREDICT", "VFL_LOGISTIC_TRAIN", "VFL_LOGISTIC_PREDICT",
             "VFL_XGBOOST_TRAIN", "VFL_XGBOOST_PREDICT")));
+
+    /** 求并引擎轮询上限（秒）：本地小数据求并通常数秒内完成。 */
+    private static final int UNION_POLL_SECONDS = 90;
 
     // ===== 预处理 =====
     @Transactional(rollbackFor = Exception.class)
@@ -209,6 +222,10 @@ public class SinglePartyExtService {
             if (script != null && ("PREPROCESS".equals(category) || "SCRIPT".equals(category) || "FLPRE".equals(category))) {
                 return runReal(t, taskId, script);
             }
+            // 数据融合：横向(样本并集)路由到真实联邦求并引擎
+            if ("FLPRE".equals(category) && "DATA_FUSION".equals(subType)) {
+                return runFusionMerge(t, taskId);
+            }
             // FLPRE 的天然多方类（PSI 对齐/秘密共享/VFL 训练预测）本地脚本无法诚实实现，
             // 在接通真实联邦引擎之前显式失败，绝不返回假成功
             if ("FLPRE".equals(category) && MULTI_PARTY_SUBTYPES.contains(subType)) {
@@ -246,6 +263,10 @@ public class SinglePartyExtService {
             params = new HashMap<>();
         }
         String resourceId = str(firstNonNull(t.get("resourceId"), params.get("resourceId")));
+        // 多数据源任务（如 DATA_MERGE）resourceId 为逗号串，主数据集取第一个
+        if (resourceId != null && resourceId.contains(",")) {
+            resourceId = resourceId.split(",")[0].trim();
+        }
         DataResource res = resolveResource(resourceId);
         if (res == null) {
             return failTask(t, taskId, start, "数据资源不存在: " + resourceId);
@@ -274,6 +295,19 @@ public class SinglePartyExtService {
                 return failTask(t, taskId, start, "扩充数据来源资源不存在或无本地数据文件: " + expandSource);
             }
             params.put("expand_source_path", expandRes.getUrl());
+        }
+        // 多数据源任务（DATA_MERGE）：逐个资源ID解析为本地路径列表
+        Object dataSources = params.get("dataSources");
+        if (dataSources instanceof List && !((List<?>) dataSources).isEmpty()) {
+            List<String> sourcePaths = new ArrayList<>();
+            for (Object rid : (List<?>) dataSources) {
+                DataResource sr = resolveResource(str(rid));
+                if (sr == null || StringUtils.isBlank(sr.getUrl())) {
+                    return failTask(t, taskId, start, "数据源资源不存在或无本地数据文件: " + rid);
+                }
+                sourcePaths.add(sr.getUrl());
+            }
+            params.put("source_paths", sourcePaths);
         }
         // 参数经文件传递（UTF-8 显式编码，避开 argv 编码/长度问题）
         File paramFile = new File(resultDir, "params.json");
@@ -327,6 +361,131 @@ public class SinglePartyExtService {
         repository.updateTaskState(upd);
         writeLog(taskId, taskName, category, "INFO",
                 "任务执行成功，结果行数=" + rows + (summary.isEmpty() ? "" : "，" + summary));
+        return BaseResultEntity.success("任务执行成功");
+    }
+
+    /**
+     * 数据融合/合并 → 真实联邦求并引擎。
+     * 横向融合(HORIZONTAL)/纵向堆叠合并(UNION) = 两方样本并集，由求并引擎(gRPC→node)执行；
+     * 纵向融合(VERTICAL)/按键关联合并(JOIN) 需 PSI 对齐，指引用户走特征对齐，不做本地假算。
+     */
+    private BaseResultEntity runFusionMerge(Map<String, Object> t, String taskId) {
+        Date start = new Date();
+        Map<String, Object> params;
+        try {
+            String pj = str(t.get("params"));
+            params = pj == null || pj.isEmpty() ? new HashMap<>() : objectMapper.readValue(pj, Map.class);
+        } catch (Exception e) {
+            params = new HashMap<>();
+        }
+        String mode = str(firstNonNull(params.get("fusionType"), params.get("mergeType")));
+        boolean unionMode = "HORIZONTAL".equalsIgnoreCase(mode) || "UNION".equalsIgnoreCase(mode);
+        if (!unionMode) {
+            return failTask(t, taskId, start,
+                    "纵向(按ID对齐)融合/关联合并需 PSI 对齐引擎，请使用『特征对齐』功能；本入口当前支持横向样本并集");
+        }
+        String ownOrganId = str(params.get("ownOrganId"));
+        String ownResourceId = str(firstNonNull(params.get("ownResourceId"), params.get("localResourceId"), t.get("resourceId")));
+        String ownKeyword = str(params.get("ownKeyword"));
+        String otherOrganId = str(params.get("otherOrganId"));
+        String otherResourceId = str(params.get("otherResourceId"));
+        String otherKeyword = str(params.get("otherKeyword"));
+        StringBuilder miss = new StringBuilder();
+        if (StringUtils.isBlank(ownOrganId)) miss.append("本机构(ownOrganId) ");
+        if (StringUtils.isBlank(ownResourceId)) miss.append("本机构数据集 ");
+        if (StringUtils.isBlank(ownKeyword)) miss.append("本方关联字段 ");
+        if (StringUtils.isBlank(otherOrganId)) miss.append("协作方 ");
+        if (StringUtils.isBlank(otherResourceId)) miss.append("协作方数据集 ");
+        if (StringUtils.isBlank(otherKeyword)) miss.append("协作方关联字段 ");
+        if (miss.length() > 0) {
+            return failTask(t, taskId, start, "缺少必要参数: " + miss + "。请重新创建任务并补全协作方信息");
+        }
+
+        DataUnionReq req = new DataUnionReq();
+        req.setOwnOrganId(ownOrganId);
+        req.setOwnResourceId(ownResourceId);
+        req.setOwnKeyword(ownKeyword);
+        req.setOtherOrganId(otherOrganId);
+        req.setOtherResourceId(otherResourceId);
+        req.setOtherKeyword(otherKeyword);
+        req.setResultName(str(firstNonNull(params.get("resultName"), str(t.get("taskName")) + "_并集结果")));
+        req.setResultOrganIds(str(firstNonNull(params.get("resultOrganIds"), ownOrganId)));
+        Object tag = params.get("tag");
+        req.setTag(tag == null ? 0 : toInt(tag));
+        req.setRemarks(str(t.get("remark")));
+
+        Long userId = null;
+        try { userId = Long.valueOf(str(t.get("userId"))); } catch (Exception ignore) { }
+        BaseResultEntity save = dataUnionService.saveDataUnion(req, userId == null ? 0L : userId);
+        if (save.getCode() == null || save.getCode() != 0) {
+            return failTask(t, taskId, start, "求并引擎创建任务失败: " + save.getMsg());
+        }
+        Long engineId;
+        try {
+            Map<String, Object> rm = (Map<String, Object>) save.getResult();
+            engineId = Long.valueOf(String.valueOf(rm.get("taskId")));
+        } catch (Exception e) {
+            return failTask(t, taskId, start, "求并引擎返回异常，无法取得任务ID");
+        }
+        writeLog(taskId, str(t.get("taskName")), "FLPRE", "INFO", "已提交真实联邦求并引擎, 引擎任务ID=" + engineId);
+
+        for (int i = 0; i < UNION_POLL_SECONDS; i++) {
+            try { TimeUnit.SECONDS.sleep(1); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+            DataUnionTask ut = dataUnionRepository.selectTaskById(engineId);
+            if (ut == null || ut.getTaskState() == null) continue;
+            if (ut.getTaskState() == 1) {
+                return fusionSuccess(t, taskId, start, ut);
+            }
+            if (ut.getTaskState() == 3 || ut.getTaskState() == 4) {
+                return failTask(t, taskId, start,
+                        "求并引擎执行失败(引擎任务ID=" + engineId + ")，详情见『联邦求并』模块任务日志");
+            }
+        }
+        // 超时未出结果：如实标记为执行中，让用户稍后在求并模块跟进（绝不假成功）
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("taskId", taskId);
+        upd.put("taskState", 2);
+        upd.put("progress", 50);
+        upd.put("startTime", start);
+        upd.put("errorMsg", "");
+        upd.put("resultContent", "字段,值\r\n引擎任务ID," + engineId + "\r\n状态,引擎仍在执行\r\n");
+        repository.updateTaskState(upd);
+        writeLog(taskId, str(t.get("taskName")), "FLPRE", "INFO",
+                "求并引擎执行中(超过" + UNION_POLL_SECONDS + "s 未完成), 引擎任务ID=" + engineId);
+        return BaseResultEntity.success("任务已提交真实求并引擎，仍在执行中，请稍后刷新或到『联邦求并』模块查看");
+    }
+
+    private BaseResultEntity fusionSuccess(Map<String, Object> t, String taskId, Date start, DataUnionTask ut) {
+        String resultPath = null;
+        long rows = ut.getFileRows() == null ? 0 : ut.getFileRows();
+        try {
+            if (StringUtils.isNotBlank(ut.getFilePath()) && new File(ut.getFilePath()).isFile()) {
+                File dir = new File(RESULT_BASE, taskId);
+                if (dir.exists() || dir.mkdirs()) {
+                    File dst = new File(dir, "result.csv");
+                    Files.copy(new File(ut.getFilePath()).toPath(), dst.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    resultPath = dst.getAbsolutePath();
+                    if (rows == 0) {
+                        try { rows = Math.max(Files.lines(dst.toPath()).count() - 1, 0); } catch (Exception ignore) { }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("拷贝求并结果失败, taskId={}", taskId, e);
+        }
+        String summary = "真实联邦求并完成, 引擎任务ID=" + ut.getId() + ", 结果行数=" + rows;
+        Map<String, Object> upd = new HashMap<>();
+        upd.put("taskId", taskId);
+        upd.put("taskState", 1);
+        upd.put("progress", 100);
+        upd.put("startTime", start);
+        upd.put("endTime", new Date());
+        if (resultPath != null) upd.put("resultPath", resultPath);
+        upd.put("resultContent", buildRealResultCsv(t, resultPath == null ? str(ut.getFilePath()) : resultPath, rows, summary));
+        upd.put("errorMsg", "");
+        repository.updateTaskState(upd);
+        writeLog(taskId, str(t.get("taskName")), "FLPRE", "INFO", summary);
         return BaseResultEntity.success("任务执行成功");
     }
 

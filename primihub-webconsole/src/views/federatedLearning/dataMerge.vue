@@ -11,20 +11,18 @@
               <el-input v-model="mergeFormData.mergeName" placeholder="请输入合并任务名称" />
             </el-form-item>
             <el-form-item label="数据源选择" prop="dataSources">
-              <el-select v-model="mergeFormData.dataSources" multiple placeholder="请选择数据源" style="width: 100%;">
-                <el-option v-for="item in dataSourceList" :key="item.id" :label="item.name" :value="item.id" />
+              <el-select v-model="mergeFormData.dataSources" multiple filterable placeholder="请选择至少 2 个本机构数据资源" style="width: 100%;">
+                <el-option v-for="r in resourceList" :key="r.resourceId" :label="r.resourceName" :value="r.resourceId" />
               </el-select>
             </el-form-item>
             <el-form-item label="合并方式">
               <el-radio-group v-model="mergeFormData.mergeType">
-                <el-radio label="UNION">纵向合并（Union）</el-radio>
-                <el-radio label="JOIN">横向合并（Join）</el-radio>
+                <el-radio label="UNION">纵向合并（按同名字段追加行）</el-radio>
+                <el-radio label="JOIN">横向合并（按关联字段 Join）</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item v-if="mergeFormData.mergeType === 'JOIN'" label="关联字段" prop="joinKey">
-              <el-select v-model="mergeFormData.joinKey" placeholder="请选择关联字段" style="width: 100%;">
-                <el-option v-for="item in keyFieldList" :key="item" :label="item" :value="item" />
-              </el-select>
+              <el-input v-model="mergeFormData.joinKey" placeholder="请输入各数据源共有的关联字段名" />
             </el-form-item>
             <el-form-item label="去重处理">
               <el-switch v-model="mergeFormData.deduplication" />
@@ -33,49 +31,47 @@
               <el-select v-model="mergeFormData.outputFormat" style="width: 100%;">
                 <el-option label="CSV" value="CSV" />
                 <el-option label="Parquet" value="PARQUET" />
-                <el-option label="数据库表" value="TABLE" />
               </el-select>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handlePreview">预览</el-button>
-              <el-button type="success" @click="handleMerge">执行合并</el-button>
+              <el-button type="primary" :loading="submitting" @click="handleMerge">创建合并任务</el-button>
             </el-form-item>
           </el-form>
         </el-card>
       </el-col>
       <el-col :span="12">
         <el-card>
-          <div slot="header"><span>数据预览</span></div>
-          <el-table v-if="previewData.length > 0" :data="previewData" border max-height="350">
-            <el-table-column v-for="col in previewColumns" :key="col" :prop="col" :label="col" min-width="100" />
-          </el-table>
-          <el-empty v-else description="请选择数据源后点击预览" />
+          <div slot="header"><span>说明</span></div>
+          <div class="merge-tip">
+            <p>· 数据合并在本机构内真实执行：读取所选数据资源的本地数据文件，按所选方式合并。</p>
+            <p>· 纵向合并：各数据源按共同字段拼接行（无共同字段将报错）。</p>
+            <p>· 横向合并：各数据源按关联字段做内连接（关联字段需在每个数据源中存在）。</p>
+            <p>· 创建后在下方历史列表点击「执行」运行，完成后可下载真实结果文件。</p>
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
     <el-card style="margin-top: 20px;">
-      <div slot="header"><span>合并历史</span></div>
+      <div slot="header">
+        <span>合并历史</span>
+        <el-button size="mini" style="float:right;" icon="el-icon-refresh" @click="loadMergeHistory">刷新</el-button>
+      </div>
       <el-table :data="mergeHistory" border>
-        <el-table-column prop="id" label="任务ID" width="100" />
-        <el-table-column prop="name" label="任务名称" width="200" />
-        <el-table-column prop="mergeType" label="合并方式" width="120">
+        <el-table-column prop="taskId" label="任务ID" width="200" show-overflow-tooltip />
+        <el-table-column prop="taskName" label="任务名称" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="taskState" label="状态" width="100">
           <template slot-scope="scope">
-            {{ scope.row.mergeType === 'UNION' ? '纵向合并' : '横向合并' }}
+            <el-tag :type="getStatusType(scope.row.taskState)" size="small">{{ getStatusLabel(scope.row.taskState) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="sourceCount" label="数据源数" width="100" />
-        <el-table-column prop="recordCount" label="结果行数" width="100" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="errorMsg" label="失败原因" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="createDate" label="创建时间" width="160" />
+        <el-table-column label="操作" width="200">
           <template slot-scope="scope">
-            <el-tag :type="getStatusType(scope.row.status)" size="small">{{ getStatusLabel(scope.row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150">
-          <template slot-scope="scope">
-            <el-button size="mini" @click="handleViewResult(scope.row)">查看</el-button>
-            <el-button size="mini" type="primary" :disabled="scope.row.status !== 'completed'" @click="handleDownloadResult(scope.row)">下载</el-button>
+            <el-button v-if="scope.row.taskState === 0" size="mini" type="primary" @click="handleRunTask(scope.row)">执行</el-button>
+            <el-button size="mini" :disabled="scope.row.taskState !== 1" @click="handleDownloadResult(scope.row)">下载</el-button>
+            <el-button size="mini" type="danger" @click="handleDeleteTask(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -84,11 +80,18 @@
 </template>
 
 <script>
-import { createFLPreprocess, getFLPreprocessList } from '@/api/federatedLearning'
+import { createFLPreprocess, getFLPreprocessList, runFLPreprocess, deleteFLPreprocess, downloadFLPreprocessResult } from '@/api/federatedLearning'
+import { getResourceList } from '@/api/resource'
+
+const STATUS_MAP = { 0: { label: '待执行', type: 'info' }, 1: { label: '已完成', type: 'success' }, 2: { label: '执行中', type: 'warning' }, 3: { label: '执行失败', type: 'danger' } }
 
 export default {
   name: 'SinglePartyDataMerge',
   data() {
+    const validateSources = (rule, value, callback) => {
+      if (!value || value.length < 2) callback(new Error('请选择至少 2 个数据源'))
+      else callback()
+    }
     return {
       mergeFormData: {
         mergeName: '',
@@ -100,85 +103,102 @@ export default {
       },
       mergeRules: {
         mergeName: [{ required: true, message: '请输入合并任务名称', trigger: 'blur' }],
-        dataSources: [{ required: true, message: '请选择数据源', trigger: 'change' }],
-        joinKey: [{ required: true, message: '请选择关联字段', trigger: 'change' }]
+        dataSources: [{ required: true, validator: validateSources, trigger: 'change' }],
+        joinKey: [{ required: true, message: '请输入关联字段', trigger: 'blur' }]
       },
-      dataSourceList: [
-        { id: 'DS001', name: '用户基础信息表' },
-        { id: 'DS002', name: '交易记录表' },
-        { id: 'DS003', name: '风控特征表' },
-        { id: 'DS004', name: '信用评分表' }
-      ],
-      keyFieldList: ['user_id', 'id_card', 'phone', 'email'],
-      previewData: [],
-      previewColumns: [],
-      mergeHistory: []
+      resourceList: [],
+      mergeHistory: [],
+      submitting: false
     }
   },
   created() {
     this.loadMergeHistory()
+    this.loadResources()
   },
   methods: {
     goBack() {
       this.$router.go(-1)
     },
-    // 缺陷整改：合并历史改从真实预处理任务列表加载（原写死 3 行 mock）
+    async loadResources() {
+      try {
+        const res = await getResourceList({ pageNo: 1, pageSize: 100 })
+        this.resourceList = res.result?.data || []
+      } catch (e) {
+        this.resourceList = []
+      }
+    },
     loadMergeHistory() {
       getFLPreprocessList({ preprocessType: 'DATA_MERGE', pageNo: 1, pageSize: 100 }).then(res => {
-        const list = (res && res.result && (res.result.list || res.result)) || []
+        const list = (res && res.result && (res.result.data || res.result.list)) || []
         this.mergeHistory = Array.isArray(list) ? list : []
       }).catch(() => { this.mergeHistory = [] })
     },
-    handlePreview() {
-      if (this.mergeFormData.dataSources.length === 0) {
-        this.$message.warning('请选择数据源')
-        return
-      }
-      this.previewColumns = ['user_id', 'name', 'age', 'credit_score', 'transaction_count']
-      this.previewData = [
-        { user_id: 'U001', name: '张三', age: 28, credit_score: 720, transaction_count: 156 },
-        { user_id: 'U002', name: '李四', age: 35, credit_score: 680, transaction_count: 89 },
-        { user_id: 'U003', name: '王五', age: 42, credit_score: 750, transaction_count: 234 }
-      ]
-      this.$message.success('数据预览已生成')
-    },
-    // 缺陷整改：改为真实提交合并任务（复用 FL 预处理 preprocess，subType=DATA_MERGE）
     handleMerge() {
       this.$refs.mergeForm.validate((valid) => {
         if (!valid) return
+        this.submitting = true
+        const names = this.mergeFormData.dataSources
+          .map(id => (this.resourceList.find(r => r.resourceId === id) || {}).resourceName)
+          .filter(Boolean)
         const payload = {
           taskName: this.mergeFormData.mergeName,
           preprocessType: 'DATA_MERGE',
           mergeType: this.mergeFormData.mergeType,
           dataSources: this.mergeFormData.dataSources,
           resourceId: this.mergeFormData.dataSources.join(','),
+          resourceName: names.join(','),
           joinKey: this.mergeFormData.joinKey,
           deduplication: this.mergeFormData.deduplication,
           outputFormat: this.mergeFormData.outputFormat
         }
         createFLPreprocess(payload).then(res => {
+          this.submitting = false
           if (!res || res.code !== 0) {
             this.$message.error((res && (res.message || res.msg)) || '创建失败')
             return
           }
-          this.$message.success('数据合并任务已创建')
+          this.$message.success('数据合并任务已创建，请在历史列表点击「执行」运行')
           this.loadMergeHistory()
-        }).catch(() => this.$message.error('请求异常'))
+        }).catch(() => { this.submitting = false; this.$message.error('请求异常') })
       })
     },
-    handleViewResult(row) {
-      this.$message.info(`查看合并结果: ${row.name}`)
+    async handleRunTask(row) {
+      try {
+        const res = await runFLPreprocess({ taskId: row.taskId })
+        if (res.code === 0) this.$message.success('任务执行成功')
+        else this.$message.error(res.message || '执行失败')
+        this.loadMergeHistory()
+      } catch (e) {
+        this.$message.error('请求异常')
+      }
     },
-    handleDownloadResult(row) {
-      this.$message.success(`开始下载: ${row.name}`)
+    async handleDownloadResult(row) {
+      try {
+        const res = await downloadFLPreprocessResult({ taskId: row.taskId })
+        const url = URL.createObjectURL(new Blob([res]))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `data_merge_${row.taskId}.csv`
+        a.click()
+        URL.revokeObjectURL(url)
+      } catch (e) {
+        this.$message.error('下载失败')
+      }
     },
-    getStatusType(status) {
-      const map = { completed: 'success', running: 'warning', failed: 'danger' }
-      return map[status] || 'info'
+    async handleDeleteTask(row) {
+      try {
+        await this.$confirm(`确认删除合并任务「${row.taskName}」？`, '提示', { type: 'warning' })
+        const res = await deleteFLPreprocess({ taskId: row.taskId })
+        if (res.code === 0) { this.$message.success('已删除'); this.loadMergeHistory() } else this.$message.error(res.message)
+      } catch (e) {
+        if (e !== 'cancel') this.$message.error('操作失败')
+      }
     },
-    getStatusLabel(status) {
-      const map = { completed: '已完成', running: '执行中', failed: '失败' }
-      return map[status] || status
+    getStatusType(state) {
+      return STATUS_MAP[state]?.type || 'info'
+    },
+    getStatusLabel(state) {
+      return STATUS_MAP[state]?.label || '未知'
     }
   }
 }
@@ -186,4 +206,5 @@ export default {
 
 <style scoped>
 .app-container { padding: 20px; }
+.merge-tip { font-size: 13px; color: #606266; line-height: 1.8; }
 </style>
