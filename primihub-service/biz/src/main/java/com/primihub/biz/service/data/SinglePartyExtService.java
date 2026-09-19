@@ -226,11 +226,14 @@ public class SinglePartyExtService {
             if ("FLPRE".equals(category) && "DATA_FUSION".equals(subType)) {
                 return runFusionMerge(t, taskId);
             }
-            // FLPRE 的天然多方类（PSI 对齐/秘密共享/VFL 训练预测）本地脚本无法诚实实现，
-            // 在接通真实联邦引擎之前显式失败，绝不返回假成功
+            // FLPRE 的天然多方类本地脚本无法诚实实现，登记入口显式失败，绝不返回假成功。
+            // PSI 对齐/VFL 训练预测已在对应页面接通真实联邦引擎（PSI / createTask / saveReasoning）。
             if ("FLPRE".equals(category) && MULTI_PARTY_SUBTYPES.contains(subType)) {
+                String hint = subType.startsWith("VFL_") ? "请使用『纵向联邦训练/预测』页面提交（已接真实联邦引擎）"
+                        : "FEATURE_ALIGN".equals(subType) ? "请使用『特征对齐』页面提交（已接真实 PSI 引擎）"
+                        : "平台联邦引擎暂无对应组件，尚未接通";
                 return failTask(t, taskId, new Date(),
-                        "该算法为多方联邦任务(" + subType + ")，需经真实联邦引擎执行；当前版本尚未接通，拒绝模拟执行");
+                        "该算法为多方联邦任务(" + subType + ")，本登记入口不执行模拟计算；" + hint);
             }
             // 无脚本映射的类别（FLMODEL 等）保留登记式流转；成功态=1（前端词汇 1=已完成）
             Map<String, Object> upd = new HashMap<>();
