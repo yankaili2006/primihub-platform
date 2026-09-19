@@ -27,7 +27,10 @@ export const constantRoutes = [
   {
     // 旧大写「联邦模型管理」树已并入 /federatedLearning（整合 P3）；
     // 存量书签/外链的大写 URL 在此参数化 redirect 到新位置。
+    // ⚠️ caseSensitive 必须为 true：vue-router 默认大小写不敏感，本路由会把小写
+    // /federatedLearning/* 也劫持成自我重定向死循环（Maximum call stack size exceeded）。
     path: '/FederatedLearning/:sub?',
+    caseSensitive: true,
     redirect: to => '/federatedLearning/' + (to.params.sub || 'list'),
     hidden: true
   },
