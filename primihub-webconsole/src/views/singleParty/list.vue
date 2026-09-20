@@ -91,6 +91,9 @@ const ALGORITHM_OPTIONS = [
 
 export default {
   name: 'SinglePartyList',
+  props: {
+    projectId: { type: [String, Number], default: null }
+  },
   components: { Pagination },
   filters: {
     taskStatusFilter(val) {
@@ -129,6 +132,7 @@ export default {
       this.listLoading = true
       try {
         const params = { ...this.query, pageNo: this.pageNo, pageSize: this.pageSize }
+        if (this.projectId != null && this.projectId !== '') { params.projectId = this.projectId }
         const { result } = await getTaskList(params)
         if (result) {
           this.taskList = result.data || []
@@ -159,7 +163,10 @@ export default {
       this.fetchList()
     },
     toTaskPage() {
-      this.$router.push('/singleParty/task')
+      this.$router.push({
+        path: '/singleParty/task',
+        query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {}
+      })
     },
     toDetailPage(taskId) {
       this.$router.push(`/singleParty/detail/${taskId}`)

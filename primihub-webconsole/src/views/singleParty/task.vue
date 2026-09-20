@@ -100,7 +100,8 @@ export default {
           algorithmType: this.form.algorithmType,
           resourceId: this.form.resourceId,
           selectedFeatures: this.form.selectedFeatures?.join(','),
-          remarks: this.form.remarks
+          remarks: this.form.remarks,
+          projectId: (this.$route.query && this.$route.query.projectId) ? this.$route.query.projectId : undefined
         })
         if (code === 0) {
           this.$message.success('任务创建成功')
