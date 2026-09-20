@@ -88,6 +88,9 @@ import Pagination from '@/components/Pagination'
 import StatusIcon from '@/components/StatusIcon'
 
 export default {
+  props: {
+    projectId: { type: [String, Number], default: null }
+  },
   components: {
     Pagination,
     StatusIcon
@@ -153,7 +156,8 @@ export default {
   methods: {
     toTaskPage() {
       this.$router.push({
-        name: 'ModelReasoningTask'
+        name: 'ModelReasoningTask',
+        query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {}
       })
     },
     search() {
@@ -199,6 +203,7 @@ export default {
         pageNo: this.pageNo,
         pageSize: this.pageSize
       }
+      if (this.projectId != null && this.projectId !== '') { params.projectId = this.projectId }
       const { result } = await getReasoningList(params)
       this.dataList = result.data
       this.total = result.total

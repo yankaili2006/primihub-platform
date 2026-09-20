@@ -13,6 +13,7 @@
             /*(select m.model_name from data_model m,data_model_task mt,data_task dt where m.model_id=mt.model_id and r.task_id = dt.task_id_name and mt.task_id = dt.task_id) modelName,*/
             (select m.model_name from data_model m,data_model_task mt where m.model_id=mt.model_id and mt.task_id = r.task_id) modelName,
             r.task_id taskId,
+            r.project_id projectId,
             r.run_task_id runTaskId,
             r.release_date releaseDate
         from data_reasoning r where r.is_del = 0
@@ -36,6 +37,7 @@
             reasoning_type reasoningType,
             reasoning_state reasoningState,
             task_id taskId,
+            project_id projectId,
             run_task_id runTaskId,
             release_date releaseDate
         from data_reasoning where id = #{id}
@@ -57,5 +59,6 @@
         <if test="id!=null and id!=0"> and r.id = #{id} </if>
         <if test="reasoningState!=null"> and r.reasoning_state = #{reasoningState} </if>
         <if test="reasoningName!=null and reasoningName!=''"> and r.reasoning_name like CONCAT('%',#{reasoningName,jdbcType=VARCHAR},'%') </if>
+        <if test="projectId!=null"> and r.project_id = #{projectId} </if>
     </sql>
 </mapper>

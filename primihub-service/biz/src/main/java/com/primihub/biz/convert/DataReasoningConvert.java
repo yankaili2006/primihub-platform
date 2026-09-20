@@ -19,6 +19,7 @@ public class DataReasoningConvert {
         dataReasoning.setReasoningState(0);
         dataReasoning.setTaskId(req.getTaskId());
         dataReasoning.setUserId(req.getUserId());
+        dataReasoning.setProjectId(req.getProjectId());
         return dataReasoning;
     }
 
@@ -39,6 +40,7 @@ public class DataReasoningConvert {
         dataReasoningVo.setReasoningType(dataReasoning.getReasoningType());
         dataReasoningVo.setReasoningState(dataReasoning.getReasoningState());
         dataReasoningVo.setTaskId(dataReasoning.getTaskId());
+        dataReasoningVo.setProjectId(dataReasoning.getProjectId());
         dataReasoningVo.setReleaseDate(dataReasoning.getReleaseDate());
         dataReasoningVo.setRunTaskId(dataReasoning.getRunTaskId());
         return dataReasoningVo;

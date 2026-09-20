@@ -20,6 +20,8 @@ public class DataReasoning {
 
     private Long taskId;
 
+    private Long projectId;
+
     private Long runTaskId;
 
     private Date releaseDate;

@@ -3,8 +3,8 @@
 <mapper namespace="com.primihub.biz.repository.primarydb.data.DataReasoningPrRepository">
 
     <insert id="saveDataReasoning" useGeneratedKeys="true" keyProperty="id" parameterType="com.primihub.biz.entity.data.po.DataReasoning">
-        insert into data_reasoning(reasoning_id,reasoning_name,reasoning_desc,reasoning_type,reasoning_state,task_id,release_date,user_id,is_del,create_date,update_date)
-        value (#{reasoningId},#{reasoningName},#{reasoningDesc},#{reasoningType},#{reasoningState},#{taskId},#{releaseDate},#{userId},0,now(),now())
+        insert into data_reasoning(reasoning_id,reasoning_name,reasoning_desc,reasoning_type,reasoning_state,task_id,project_id,release_date,user_id,is_del,create_date,update_date)
+        value (#{reasoningId},#{reasoningName},#{reasoningDesc},#{reasoningType},#{reasoningState},#{taskId},#{projectId},#{releaseDate},#{userId},0,now(),now())
     </insert>
 
     <insert id="saveDataReasoningResources" parameterType="com.primihub.biz.entity.data.po.DataReasoningResource">

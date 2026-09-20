@@ -12,5 +12,7 @@ public class ReasoningListReq extends PageReq {
 
     private Long userId;
 
+    private Long projectId;
+
     private Integer isAdmin = 0;
 }

@@ -176,7 +176,8 @@ export default {
             taskId,
             resourceList: this.form.resourceList,
             reasoningName,
-            reasoningDesc
+            reasoningDesc,
+            projectId: (this.$route.query && this.$route.query.projectId) ? this.$route.query.projectId : undefined
           })
           if (code === 0) {
             this.$message({
