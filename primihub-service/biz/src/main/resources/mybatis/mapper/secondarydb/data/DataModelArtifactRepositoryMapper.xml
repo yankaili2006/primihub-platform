@@ -14,6 +14,7 @@
         checksum as checksum,
         metadata as metadata,
         organ_id as organId,
+        project_id as projectId,
         user_id as userId,
         create_date as createDate
     </sql>
@@ -37,6 +38,9 @@
         </if>
         <if test="organId!=null and organId!=''">
             and organ_id = #{organId}
+        </if>
+        <if test="projectId!=null">
+            and project_id = #{projectId}
         </if>
     </sql>
 

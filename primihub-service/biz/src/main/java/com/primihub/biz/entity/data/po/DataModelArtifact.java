@@ -58,6 +58,7 @@ public class DataModelArtifact {
      * 机构id
      */
     private String organId;
+    private Long projectId;
     /**
      * 用户id
      */

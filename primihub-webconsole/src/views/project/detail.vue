@@ -62,10 +62,6 @@
         <el-tab-pane label="衍生数据" name="derivedData">
           <DerivedDataTable v-if="tabName === 'derivedData'" max-height="480" :data="derivedDataResourceList" />
         </el-tab-pane>
-        <el-tab-pane label="联邦学习" name="federatedLearning">
-          <!-- 项目上下文注入：只看/只建本项目的联邦学习任务（整合 P2） -->
-          <FlTaskList v-if="tabName === 'federatedLearning'" :project-id="id" />
-        </el-tab-pane>
         <el-tab-pane label="联邦分析" name="federatedAnalysis">
           <!-- 单一真源 FaCenter，项目上下文注入（双胞胎归并） -->
           <FaCenter v-if="tabName === 'federatedAnalysis'" :project-id="id" />
@@ -95,6 +91,9 @@
         </el-tab-pane>
         <el-tab-pane label="单方算法" name="singleParty">
           <SinglePartyList v-if="tabName === 'singleParty'" :project-id="id" />
+        </el-tab-pane>
+        <el-tab-pane label="模型产物" name="modelArtifact">
+          <ModelArtifactList v-if="tabName === 'modelArtifact'" :project-id="id" />
         </el-tab-pane>
       </el-tabs>
     </section>
@@ -139,7 +138,6 @@ import ResourceApprovalDialog from '@/components/ResourceApprovalDialog'
 import ResourceTable from '@/components/ResourceTable'
 import ResourcePreviewDialog from '@/components/ResourcePreviewDialog'
 import ModelTaskList from '@/components/ModelTaskList'
-import FlTaskList from '@/components/FederatedLearning/FlTaskList'
 import FaCenter from '@/components/FederatedAnalysis/FaCenter'
 import FsCenter from '@/components/FederatedStatistics/FsCenter'
 import FqCenter from '@/components/FederatedQuery/FqCenter'
@@ -149,13 +147,13 @@ import PsiList from '@/views/PSI/list'
 import PrivateSearchList from '@/views/privateSearch/index'
 import ReasoningList from '@/views/reasoning/list'
 import SinglePartyList from '@/views/singleParty/list'
+import ModelArtifactList from '@/views/modelArtifact/list'
 import ProjectAudit from '@/components/ProjectAudit'
 import DerivedDataTable from '@/components/DerivedDataTable'
 import EditInput from '@/components/editInput'
 
 export default {
   components: {
-    FlTaskList,
     FaCenter,
     FsCenter,
     FqCenter,
@@ -165,6 +163,7 @@ export default {
     PrivateSearchList,
     ReasoningList,
     SinglePartyList,
+    ModelArtifactList,
     ProjectResourceDialog,
     ProviderOrganDialog,
     ResourceTable,

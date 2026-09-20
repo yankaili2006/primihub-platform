@@ -22,6 +22,7 @@ public class DataModelArtifactVo {
     private String checksum;
     private String metadata;
     private String organId;
+    private Long projectId;
     private Long userId;
     private String userName;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

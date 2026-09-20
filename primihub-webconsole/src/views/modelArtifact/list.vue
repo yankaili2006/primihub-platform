@@ -101,6 +101,9 @@ import Pagination from '@/components/Pagination'
 import { MODEL_KIND_OPTIONS } from '@/const/modelArtifact'
 
 export default {
+  props: {
+    projectId: { type: [String, Number], default: null }
+  },
   components: { Pagination },
   data() {
     return {
@@ -133,7 +136,8 @@ export default {
     },
     toCreatePage() {
       this.$router.push({
-        name: 'ModelArtifactCreate'
+        name: 'ModelArtifactCreate',
+        query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {}
       })
     },
     toEditPage(id) {
@@ -178,6 +182,7 @@ export default {
         modelName,
         modelKind
       }
+      if (this.projectId != null && this.projectId !== '') { params.projectId = this.projectId }
       const res = await getModelArtifactList(params)
       if (res.code === 0) {
         const { data, total } = res.result

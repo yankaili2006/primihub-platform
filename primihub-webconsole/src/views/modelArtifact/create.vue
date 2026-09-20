@@ -165,6 +165,7 @@ export default {
       this.$refs['dataForm'].validate(async(valid) => {
         if (valid) {
           const params = { ...this.dataForm }
+          if (this.$route.query && this.$route.query.projectId) { params.projectId = this.$route.query.projectId }
           if (this.isEditPage) {
             params.artifactId = this.artifactId
           }

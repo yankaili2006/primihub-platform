@@ -47,4 +47,5 @@ public class DataModelArtifactReq extends PageReq {
      * 机构id（查询过滤）
      */
     private String organId;
+    private Long projectId;
 }

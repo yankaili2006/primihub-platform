@@ -58,6 +58,7 @@ public class DataModelArtifactService {
         artifact.setMetadata(req.getMetadata());
         artifact.setUserId(userId);
         artifact.setOrganId(organConfiguration.getSysLocalOrganId());
+        artifact.setProjectId(req.getProjectId());
         if (req.getFileId() != null && req.getFileId() != 0L) {
             SysFile sysFile = sysFileSecondarydbRepository.selectSysFileByFileId(req.getFileId());
             if (sysFile == null) {
@@ -122,6 +123,7 @@ public class DataModelArtifactService {
         paramMap.put("modelKind", req.getModelKind());
         paramMap.put("framework", req.getFramework());
         paramMap.put("organId", req.getOrganId());
+        paramMap.put("projectId", req.getProjectId());
         List<DataModelArtifact> artifacts = dataModelArtifactRepository.queryModelArtifactList(paramMap);
         if (artifacts.isEmpty()) {
             return BaseResultEntity.success(new PageDataEntity(0, req.getPageSize(), req.getPageNo(), new ArrayList()));
@@ -172,6 +174,7 @@ public class DataModelArtifactService {
         vo.setChecksum(po.getChecksum());
         vo.setMetadata(po.getMetadata());
         vo.setOrganId(po.getOrganId());
+        vo.setProjectId(po.getProjectId());
         vo.setUserId(po.getUserId());
         vo.setCreateDate(po.getCreateDate());
         return vo;
