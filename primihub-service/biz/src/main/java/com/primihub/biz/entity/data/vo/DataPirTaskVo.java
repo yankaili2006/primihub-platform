@@ -38,6 +38,8 @@ public class DataPirTaskVo {
 
     private String retrievalId;
 
+    private Long projectId;
+
     private Integer available;
 
     private String taskName;

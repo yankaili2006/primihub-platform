@@ -46,7 +46,7 @@
       </el-form>
     </div>
     <div class="organ-container">
-      <el-button v-if="!projectId" class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">隐私求交</el-button>
+      <el-button class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">隐私求交</el-button>
       <div class="organ">
         <el-table
           :data="allDataPsiTask"
@@ -220,7 +220,8 @@ export default {
     },
     toTaskPage() {
       this.$router.push({
-        name: 'PSITask'
+        name: 'PSITask',
+        query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {}
       })
     },
     toTaskDetailPage(id) {

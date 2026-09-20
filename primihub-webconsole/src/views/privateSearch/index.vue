@@ -147,6 +147,9 @@ import { getToken } from '@/utils/auth'
 import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
+  props: {
+    projectId: { type: [String, Number], default: null }
+  },
   components: {
     Pagination,
     StatusIcon
@@ -249,7 +252,8 @@ export default {
     },
     toTaskPage() {
       this.$router.push({
-        name: 'PIRTask'
+        name: 'PIRTask',
+        query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {}
       })
     },
     async search() {
@@ -293,6 +297,7 @@ export default {
           startDate: startDate,
           endDate: endDate }
       }
+      if (this.projectId != null && this.projectId !== '') { params.projectId = this.projectId }
       getPirTaskList(params).then(res => {
         const { result } = res
         this.dataList = result.data

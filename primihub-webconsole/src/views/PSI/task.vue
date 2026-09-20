@@ -554,7 +554,7 @@ export default {
           const ownKeyword = this.formData.ownKeyword.join(',')
           const otherKeyword = this.formData.otherKeyword.join(',')
           this.isRun = true
-          const res = await saveDataPsi(Object.assign({}, this.formData, { ownKeyword, otherKeyword }))
+          const res = await saveDataPsi(Object.assign({}, this.formData, { ownKeyword, otherKeyword }, (this.$route.query && this.$route.query.projectId) ? { projectId: this.$route.query.projectId } : {}))
           if (res.code === 0) {
             this.$message({
               message: '创建完成',

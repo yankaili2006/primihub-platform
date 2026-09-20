@@ -20,6 +20,8 @@ public class DataPirTask {
 
     private String retrievalId;
 
+    private Long projectId;
+
     @JsonIgnore
     private Integer isDel;
 

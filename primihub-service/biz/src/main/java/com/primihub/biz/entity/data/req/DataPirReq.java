@@ -14,6 +14,8 @@ public class DataPirReq{
     private String resourceId;
     @ApiModelProperty(value = "任务名称",required = true,example = "查询物业员工名单中姓名为张三的人")
     private String taskName;
+
+    private Long projectId;
     @ApiModelProperty(value = "查询条件",required = true)
     private List<DataPirKeyQuery> keyQuerys;
 

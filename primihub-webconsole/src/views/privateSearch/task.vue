@@ -279,7 +279,8 @@ export default {
           pirSubmitTask({
             resourceId: this.selectResources.resourceId,
             pirParam: this.form.pirParam.replace(/(\s|,)+$/g, ''),
-            taskName: this.form.taskName
+            taskName: this.form.taskName,
+            projectId: (this.$route.query && this.$route.query.projectId) ? this.$route.query.projectId : undefined
           }).then(res => {
             if (res.code === 0) {
               this.listLoading = false

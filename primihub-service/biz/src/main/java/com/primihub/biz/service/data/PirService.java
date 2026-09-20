@@ -122,6 +122,7 @@ public class PirService {
             ? req.getResourceId()
             : (localResource != null ? localResource.getResourceFusionId() : req.getResourceId());
         dataPirTask.setResourceId(engineResourceId);
+        dataPirTask.setProjectId(req.getProjectId());
         dataTaskPrRepository.saveDataPirTask(dataPirTask);
         dataAsyncService.pirGrpcTask(dataTask,dataPirTask,resourceColumnNames,dataPirKeyQueries);
         Map<String, Object> map = new HashMap<>();

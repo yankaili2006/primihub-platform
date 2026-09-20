@@ -27,7 +27,7 @@
     </div>
     <div class="organ-container">
       <div class="add-button-wrapper">
-        <el-button v-if="!projectId" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求并</el-button>
+        <el-button icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求并</el-button>
         <span v-if="!projectId" class="add-hint">创建联邦求并任务，合并本机构与协作方数据</span>
       </div>
       <el-table v-loading="listLoading" :data="allDataUnionTask" class="table-list" :empty-text="listLoading ? '加载中...' : '暂无数据'">
@@ -118,7 +118,7 @@ export default {
     handleDateChange(val) { if (!val) { this.query.createDate = []; this.getUnionTaskList() } },
     handleClear(name) { this.query[name] = ''; this.getUnionTaskList() },
     reset() { Object.keys(this.query).forEach(k => { this.query[k] = '' }); this.pageNo = 1; this.getUnionTaskList() },
-    toTaskPage() { this.$router.push({ name: 'UnionTask' }) },
+    toTaskPage() { this.$router.push({ name: 'UnionTask', query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {} }) },
     toTaskDetailPage(id) { this.$router.push({ name: 'UnionDetail', params: { id } }) },
     async getAvailableOrganList() {
       try { const { result } = await getAvailableOrganList(); this.organList = result || [] } catch (e) { console.error(e) }

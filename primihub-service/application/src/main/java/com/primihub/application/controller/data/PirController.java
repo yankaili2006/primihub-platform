@@ -39,7 +39,7 @@ public class PirController {
 
     @ApiOperation(value = "提交匿踪查询任务",httpMethod = "POST",consumes = MediaType.APPLICATION_JSON_VALUE)
     @RequestMapping("pirSubmitTask")
-    public BaseResultEntity pirSubmitTask(String resourceId,String pirParam,String taskName){
+    public BaseResultEntity pirSubmitTask(String resourceId,String pirParam,String taskName,Long projectId){
         // 查询条件
         DataPirReq param = new DataPirReq();
         if (StringUtils.isBlank(resourceId)){
@@ -60,6 +60,7 @@ public class PirController {
         }
         param.setResourceId(resourceId);
         param.setTaskName(taskName);
+        param.setProjectId(projectId);
         return pirService.pirSubmitTask(param, pirParam);
     }
 

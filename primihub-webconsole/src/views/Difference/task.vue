@@ -244,6 +244,7 @@ export default {
           otherKeyword: this.formData.otherKeyword.join(','),
           resultOrganIds: this.selectedResultOrgans.join(',')
         }
+        if (this.$route.query && this.$route.query.projectId) { data.projectId = this.$route.query.projectId }
         const res = await saveDataDifference(data)
         this.submitting = false
         if (res.code === 0) {

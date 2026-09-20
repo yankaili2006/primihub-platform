@@ -27,7 +27,7 @@
     </div>
     <div class="organ-container">
       <div class="add-button-wrapper">
-        <el-button v-if="!projectId" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求差</el-button>
+        <el-button icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求差</el-button>
         <span v-if="!projectId" class="add-hint">创建联邦求差任务，计算本机构与协作方数据的差集</span>
       </div>
       <el-table v-loading="listLoading" :data="allDataDifferenceTask" class="table-list" :empty-text="listLoading ? '加载中...' : '暂无数据'">
@@ -129,7 +129,7 @@ export default {
     handleDateChange(val) { if (!val) { this.query.createDate = []; this.getDifferenceTaskList() } },
     handleClear(name) { this.query[name] = ''; this.getDifferenceTaskList() },
     reset() { Object.keys(this.query).forEach(k => { this.query[k] = '' }); this.pageNo = 1; this.getDifferenceTaskList() },
-    toTaskPage() { this.$router.push({ name: 'DifferenceTask' }) },
+    toTaskPage() { this.$router.push({ name: 'DifferenceTask', query: (this.projectId != null && this.projectId !== '') ? { projectId: this.projectId } : {} }) },
     toTaskDetailPage(id) { this.$router.push({ name: 'DifferenceDetail', params: { id } }) },
     async getAvailableOrganList() {
       try {

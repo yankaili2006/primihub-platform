@@ -87,6 +87,9 @@
         <el-tab-pane label="联邦求交" name="federatedPsi">
           <PsiList v-if="tabName === 'federatedPsi'" :project-id="id" />
         </el-tab-pane>
+        <el-tab-pane label="匿踪查询" name="federatedPir">
+          <PrivateSearchList v-if="tabName === 'federatedPir'" :project-id="id" />
+        </el-tab-pane>
       </el-tabs>
     </section>
 
@@ -137,6 +140,7 @@ import FqCenter from '@/components/FederatedQuery/FqCenter'
 import DifferenceList from '@/views/Difference/list'
 import UnionList from '@/views/Union/list'
 import PsiList from '@/views/PSI/list'
+import PrivateSearchList from '@/views/privateSearch/index'
 import ProjectAudit from '@/components/ProjectAudit'
 import DerivedDataTable from '@/components/DerivedDataTable'
 import EditInput from '@/components/editInput'
@@ -150,6 +154,7 @@ export default {
     DifferenceList,
     UnionList,
     PsiList,
+    PrivateSearchList,
     ProjectResourceDialog,
     ProviderOrganDialog,
     ResourceTable,

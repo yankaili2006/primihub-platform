@@ -77,6 +77,7 @@
             dpt.resource_id resourceId,
             dpt.resource_name resourceName,
             dpt.retrieval_id retrievalId,
+            dpt.project_id projectId,
             dpt.create_date createDate,
             dt.task_state taskState
         from
@@ -122,6 +123,7 @@
         <if test="taskId!=null and taskId!=''"> and dt.task_id_name like CONCAT('%',#{taskId,jdbcType=VARCHAR},'%')</if>
         <if test="organName!=null and organName!=''"> and dpt.provider_organ_name like CONCAT('%',#{organName,jdbcType=VARCHAR},'%')</if>
         <if test="retrievalId!=null and retrievalId!=''"> and dpt.retrieval_id like CONCAT('%',#{retrievalId,jdbcType=VARCHAR},'%')</if>
+        <if test="projectId!=null"> and dpt.project_id = #{projectId}</if>
         <if test="taskState!=null"> and dt.task_state = #{taskState}</if>
         <if test="taskName!=null"> and dt.task_name like CONCAT('%',#{taskName,jdbcType=VARCHAR},'%')</if>
         <if test="startDate!=null">and dpt.create_date &gt;=#{startDate} </if>
