@@ -99,6 +99,7 @@ public class DataPsiService {
     public BaseResultEntity saveDataPsi(DataPsiReq req, Long userId) {
         DataPsi dataPsi = DataPsiConvert.DataPsiReqConvertPo(req);
         dataPsi.setUserId(userId);
+        dataPsi.setProjectId(req.getProjectId());
         dataPsiPrRepository.saveDataPsi(dataPsi);
         DataPsiTask task = new DataPsiTask();
         task.setPsiId(dataPsi.getId());

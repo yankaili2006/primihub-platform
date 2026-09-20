@@ -46,7 +46,7 @@
       </el-form>
     </div>
     <div class="organ-container">
-      <el-button class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">隐私求交</el-button>
+      <el-button v-if="!projectId" class="add-button" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">隐私求交</el-button>
       <div class="organ">
         <el-table
           :data="allDataPsiTask"
@@ -130,6 +130,9 @@ import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 
 export default {
   name: 'PSIDirectory',
+  props: {
+    projectId: { type: [String, Number], default: null }
+  },
   components: {
     PSITaskDetail,
     Pagination
@@ -285,6 +288,9 @@ export default {
         pageNo: this.pageNo,
         pageSize: this.pageSize,
         resultName: this.resultName
+      }
+      if (this.projectId != null && this.projectId !== '') {
+        params.projectId = this.projectId
       }
       if (this.query.createDate && this.query.createDate.length > 0) {
         const startDate = this.query.createDate.length > 0 ? this.query.createDate[0] : ''

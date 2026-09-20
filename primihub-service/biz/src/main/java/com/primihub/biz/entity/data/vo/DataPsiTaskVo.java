@@ -12,6 +12,8 @@ public class DataPsiTaskVo {
      * psi id
      */
     private Long dataPsiId;
+
+    private Long projectId;
     /**
      * 返回结果名称
      */

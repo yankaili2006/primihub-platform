@@ -84,6 +84,9 @@
         <el-tab-pane label="联邦求并" name="federatedUnion">
           <UnionList v-if="tabName === 'federatedUnion'" :project-id="id" />
         </el-tab-pane>
+        <el-tab-pane label="联邦求交" name="federatedPsi">
+          <PsiList v-if="tabName === 'federatedPsi'" :project-id="id" />
+        </el-tab-pane>
       </el-tabs>
     </section>
 
@@ -133,6 +136,7 @@ import FsCenter from '@/components/FederatedStatistics/FsCenter'
 import FqCenter from '@/components/FederatedQuery/FqCenter'
 import DifferenceList from '@/views/Difference/list'
 import UnionList from '@/views/Union/list'
+import PsiList from '@/views/PSI/list'
 import ProjectAudit from '@/components/ProjectAudit'
 import DerivedDataTable from '@/components/DerivedDataTable'
 import EditInput from '@/components/editInput'
@@ -145,6 +149,7 @@ export default {
     FqCenter,
     DifferenceList,
     UnionList,
+    PsiList,
     ProjectResourceDialog,
     ProviderOrganDialog,
     ResourceTable,

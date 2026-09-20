@@ -90,4 +90,6 @@ public class DataPsiReq {
 
     private String teeOrganId;
 
+    private Long projectId;
+
 }

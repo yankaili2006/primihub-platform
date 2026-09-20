@@ -5,6 +5,7 @@
     <select id="selectPsiTaskPage" resultType="com.primihub.biz.entity.data.vo.DataPsiTaskVo" parameterType="com.primihub.biz.entity.data.req.DataPsiQueryReq">
         SELECT
             dp.id AS dataPsiId,
+            dp.project_id AS projectId,
             dp.result_name AS resultName,
             dp.other_organ_id as otherOrganId,
             dp.tag as psiTag,
@@ -45,6 +46,7 @@
          <if test="organId!=null"> and dp.other_organ_id = #{organId}</if>
          <if test="taskName!=null"> and dt.task_name like CONCAT('%',#{taskName},'%')</if>
          <if test="taskState!=null"> and dpt.task_state = #{taskState}</if>
+        <if test="projectId!=null"> and dp.project_id = #{projectId}</if>
         <if test="startDate!=null">and dpt.create_date &gt;=#{startDate} </if>
         <if test="endDate!=null">and dpt.create_date &lt;=#{endDate} </if>
     </sql>

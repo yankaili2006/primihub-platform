@@ -102,6 +102,8 @@ public class DataPsi {
      * 是否删除
      */
     @JsonIgnore
+    private Long projectId;
+
     private Integer isDel;
 
     /**

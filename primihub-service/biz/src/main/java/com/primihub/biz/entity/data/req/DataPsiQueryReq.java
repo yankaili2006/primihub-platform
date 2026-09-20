@@ -10,4 +10,5 @@ public class DataPsiQueryReq extends PageReq{
     private Integer taskState;
     private String startDate;
     private String endDate;
+    private Long projectId;
 }
