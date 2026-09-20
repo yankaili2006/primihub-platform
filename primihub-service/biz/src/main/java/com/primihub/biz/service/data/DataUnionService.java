@@ -53,6 +53,7 @@ public class DataUnionService {
             dataUnion.setResultOrganIds(req.getResultOrganIds());
             dataUnion.setRemarks(req.getRemarks());
             dataUnion.setTeeOrganId(req.getTeeOrganId());
+            dataUnion.setProjectId(req.getProjectId());
             dataUnion.setUserId(userId);
             dataUnionPrRepository.saveDataUnion(dataUnion);
 
@@ -86,7 +87,7 @@ public class DataUnionService {
     }
 
     public BaseResultEntity getUnionTaskList(String taskName, Integer taskState, String organId,
-                                              String startDate, String endDate, Integer pageNo, Integer pageSize) {
+                                              String startDate, String endDate, Long projectId, Integer pageNo, Integer pageSize) {
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("resultName", taskName);
@@ -94,6 +95,7 @@ public class DataUnionService {
             params.put("organId", organId);
             params.put("startDate", startDate);
             params.put("endDate", endDate);
+            params.put("projectId", projectId);
             params.put("offset", (pageNo - 1) * pageSize);
             params.put("pageSize", pageSize);
 

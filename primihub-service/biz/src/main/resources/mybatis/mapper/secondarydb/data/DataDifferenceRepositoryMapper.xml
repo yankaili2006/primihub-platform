@@ -5,6 +5,7 @@
     <select id="selectTaskPage" resultType="java.util.Map" parameterType="java.util.Map">
         SELECT
             dd.id AS dataDifferenceId,
+            dd.project_id AS projectId,
             dd.result_name AS resultName,
             dd.other_organ_id as otherOrganId,
             dd.tag as differenceTag,
@@ -42,6 +43,7 @@
     <sql id="pageListWhere">
         <if test="resultName!=null"> and dd.result_name like CONCAT('%',#{resultName},'%')</if>
         <if test="organId!=null"> and dd.other_organ_id = #{organId}</if>
+        <if test="projectId!=null"> and dd.project_id = #{projectId}</if>
         <if test="taskState!=null"> and ddt.task_state = #{taskState}</if>
         <if test="startDate!=null">and ddt.create_date &gt;= #{startDate} </if>
         <if test="endDate!=null">and ddt.create_date &lt;= #{endDate} </if>

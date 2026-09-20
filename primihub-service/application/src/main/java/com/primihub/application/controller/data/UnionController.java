@@ -76,9 +76,10 @@ public class UnionController {
             @RequestParam(required = false) String organId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Long projectId,
             @RequestParam(defaultValue = "1") Integer pageNo,
             @RequestParam(defaultValue = "10") Integer pageSize) {
-        return dataUnionService.getUnionTaskList(taskName, taskState, organId, startDate, endDate, pageNo, pageSize);
+        return dataUnionService.getUnionTaskList(taskName, taskState, organId, startDate, endDate, projectId, pageNo, pageSize);
     }
 
     /**

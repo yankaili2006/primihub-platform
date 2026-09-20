@@ -5,6 +5,7 @@
     <select id="selectTaskPage" resultType="java.util.Map" parameterType="java.util.Map">
         SELECT
             du.id AS dataUnionId,
+            du.project_id AS projectId,
             du.result_name AS resultName,
             du.other_organ_id as otherOrganId,
             du.tag as unionTag,
@@ -41,6 +42,7 @@
     <sql id="pageListWhere">
         <if test="resultName!=null"> and du.result_name like CONCAT('%',#{resultName},'%')</if>
         <if test="organId!=null"> and du.other_organ_id = #{organId}</if>
+        <if test="projectId!=null"> and du.project_id = #{projectId}</if>
         <if test="taskState!=null"> and dut.task_state = #{taskState}</if>
         <if test="startDate!=null">and dut.create_date &gt;= #{startDate} </if>
         <if test="endDate!=null">and dut.create_date &lt;= #{endDate} </if>

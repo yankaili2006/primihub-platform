@@ -98,6 +98,11 @@ public class DataDifference {
      * 是否删除
      */
     @JsonIgnore
+    /**
+     * 关联项目ID（项目级过滤，空=模块级全局）
+     */
+    private Long projectId;
+
     private Integer isDel;
 
     /**

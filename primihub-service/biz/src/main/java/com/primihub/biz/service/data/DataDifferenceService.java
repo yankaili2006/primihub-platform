@@ -54,6 +54,7 @@ public class DataDifferenceService {
             dataDifference.setDifferenceDirection(req.getDifferenceDirection());
             dataDifference.setRemarks(req.getRemarks());
             dataDifference.setTeeOrganId(req.getTeeOrganId());
+            dataDifference.setProjectId(req.getProjectId());
             dataDifference.setUserId(userId);
             dataDifferencePrRepository.saveDataDifference(dataDifference);
 
@@ -87,7 +88,7 @@ public class DataDifferenceService {
     }
 
     public BaseResultEntity getDifferenceTaskList(String taskName, Integer taskState, String organId,
-                                                   String startDate, String endDate, Integer pageNo, Integer pageSize) {
+                                                   String startDate, String endDate, Long projectId, Integer pageNo, Integer pageSize) {
         try {
             Map<String, Object> params = new HashMap<>();
             params.put("resultName", taskName);
@@ -95,6 +96,7 @@ public class DataDifferenceService {
             params.put("organId", organId);
             params.put("startDate", startDate);
             params.put("endDate", endDate);
+            params.put("projectId", projectId);
             params.put("offset", (pageNo - 1) * pageSize);
             params.put("pageSize", pageSize);
 

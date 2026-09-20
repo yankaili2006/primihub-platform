@@ -27,8 +27,8 @@
     </div>
     <div class="organ-container">
       <div class="add-button-wrapper">
-        <el-button icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求差</el-button>
-        <span class="add-hint">创建联邦求差任务，计算本机构与协作方数据的差集</span>
+        <el-button v-if="!projectId" icon="el-icon-circle-plus-outline" type="primary" @click="toTaskPage">联邦求差</el-button>
+        <span v-if="!projectId" class="add-hint">创建联邦求差任务，计算本机构与协作方数据的差集</span>
       </div>
       <el-table v-loading="listLoading" :data="allDataDifferenceTask" class="table-list" :empty-text="listLoading ? '加载中...' : '暂无数据'">
         <el-table-column type="index" align="center" label="序号" width="50" />
@@ -98,6 +98,7 @@ import { dateRangePickerOptions } from '@/utils/dateShortcuts'
 export default {
   name: 'DifferenceDirectory',
   components: { Pagination },
+  props: { projectId: { type: [String, Number], default: null } },
   filters: {
     tagFilter(state) {
       return { 0: 'ECDH', 1: 'KKRT', 2: 'TEE' }[state] || '未知'
@@ -173,6 +174,7 @@ export default {
     getDifferenceTaskList() {
       this.listLoading = true
       const params = { pageNo: this.pageNo, pageSize: this.pageSize }
+      if (this.projectId != null && this.projectId !== '') params.projectId = this.projectId
       if (this.query.createDate && this.query.createDate.length > 0) {
         params.startDate = this.query.createDate[0]; params.endDate = this.query.createDate[1]
       }
