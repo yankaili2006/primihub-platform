@@ -57,6 +57,7 @@
         </el-tab-pane>
         <el-tab-pane label="任务列表" name="modelTask">
           <el-button v-if="creator" type="primary" class="add-provider-button" :disabled="projectStatus === 2" @click="toModelCreate">新建任务</el-button>
+          <el-button v-if="creator" type="primary" plain :disabled="projectStatus === 2" @click="toParamTuning">参数调优</el-button>
           <ModelTaskList :is-creator="creator" :project-status="projectStatus" />
         </el-tab-pane>
         <el-tab-pane label="衍生数据" name="derivedData">
@@ -549,6 +550,12 @@ export default {
         }
       }
       return result
+    },
+    toParamTuning() {
+      this.$router.push({
+        name: 'FederatedLearningParamTuning',
+        query: { projectId: this.list.id }
+      })
     },
     toModelCreate() {
       this.$router.push({

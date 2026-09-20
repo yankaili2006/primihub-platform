@@ -38,17 +38,28 @@
     </el-col>
     <el-col :span="12">
       <el-card>
-        <div slot="header"><span>调优结果</span></div>
+        <div slot="header">
+          <span>调优结果</span>
+          <!-- 每个试验是真实多方 FL 训练（分钟级），结果需手动刷新回读进度 -->
+          <el-button style="float: right; padding: 3px 0" type="text" icon="el-icon-refresh" @click="loadResults">刷新</el-button>
+        </div>
         <el-table :data="results" border max-height="400">
-          <el-table-column prop="rank" label="排名" width="60" />
-          <el-table-column prop="learningRate" label="学习率" width="100" />
+          <el-table-column prop="rank" label="排名" width="60" :formatter="dashIfNull" />
+          <el-table-column prop="learningRate" label="学习率" width="90" />
           <el-table-column prop="iterations" label="迭代次数" width="80" />
           <el-table-column prop="batchSize" label="批次大小" width="80" />
-          <el-table-column prop="accuracy" label="精度" width="80" />
-          <el-table-column prop="auc" label="AUC" width="80" />
+          <el-table-column prop="accuracy" label="精度" width="80" :formatter="dashIfNull" />
+          <el-table-column prop="auc" label="AUC" width="60" :formatter="dashIfNull" />
+          <el-table-column label="状态" width="80">
+            <template slot-scope="scope">
+              <el-tag size="mini" :type="stateTag(scope.row.taskState)">{{ stateLabel(scope.row.taskState) }}</el-tag>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="80">
             <template slot-scope="scope">
-              <el-button size="mini" type="primary" @click="handleApply(scope.row)">应用</el-button>
+              <el-button size="mini" :type="scope.row.applied === 1 ? 'success' : 'primary'" :disabled="scope.row.applied === 1" @click="handleApply(scope.row)">
+                {{ scope.row.applied === 1 ? '已应用' : '应用' }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -97,7 +108,8 @@ export default {
       try {
         const res = await createParamTuning(this.formData)
         if (res && res.code === 0) {
-          this.$message.success('参数调优任务已启动')
+          const r = res.result || {}
+          this.$message.success(`参数调优已启动：派发 ${r.launched || r.trials || 0} 个真实训练试验${r.note ? '（' + r.note + '）' : ''}`)
           this.loadResults()
         } else {
           this.$message.warning('调优启动失败: ' + ((res && res.msg) || '后端未接通该接口'))
@@ -119,13 +131,23 @@ export default {
       try {
         const res = await applyBestParams({ ...row, taskId: this.formData.taskId })
         if (res && res.code === 0) {
-          this.$message.success('最优参数已应用')
+          this.$message.success('已记录为应用参数（不修改基础任务）')
+          this.loadResults()
         } else {
           this.$message.warning('应用失败: ' + ((res && res.msg) || '后端未接通该接口'))
         }
       } catch (e) {
         this.$message.error('应用参数接口不可用: ' + (e.message || e))
       }
+    },
+    dashIfNull(row, column, value) {
+      return value === null || value === undefined || value === '' ? '-' : value
+    },
+    stateLabel(state) {
+      return { 0: '待运行', 1: '已完成', 2: '运行中', 3: '失败', 4: '已取消' }[state] || '-'
+    },
+    stateTag(state) {
+      return { 1: 'success', 2: '', 3: 'danger', 4: 'info' }[state] || 'info'
     }
   }
 }

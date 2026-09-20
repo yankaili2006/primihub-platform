@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * 联邦学习 训练曲线 / 模型报告 / 日志 / 参数调优 —— 只读可视化接口（原全 404）。
+ * 联邦学习 训练曲线 / 模型报告 / 日志 —— 只读可视化接口（原全 404）。参数调优在 FlTuningService（真实实现）。
  * 数据按 taskId 确定性生成"代表性"训练曲线/指标（同一 taskId 每次一致）；实际逐轮训练指标应由
  * 联邦训练引擎产出，本层是其可视化壳，engine 落地后改为读真实 metrics 即可。
  */
@@ -156,33 +156,7 @@ public class FlReportService {
 
     public BaseResultEntity taskLogs(String taskId) { return logsResult(taskId, 1, 200); }
 
-    // ===== 参数调优 =====
-
-    public BaseResultEntity paramTuningList(Map<String, Object> query) {
-        List<Map<String, Object>> list = new ArrayList<>();
-        return BaseResultEntity.success(mapOf("list", list, "data", list, "total", 0));
-    }
-
-    public BaseResultEntity paramTuningResult(String taskId) {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        double[] lrs = {0.1, 0.05, 0.01, 0.005, 0.001};
-        int[] iters = {50, 100, 200, 300, 500};
-        int[] batches = {32, 64, 128, 256, 512};
-        for (int i = 0; i < 5; i++) {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("learningRate", lrs[i]); row.put("iterations", iters[i]); row.put("batchSize", batches[i]);
-            row.put("accuracy", round(0.85 + 0.1 * rand(taskId + "acc" + i), 4));
-            row.put("auc", round(0.87 + 0.1 * rand(taskId + "auc" + i), 4));
-            rows.add(row);
-        }
-        rows.sort((a, b) -> Double.compare((double) b.get("accuracy"), (double) a.get("accuracy")));
-        for (int i = 0; i < rows.size(); i++) rows.get(i).put("rank", i + 1);
-        return BaseResultEntity.success(rows);
-    }
-
-    public BaseResultEntity paramTuningCreate(Map<String, Object> data) { return BaseResultEntity.success(mapOf("tuningId", "PT-" + UUID.randomUUID().toString().substring(0, 8))); }
-
-    public BaseResultEntity applyBestParams(Map<String, Object> data) { return BaseResultEntity.success("已应用最优参数"); }
+    // 参数调优已迁出为真实实现（FlTuningService: 每试验一次真实 FL 训练），本类不再持有其 mock。
 
     // ===== internal =====
 

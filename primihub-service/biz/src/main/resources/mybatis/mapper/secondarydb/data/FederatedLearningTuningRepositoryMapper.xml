@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.FederatedLearningTuningRepository">
+
+    <!-- 显式 snake_case→camelCase 别名：live 配置未开 mapUnderscoreToCamelCase，
+         SELECT * 只会填上无下划线列、其余字段全 null（同 FederatedLearningRepositoryMapper 说明）。 -->
+    <sql id="trialColumns">
+        id,
+        tuning_id AS tuningId,
+        base_task_id AS baseTaskId,
+        child_task_id AS childTaskId,
+        project_id AS projectId,
+        search_method AS searchMethod,
+        learning_rate AS learningRate,
+        iterations,
+        batch_size AS batchSize,
+        accuracy,
+        loss,
+        auc,
+        task_state AS taskState,
+        rank_no AS rankNo,
+        applied,
+        user_id AS userId,
+        is_del AS isDel,
+        create_date AS createDate,
+        update_date AS updateDate
+    </sql>
+
+    <select id="selectByTuningId" resultType="com.primihub.biz.entity.data.po.FederatedLearningTuning">
+        SELECT <include refid="trialColumns"/>
+        FROM federated_learning_tuning
+        WHERE tuning_id = #{tuningId} AND is_del = 0
+        ORDER BY id
+    </select>
+
+    <select id="selectLatestTuningIdByBaseTaskId" resultType="java.lang.String">
+        SELECT tuning_id
+        FROM federated_learning_tuning
+        WHERE base_task_id = #{baseTaskId} AND is_del = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectTrialById" resultType="com.primihub.biz.entity.data.po.FederatedLearningTuning">
+        SELECT <include refid="trialColumns"/>
+        FROM federated_learning_tuning
+        WHERE id = #{id} AND is_del = 0
+    </select>
+
+    <select id="selectRuns" resultType="java.util.HashMap">
+        SELECT
+            tuning_id AS tuningId,
+            base_task_id AS baseTaskId,
+            MAX(project_id) AS projectId,
+            MAX(search_method) AS searchMethod,
+            COUNT(*) AS trialCount,
+            MAX(accuracy) AS bestAccuracy,
+            SUM(applied) AS appliedCount,
+            MIN(create_date) AS createDate
+        FROM federated_learning_tuning
+        WHERE is_del = 0
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="baseTaskId != null and baseTaskId != ''">
+            AND base_task_id = #{baseTaskId}
+        </if>
+        GROUP BY tuning_id, base_task_id
+        ORDER BY MIN(create_date) DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectRunsCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT tuning_id)
+        FROM federated_learning_tuning
+        WHERE is_del = 0
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="baseTaskId != null and baseTaskId != ''">
+            AND base_task_id = #{baseTaskId}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.FederatedLearningTuningPrRepository">
+
+    <insert id="saveTrial" parameterType="com.primihub.biz.entity.data.po.FederatedLearningTuning">
+        INSERT INTO federated_learning_tuning (
+            tuning_id, base_task_id, child_task_id, project_id, search_method,
+            learning_rate, iterations, batch_size, accuracy, loss, auc,
+            task_state, rank_no, applied, user_id, is_del, create_date, update_date
+        ) VALUES (
+            #{tuningId}, #{baseTaskId}, #{childTaskId}, #{projectId}, #{searchMethod},
+            #{learningRate}, #{iterations}, #{batchSize}, #{accuracy}, #{loss}, #{auc},
+            #{taskState}, #{rankNo}, 0, #{userId}, 0, now(), now()
+        )
+        <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <update id="updateTrialMetrics" parameterType="com.primihub.biz.entity.data.po.FederatedLearningTuning">
+        UPDATE federated_learning_tuning
+        SET accuracy = #{accuracy},
+            loss = #{loss},
+            auc = #{auc},
+            task_state = #{taskState},
+            rank_no = #{rankNo},
+            update_date = now()
+        WHERE id = #{id}
+    </update>
+
+    <update id="clearApplied">
+        UPDATE federated_learning_tuning
+        SET applied = 0, update_date = now()
+        WHERE tuning_id = #{tuningId} AND applied = 1
+    </update>
+
+    <update id="markApplied">
+        UPDATE federated_learning_tuning
+        SET applied = 1, update_date = now()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

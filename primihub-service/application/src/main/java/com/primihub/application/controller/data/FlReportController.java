@@ -2,6 +2,7 @@ package com.primihub.application.controller.data;
 
 import com.primihub.biz.entity.base.BaseResultEntity;
 import com.primihub.biz.service.data.FlReportService;
+import com.primihub.biz.service.data.FlTuningService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,9 @@ public class FlReportController {
 
     @Autowired
     private FlReportService service;
+
+    @Autowired
+    private FlTuningService tuningService;
 
     // 训练曲线
     @ApiOperation("训练迭代明细") @GetMapping("training/iterations")
@@ -54,13 +58,14 @@ public class FlReportController {
     @ApiOperation("任务日志") @GetMapping("taskLogs")
     public BaseResultEntity taskLogs(@RequestParam(required = false) String taskId) { return service.taskLogs(taskId); }
 
-    // 参数调优
+    // 参数调优（真实实现: 每试验一次真实 FL 训练, FlTuningService）
     @ApiOperation("参数调优列表") @GetMapping("paramTuning/list")
-    public BaseResultEntity ptList(@RequestParam Map<String, Object> query) { return service.paramTuningList(query); }
+    public BaseResultEntity ptList(@RequestParam Map<String, Object> query) { return tuningService.list(query); }
     @ApiOperation("参数调优结果") @GetMapping("paramTuning/result")
-    public BaseResultEntity ptResult(@RequestParam(required = false) String taskId) { return service.paramTuningResult(taskId); }
+    public BaseResultEntity ptResult(@RequestParam(required = false) String taskId) { return tuningService.result(taskId); }
     @ApiOperation("创建参数调优") @PostMapping("paramTuning/create")
-    public BaseResultEntity ptCreate(@RequestBody(required = false) Map<String, Object> data) { return service.paramTuningCreate(data); }
+    public BaseResultEntity ptCreate(@RequestHeader(value = "userId", required = false) Long userId,
+                                     @RequestBody(required = false) Map<String, Object> data) { return tuningService.create(data, userId); }
     @ApiOperation("应用最优参数") @PostMapping("paramTuning/apply")
-    public BaseResultEntity ptApply(@RequestBody(required = false) Map<String, Object> data) { return service.applyBestParams(data); }
+    public BaseResultEntity ptApply(@RequestBody(required = false) Map<String, Object> data) { return tuningService.apply(data); }
 }
