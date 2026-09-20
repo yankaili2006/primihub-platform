@@ -82,7 +82,11 @@
         </el-card>
 
         <el-card style="margin-top: 20px;">
-          <div slot="header"><span>运行日志</span></div>
+          <div slot="header">
+            <span>运行日志</span>
+            <!-- 真实联邦训练分钟级，状态/日志随进度懒同步，需手动刷新 -->
+            <el-button style="float: right; padding: 3px 0" type="text" icon="el-icon-refresh" @click="handleLoad(currentWorkflowId)">刷新</el-button>
+          </div>
           <div class="log-panel">
             <div v-if="logs.length === 0" style="color:#999;">暂无日志，运行后展示真实执行日志</div>
             <div v-for="(log, index) in logs" :key="index" class="log-item">
@@ -198,7 +202,7 @@ export default {
         if (res.code === 0 && res.result) {
           this.currentWorkflowId = res.result.workflowId
           this.logs = res.result.logs || []
-          this.$message.success('任务执行成功')
+          this.$message.success('真实联邦训练已派发（运行中），状态与日志请稍后刷新')
           this.loadWorkflows(); this.loadOverview()
         } else { this.$message.error(res.msg || '执行失败') }
       } catch (e) { this.$message.error('执行失败') } finally { this.running = false }

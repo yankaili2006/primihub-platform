@@ -5,7 +5,8 @@
     <sql id="cols">
         id, workflow_id AS workflowId, workflow_name AS workflowName, participants,
         dataset_id AS datasetId, dataset_name AS datasetName, rounds, learning_rate AS learningRate,
-        status, result_summary AS resultSummary, user_id AS userId, user_name AS userName,
+        status, result_summary AS resultSummary, fl_task_id AS flTaskId, model_id AS modelId,
+        user_id AS userId, user_name AS userName,
         create_date AS createDate, update_date AS updateDate, start_time AS startTime, end_time AS endTime
     </sql>
 
@@ -59,6 +60,8 @@
             <if test="nodes != null">nodes = #{nodes},</if>
             <if test="status != null">status = #{status},</if>
             <if test="resultSummary != null">result_summary = #{resultSummary},</if>
+            <if test="flTaskId != null">fl_task_id = #{flTaskId},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
             <if test="startTime != null">start_time = #{startTime},</if>
             <if test="endTime != null">end_time = #{endTime},</if>
             update_date = NOW()
