@@ -44,9 +44,7 @@ public class FlTuningService {
     @Autowired
     private FederatedLearningTuningPrRepository tuningPrRepository;
     @Autowired
-    private com.primihub.biz.repository.secondarydb.data.DataModelRepository dataModelRepository;
-    @Autowired
-    private com.primihub.biz.repository.secondarydb.data.DataTaskRepository dataTaskRepository;
+    private FlMetricsResolver metricsResolver;
 
     // ===== 创建调优运行 =====
 
@@ -280,42 +278,18 @@ public class FlTuningService {
     }
 
     /**
-     * 试验完成后从引擎真实产出的 indicatorFileName.json 回填 train_acc/train_auc。
-     * fl_task.accuracy 桥接链路不落值，指标真源是 node 引擎写在共享 /data 卷的指标文件；
-     * 任何一环缺失（未完成/文件不存在）都保持 null，绝不编造。
+     * 试验完成后从引擎真实产出的 indicatorFileName.json 回填 train_acc/train_auc
+     * （解析链共用 FlMetricsResolver）。任何一环缺失都保持 null，绝不编造。
      */
     private void backfillRealMetrics(FederatedLearningTuning t) {
         if (t.getChildTaskId() == null || t.getAccuracy() != null) return;
         if (t.getTaskState() == null || t.getTaskState() != 1) return;
-        try {
-            com.primihub.biz.entity.data.po.FederatedLearningTask flt =
-                    federatedLearningRepository.selectTaskByTaskId(t.getChildTaskId());
-            if (flt == null || flt.getExecutionLog() == null || !flt.getExecutionLog().contains("modelId")) return;
-            String logJson = flt.getExecutionLog();
-            int cut = logJson.indexOf(" | ");
-            Object modelIdObj = JSON.parseObject(cut > 0 ? logJson.substring(0, cut) : logJson).get("modelId");
-            if (modelIdObj == null) return;
-            Map<String, Object> q = new HashMap<>();
-            q.put("modelId", Long.valueOf(modelIdObj.toString()));
-            q.put("offset", 0);
-            q.put("pageSize", 1);
-            List<com.primihub.biz.entity.data.po.DataModelTask> mts = dataModelRepository.queryModelTaskByModelId(q);
-            if (mts == null || mts.isEmpty()) return;
-            com.primihub.biz.entity.data.po.DataTask dt = dataTaskRepository.selectDataTaskByTaskId(mts.get(0).getTaskId());
-            if (dt == null || dt.getTaskResultContent() == null) return;
-            Object ind = JSON.parseObject(dt.getTaskResultContent()).get("indicatorFileName");
-            if (ind == null) return;
-            java.io.File f = new java.io.File(String.valueOf(ind));
-            if (!f.exists()) return;
-            Map<?, ?> m = JSON.parseObject(new String(
-                    java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8));
-            Double acc = dbl(m.get("train_acc"));
-            Double auc = dbl(m.get("train_auc"));
-            if (acc != null) t.setAccuracy(acc);
-            if (auc != null) t.setAuc(auc);
-        } catch (Exception e) {
-            log.warn("回填真实指标失败(保持 null) {}: {}", t.getChildTaskId(), e.getMessage());
-        }
+        Map<String, Object> m = metricsResolver.readIndicator(metricsResolver.resolveDataTask(t.getChildTaskId()));
+        if (m == null) return;
+        Double acc = dbl(m.get("train_acc"));
+        Double auc = dbl(m.get("train_auc"));
+        if (acc != null) t.setAccuracy(acc);
+        if (auc != null) t.setAuc(auc);
     }
 
     // ===== 应用参数（只记录选中试验，不改动基础任务） =====

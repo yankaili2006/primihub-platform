@@ -57,6 +57,7 @@ public class FlReportController {
     public BaseResultEntity logs(@RequestParam Map<String, Object> query) { return service.logs(query); }
     @ApiOperation("任务日志") @GetMapping("taskLogs")
     public BaseResultEntity taskLogs(@RequestParam(required = false) String taskId) { return service.taskLogs(taskId); }
+    // batchExportLogs 已由 FederatedLearningLogExportController 提供，勿在此重复映射（Ambiguous mapping 会拒启）
 
     // 参数调优（真实实现: 每试验一次真实 FL 训练, FlTuningService）
     @ApiOperation("参数调优列表") @GetMapping("paramTuning/list")

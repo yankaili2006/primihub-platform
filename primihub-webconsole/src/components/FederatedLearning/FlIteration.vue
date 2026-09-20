@@ -18,7 +18,7 @@
         <el-table-column prop="timestamp" label="时间" width="180" />
       </el-table>
       <div v-if="iterationData.length === 0" style="text-align: center; color: #999; padding: 20px;">
-        暂无迭代数据（任务需处于运行中且后端已接通训练迭代接口）
+        暂无迭代数据：当前训练引擎只产出最终指标、不产出逐轮迭代历史（最终指标见「模型报告」）
       </div>
     </el-card>
   </div>
