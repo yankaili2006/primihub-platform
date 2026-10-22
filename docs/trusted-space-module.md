@@ -105,7 +105,18 @@
 - 前端 `npm run build:prod` 通过；`eslint` 对本次新增/改动文件 0 error（仓库整体有 ~400 个既有 lint 错误，未动）。
 - `tests/unit/api/trustedSpace.spec.js` 已加；仓库的 jest 工具链（Vue2 + `@vue/test-utils ^2`）目前跑不起来，待修。
 
-## 8. 上线步骤（下一轮）
+## 8. 上线记录（VM940，2026-10-22）
+
+- 17:05 CST 完成：六库（fusion0/1/2 + privacy0/1/2）先打 `20261022-trusted-space.sql`（复跑验证幂等），再把
+  application0-2 / manage-web0-2 切到叠加镜像 `primihub-platform:2.0-full-20261022-80fe8a6c`
+  （现网 20260920 镜像 + 新 application.jar）与 `primihub-web:2.0-full-20261022-80fe8a6c`，17:27 gateway0-2 对齐同一 tag。
+- 三机构控制台实测：登录权限树含 TrustedSpace×8 码；`listAll/page/detail/resources` 全 code=0；资源列表 `trustedSpaceName`
+  按新表解析；`assignResources` 把机构 B `nev_oem_usage`→新能源车、机构 C `water_precip_daily_test`→水利。
+- 经验：三个 application 同时冷启 8–10 分钟、单个 gateway 400+ 秒（8 核 15G 的 VM，load 20），期间 healthcheck 显
+  unhealthy、nginx 对 `/prod-api` 回 404/502，属过程态；两处同时 `compose up` 会撞 `removal already in progress`，
+  残留 `<id>_application1` 临时名容器，用 `up -d --no-deps --force-recreate` 正名。
+
+## 8a. 上线步骤（通用）
 
 1. 构建后端镜像（application 与 gateway 同镜像；gateway 可不换）+ web 镜像。
 2. **先打 SQL 再换镜像**：`apply-schema-patch.sh --host <ssh目标> --only-trusted-space`（或逐库 `mysql -D <db> < 20261022-trusted-space.sql`）；
