@@ -361,7 +361,7 @@ public class PsiControllerTest {
         assertNotNull(result);
     }
 
-    @Test public void testFunction_psi_downloadTask() {
+    @Test public void testFunction_psi_downloadTask() throws Exception {
         MockHttpServletResponse resp = new MockHttpServletResponse();
         when(dataPsiService.getPsiTaskDetails(TASK_ID)).thenReturn(successResult);
         controller.downloadPsiTask(resp, TASK_ID);

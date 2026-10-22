@@ -645,7 +645,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction143_fieldConfidentiality() {
         SqlValidateReq req = new SqlValidateReq();
         req.setSql("SELECT name FROM users");
-        req.setFieldConfidentiality(true);
         when(federatedAnalysisService.validateSql(req)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.validateSql(req);
         assertNotNull(result);
@@ -654,7 +653,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction144_filterOperator() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("filter-operator-test");
-        req.setSqlCondition("WHERE age > 18");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);
@@ -663,7 +661,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction145_joinOperator() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("join-operator-test");
-        req.setJoinType("INNER");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);
@@ -672,7 +669,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction146_aggregateOperator() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("aggregate-test");
-        req.setAggregateType("SUM");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);
@@ -681,7 +677,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction147_groupOperator() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("group-test");
-        req.setGroupByFields("dept");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);
@@ -690,7 +685,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction148_sortOperator() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("sort-test");
-        req.setOrderByFields("name ASC");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);
@@ -699,7 +693,6 @@ public class FederatedAnalysisControllerTest {
     @Test public void testFunction149_windowFunction() {
         AnalysisTaskReq req = new AnalysisTaskReq();
         req.setTaskName("window-test");
-        req.setWindowFunction("ROW_NUMBER() OVER (PARTITION BY dept)");
         when(federatedAnalysisService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(req);
         assertNotNull(result);

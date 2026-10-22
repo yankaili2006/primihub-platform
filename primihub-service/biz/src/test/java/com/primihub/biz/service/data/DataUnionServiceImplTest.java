@@ -8,6 +8,7 @@ import com.primihub.biz.entity.data.req.DataUnionReq;
 import com.primihub.biz.repository.primarydb.data.DataUnionPrRepository;
 import com.primihub.biz.repository.secondarydb.data.DataUnionRepository;
 import com.primihub.biz.service.sys.LogManagementService;
+import com.primihub.biz.service.data.DataAsyncService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,10 @@ public class DataUnionServiceImplTest {
 
     @Mock
     private LogManagementService logManagementService;
+
+    /** 服务现在把 gRPC 下发与详情补全委托给 DataAsyncService，不 mock 会 NPE → 被 catch 成 FAILURE(-1) */
+    @Mock
+    private DataAsyncService dataAsyncService;
 
     @Mock
     private DataUnionRepository dataUnionRepository;
@@ -122,7 +127,7 @@ public class DataUnionServiceImplTest {
         // 空结果时服务提前返回(不再查 count), 故只验 selectTaskPage 被调用
         when(dataUnionRepository.selectTaskPage(any())).thenReturn(Collections.emptyList());
 
-        BaseResultEntity result = dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = dataUnionService.getUnionTaskList(null, null, null, null, null, null, 1, 10);
 
         assertEquals(0, result.getCode().intValue());
         verify(dataUnionRepository).selectTaskPage(any());
@@ -139,7 +144,7 @@ public class DataUnionServiceImplTest {
         when(dataUnionRepository.selectTaskPage(any())).thenReturn(data);
         when(dataUnionRepository.selectTaskPageCount(any())).thenReturn(1L);
 
-        BaseResultEntity result = dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
 
         assertEquals(0, result.getCode().intValue());
         verify(dataUnionRepository).selectTaskPage(any());
@@ -150,7 +155,7 @@ public class DataUnionServiceImplTest {
     public void getUnionTaskList_repositoryThrows_returnsFailure() {
         when(dataUnionRepository.selectTaskPage(any())).thenThrow(new RuntimeException("DB error"));
 
-        BaseResultEntity result = dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = dataUnionService.getUnionTaskList(null, null, null, null, null, null, 1, 10);
 
         assertEquals(BaseResultEnum.FAILURE.getReturnCode(), result.getCode());
     }

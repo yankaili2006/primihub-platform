@@ -27,6 +27,13 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class BaseModuleControllersTest {
 
+    /** tenant 删除/冻结/解冻接口以 JSON body {id} 入参；id 为 null 时给空 map（等价于缺参） */
+    private static Map<String, Object> idBody(Long id) {
+        Map<String, Object> m = new HashMap<>();
+        if (id != null) m.put("id", id);
+        return m;
+    }
+
     // ==================== UserController ====================
     @Mock
     private SysUserService sysUserService;
@@ -351,33 +358,33 @@ public class BaseModuleControllersTest {
     @Test
     public void tenantController_deleteTenant_success() {
         when(tenantService.deleteTenant(VALID_ID)).thenReturn(successResult);
-        BaseResultEntity result = tenantController.deleteTenant(VALID_ID);
+        BaseResultEntity result = tenantController.deleteTenant(idBody(VALID_ID));
         assertSame(successResult, result);
     }
 
     @Test
     public void tenantController_deleteTenant_null_returnsLackOfParam() {
-        BaseResultEntity result = tenantController.deleteTenant(null);
+        BaseResultEntity result = tenantController.deleteTenant(idBody(null));
         assertEquals(BaseResultEnum.LACK_OF_PARAM.getReturnCode(), result.getCode());
     }
 
     @Test
     public void tenantController_freezeTenant_success() {
         when(tenantService.freezeTenant(VALID_ID)).thenReturn(successResult);
-        BaseResultEntity result = tenantController.freezeTenant(VALID_ID);
+        BaseResultEntity result = tenantController.freezeTenant(idBody(VALID_ID));
         assertSame(successResult, result);
     }
 
     @Test
     public void tenantController_freezeTenant_null_returnsLackOfParam() {
-        BaseResultEntity result = tenantController.freezeTenant(null);
+        BaseResultEntity result = tenantController.freezeTenant(idBody(null));
         assertEquals(BaseResultEnum.LACK_OF_PARAM.getReturnCode(), result.getCode());
     }
 
     @Test
     public void tenantController_unfreezeTenant_success() {
         when(tenantService.unfreezeTenant(VALID_ID)).thenReturn(successResult);
-        BaseResultEntity result = tenantController.unfreezeTenant(VALID_ID);
+        BaseResultEntity result = tenantController.unfreezeTenant(idBody(VALID_ID));
         assertSame(successResult, result);
     }
 
@@ -1152,15 +1159,15 @@ public class BaseModuleControllersTest {
     }
     @Test public void testFunction14_deleteTenant() {
         when(tenantService.deleteTenant(VALID_ID)).thenReturn(successResult);
-        assertNotNull(tenantController.deleteTenant(VALID_ID));
+        assertNotNull(tenantController.deleteTenant(idBody(VALID_ID)));
     }
     @Test public void testFunction15_freezeTenant() {
         when(tenantService.freezeTenant(VALID_ID)).thenReturn(successResult);
-        assertNotNull(tenantController.freezeTenant(VALID_ID));
+        assertNotNull(tenantController.freezeTenant(idBody(VALID_ID)));
     }
     @Test public void testFunction16_unfreezeTenant() {
         when(tenantService.unfreezeTenant(VALID_ID)).thenReturn(successResult);
-        assertNotNull(tenantController.unfreezeTenant(VALID_ID));
+        assertNotNull(tenantController.unfreezeTenant(idBody(VALID_ID)));
     }
     @Test public void testFunction17_findTenantPage() {
         when(tenantService.findTenantPage("kw", 1, 1, 10)).thenReturn(successResult);
@@ -1404,7 +1411,7 @@ public class BaseModuleControllersTest {
     }
     @Test public void testFunction71_updateDataResource() {
         DataResourceReq req = new DataResourceReq();
-        req.setId(VALID_ID);
+        req.setResourceId(VALID_ID);
         req.setResourceName("updated-res");
         when(dataResourceService.saveDataResource(req, USER_ID)).thenReturn(successResult);
         assertNotNull(resourceController.saveDataResource(req, USER_ID));
@@ -1456,7 +1463,7 @@ public class BaseModuleControllersTest {
     }
     @Test public void testFunction82_resourceApproval() {
         DataResourceReq req = new DataResourceReq();
-        req.setId(VALID_ID);
+        req.setResourceId(VALID_ID);
         req.setResourceName("approve-res");
         when(dataResourceService.saveDataResource(req, USER_ID)).thenReturn(successResult);
         assertNotNull(resourceController.saveDataResource(req, USER_ID));

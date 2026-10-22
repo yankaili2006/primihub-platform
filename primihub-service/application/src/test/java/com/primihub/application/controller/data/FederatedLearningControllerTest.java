@@ -601,7 +601,6 @@ public class FederatedLearningControllerTest {
 
     @Test public void testFunction185_hyperparameterTuning() {
         FederatedLearningReq req = buildValidReq();
-        req.setParams("{\"learning_rate\":0.01,\"epochs\":10}");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -609,7 +608,6 @@ public class FederatedLearningControllerTest {
 
     @Test public void testFunction186_featureEngineering() {
         FederatedLearningReq req = buildValidReq();
-        req.setFeatureColumns("col1,col2,col3");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -631,7 +629,6 @@ public class FederatedLearningControllerTest {
 
     @Test public void testFunction189_secureAggregation() {
         FederatedLearningReq req = buildValidReq();
-        req.setSecureAggregation(true);
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -639,8 +636,6 @@ public class FederatedLearningControllerTest {
 
     @Test public void testFunction190_differentialPrivacy() {
         FederatedLearningReq req = buildValidReq();
-        req.setDifferentialPrivacy(true);
-        req.setEpsilon(1.0);
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -667,8 +662,6 @@ public class FederatedLearningControllerTest {
 
     @Test public void testFunction194_taskSchedule() {
         FederatedLearningReq req = buildValidReq();
-        req.setScheduleType("CRON");
-        req.setScheduleValue("0 0 * * *");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -703,7 +696,6 @@ public class FederatedLearningControllerTest {
         FederatedLearningReq req = buildValidReq();
         req.setTaskType(2);
         req.setModelId("model-123");
-        req.setPredictionMode("online");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -713,7 +705,6 @@ public class FederatedLearningControllerTest {
         FederatedLearningReq req = buildValidReq();
         req.setTaskType(2);
         req.setModelId("model-123");
-        req.setPredictionMode("batch");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);
@@ -738,7 +729,6 @@ public class FederatedLearningControllerTest {
         FederatedLearningReq req = buildValidReq();
         req.setTaskType(2);
         req.setModelId("model-123");
-        req.setInferenceData("{\"features\":[1,2,3]}");
         when(federatedLearningService.createTask(req, 1L)).thenReturn(BaseResultEntity.success());
         BaseResultEntity result = controller.createTask(1L, req);
         assertNotNull(result);

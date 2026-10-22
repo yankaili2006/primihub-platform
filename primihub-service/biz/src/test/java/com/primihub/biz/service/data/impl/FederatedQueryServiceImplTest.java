@@ -282,37 +282,40 @@ public class FederatedQueryServiceImplTest {
         verify(queryTaskRepository, never()).updateQueryTask(any());
     }
 
+    /**
+     * runQuery 现为「同步校验 + 异步执行」：sourceConfig 里没有双方 parties 时，同步侧直接把任务标为失败(3)、
+     * 记 ERROR 日志、只 update 一次并返回 code=0（消息「任务执行失败」）。旧用例假设同步跑完 PSI（两次 update、
+     * 模拟模式 WARN 日志），与现实现不符，改为断言同步侧契约。
+     */
     @Test
-    public void runQuery_gRpcFallsBackToSimulatedMode() {
+    public void runQuery_withoutParties_marksFailedSynchronously() {
         FederatedQueryTask task = createTask(TASK_ID, "DH", "batch", "psi", 0);
+        task.setSourceConfig("{}"); // 既无 clientData/serverData 也无 parties
         when(queryTaskRepository.selectQueryTaskById(TASK_ID)).thenReturn(task);
 
         BaseResultEntity result = federatedQueryService.runQuery(TASK_ID, USER_ID);
 
         assertEquals(0, result.getCode().intValue());
-
-        // updateQueryTask 被调用2次(状态 1→2)。注意: captor 捕获的是同一个被复用的 task 引用,
-        // 两次取值都反映最终状态(2), 无法断言中间态1(Mockito captor 引用捕获局限)。
-        verify(queryTaskRepository, times(2)).updateQueryTask(taskCaptor.capture());
-        List<FederatedQueryTask> capturedTasks = taskCaptor.getAllValues();
-        assertEquals(Integer.valueOf(2), capturedTasks.get(1).getTaskState());
-        assertNotNull(capturedTasks.get(1).getResultSummary());
+        verify(queryTaskRepository, times(1)).updateQueryTask(taskCaptor.capture());
+        assertEquals(Integer.valueOf(3), taskCaptor.getValue().getTaskState());
+        assertNotNull(taskCaptor.getValue().getErrorMessage());
 
         verify(queryTaskRepository, atLeast(1)).insertQueryLog(logCaptor.capture());
-        List<FederatedQueryLog> logs = logCaptor.getAllValues();
-        boolean hasWarnLog = logs.stream().anyMatch(l -> "WARN".equals(l.getLogLevel()));
-        assertTrue("Expected WARN log for simulated mode", hasWarnLog);
+        assertTrue("Expected ERROR log for missing parties",
+                logCaptor.getAllValues().stream().anyMatch(l -> "ERROR".equals(l.getLogLevel())));
     }
 
+    /** 双方数据集齐备：同步侧标为运行中(1)并提交异步执行；异步线程随后还会 update 一次，这里只断言同步契约 */
     @Test
-    public void runQuery_withDifferenceQueryType_succeeds() {
+    public void runQuery_withDatasets_marksRunningAndSubmits() {
         FederatedQueryTask task = createTask(TASK_ID, "OT", "realtime", "difference", 0);
         when(queryTaskRepository.selectQueryTaskById(TASK_ID)).thenReturn(task);
 
         BaseResultEntity result = federatedQueryService.runQuery(TASK_ID, USER_ID);
 
         assertEquals(0, result.getCode().intValue());
-        verify(queryTaskRepository, times(2)).updateQueryTask(any());
+        assertEquals("任务已提交执行", result.getResult());
+        verify(queryTaskRepository, atLeast(1)).updateQueryTask(any());
     }
 
     @Test

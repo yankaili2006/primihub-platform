@@ -513,7 +513,7 @@ public class FederatedStatsControllerTest {
     }
 
     @Test
-    public void compatibility_endpointsAreWired() {
+    public void compatibility_endpointsAreWired() throws Exception {
         assertNotNull(controller.getClass().getDeclaredMethod("createTaskCompat", FederatedStatsReq.class));
         assertNotNull(controller.getClass().getDeclaredMethod("getTaskListCompat", FederatedStatsQueryReq.class));
         assertNotNull(controller.getClass().getDeclaredMethod("runTaskCompat", TaskActionReq.class));

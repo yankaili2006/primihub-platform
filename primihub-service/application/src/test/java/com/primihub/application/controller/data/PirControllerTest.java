@@ -46,21 +46,21 @@ public class PirControllerTest {
         captor.setTaskName(taskName);
         when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
 
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, taskName);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, taskName, null);
         assertSame(successResult, result);
         verify(pirService).pirSubmitTask(any(DataPirReq.class), eq(pirParam));
     }
 
     @Test
     public void pirSubmitTask_missingResourceId_returnsLackOfParam() {
-        BaseResultEntity result = controller.pirSubmitTask(null, "param", "task");
+        BaseResultEntity result = controller.pirSubmitTask(null, "param", "task", null);
         assertEquals(BaseResultEnum.LACK_OF_PARAM.getReturnCode(), result.getCode());
         verify(pirService, never()).pirSubmitTask(any(), anyString());
     }
 
     @Test
     public void pirSubmitTask_missingPirParam_returnsLackOfParam() {
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, null, "task");
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, null, "task", null);
         assertEquals(BaseResultEnum.LACK_OF_PARAM.getReturnCode(), result.getCode());
         verify(pirService, never()).pirSubmitTask(any(), anyString());
     }
@@ -70,7 +70,7 @@ public class PirControllerTest {
         String pirParam = "query1";
         when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
 
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, null);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, null, null);
         assertSame(successResult, result);
         verify(pirService).pirSubmitTask(any(DataPirReq.class), eq(pirParam));
     }
@@ -81,7 +81,7 @@ public class PirControllerTest {
         String longName = new String(new char[300]).replace('\0', 'A');
         when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
 
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, longName);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, longName, null);
         assertSame(successResult, result);
         verify(pirService).pirSubmitTask(any(DataPirReq.class), eq(pirParam));
     }
@@ -190,7 +190,7 @@ public class PirControllerTest {
     @Test public void testFunction_pir_submitTask() {
         String pirParam = "param1,param2";
         when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, "PIR-Test");
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, "PIR-Test", null);
         assertNotNull(result);
     }
 
@@ -218,7 +218,7 @@ public class PirControllerTest {
     @Test public void testFunction_pir_submitWithDefaultName() {
         String pirParam = "query1";
         when(pirService.pirSubmitTask(any(DataPirReq.class), eq(pirParam))).thenReturn(successResult);
-        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, null);
+        BaseResultEntity result = controller.pirSubmitTask(RESOURCE_ID, pirParam, null, null);
         assertNotNull(result);
     }
 

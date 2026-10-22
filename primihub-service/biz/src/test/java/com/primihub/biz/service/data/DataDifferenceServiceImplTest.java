@@ -8,6 +8,7 @@ import com.primihub.biz.entity.data.req.DataDifferenceReq;
 import com.primihub.biz.repository.primarydb.data.DataDifferencePrRepository;
 import com.primihub.biz.repository.secondarydb.data.DataDifferenceRepository;
 import com.primihub.biz.service.sys.LogManagementService;
+import com.primihub.biz.service.data.DataAsyncService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,10 @@ public class DataDifferenceServiceImplTest {
 
     @Mock
     private LogManagementService logManagementService;
+
+    /** 服务现在把 gRPC 下发与详情补全委托给 DataAsyncService，不 mock 会 NPE → 被 catch 成 FAILURE(-1) */
+    @Mock
+    private DataAsyncService dataAsyncService;
 
     @Mock
     private DataDifferenceRepository dataDifferenceRepository;
@@ -123,7 +128,7 @@ public class DataDifferenceServiceImplTest {
         // 空结果时服务提前返回(不再查 count), 故只验 selectTaskPage 被调用
         when(dataDifferenceRepository.selectTaskPage(any())).thenReturn(Collections.emptyList());
 
-        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, null, 1, 10);
 
         assertEquals(0, result.getCode().intValue());
         verify(dataDifferenceRepository).selectTaskPage(any());
@@ -140,7 +145,7 @@ public class DataDifferenceServiceImplTest {
         when(dataDifferenceRepository.selectTaskPage(any())).thenReturn(data);
         when(dataDifferenceRepository.selectTaskPageCount(any())).thenReturn(1L);
 
-        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
 
         assertEquals(0, result.getCode().intValue());
         verify(dataDifferenceRepository).selectTaskPage(any());
@@ -151,7 +156,7 @@ public class DataDifferenceServiceImplTest {
     public void getDifferenceTaskList_repositoryThrows_returnsFailure() {
         when(dataDifferenceRepository.selectTaskPage(any())).thenThrow(new RuntimeException("DB error"));
 
-        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, null, 1, 10);
 
         assertEquals(BaseResultEnum.FAILURE.getReturnCode(), result.getCode());
     }

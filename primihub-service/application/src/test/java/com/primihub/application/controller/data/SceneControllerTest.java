@@ -29,6 +29,11 @@ public class SceneControllerTest {
     private static final String CERT = "electronic_cert";
     private static final Long TEST_USER_ID = 1L;
 
+    /** Java 8 没有 Map.entry，自带一个 */
+    private static Map.Entry<String, Object> entry(String k, Object v) {
+        return new java.util.AbstractMap.SimpleEntry<>(k, v);
+    }
+
     private Map<String, Object> req(Map.Entry<String, Object>... entries) {
         Map<String, Object> map = new HashMap<>();
         for (Map.Entry<String, Object> e : entries) {
@@ -108,7 +113,7 @@ public class SceneControllerTest {
 
     @Test
     public void deletePoliceApi_success() {
-        Map<String, Object> req = req(Map.entry("id", 42L));
+        Map<String, Object> req = req(entry("id", 42L));
         when(sceneService.deleteApiConfig(42L)).thenReturn(BaseResultEntity.success());
 
         BaseResultEntity result = controller.deletePoliceApi(req);
@@ -164,7 +169,7 @@ public class SceneControllerTest {
 
     @Test
     public void deletePoliceKey_success() {
-        Map<String, Object> req = req(Map.entry("id", 7L));
+        Map<String, Object> req = req(entry("id", 7L));
         when(sceneService.deleteKey(7L)).thenReturn(BaseResultEntity.success());
 
         BaseResultEntity result = controller.deletePoliceKey(req);
@@ -186,7 +191,7 @@ public class SceneControllerTest {
 
     @Test
     public void encryptPoliceData_success() {
-        Map<String, Object> req = req(Map.entry("keyId", 1L), Map.entry("data", "plaintext"));
+        Map<String, Object> req = req(entry("keyId", 1L), entry("data", "plaintext"));
 
         when(sceneService.encryptData(1L, "plaintext")).thenReturn(BaseResultEntity.success("cipher"));
 
@@ -199,7 +204,7 @@ public class SceneControllerTest {
 
     @Test
     public void encryptPoliceData_missingKeyId_passesNull() {
-        Map<String, Object> req = req(Map.entry("data", "plaintext"));
+        Map<String, Object> req = req(entry("data", "plaintext"));
 
         when(sceneService.encryptData(null, "plaintext")).thenReturn(BaseResultEntity.success());
 
@@ -211,7 +216,7 @@ public class SceneControllerTest {
 
     @Test
     public void decryptPoliceData_success() {
-        Map<String, Object> req = req(Map.entry("keyId", 2L), Map.entry("encryptedData", "cipher"));
+        Map<String, Object> req = req(entry("keyId", 2L), entry("encryptedData", "cipher"));
 
         when(sceneService.decryptData(2L, "cipher")).thenReturn(BaseResultEntity.success("plaintext"));
 
@@ -296,7 +301,7 @@ public class SceneControllerTest {
 
     @Test
     public void deleteCertApi_success() {
-        Map<String, Object> req = req(Map.entry("id", 99L));
+        Map<String, Object> req = req(entry("id", 99L));
         when(sceneService.deleteApiConfig(99L)).thenReturn(BaseResultEntity.success());
 
         BaseResultEntity result = controller.deleteCertApi(req);
@@ -342,7 +347,7 @@ public class SceneControllerTest {
 
     @Test
     public void deleteCertKey_success() {
-        Map<String, Object> req = req(Map.entry("id", 15L));
+        Map<String, Object> req = req(entry("id", 15L));
         when(sceneService.deleteKey(15L)).thenReturn(BaseResultEntity.success());
 
         BaseResultEntity result = controller.deleteCertKey(req);
@@ -353,7 +358,7 @@ public class SceneControllerTest {
 
     @Test
     public void encryptCertData_success() {
-        Map<String, Object> req = req(Map.entry("keyId", 3L), Map.entry("data", "secret"));
+        Map<String, Object> req = req(entry("keyId", 3L), entry("data", "secret"));
         when(sceneService.encryptData(3L, "secret")).thenReturn(BaseResultEntity.success("encrypted"));
 
         BaseResultEntity result = controller.encryptCertData(req);
@@ -365,7 +370,7 @@ public class SceneControllerTest {
 
     @Test
     public void decryptCertData_success() {
-        Map<String, Object> req = req(Map.entry("keyId", 4L), Map.entry("encryptedData", "ciphertext"));
+        Map<String, Object> req = req(entry("keyId", 4L), entry("encryptedData", "ciphertext"));
         when(sceneService.decryptData(4L, "ciphertext")).thenReturn(BaseResultEntity.success("decrypted"));
 
         BaseResultEntity result = controller.decryptCertData(req);

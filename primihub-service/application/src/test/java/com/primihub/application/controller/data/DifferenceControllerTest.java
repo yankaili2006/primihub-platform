@@ -125,32 +125,32 @@ public class DifferenceControllerTest {
 
     @Test
     public void getDifferenceTaskList_success() {
-        when(dataDifferenceService.getDifferenceTaskList("task1", null, null, null, null, 1, 10))
+        when(dataDifferenceService.getDifferenceTaskList("task1", null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getDifferenceTaskList("task1", null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getDifferenceTaskList("task1", null, null, null, null, null, 1, 10);
         assertSame(successResult, result);
-        verify(dataDifferenceService).getDifferenceTaskList("task1", null, null, null, null, 1, 10);
+        verify(dataDifferenceService).getDifferenceTaskList("task1", null, null, null, null, null, 1, 10);
     }
 
     @Test
     public void getDifferenceTaskList_withAllFilters() {
-        when(dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+        when(dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = controller.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
         assertSame(successResult, result);
-        verify(dataDifferenceService).getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        verify(dataDifferenceService).getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
     }
 
     @Test
     public void getDifferenceTaskList_useDefaultPagination() {
-        when(dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, 1, 10))
+        when(dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getDifferenceTaskList(null, null, null, null, null, null, 1, 10);
         assertSame(successResult, result);
-        verify(dataDifferenceService).getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        verify(dataDifferenceService).getDifferenceTaskList(null, null, null, null, null, null, 1, 10);
     }
 
     // ==================== getDifferenceTaskDetails ====================
@@ -258,9 +258,9 @@ public class DifferenceControllerTest {
     }
 
     @Test public void testFunction_diff_getTaskList() {
-        when(dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, 1, 10))
+        when(dataDifferenceService.getDifferenceTaskList(null, null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
-        BaseResultEntity result = controller.getDifferenceTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getDifferenceTaskList(null, null, null, null, null, null, 1, 10);
         assertNotNull(result);
     }
 
@@ -295,9 +295,9 @@ public class DifferenceControllerTest {
     }
 
     @Test public void testFunction_diff_taskListWithFilters() {
-        when(dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+        when(dataDifferenceService.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20))
                 .thenReturn(successResult);
-        BaseResultEntity result = controller.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = controller.getDifferenceTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
         assertNotNull(result);
     }
 }

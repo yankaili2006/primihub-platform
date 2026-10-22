@@ -124,32 +124,32 @@ public class UnionControllerTest {
 
     @Test
     public void getUnionTaskList_success() {
-        when(dataUnionService.getUnionTaskList("task1", null, null, null, null, 1, 10))
+        when(dataUnionService.getUnionTaskList("task1", null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getUnionTaskList("task1", null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getUnionTaskList("task1", null, null, null, null, null, 1, 10);
         assertSame(successResult, result);
-        verify(dataUnionService).getUnionTaskList("task1", null, null, null, null, 1, 10);
+        verify(dataUnionService).getUnionTaskList("task1", null, null, null, null, null, 1, 10);
     }
 
     @Test
     public void getUnionTaskList_withAllFilters() {
-        when(dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+        when(dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = controller.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
         assertSame(successResult, result);
-        verify(dataUnionService).getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        verify(dataUnionService).getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
     }
 
     @Test
     public void getUnionTaskList_defaultPagination() {
-        when(dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10))
+        when(dataUnionService.getUnionTaskList(null, null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
 
-        BaseResultEntity result = controller.getUnionTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getUnionTaskList(null, null, null, null, null, null, 1, 10);
         assertSame(successResult, result);
-        verify(dataUnionService).getUnionTaskList(null, null, null, null, null, 1, 10);
+        verify(dataUnionService).getUnionTaskList(null, null, null, null, null, null, 1, 10);
     }
 
     // ==================== getUnionTaskDetails ====================
@@ -265,9 +265,9 @@ public class UnionControllerTest {
     }
 
     @Test public void testFunction_union_getTaskList() {
-        when(dataUnionService.getUnionTaskList(null, null, null, null, null, 1, 10))
+        when(dataUnionService.getUnionTaskList(null, null, null, null, null, null, 1, 10))
                 .thenReturn(successResult);
-        BaseResultEntity result = controller.getUnionTaskList(null, null, null, null, null, 1, 10);
+        BaseResultEntity result = controller.getUnionTaskList(null, null, null, null, null, null, 1, 10);
         assertNotNull(result);
     }
 
@@ -302,9 +302,9 @@ public class UnionControllerTest {
     }
 
     @Test public void testFunction_union_taskListWithFilters() {
-        when(dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20))
+        when(dataUnionService.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20))
                 .thenReturn(successResult);
-        BaseResultEntity result = controller.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", 2, 20);
+        BaseResultEntity result = controller.getUnionTaskList("test", 1, "orgA", "2025-01-01", "2025-12-31", null, 2, 20);
         assertNotNull(result);
     }
 }
