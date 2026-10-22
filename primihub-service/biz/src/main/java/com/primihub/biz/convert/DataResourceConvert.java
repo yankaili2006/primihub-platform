@@ -56,6 +56,7 @@ public class DataResourceConvert {
         if (po.getResourceKind()!=0){
             po.setObjectKey(sysFile.getFileUrl());
         }
+        po.setTrustedSpace(req.getTrustedSpace());
         return po;
     }
 
@@ -80,10 +81,14 @@ public class DataResourceConvert {
         po.setPublicOrganId(req.getPublicOrganId());
         po.setResourceState(0);
         po.setResourceKind(req.getResourceKind()==null?0:req.getResourceKind());
+        po.setTrustedSpace(req.getTrustedSpace());
         return po;
     }
 
     public static void editResourceReqConvertPo(DataResourceReq req, DataResource po){
+        if (req.getTrustedSpace()!=null && req.getTrustedSpace()!=0L){
+            po.setTrustedSpace(req.getTrustedSpace());
+        }
         if (req.getResourceName()!=null && !"".equals(req.getResourceName().trim())){
             po.setResourceName(req.getResourceName());
         }

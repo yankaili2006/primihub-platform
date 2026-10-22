@@ -24,7 +24,7 @@
         resource_kind as resourceKind,
         object_key as objectKey,
         trusted_space as trustedSpace,
-        (select t.tag_name from data_resource_tag t where t.tag_id = trusted_space and t.is_del = 0) as trustedSpaceName,
+        (select s.space_name from data_trusted_space s where s.space_id = trusted_space and s.is_del = 0) as trustedSpaceName,
         resource_hash_code as resourceHashCode,
         db_id as dbId,
         user_id as userId,
@@ -33,11 +33,11 @@
         create_date as createDate
     </sql>
 
+    <!-- 可信空间候选 = data_trusted_space 中启用且未删除的空间名（缺省空间排前） -->
     <select id="queryTrustedSpaceNames" resultType="java.lang.String">
-        select distinct t.tag_name from data_resource_tag t
-        where t.is_del = 0
-          and t.tag_id in (select trusted_space from data_resource where is_del = 0 and trusted_space is not null)
-        order by t.tag_name
+        select space_name from data_trusted_space
+        where is_del = 0 and status = 1
+        order by is_default desc, sort_index asc, space_id asc
     </select>
     <select id="queryAllResourceTag" resultType="java.lang.String">
         select distinct tag_name         from data_resource_tag WHERE is_del = 0
@@ -81,15 +81,18 @@
         <if test="resourceKind!=null">
             and resource_kind = #{resourceKind}
         </if>
+        <if test="trustedSpace!=null">
+            and (trusted_space = #{trustedSpace}
+            <if test="trustedSpaceIncludeDefault!=null and trustedSpaceIncludeDefault">
+                or trusted_space is null
+            </if>
+            )
+        </if>
+        <!-- 按空间名过滤：命中显式指向同名空间的资源；若该名是缺省空间（或兼容旧字面量 PrimiHub），NULL 资源也命中 -->
         <if test="trustedSpaceName!=null and trustedSpaceName!=''">
-            <choose>
-                <when test="trustedSpaceName=='PrimiHub'">
-                    and (trusted_space is null or trusted_space in (select tag_id from data_resource_tag where tag_name = 'PrimiHub' and is_del = 0))
-                </when>
-                <otherwise>
-                    and trusted_space in (select tag_id from data_resource_tag where tag_name = #{trustedSpaceName} and is_del = 0)
-                </otherwise>
-            </choose>
+            and (trusted_space in (select s.space_id from data_trusted_space s where s.space_name = #{trustedSpaceName} and s.is_del = 0)
+                 or (trusted_space is null and (#{trustedSpaceName} = 'PrimiHub'
+                     or exists (select 1 from data_trusted_space d where d.space_name = #{trustedSpaceName} and d.is_del = 0 and d.is_default = 1))))
         </if>
         <choose>
             <when test="fileContainsY!=null and fileContainsY==1">

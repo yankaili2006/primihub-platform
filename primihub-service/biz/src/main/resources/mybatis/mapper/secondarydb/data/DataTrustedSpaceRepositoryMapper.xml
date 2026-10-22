@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.secondarydb.data.DataTrustedSpaceRepository">
+
+    <sql id="spaceColumns">
+        space_id as spaceId,
+        space_code as spaceCode,
+        space_name as spaceName,
+        space_desc as spaceDesc,
+        organ_id as organId,
+        organ_name as organName,
+        is_default as isDefault,
+        status as status,
+        sort_index as sortIndex,
+        user_id as userId,
+        is_del as isDel,
+        create_date as createDate,
+        update_date as updateDate
+    </sql>
+
+    <sql id="pageCondition">
+        where is_del = 0
+        <if test="spaceName != null and spaceName != ''">
+            and space_name like CONCAT('%', #{spaceName,jdbcType=VARCHAR}, '%')
+        </if>
+        <if test="spaceCode != null and spaceCode != ''">
+            and space_code = #{spaceCode}
+        </if>
+        <if test="status != null">
+            and status = #{status}
+        </if>
+    </sql>
+
+    <select id="selectTrustedSpacePage" parameterType="map" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        <include refid="pageCondition"/>
+        order by is_default desc, sort_index asc, space_id asc
+        <if test="offset != null and pageSize != null">
+            limit #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <select id="selectTrustedSpaceCount" parameterType="map" resultType="java.lang.Integer">
+        select count(*) from data_trusted_space
+        <include refid="pageCondition"/>
+    </select>
+
+    <select id="selectAllEnabled" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        where is_del = 0 and status = 1
+        order by is_default desc, sort_index asc, space_id asc
+    </select>
+
+    <select id="selectTrustedSpaceById" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        where space_id = #{spaceId} and is_del = 0
+    </select>
+
+    <select id="selectTrustedSpaceByCode" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        where space_code = #{spaceCode} and is_del = 0
+        <if test="excludeId != null">
+            and space_id != #{excludeId}
+        </if>
+        limit 1
+    </select>
+
+    <select id="selectTrustedSpaceByName" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        where space_name = #{spaceName} and is_del = 0
+        <if test="excludeId != null">
+            and space_id != #{excludeId}
+        </if>
+        limit 1
+    </select>
+
+    <select id="selectDefaultTrustedSpace" resultType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        select <include refid="spaceColumns"/>
+        from data_trusted_space
+        where is_default = 1 and is_del = 0
+        order by space_id asc
+        limit 1
+    </select>
+
+    <!-- 有效资源 = 未删除且非衍生(resource_source != 3)，与资源列表口径一致 -->
+    <select id="countResourcesBySpace" resultType="java.lang.Integer">
+        select count(*) from data_resource
+        where is_del = 0
+        and (trusted_space = #{spaceId}
+        <if test="isDefault != null and isDefault == 1">
+            or trusted_space is null
+        </if>
+        )
+    </select>
+
+    <select id="selectResourceCountGroupBySpace" resultType="java.util.HashMap">
+        select trusted_space as spaceId, count(*) as cnt
+        from data_resource
+        where is_del = 0
+        group by trusted_space
+    </select>
+
+</mapper>
