@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.primihub.biz.repository.primarydb.data.DataTrustedSpacePrRepository">
+
+    <insert id="insertTrustedSpace" keyProperty="spaceId" useGeneratedKeys="true"
+            parameterType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        insert into data_trusted_space (space_code, space_name, space_desc, organ_id, organ_name, is_default, status, sort_index, user_id, is_del, create_date, update_date)
+        values (#{spaceCode}, #{spaceName}, #{spaceDesc}, #{organId}, #{organName}, ifnull(#{isDefault}, 0), ifnull(#{status}, 1), ifnull(#{sortIndex}, 100), #{userId}, 0, now(), now())
+    </insert>
+
+    <update id="updateTrustedSpace" parameterType="com.primihub.biz.entity.data.po.DataTrustedSpace">
+        update data_trusted_space
+        <set>
+            <if test="spaceCode != null">space_code = #{spaceCode},</if>
+            <if test="spaceName != null">space_name = #{spaceName},</if>
+            <if test="spaceDesc != null">space_desc = #{spaceDesc},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sortIndex != null">sort_index = #{sortIndex},</if>
+            update_date = now()
+        </set>
+        where space_id = #{spaceId} and is_del = 0
+    </update>
+
+    <update id="deleteTrustedSpace">
+        update data_trusted_space
+        set is_del = 1, space_code = concat(space_code, '_del_', space_id), update_date = now()
+        where space_id = #{spaceId} and is_del = 0 and is_default = 0
+    </update>
+
+    <update id="updateResourceTrustedSpace">
+        update data_resource
+        set trusted_space = #{spaceId}, update_date = now()
+        where is_del = 0 and resource_id in
+        <foreach collection="resourceIds" item="rid" open="(" separator="," close=")">
+            #{rid}
+        </foreach>
+    </update>
+
+    <update id="clearResourceTrustedSpace">
+        update data_resource
+        set trusted_space = null, update_date = now()
+        where trusted_space = #{spaceId}
+        <if test="resourceIds != null and resourceIds.size() > 0">
+            and resource_id in
+            <foreach collection="resourceIds" item="rid" open="(" separator="," close=")">
+                #{rid}
+            </foreach>
+        </if>
+    </update>
+
+</mapper>

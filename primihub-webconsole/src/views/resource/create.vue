@@ -55,6 +55,16 @@
           <p class="tips">标签个数不能超过5个</p>
         </div>
       </el-form-item>
+      <el-form-item label="可信空间" prop="trustedSpace">
+        <div class="item-wrap-normal">
+          <el-select v-model="dataForm.trustedSpace" placeholder="不选则归入缺省空间" clearable style="width: 300px;">
+            <el-option v-for="s in trustedSpaceOptions" :key="s.spaceId" :label="s.spaceName" :value="s.spaceId">
+              <span>{{ s.spaceName }}</span>
+              <span v-if="s.isDefault === 1" class="option-hint">缺省</span>
+            </el-option>
+          </el-select>
+        </div>
+      </el-form-item>
       <el-form-item label="授权方式" prop="resourceAuthType">
         <div class="item-wrap-normal auth-container">
           <el-radio-group v-model="dataForm.resourceAuthType" @change="handleAuthTypeChange">
@@ -133,6 +143,7 @@
 
 <script>
 import { saveResource, getResourceDetail, resourceFilePreview, displayDatabaseSourceType } from '@/api/resource'
+import { getTrustedSpaceList } from '@/api/trustedSpace'
 import Upload from '@/components/Upload'
 import EditResourceTable from '@/components/EditResourceTable'
 import ResourcePreviewTable from '@/components/ResourcePreviewTable'
@@ -151,6 +162,7 @@ export default {
     return {
       isEditPage: false,
       fileUrl: '',
+      trustedSpaceOptions: [], // 可信空间下拉（/data/trustedSpace/listAll）
       dataForm: {
         resourceName: '',
         resourceDesc: '',
@@ -158,6 +170,7 @@ export default {
         resourceSource: 1,
         resourceKind: 0, // 资源形态 0表格 1图像等非结构化
         resourceAuthType: 1,
+        trustedSpace: null, // 可信空间 space_id；null = 缺省空间
         fileId: -1, // 文件id
         fieldList: [],
         fusionOrganList: []
@@ -237,12 +250,21 @@ export default {
   async created() {
     this.isEditPage = this.$route.name === 'ResourceEdit'
     this.resourceId = this.$route.params.id
+    this.loadTrustedSpaces()
     if (this.isEditPage) {
       await this.getResourceDetail()
     }
     await this.displayDatabaseSourceType()
   },
   methods: {
+    async loadTrustedSpaces() {
+      try {
+        const { code, result } = await getTrustedSpaceList()
+        if (code === 0 && Array.isArray(result)) this.trustedSpaceOptions = result
+      } catch (e) {
+        // 接口不可用：下拉为空，资源仍可按缺省空间保存
+      }
+    },
     async displayDatabaseSourceType() {
       const res = await displayDatabaseSourceType()
       if (res.code === 0) {
@@ -394,8 +416,9 @@ export default {
       this.loading = true
       const { result = {}} = await getResourceDetail(this.resourceId)
       const { resource, dataList, fieldList, fusionOrganList } = result
-      const { resourceName, resourceDesc, resourceAuthType, resourceSource, resourceKind, tags, fileId, url } = resource
+      const { resourceName, resourceDesc, resourceAuthType, resourceSource, resourceKind, tags, fileId, url, trustedSpace } = resource
       this.resource = resource
+      this.dataForm.trustedSpace = trustedSpace || null
       this.dataForm.resourceName = resourceName
       this.dataForm.resourceDesc = resourceDesc
       this.dataForm.resourceAuthType = resourceAuthType
@@ -430,6 +453,11 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.option-hint {
+  float: right;
+  color: #909399;
+  font-size: 12px;
+}
 ::v-deep .el-loading-mask{
   z-index: 1;
 }

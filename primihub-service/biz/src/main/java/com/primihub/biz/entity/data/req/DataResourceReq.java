@@ -67,5 +67,13 @@ public class DataResourceReq extends PageReq{
      * 可信空间名过滤（水利/新能源车/农业/PrimiHub）；PrimiHub 同时命中未设置(NULL)的资源
      */
     private String trustedSpaceName;
+    /**
+     * 可信空间 id（data_trusted_space.space_id）：查询时按 id 过滤；保存/编辑时写入资源归属，null=不改/缺省
+     */
+    private Long trustedSpace;
+    /**
+     * 与 trustedSpace 联用：true 时把 trusted_space 为 NULL 的资源一并命中（缺省空间视图），仅服务端内部使用
+     */
+    private Boolean trustedSpaceIncludeDefault = false;
 
 }

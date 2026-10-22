@@ -149,3 +149,24 @@ INSERT INTO data_psi_task (psi_id, task_id, task_state, ascription_type, file_ro
 -- 插入PIR任务
 INSERT INTO data_pir_task (task_id, server_address, provider_organ_name, resource_id, resource_name, is_del) VALUES
 (3, 'http://localhost:8090', '广告公司M', 'res-003', '用户行为数据', 0);
+
+-- 可信空间模块：缺省空间 + 菜单/按钮权限（与 arm64-deploy/data/sql-patches/20261022-trusted-space.sql 同源）
+INSERT INTO data_trusted_space (space_id, space_code, space_name, space_desc, is_default, status, sort_index, is_del) VALUES
+(1001, 'primihub', 'PrimiHub', '缺省可信空间：未归类的数据资源', 1, 1, 0, 0),
+(1002, 'water', '水利', '水利领域数据资源', 0, 1, 10, 0),
+(1003, 'nev', '新能源车', '新能源车领域数据资源', 0, 1, 20, 0),
+(1004, 'agri', '农业', '农业领域数据资源', 0, 1, 30, 0);
+
+INSERT INTO sys_auth (auth_id, auth_name, auth_code, auth_type, p_auth_id, r_auth_id, full_path, auth_url, data_auth_code, auth_index, auth_depth, is_show, is_editable, is_del) VALUES
+(9840, '可信空间', 'TrustedSpace', 1, 0, 9840, '9840', '', 'own', 5, 0, 1, 1, 0),
+(9841, '空间列表', 'TrustedSpaceList', 2, 9840, 9840, '9840,9841', '/trustedSpace/page', 'own', 1, 1, 1, 1, 0),
+(9842, '空间详情', 'TrustedSpaceDetail', 3, 9840, 9840, '9840,9842', '/trustedSpace/detail', 'own', 2, 1, 1, 1, 0),
+(9843, '新建空间', 'TrustedSpaceAdd', 3, 9840, 9840, '9840,9843', '/trustedSpace/save', 'own', 3, 1, 1, 1, 0),
+(9844, '编辑空间', 'TrustedSpaceEdit', 3, 9840, 9840, '9840,9844', '/trustedSpace/update', 'own', 4, 1, 1, 1, 0),
+(9845, '删除空间', 'TrustedSpaceDelete', 3, 9840, 9840, '9840,9845', '/trustedSpace/delete', 'own', 5, 1, 1, 1, 0),
+(9846, '划入资源', 'TrustedSpaceAssign', 3, 9840, 9840, '9840,9846', '/trustedSpace/assignResources', 'own', 6, 1, 1, 1, 0),
+(9847, '移出资源', 'TrustedSpaceRemove', 3, 9840, 9840, '9840,9847', '/trustedSpace/removeResources', 'own', 7, 1, 1, 1, 0);
+
+INSERT INTO sys_ra (id, role_id, auth_id, is_del) VALUES
+(48, 1, 9840, 0), (49, 1, 9841, 0), (50, 1, 9842, 0), (51, 1, 9843, 0),
+(52, 1, 9844, 0), (53, 1, 9845, 0), (54, 1, 9846, 0), (55, 1, 9847, 0);

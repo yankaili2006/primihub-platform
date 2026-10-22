@@ -93,7 +93,8 @@ public class ResourceController {
                     &&(req.getResourceAuthType()==null || req.getResourceAuthType()==0)
                     &&(req.getPublicOrganId()==null|| "".equals(req.getPublicOrganId().trim()))
                     &&(req.getResourceSource()==null || req.getResourceSource()==0)
-                    &&(req.getTags()==null||req.getTags().size()==0)){
+                    &&(req.getTags()==null||req.getTags().size()==0)
+                    &&(req.getTrustedSpace()==null || req.getTrustedSpace()==0L)){
                 return BaseResultEntity.failure(BaseResultEnum.LACK_OF_PARAM,"至少需要一个修改的字段");
             }
             if(!DataResourceAuthType.AUTH_TYPE_MAP.containsKey(req.getResourceAuthType())) {

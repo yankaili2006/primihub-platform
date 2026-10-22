@@ -24,6 +24,7 @@ import com.primihub.biz.entity.sys.po.SysUser;
 import com.primihub.biz.repository.primarydb.data.DataResourcePrRepository;
 import com.primihub.biz.repository.secondarydb.data.DataModelRepository;
 import com.primihub.biz.repository.secondarydb.data.DataResourceRepository;
+import com.primihub.biz.repository.secondarydb.data.DataTrustedSpaceRepository;
 import com.primihub.biz.repository.secondarydb.sys.SysFileSecondarydbRepository;
 import com.primihub.biz.service.feign.FusionResourceService;
 import com.primihub.biz.service.sys.SysUserService;
@@ -59,6 +60,8 @@ public class DataResourceService {
     private DataResourceRepository dataResourceRepository;
     @Autowired
     private DataResourcePrRepository dataResourcePrRepository;
+    @Autowired
+    private DataTrustedSpaceRepository dataTrustedSpaceRepository;
     @Autowired
     private OtherBusinessesService otherBusinessesService;
     @Autowired
@@ -98,6 +101,8 @@ public class DataResourceService {
         paramMap.put("fileContainsY", req.getFileContainsY());
         paramMap.put("resourceKind", req.getResourceKind());
         paramMap.put("trustedSpaceName", req.getTrustedSpaceName());
+        paramMap.put("trustedSpace", req.getTrustedSpace());
+        paramMap.put("trustedSpaceIncludeDefault", req.getTrustedSpaceIncludeDefault() != null && req.getTrustedSpaceIncludeDefault());
         List<DataResource> dataResources = dataResourceRepository.queryDataResource(paramMap);
         if (dataResources.size() == 0) {
             return BaseResultEntity.success(new PageDataEntity(0, req.getPageSize(), req.getPageNo(), new ArrayList()));
@@ -152,6 +157,10 @@ public class DataResourceService {
 
     public BaseResultEntity saveDataResource(DataResourceReq req, Long userId) {
         Map<String, Object> map = new HashMap<>();
+        BaseResultEntity spaceCheck = checkTrustedSpace(req);
+        if (spaceCheck != null) {
+            return spaceCheck;
+        }
         try {
             DataResource dataResource = DataResourceConvert.dataResourceReqConvertPo(req, userId, null);
             List<DataResourceFieldReq> fieldList = req.getFieldList();
@@ -244,6 +253,10 @@ public class DataResourceService {
         DataResource dataResource = dataResourceRepository.queryDataResourceById(req.getResourceId());
         if (dataResource == null) {
             return BaseResultEntity.failure(BaseResultEnum.DATA_EDIT_FAIL, "找不到资源信息");
+        }
+        BaseResultEntity spaceCheck = checkTrustedSpace(req);
+        if (spaceCheck != null) {
+            return spaceCheck;
         }
         DataResourceConvert.editResourceReqConvertPo(req, dataResource);
         try {
@@ -532,6 +545,24 @@ public class DataResourceService {
      * 可信空间候选：被资源实际引用的主标签名 + 缺省 PrimiHub（未设置的资源归它）。
      * 资源列表筛选与智能体页「数据空间」共用，不再各写一份常量。
      */
+    /**
+     * 保存/编辑资源时若指定了可信空间，须存在且启用；0/null 视为未指定（缺省空间）。返回 null 表示通过。
+     */
+    private BaseResultEntity checkTrustedSpace(DataResourceReq req) {
+        if (req.getTrustedSpace() == null || req.getTrustedSpace() == 0L) {
+            req.setTrustedSpace(null);
+            return null;
+        }
+        DataTrustedSpace space = dataTrustedSpaceRepository.selectTrustedSpaceById(req.getTrustedSpace());
+        if (space == null) {
+            return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "trustedSpace 不存在");
+        }
+        if (space.getStatus() != null && space.getStatus() != 1) {
+            return BaseResultEntity.failure(BaseResultEnum.PARAM_INVALIDATION, "trustedSpace 已停用");
+        }
+        return null;
+    }
+
     public BaseResultEntity getTrustedSpaces() {
         List<String> names = new ArrayList<>(dataResourceRepository.queryTrustedSpaceNames());
         names.remove("PrimiHub");

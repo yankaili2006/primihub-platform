@@ -196,9 +196,30 @@ CREATE TABLE IF NOT EXISTS data_resource (
     url VARCHAR(255),
     resource_hash_code VARCHAR(255),
     resource_state TINYINT NOT NULL DEFAULT 0,
+    resource_kind INT DEFAULT 0,
+    object_key VARCHAR(512),
+    trusted_space BIGINT,
     is_del TINYINT DEFAULT 0,
     create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 可信空间（data_resource.trusted_space -> space_id；NULL = 缺省空间）
+CREATE TABLE IF NOT EXISTS data_trusted_space (
+    space_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    space_code VARCHAR(64) NOT NULL,
+    space_name VARCHAR(128) NOT NULL,
+    space_desc VARCHAR(512),
+    organ_id VARCHAR(64),
+    organ_name VARCHAR(128),
+    is_default TINYINT NOT NULL DEFAULT 0,
+    status TINYINT NOT NULL DEFAULT 1,
+    sort_index INT NOT NULL DEFAULT 100,
+    user_id BIGINT,
+    is_del TINYINT NOT NULL DEFAULT 0,
+    create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT uk_trusted_space_code UNIQUE (space_code)
 );
 
 CREATE TABLE IF NOT EXISTS data_resource_tag (

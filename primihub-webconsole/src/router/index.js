@@ -1440,6 +1440,29 @@ export const asyncRoutes = [
     ]
   },
   {
+    // 可信空间：数据资源的归属域（水利/新能源车/农业/缺省 PrimiHub），sys_auth 9840–9847
+    path: '/trustedSpace',
+    component: Layout,
+    name: 'TrustedSpace',
+    redirect: '/trustedSpace/list',
+    meta: { title: '可信空间', icon: 'el-icon-box' },
+    children: [
+      {
+        path: 'list',
+        name: 'TrustedSpaceList',
+        component: () => import('@/views/trustedSpace/list'),
+        meta: { title: '空间列表' }
+      },
+      {
+        path: 'detail/:id',
+        name: 'TrustedSpaceDetail',
+        hidden: true,
+        component: () => import('@/views/trustedSpace/detail'),
+        meta: { title: '空间详情', activeMenu: '/trustedSpace/list' }
+      }
+    ]
+  },
+  {
     path: '/setting',
     component: Layout,
     name: 'Setting',
